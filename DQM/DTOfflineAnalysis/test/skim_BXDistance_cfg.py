@@ -5,13 +5,14 @@ process = cms.Process("SkimBXDistance")
 # the source
 process.source = cms.Source("PoolSource",
      fileNames = cms.untracked.vstring(
-    '/store/data/Commissioning08/Cosmics/RAW/v1/000/067/818/00559BCE-DAA4-DD11-A35B-000423D9517C.root'
+    'rfio:/castor/cern.ch/user/c/cerminar/MySkims/GlobalRuns/r67818_EmptyTriggers/run67818_SkimEmptyTriggers_1.root',
+    'rfio:/castor/cern.ch/user/c/cerminar/MySkims/GlobalRuns/r67818_EmptyTriggers/run67818_SkimEmptyTriggers_2.root'
      )
                              )
 #process.source.skipEvents = 500000
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(100)
+    input = cms.untracked.int32(-1)
     )
 
 
@@ -41,13 +42,15 @@ process.MessageLogger = cms.Service("MessageLogger",
 
 
 #process.mySkimBxDistance = cms.Path(process.bxDistanceFilter)
+process.dummyProducer = cms.EDProducer("ThingWithMergeProducer")
 
-process.mySkimBxDistance = cms.Path(process.gtDigis+ process.eventListProducer + process.l1GmtTriggerSource)
+
+process.mySkimBxDistance = cms.Path(process.dummyProducer + process.gtDigis+ process.eventListProducer + process.l1GmtTriggerSource)
 
 
 process.out1 = cms.OutputModule("PoolOutputModule",
                                 #compressionLevel = cms.untracked.int32(9),
-                                fileName = cms.untracked.string('run67818_SkimBxDistance_2.root'),
+                                fileName = cms.untracked.string('/tmp/cerminar/run67818_SkimBxDistance_1.root'),
                                 SelectEvents = cms.untracked.PSet(
                                        SelectEvents = cms.vstring('mySkimBxDistance'))
                                 )
