@@ -48,7 +48,7 @@ L1GmtTriggerSource::L1GmtTriggerSource(const edm::ParameterSet& ps) {
    //now do what ever initialization is needed
   m_GMTInputTag = ps.getParameter<edm::InputTag>("GMTInputTag");
   inputLabel  = ps.getParameter<edm::InputTag>("inputLabel");
-  debug = ps.getUntrackedParameter<unsigned int>("debug", false);
+  debug = ps.getUntrackedParameter<bool>("debug", false);
 }
 
 
@@ -69,7 +69,8 @@ L1GmtTriggerSource::~L1GmtTriggerSource()
 void
 L1GmtTriggerSource::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
-  cout << "=== Event: " << iEvent.id().event() << "===============================================================" << endl;
+  if(debug)
+    cout << "=== Event: " << iEvent.id().event() << "===============================================================" << endl;
   
    using namespace edm;
    unsigned int GTEVMId= 812;
@@ -90,13 +91,13 @@ L1GmtTriggerSource::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
    bool rpcb_l1a = false;
    bool rpcf_l1a = false;
    
-   std::vector<L1MuGMTReadoutRecord> gmt_records = gmtrc->getRecords();
-   std::vector<L1MuGMTReadoutRecord>::const_iterator igmtrr;
+   vector<L1MuGMTReadoutRecord> gmt_records = gmtrc->getRecords();
+   vector<L1MuGMTReadoutRecord>::const_iterator igmtrr;
    
    for(igmtrr=gmt_records.begin(); igmtrr!=gmt_records.end(); igmtrr++) {
 
-     std::vector<L1MuRegionalCand>::const_iterator iter1;
-     std::vector<L1MuRegionalCand> rmc;
+     vector<L1MuRegionalCand>::const_iterator iter1;
+     vector<L1MuRegionalCand> rmc;
 
      // DT muon candidates
      int idt = 0;
@@ -107,8 +108,8 @@ L1GmtTriggerSource::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
        }
      }
      
-     if(idt>0) std::cout << "Found " << idt << " valid DT candidates in bx wrt. L1A = " 
-                                     << igmtrr->getBxInEvent() << std::endl;
+     if(idt>0 && debug) cout << "Found " << idt << " valid DT candidates in bx wrt. L1A = " 
+                                     << igmtrr->getBxInEvent() << endl;
      if(igmtrr->getBxInEvent()==0 && idt>0) dt_l1a = true;
      
      // CSC muon candidates
@@ -125,10 +126,10 @@ L1GmtTriggerSource::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
        }
      }
      
-     if(icsc>0) std::cout << "Found " << icsc << " valid CSC candidates in bx wrt. L1A = " 
-                                     << igmtrr->getBxInEvent() << std::endl;
-     if(ihalo>0) std::cout << "Found " << ihalo << " valid CSC halo candidates in bx wrt. L1A = " 
-                                     << igmtrr->getBxInEvent() << std::endl;
+     if(icsc>0 & debug) cout << "Found " << icsc << " valid CSC candidates in bx wrt. L1A = " 
+                                     << igmtrr->getBxInEvent() << endl;
+     if(ihalo>0 & debug) cout << "Found " << ihalo << " valid CSC halo candidates in bx wrt. L1A = " 
+                                     << igmtrr->getBxInEvent() << endl;
      if(igmtrr->getBxInEvent()==0 && icsc>0) csc_l1a = true;
      if(igmtrr->getBxInEvent()==0 && ihalo>0) halo_l1a = true;
      
@@ -141,8 +142,8 @@ L1GmtTriggerSource::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
        }
      }
      
-     if(irpcb>0) std::cout << "Found " << irpcb << " valid barrel RPC candidates in bx wrt. L1A = " 
-                                     << igmtrr->getBxInEvent() << std::endl;
+     if(irpcb>0 & debug) cout << "Found " << irpcb << " valid barrel RPC candidates in bx wrt. L1A = " 
+                                     << igmtrr->getBxInEvent() << endl;
      if(igmtrr->getBxInEvent()==0 && irpcb>0) rpcb_l1a = true;
      
      // RPC endcap muon candidates
@@ -154,8 +155,8 @@ L1GmtTriggerSource::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
        }
      }
      
-     if(irpcf>0) std::cout << "Found " << irpcf << " valid endcap RPC candidates in bx wrt. L1A = " 
-                                     << igmtrr->getBxInEvent() << std::endl;
+     if(irpcf>0 && debug) cout << "Found " << irpcf << " valid endcap RPC candidates in bx wrt. L1A = " 
+                                     << igmtrr->getBxInEvent() << endl;
      if(igmtrr->getBxInEvent()==0 && irpcf>0) rpcf_l1a = true;
      
    }
@@ -178,55 +179,56 @@ L1GmtTriggerSource::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
    int bxDistanceAll = bxDist(prevOrbtAndBxAll, currentId);
    prevOrbtAndBxAll = currentId;
    hAll->Fill(bxDistanceAll);
-   cout << "   BX distance from previous event: " << bxDistanceAll << endl;
+   if(debug) cout << "   BX distance from previous event: " << bxDistanceAll << endl;
        
    if(dt_l1a) {
      int bxDistDT = bxDist(prevOrbtAndBxDT, currentId);
      prevOrbtAndBxDT = currentId;
      hDT->Fill(bxDistDT);
-     cout << "   BX distance from previous event (DT trigger): " << bxDistDT << endl;
+     if(debug) cout << "   BX distance from previous event (DT trigger): " << bxDistDT << endl;
    }
    
    if(dt_l1a && !rpcf_l1a && !rpcb_l1a && !csc_l1a && !halo_l1a) {
      int bxDistDTonly = bxDist(prevOrbtAndBxDTonly, currentId);
      prevOrbtAndBxDTonly = currentId;
      hDTonly->Fill(bxDistDTonly);
-     cout << "   BX distance from previous event (DT trigger only): " << bxDistDTonly << endl;
+     if(debug) cout << "   BX distance from previous event (DT trigger only): " << bxDistDTonly << endl;
    }
 
    if(dt_l1a || rpcb_l1a || rpcf_l1a) {
      int bxDistDTorRPC = bxDist(prevOrbtAndBxDTorRPC, currentId);
      prevOrbtAndBxDTorRPC = currentId;
      hDTorRPC->Fill(bxDistDTorRPC);
-     cout << "   BX distance from previous event (DT or RPC trigger): " << bxDistDTorRPC << endl;
+     if(debug) cout << "   BX distance from previous event (DT or RPC trigger): " << bxDistDTorRPC << endl;
    }
 
    if(rpcb_l1a || rpcf_l1a) {
      int bxDistRPC = bxDist(prevOrbtAndBxRPC, currentId);
      prevOrbtAndBxRPC = currentId;
      hRPC->Fill(bxDistRPC);
-     cout << "   BX distance from previous event (RPC trigger): " << bxDistRPC << endl;
+     if(debug) cout << "   BX distance from previous event (RPC trigger): " << bxDistRPC << endl;
    }
 
    if((rpcb_l1a || rpcf_l1a) && !dt_l1a && !csc_l1a && !halo_l1a) {
      int bxDistRPConly = bxDist(prevOrbtAndBxRPConly, currentId);
      prevOrbtAndBxRPConly = currentId;
      hRPConly->Fill(bxDistRPConly);
-     cout << "   BX distance from previous event (RPC trigger only): " << bxDistRPConly << endl;
+     if(debug) cout << "   BX distance from previous event (RPC trigger only): " << bxDistRPConly << endl;
    }
    
 
 
    //-----------------------------------------------------------
       
-   std::cout << "**** L1 Muon Trigger Source ****" << std::endl;
-   if(dt_l1a) std::cout << "DT" << std::endl;
-   if(csc_l1a) std::cout << "CSC" << std::endl;
-   if(halo_l1a) std::cout << "CSC halo" << std::endl;
-   if(rpcb_l1a) std::cout << "barrel RPC" << std::endl;
-   if(rpcf_l1a) std::cout << "endcap RPC" << std::endl;
-   std::cout << "************************" << std::endl;
-   
+   if(debug) {
+     cout << "**** L1 Muon Trigger Source ****" << endl;
+     if(dt_l1a) cout << "DT" << endl;
+     if(csc_l1a) cout << "CSC" << endl;
+     if(halo_l1a) cout << "CSC halo" << endl;
+     if(rpcb_l1a) cout << "barrel RPC" << endl;
+     if(rpcf_l1a) cout << "endcap RPC" << endl;
+     cout << "************************" << endl;
+   }
 }
 
 
@@ -262,7 +264,7 @@ L1GmtTriggerSource::endJob() {
 
 
 
-int L1GmtTriggerSource::bxDist(const std::pair<int, int>& previousId, const std::pair<int, int>& currentId) const {
+int L1GmtTriggerSource::bxDist(const pair<int, int>& previousId, const pair<int, int>& currentId) const {
      return  ((currentId.first*3564)+currentId.second)-((previousId.first*3564)+previousId.second);
 }
 
