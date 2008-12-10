@@ -32,7 +32,7 @@ private:
   bool debug;
   int previousOrbit;
   int previousBX;
-
+  std::string listInstance;
    
   TFile *theRootFile;
   TH1F *bxDistr;

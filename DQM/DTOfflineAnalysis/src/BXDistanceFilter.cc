@@ -28,6 +28,7 @@ BXDistanceFilter::BXDistanceFilter(const edm::ParameterSet& iConfig) : previousO
   inputLabel = iConfig.getUntrackedParameter<edm::InputTag>("inputLabel",edm::InputTag("source"));
   maxDistance = iConfig.getUntrackedParameter<unsigned int>("maxDistance", 10);
   debug = iConfig.getUntrackedParameter<unsigned int>("debug", false);
+  listInstance =  iConfig.getUntrackedParameter<string>("listInstance", "All");
 }
 
 
@@ -94,7 +95,7 @@ bool BXDistanceFilter::beginRun(edm::Run& run,  const edm::EventSetup& es ) {
   cout << "[BXDistanceFilter] beginRun" << endl;
   
   edm::Handle<SimpleEventCollection> seListHandle;
-  run.getByLabel("eventListProducer", seListHandle);
+  run.getByLabel("eventListProducer",listInstance, seListHandle);
   
   SimpleEventCollection seList = *seListHandle;
 
