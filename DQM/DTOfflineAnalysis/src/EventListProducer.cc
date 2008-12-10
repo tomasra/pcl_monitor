@@ -27,7 +27,7 @@ EventListProducer::EventListProducer(const edm::ParameterSet& iConfig):
 
    //register your products
 
-  produces<SimpleEventCollection,edm::InRun>();
+  produces<SimpleEventCollection,edm::InRun>("All");
 
    //now do what ever other initialization is needed
   
@@ -82,7 +82,7 @@ EventListProducer::endRun(edm::Run& iRun, const edm::EventSetup&) {
 
   edm::LogInfo("SavingSimpleEvents") << " Collection of " << _sec->size() << " SimpleEvents ready to be saved";
   cout << "D1" << endl;
-  iRun.put(_sec);
+  iRun.put(_sec, "All");
   cout << "D2" << endl;
 
 

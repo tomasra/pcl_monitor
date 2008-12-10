@@ -4,8 +4,8 @@
 /** \class EventListProducer
  *  No description available.
  *
- *  $Date: $
- *  $Revision: $
+ *  $Date: 2008/12/03 10:41:13 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
 #include "FWCore/Framework/interface/Frameworkfwd.h"
@@ -28,6 +28,7 @@ private:
 
 
   std::auto_ptr<SimpleEventCollection> _sec;
+//   std::auto_ptr<SimpleEventCollection> _secFirst;
 
   SimpleEvent previousEvent;
   int maxDistance; 
