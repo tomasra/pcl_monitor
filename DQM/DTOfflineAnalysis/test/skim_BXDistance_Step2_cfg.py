@@ -5,9 +5,7 @@ process = cms.Process("SkimBXDistanceStep2")
 # the source
 process.source = cms.Source("PoolSource",
      fileNames = cms.untracked.vstring(
-    'file:run67818_SkimBxDistance_1.root',
-    'file:run67818_SkimBxDistance_2.root'
-
+        'file:/tmp/cerminar/run67818_SkimBxDistance_2.root'
     )
                             )
 #process.source.skipEvents = 500000
@@ -44,17 +42,18 @@ process.MessageLogger = cms.Service("MessageLogger",
 
 process.load("DQM.DTOfflineAnalysis.l1GmtTriggerSource_cfi")
 process.load("DQM.DTOfflineAnalysis.bxDistanceFilter_cfi")
+process.bxDistanceFilter.listInstance = "All"
 
 process.mySkimBxDistance = cms.Path(process.gtDigis+ process.bxDistanceFilter * process.l1GmtTriggerSource)
 
 
 process.out1 = cms.OutputModule("PoolOutputModule",
                                 #compressionLevel = cms.untracked.int32(9),
-                                fileName = cms.untracked.string('/data/c/cerminar/data/GlobalRun/Run67818_B38_DoubleTriggerSkim/run67818_SkimBxDistance_Step2_4.root'),
+                                fileName = cms.untracked.string('/tmp/cerminar/run67818_SkimBxDistance_Step2_Test.root'),
                                 SelectEvents = cms.untracked.PSet(
                                        SelectEvents = cms.vstring('mySkimBxDistance')),
                                 outputCommands = cms.untracked.vstring('keep *',
-                                                                       'drop SimpleEvents_event*__*')
+                                                                       'drop SimpleEventCollection_event*_*_*')
 
                                 )
  
