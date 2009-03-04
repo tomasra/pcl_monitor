@@ -17,6 +17,7 @@
 <use name=rootgraphics>
 <use name=CalibMuon/DTDigiSync>
 <use name=CalibMuon/DTCalibration>
+<use name=EventFilter/Utilities>
 
 <export>
  <lib name=DQMDTOfflineAnalysis>
