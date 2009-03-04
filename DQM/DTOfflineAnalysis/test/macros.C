@@ -413,7 +413,7 @@ TStyle * getStyle(TString name) {
     theStyle->SetAxisColor(1, "XYZ");
     theStyle->SetStripDecimals(kTRUE);
     theStyle->SetTickLength(0.03, "XYZ");
-//     theStyle->SetNdivisions(510, "XYZ");
+    theStyle->SetNdivisions(510, "XYZ");
     theStyle->SetPadTickX(1);  // To get tick marks on the opposite side of the frame
     theStyle->SetPadTickY(1);
 
@@ -558,7 +558,7 @@ TStyle * getStyle(TString name) {
     theStyle->SetLabelFont(font, "XYZ");
 //     theStyle->SetLabelOffset(0.007, "XYZ");
 
-    theStyle->SetLabelSize(0.05, "XYZ");
+    theStyle->SetLabelSize(0.07, "XYZ");
 
     // For the axis:
 
@@ -566,7 +566,7 @@ TStyle * getStyle(TString name) {
     theStyle->SetStripDecimals(kTRUE);
     theStyle->SetTickLength(0.03, "XYZ");
     theStyle->SetNdivisions(508, "YZ");
-//     theStyle->SetNdivisions(508, "X");
+    theStyle->SetNdivisions(508, "X");
 
 
 //     theStyle->SetNdivisions(-500,"xyz");
