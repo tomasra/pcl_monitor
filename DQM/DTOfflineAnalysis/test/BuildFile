@@ -1,5 +1,5 @@
 
 <library file=plotter/*.cc name=DTOfflineAnalysisPlotter>
- <use name=root>
+ <use name=rootgraphics>
 </library>
 
