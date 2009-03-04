@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2008/10/27 16:25:25 $
- *  $Revision: 1.4 $
+ *  $Date: 2008/12/03 10:41:13 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -67,7 +67,7 @@ void DTResolutionAnalysis::analyze(const Event& event, const EventSetup& setup) 
   ESHandle<DTStatusFlag> statusMap;
   if(checkNoisyChannels) {
     setup.get<DTStatusFlagRcd>().get(statusMap);
-    }
+  }
 
   // Loop over all chambers containing a segment
   DTRecSegment4DCollection::id_iterator chamberId;
@@ -133,11 +133,12 @@ void DTResolutionAnalysis::analyze(const Event& event, const EventSetup& setup) 
       for(vector<DTRecHit1D>::const_iterator recHit1D = recHits1D_S3.begin();
 	  recHit1D != recHits1D_S3.end();
 	  recHit1D++) {
-
-	if(debug)
-	  cout<<"Looping on 1D rechits: -------------------------"<<endl;
-
 	const DTWireId wireId = (*recHit1D).wireId();
+	if(debug) {
+	  cout<<"Looping on 1D rechits: -------------------------"<<endl;
+	  cout << wireId << endl;
+	}
+
 
 	// Check for noisy channels and skip them
 	if(checkNoisyChannels) {
@@ -166,7 +167,7 @@ void DTResolutionAnalysis::analyze(const Event& event, const EventSetup& setup) 
 	// Extrapolate the segment to the z of the wire
 	
 	// Get wire position in chamber RF
-	LocalPoint wirePosInLay(wireX,0,0);
+	LocalPoint wirePosInLay(wireX,(*recHit1D).localPosition().y(),(*recHit1D).localPosition().z());
 	GlobalPoint wirePosGlob = layer->toGlobal(wirePosInLay);
 	LocalPoint wirePosInChamber = chamber->toLocal(wirePosGlob);
 
@@ -177,18 +178,43 @@ void DTResolutionAnalysis::analyze(const Event& event, const EventSetup& setup) 
 	// Compute the distance of the segment from the wire
 	int sl = wireId.superlayer();
   
+
 	double distSegmToWire = -1;	
+	float deltaX = (*recHit1D).localPosition().x() - (layer->toLocal(chamber->toGlobal(segPosAtZWire))).x();
+	float angle = -1;
 	if(sl == 1 || sl == 3) {
 	  // RPhi SL
 	  distSegmToWire = wirePosInChamber.x() - segPosAtZWire.x();
-
+	  angle = (*segment4D).localDirection().phi();
 	} else if(sl == 2) {
 	  // RZ SL
 	  //x in layer and y in chamber are in opposite direction in sl theta
 	  distSegmToWire = segPosAtZWire.y() - wirePosInChamber.y();
+	  angle = (*segment4D).localDirection().theta();
 	}
 
-	if(fabs(distSegmToWire) > 2.1)
+	if(debug) {
+	  cout << "--- Layer reference frame: " << endl;
+	  cout << "      wire x: " << wireX << endl;
+	  cout << "      rechit x: " << (*recHit1D).localPosition().x() << endl;
+	  cout << "      segment x: " << (layer->toLocal(chamber->toGlobal(segPosAtZWire))).x() << endl;
+	  cout << " - dist hit-wire: " << (*recHit1D).localPosition().x() - wireX << endl;
+	  cout << " - dist segm-wire: " << (layer->toLocal(chamber->toGlobal(segPosAtZWire))).x() - wireX << endl;
+	  cout << " - delta x: " << (*recHit1D).localPosition().x() - (layer->toLocal(chamber->toGlobal(segPosAtZWire))).x() << endl;
+
+	  cout << "--- Chamber reference frame: " << endl;
+	  cout << "      wire x: " << wirePosInChamber.x() << endl;
+	  cout << "      rechit x: " << (chamber->toLocal(layer->toGlobal((*recHit1D).localPosition()))).x() << endl;
+	  cout << "      segment x: " << segPosAtZWire.x() << endl;
+	  cout << " - dist hit-wire: " << (chamber->toLocal(layer->toGlobal((*recHit1D).localPosition()))).x() - wirePosInChamber.x() << endl;
+	  cout << " - dist segm-wire: " << segPosAtZWire.x()-wirePosInChamber.x() << endl;
+	  cout << " - delta x: " << (chamber->toLocal(layer->toGlobal((*recHit1D).localPosition()))).x() - segPosAtZWire.x() << endl;
+	  
+
+	}
+
+
+	if(fabs(distSegmToWire) > 10)
 	  cout << "  Warning: dist segment-wire: " << distSegmToWire << endl;
 
 	//double residual = distRecHitToWire - distSegmToWire;
@@ -196,15 +222,24 @@ void DTResolutionAnalysis::analyze(const Event& event, const EventSetup& setup) 
 	// Get segment etrapolation pos. in layer RF
 	//LocalPoint segPosExtrInLayer = layer->toLocal(chamber->toGlobal(segPosAtZWire));
 	const DTSuperLayer* superlayer = chamber->superLayer(wireId.superlayerId());
-	LocalPoint segPosExtrInLayer = superlayer->toLocal(chamber->toGlobal(segPosAtZWire));
+	LocalPoint segPosExtrInSL = superlayer->toLocal(chamber->toGlobal(segPosAtZWire));
 
-	fillHistos(wireId.superlayerId(), distSegmToWire, distRecHitToWire,
-		   segPosExtrInLayer.x(), segPosExtrInLayer.y());
+
+	
+	
+	fillHistos(wireId.superlayerId(),
+		   distRecHitToWire - distSegmToWire,
+		   distSegmToWire,
+		   deltaX,
+		   angle,
+		   sqrt((*recHit1D).localPositionError().xx())
+		   );
       
 	if(debug) {
 	  cout << "     Dist. segment extrapolation from wire (cm): " << distSegmToWire << endl;
 	  cout << "     Dist. RecHit from wire (cm): " << distRecHitToWire << endl;
 	  cout << "     Residual (cm): " << distRecHitToWire - distSegmToWire << endl;
+	  cout << "     deltaX: " << deltaX << endl;	  
 	}
 
       }// End of loop over 1D RecHit inside 4D segment
@@ -212,6 +247,12 @@ void DTResolutionAnalysis::analyze(const Event& event, const EventSetup& setup) 
     }// End of loop over the segm4D of this ChamerId
  }
   // -----------------------------------------------------------------------------
+
+
+  
+
+
+
 }
 
 
@@ -229,32 +270,33 @@ void DTResolutionAnalysis::bookHistos(DTSuperLayerId slId) {
 
   
   string slHistoName =
-    "_W" + wheel.str() +
-    "_St" + station.str() +
+    "W" + wheel.str() +
     "_Sec" + sector.str() +
+    "_St" + station.str() +
     "_SL" + superLayer.str();
   theFile->cd();
-  histosPerSL[slId] = new HResSL(slHistoName);
+  histosPerSL[slId] = new HRes1DHits(slHistoName);
 }
 
 // Fill a set of histograms for a given SL 
 void DTResolutionAnalysis::fillHistos(DTSuperLayerId slId,
-				      float distExtr,
-				      float distRecHit,
-				      float xExtr,
-				      float yExtr) {
+				      float dealtDist,
+				      float distFromWire,
+				      float deltaX,
+				      float angle,
+				      float sigma) {
   // FIXME: optimization of the number of searches
   if(histosPerSL.find(slId) == histosPerSL.end()) {
     bookHistos(slId);
   }
   theFile->cd();
-  histosPerSL[slId]->Fill(distExtr, distRecHit, xExtr, yExtr);                          
+  histosPerSL[slId]->Fill(dealtDist, distFromWire, deltaX, angle, sigma);
 }
 
 void DTResolutionAnalysis::endJob() {
   // Write all histos to file
   theFile->cd();
-  for(map<DTSuperLayerId, HResSL* >::const_iterator slIdAndHisto = histosPerSL.begin();
+  for(map<DTSuperLayerId, HRes1DHits* >::const_iterator slIdAndHisto = histosPerSL.begin();
       slIdAndHisto != histosPerSL.end(); ++slIdAndHisto) {
     (*slIdAndHisto).second->Write();
   }

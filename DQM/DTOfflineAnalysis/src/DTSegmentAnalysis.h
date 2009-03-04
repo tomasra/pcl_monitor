@@ -10,8 +10,8 @@
  *  All histos are produce per Chamber
  *
  *
- *  $Date: 2007/02/21 10:58:38 $
- *  $Revision: 1.3 $
+ *  $Date: 2008/12/03 10:41:13 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -37,9 +37,10 @@ public:
   virtual ~DTSegmentAnalysis();
 
   // Operations
+  void beginJob(const edm::EventSetup& setup);
   void analyze(const edm::Event& event, const edm::EventSetup& setup);
   void endJob();
-
+  
 protected:
 
 private:
@@ -49,24 +50,9 @@ private:
   // Lable of 4D segments in the event
   std::string theRecHits4DLabel;
 
-  // Book a set of histograms for a give chamber
-  void bookHistos(DTChamberId chamberId);
-  void bookHistos(DTSuperLayerId slId);
+  std::map<DTChamberId, HSegment* > histoPerChamber;
+  bool readVdrift;
 
-  // Fill a set of histograms for a give chamber 
-  void fillHistos(DTChamberId chamberId, int nsegm);
-  void fillHistos(DTChamberId chamberId,
-		  float posX,
-		  float posY,
-		  float phi,
-		  float theta,
-		  float impAngle,
-		  float chi2);
-  void fillHistoNHits(DTChamberId chamberId, int nHits);
-
-  std::map<DTChamberId, HSegment* > histosPerCh;
-  std::map<DTChamberId, TH1F *> histosNHits;
-  std::map<DTSuperLayerId, TH1F *> hT0CorrPerSL;
 
 };
 #endif

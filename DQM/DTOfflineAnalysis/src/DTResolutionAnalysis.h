@@ -13,8 +13,8 @@
  *  All histos are produce per SuperLayer.
  *
  *
- *  $Date: 2006/08/02 15:41:50 $
- *  $Revision: 1.2 $
+ *  $Date: 2008/12/03 10:41:13 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -25,7 +25,7 @@
 #include <vector>
 #include <map>
 
-class HResSL;
+class HRes1DHits;
 class TFile;
 class TH1F;
 
@@ -57,12 +57,13 @@ private:
   void bookHistos(DTSuperLayerId slId);
   // Fill a set of histograms for a give sl 
   void fillHistos(DTSuperLayerId slId,
-		  float distExtr,
-		  float residual,
-		  float xExtr,
-		  float yExtr);
+		  float dealtDist,
+		  float distFromWire,
+		  float deltaX,
+		  float angle,
+		  float sigma);
 
-  std::map<DTSuperLayerId, HResSL* > histosPerSL;
+  std::map<DTSuperLayerId, HRes1DHits* > histosPerSL;
  
   // Switch for checking of noisy channels
   bool checkNoisyChannels;

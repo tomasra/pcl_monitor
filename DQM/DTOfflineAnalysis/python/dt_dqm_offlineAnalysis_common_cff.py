@@ -12,6 +12,7 @@ calibrationEventsFilter = cms.EDFilter("TriggerTypeFilter",
 dtunpacker = cms.EDProducer("DTUnpackingModule",
     dataType = cms.string('DDU'),
     useStandardFEDid = cms.untracked.bool(True),
+    inputLabel = cms.untracked.InputTag('source'),
     fedbyType = cms.untracked.bool(True),
     readOutParameters = cms.PSet(
         debug = cms.untracked.bool(False),
@@ -31,23 +32,25 @@ dtunpacker = cms.EDProducer("DTUnpackingModule",
 from Configuration.StandardSequences.Geometry_cff import *
 from Configuration.StandardSequences.ReconstructionCosmics_cff import *
 #from RecoLocalMuon.Configuration.RecoLocalMuonCosmics_cff import *
-dt1DRecHits.dtDigiLabel = 'dtunpacker'
+#dt1DRecHits.dtDigiLabel = 'dtunpacker'
 
-# switch on code for t0 correction
-dt2DSegments.Reco2DAlgoConfig.performT0SegCorrection = True
-dt2DSegments.Reco2DAlgoConfig.T0_hit_resolution = cms.untracked.double(0.0250)
+# # switch on code for t0 correction
+# dt2DSegments.Reco2DAlgoConfig.performT0SegCorrection = True
+# dt2DSegments.Reco2DAlgoConfig.T0_hit_resolution = cms.untracked.double(0.0250)
 
-dt4DSegments.Reco4DAlgoConfig.performT0SegCorrection = True
-dt4DSegments.Reco4DAlgoConfig.T0_hit_resolution = cms.untracked.double(0.0250)
-dt4DSegments.Reco4DAlgoConfig.T0SegCorrectionDebug = False
+# dt4DSegments.Reco4DAlgoConfig.performT0SegCorrection = True
+# dt4DSegments.Reco4DAlgoConfig.T0_hit_resolution = cms.untracked.double(0.0250)
+# dt4DSegments.Reco4DAlgoConfig.T0SegCorrectionDebug = False
 
 
 from Configuration.StandardSequences.FrontierConditions_GlobalTag_cff import *
 #GlobalTag.globaltag = "CRZT210_V1::All" # or "IDEAL_V2::All" or... 
 es_prefer_GlobalTag = cms.ESPrefer('PoolDBESSource','GlobalTag')
 
-#GlobalTag.connect ="frontier://(proxyurl=http://localhost:3128)(serverurl=http://frontier1.cms:8000/FrontierOnProd)(serverurl=http://frontier2.cms:8000/FrontierOnProd)(retrieve-ziplevel=0)/CMS_COND_21X_GLOBALTAG"
-GlobalTag.globaltag = "CRAFT_V3P::All"
 
 
-reco = cms.Sequence(dtunpacker + dt1DRecHits + dt2DSegments + dt4DSegments)
+reco = cms.Sequence(dtunpacker + dtlocalreco + dtlocalrecoT0Seg)
+#reco = cms.Sequence(dtunpacker + dtlocalreco + dtlocalrecoT0Seg)
+
+#dt4DSegmentsT0Seg.Reco4DAlgoConfig.Reco2DAlgoConfig.performT0SegCorrection = True
+#dt4DSegmentsT0Seg.Reco4DAlgoConfig.Reco2DAlgoConfig.performT0_vdriftSegCorrection = True

@@ -1,8 +1,8 @@
 /*
  * \file DTLocalRecoAnalysis.cc
  * 
- * $Date: 2008/10/27 16:25:25 $
- * $Revision: 1.3 $
+ * $Date: 2008/12/03 10:41:13 $
+ * $Revision: 1.1 $
  * \author M. Zanetti - INFN Padova
  *
 */
@@ -58,7 +58,8 @@ DTLocalRecoAnalysis::~DTLocalRecoAnalysis(){
 void DTLocalRecoAnalysis::beginJob(const EventSetup& setup){
 
   //dbe->
-
+  if(doSegmentAnalysis)
+    theSegmentAnalysis->beginJob(setup);
 
 }
 
@@ -71,8 +72,9 @@ void DTLocalRecoAnalysis::endJob() {
 }
 
 void DTLocalRecoAnalysis::analyze(const Event& event, const EventSetup& setup){
-  cout << "--- [DTLocalRecoAnalysis] Analyze Run: " << event.id().run()
-       << " #Event: " << event.id().event() << endl;
+  if(debug)
+    cout << "--- [DTLocalRecoAnalysis] Analyze Run: " << event.id().run()
+	 << " #Event: " << event.id().event() << endl;
 
   if(doSegmentAnalysis)
     theSegmentAnalysis->analyze(event, setup);
