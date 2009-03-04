@@ -22,7 +22,7 @@ process.source = cms.Source("PoolSource",
 
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(10000)
+    input = cms.untracked.int32(1000)
     )
 
 
@@ -30,6 +30,8 @@ process.load("DQM.DTOfflineAnalysis.dt_dqm_offlineAnalysis_common_cff")
 process.load("DQM.DTOfflineAnalysis.dtLocalRecoAnalysis_cfi")
 #process.dtOfflineOccupancy.rootFileName = "DTOfflineOccupancy_splash.root"
 
+process.GlobalTag.globaltag = "CRAFT_ALL_V8::All"
+process.dt1DRecHits.dtDigiLabel = 'dtunpacker'
 
 # message logger
 process.MessageLogger = cms.Service("MessageLogger",
@@ -48,10 +50,11 @@ process.MessageLogger = cms.Service("MessageLogger",
                                     )
 
 
-process.jobPath = cms.Path(process.reco + process.dtLocalRecoAnal)
+process.jobPath = cms.Path(process.reco + process.dtLocalRecoAnal + process.dtLocalRecoAnalT0Seg)
+#process.jobPath = cms.Path(process.dtLocalRecoAnal)
 
 
-# f = file('aNewconfigurationFile.cfg', 'w')
-# f.write(process.dumpConfig())
-# f.close()
+#f = file('aNewconfigurationFile.cfg', 'w')
+#f.write(process.dumpConfig())
+#f.close()
 
