@@ -10,7 +10,7 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
-#include "EventFilter/Utilities/interface/GlobalEventNumber.h"
+// #include "EventFilter/Utilities/interface/GlobalEventNumber.h"
 #include <DataFormats/FEDRawData/interface/FEDRawDataCollection.h>
 
 #include "TH1F.h"
