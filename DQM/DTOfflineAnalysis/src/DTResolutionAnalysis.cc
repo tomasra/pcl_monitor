@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2008/12/03 10:41:13 $
- *  $Revision: 1.1 $
+ *  $Date: 2009/03/04 12:34:44 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "TFile.h"
+#include "TMath.h"
 
 using namespace edm;
 using namespace std;
@@ -159,10 +160,13 @@ void DTResolutionAnalysis::analyze(const Event& event, const EventSetup& setup) 
 	// Get the layer and the wire position
 	const DTLayer* layer = (chamber->superLayer(wireId.superlayerId()))->layer(wireId.layerId());
 	float wireX = layer->specificTopology().wirePosition(wireId.wire());
+
+	float hitY = (*recHit1D).localPosition().y();
+
 	
 	// Distance of the 1D rechit from the wire
 	//float distRecHitToWire = fabs(wireX - (*recHit1D).localPosition().x());
-	float distRecHitToWire = wireX - (*recHit1D).localPosition().x();
+	float distRecHitToWire = fabs(wireX - (*recHit1D).localPosition().x());
 	
 	// Extrapolate the segment to the z of the wire
 	
@@ -184,13 +188,13 @@ void DTResolutionAnalysis::analyze(const Event& event, const EventSetup& setup) 
 	float angle = -1;
 	if(sl == 1 || sl == 3) {
 	  // RPhi SL
-	  distSegmToWire = wirePosInChamber.x() - segPosAtZWire.x();
-	  angle = (*segment4D).localDirection().phi();
+	  distSegmToWire = fabs(wirePosInChamber.x() - segPosAtZWire.x());
+	  angle = angleBtwPiAndPi((*segment4D).localDirection().phi());
 	} else if(sl == 2) {
 	  // RZ SL
 	  //x in layer and y in chamber are in opposite direction in sl theta
-	  distSegmToWire = segPosAtZWire.y() - wirePosInChamber.y();
-	  angle = (*segment4D).localDirection().theta();
+	  distSegmToWire = fabs(segPosAtZWire.y() - wirePosInChamber.y());
+	  angle = angleBtwPiAndPi((*segment4D).localDirection().theta());
 	}
 
 	if(debug) {
@@ -224,17 +228,33 @@ void DTResolutionAnalysis::analyze(const Event& event, const EventSetup& setup) 
 	const DTSuperLayer* superlayer = chamber->superLayer(wireId.superlayerId());
 	LocalPoint segPosExtrInSL = superlayer->toLocal(chamber->toGlobal(segPosAtZWire));
 
+	
+	
+	// plots for different angles
+	theFile->cd();
+	HRes1DHits * histoPtr = 0;
+	if(fabs(angle) < 5.*TMath::Pi()/180.) {
+	  histoPtr = histosPerSL_angle5[wireId.superlayerId()];
+	} else if(fabs(angle) > 15*TMath::Pi()/180. && fabs(angle) < 20*TMath::Pi()/180.) {
+	  histoPtr = histosPerSL_angle15to20[wireId.superlayerId()];
+	} else if(fabs(angle) > 25*TMath::Pi()/180. && fabs(angle) < 30*TMath::Pi()/180.) {
+	  histoPtr = histosPerSL_angle25to30[wireId.superlayerId()];
+	}
 
-	
-	
-	fillHistos(wireId.superlayerId(),
-		   distRecHitToWire - distSegmToWire,
-		   distSegmToWire,
-		   deltaX,
-		   angle,
-		   sqrt((*recHit1D).localPositionError().xx())
-		   );
-      
+	histoPtr->Fill(distRecHitToWire - distSegmToWire,
+		       distSegmToWire,
+		       deltaX,
+		       hitY,
+		       angle,
+		       sqrt((*recHit1D).localPositionError().xx()));
+
+	histosPerSL[wireId.superlayerId()]->Fill(distRecHitToWire - distSegmToWire,
+						 distSegmToWire,
+						 deltaX,
+						 hitY,
+						 angle,
+						 sqrt((*recHit1D).localPositionError().xx()));
+
 	if(debug) {
 	  cout << "     Dist. segment extrapolation from wire (cm): " << distSegmToWire << endl;
 	  cout << "     Dist. RecHit from wire (cm): " << distRecHitToWire << endl;
@@ -276,22 +296,19 @@ void DTResolutionAnalysis::bookHistos(DTSuperLayerId slId) {
     "_SL" + superLayer.str();
   theFile->cd();
   histosPerSL[slId] = new HRes1DHits(slHistoName);
+
+  string slHistoName_angle5 = "angle5_" + slHistoName;
+  histosPerSL_angle5[slId] = new HRes1DHits(slHistoName_angle5);
+
+  string slHistoName_angle15to20 = "angle15to20_" + slHistoName;
+  histosPerSL_angle15to20[slId] = new HRes1DHits(slHistoName_angle15to20);
+
+  string slHistoName_angle25to30 = "angle25to30_" + slHistoName;
+  histosPerSL_angle25to30[slId] = new HRes1DHits(slHistoName_angle25to30);
+
+
 }
 
-// Fill a set of histograms for a given SL 
-void DTResolutionAnalysis::fillHistos(DTSuperLayerId slId,
-				      float dealtDist,
-				      float distFromWire,
-				      float deltaX,
-				      float angle,
-				      float sigma) {
-  // FIXME: optimization of the number of searches
-  if(histosPerSL.find(slId) == histosPerSL.end()) {
-    bookHistos(slId);
-  }
-  theFile->cd();
-  histosPerSL[slId]->Fill(dealtDist, distFromWire, deltaX, angle, sigma);
-}
 
 void DTResolutionAnalysis::endJob() {
   // Write all histos to file
@@ -300,5 +317,51 @@ void DTResolutionAnalysis::endJob() {
       slIdAndHisto != histosPerSL.end(); ++slIdAndHisto) {
     (*slIdAndHisto).second->Write();
   }
+
+  for(map<DTSuperLayerId, HRes1DHits* >::const_iterator slIdAndHisto = histosPerSL_angle5.begin();
+      slIdAndHisto != histosPerSL_angle5.end(); ++slIdAndHisto) {
+    (*slIdAndHisto).second->Write();
+  }
+
+  for(map<DTSuperLayerId, HRes1DHits* >::const_iterator slIdAndHisto = histosPerSL_angle15to20.begin();
+      slIdAndHisto != histosPerSL_angle15to20.end(); ++slIdAndHisto) {
+    (*slIdAndHisto).second->Write();
+  }
+
+  for(map<DTSuperLayerId, HRes1DHits* >::const_iterator slIdAndHisto = histosPerSL_angle25to30.begin();
+      slIdAndHisto != histosPerSL_angle25to30.end(); ++slIdAndHisto) {
+    (*slIdAndHisto).second->Write();
+  }
 }
 
+
+
+
+
+
+
+
+// BeginJob
+void DTResolutionAnalysis::beginJob(const EventSetup& setup) {
+  
+  // book histos
+  for(int wheel = -2; wheel != 3; ++wheel) { // Loop over wheel
+    for(int station = 1; station != 5; ++station) { // Loop over stations
+      for(int sector = 1; sector <= 14; ++sector) { // Loop over sectors
+	if((sector == 13 || sector == 14) && station != 4) continue;
+	for(int sl = 1; sl !=4; ++sl) { // loop over SLs
+	  if(sl == 2 && station == 4) continue;
+	  DTSuperLayerId slId(wheel, station, sector, sl);
+	  bookHistos(slId);
+	}
+      }
+    }
+  }
+}
+
+
+double DTResolutionAnalysis::angleBtwPiAndPi(double angle) const {
+  while(angle >= TMath::Pi()) angle -= TMath::Pi();
+  while(angle < 0.) angle += TMath::Pi();
+  return angle;
+}

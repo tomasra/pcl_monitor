@@ -4,8 +4,8 @@
 /*
  * \file DTLocalRecoAnalysis.h
  *
- * $Date: 2007/02/19 12:15:37 $
- * $Revision: 1.2 $
+ * $Date: 2008/12/03 10:41:11 $
+ * $Revision: 1.1 $
  * \author M. Zanetti & G. Cerminara - INFN Padova & Torino
  *
 */
@@ -21,6 +21,7 @@
 
 class DTSegmentAnalysis;
 class DTResolutionAnalysis;
+class DTTreeBuilder;
 class TFile;
 
 class DTLocalRecoAnalysis: public edm::EDAnalyzer{
@@ -54,10 +55,13 @@ private:
   // Classes doing the analysis
   DTSegmentAnalysis *theSegmentAnalysis;
   DTResolutionAnalysis *theResolutionAnalysis;
-  
+  DTTreeBuilder *theTreeBuilder;
+
   bool doSegmentAnalysis;
   bool doResolutionAnalysis;
-  
+  bool doTreeBuilder;
+
+
 };
 
 #endif

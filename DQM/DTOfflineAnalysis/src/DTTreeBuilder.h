@@ -1,7 +1,7 @@
-#ifndef DTResolutionAnalysis_H
-#define DTResolutionAnalysis_H
+#ifndef DTTreeBuilder_H
+#define DTTreeBuilder_H
 
-/** \class DTResolutionAnalysis
+/** \class DTTreeBuilder
  *  DQM Analysis of rechit residuals: it compares the rechit distance from wire
  *  with the segment extrapolation.
  *  Only segments with 8 hits in phi view and 4 hits in the theta view (if available)
@@ -20,22 +20,26 @@
 
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "DataFormats/MuonDetId/interface/DTSuperLayerId.h"
+#include <FWCore/Framework/interface/ESHandle.h>
 
 #include <string>
 #include <vector>
 #include <map>
 
-class HRes1DHits;
 class TFile;
 class TH1F;
+class TTree;
+class TClonesArray;
+class DTTtrig;
 
-class DTResolutionAnalysis {
+
+class DTTreeBuilder {
 public:
   /// Constructor
-  DTResolutionAnalysis(const edm::ParameterSet& pset, TFile* file);
+  DTTreeBuilder(const edm::ParameterSet& pset, TFile* file);
 
   /// Destructor
-  virtual ~DTResolutionAnalysis();
+  virtual ~DTTreeBuilder();
 
   // Operations
   void analyze(const edm::Event& event, const edm::EventSetup& setup);
@@ -57,17 +61,15 @@ private:
   // Lable of 1D rechits in the event
   std::string theRecHitLabel;
   
-
-  // Book a set of histograms for a give sl
-  void bookHistos(DTSuperLayerId slId);
-
-  std::map<DTSuperLayerId, HRes1DHits* > histosPerSL;
-  std::map<DTSuperLayerId, HRes1DHits* > histosPerSL_angle5;
-  std::map<DTSuperLayerId, HRes1DHits* > histosPerSL_angle15to20;
-  std::map<DTSuperLayerId, HRes1DHits* > histosPerSL_angle25to30;
- 
   // Switch for checking of noisy channels
   bool checkNoisyChannels;
+
+
+  TTree *theTree;
+  TClonesArray *segmentArray;
+  edm::ESHandle<DTTtrig> tTrigMap;
+
+
 };
 #endif
 

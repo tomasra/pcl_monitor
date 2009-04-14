@@ -4,8 +4,8 @@
 /** \class Histograms
  *  Collection of histograms for DT RecHit and Segment test.
  *
- *  $Date: 2008/12/03 10:41:14 $
- *  $Revision: 1.1 $
+ *  $Date: 2009/03/04 12:34:44 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -667,6 +667,13 @@ class HRes1DHits{
     hResPosVsAngle = new TH2F(N+"_hResPosVsAngle",
 			       "Res dist from wire vs angle",
 			       100,-3.15,3.15, 200, -0.4, 0.4);
+
+    hResDistVsY = new TH2F(N+"_hResDistVsY",
+			   "Res. dist from wire vs Y",
+			   200, -200, 200, 200, -0.4, 0.4);
+
+
+
   }
   
   HRes1DHits(TString name_, TFile* file){
@@ -678,20 +685,21 @@ class HRes1DHits{
     hResPos = (TH1F *) file->Get(name_+"_hResPos");
     hPullPos = (TH1F *) file->Get(name_+"_hPullPos");
     hResPosVsAngle = (TH2F *) file->Get(name_+"_hResPosVsAngle");
-
-    
+    hResDistVsY = (TH2F *) file->Get(name_+"_hResDistVsY");
   }
 
 
   ~HRes1DHits(){}
 
-  void Fill(float dealtDist, float distFromWire, float deltaX, float angle, float sigma) {
+  void Fill(float dealtDist, float distFromWire, float deltaX, float hitY, float angle, float sigma) {
     hResDist->Fill(dealtDist);
     hResDistVsDist->Fill(distFromWire, dealtDist);
     hResDistVsAngle->Fill(angle, dealtDist);
     hResPos->Fill(deltaX);
     hPullPos->Fill(deltaX/sigma);
     hResPosVsAngle->Fill(angle, deltaX);
+    hResDistVsY->Fill(hitY, dealtDist);
+
   }
   
   void Write() {
@@ -701,7 +709,7 @@ class HRes1DHits{
     hResPos->Write();
     hPullPos->Write();
     hResPosVsAngle->Write();
-
+    hResDistVsY->Write();
   }
 
   
@@ -713,7 +721,7 @@ class HRes1DHits{
   TH1F * hResPos;
   TH1F * hPullPos;
   TH2F * hResPosVsAngle;
-  
+  TH2F * hResDistVsY;
   TString name;
 
 };

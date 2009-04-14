@@ -5,14 +5,7 @@ process = cms.Process("DTOffAna")
 # the source
 process.source = cms.Source("PoolSource",
                             fileNames = cms.untracked.vstring(
-    '/store/mc/Summer08/CosmicMCBOn10GeV/GEN-SIM-RAW/COSMMC_21X_v3/0010/024306F6-6691-DD11-B397-00304877A312.root',
-    '/store/mc/Summer08/CosmicMCBOn10GeV/GEN-SIM-RAW/COSMMC_21X_v3/0010/04B27EBA-D290-DD11-B09C-003048553C30.root',
-    '/store/mc/Summer08/CosmicMCBOn10GeV/GEN-SIM-RAW/COSMMC_21X_v3/0010/0A2D664B-D490-DD11-8333-003048322BF6.root',
-    '/store/mc/Summer08/CosmicMCBOn10GeV/GEN-SIM-RAW/COSMMC_21X_v3/0010/14778A43-6D91-DD11-911C-003048770BAA.root',
-    '/store/mc/Summer08/CosmicMCBOn10GeV/GEN-SIM-RAW/COSMMC_21X_v3/0010/2229B83F-D490-DD11-920C-003048322CA0.root',
-    '/store/mc/Summer08/CosmicMCBOn10GeV/GEN-SIM-RAW/COSMMC_21X_v3/0010/22F8CF61-CB90-DD11-98DB-001A9243D630.root',
-    '/store/mc/Summer08/CosmicMCBOn10GeV/GEN-SIM-RAW/COSMMC_21X_v3/0010/2A5E8344-E590-DD11-A3BA-003048553C30.root',
-    '/store/mc/Summer08/CosmicMCBOn10GeV/GEN-SIM-RAW/COSMMC_21X_v3/0010/2C18E47E-D490-DD11-8A87-003048335548.root'
+    'file:/data/c/cerminar/data/CosmicMCBOn10GeV-GEN-SIM-RAW/34A263C4-0491-DD11-8B23-001A9227D359.root'
     ))
 
 
@@ -47,11 +40,12 @@ process.MessageLogger = cms.Service("MessageLogger",
                                     )
 
 
-process.jobPath = cms.Path(process.reco + process.dtLocalRecoAnal + process.dtLocalRecoAnalT0Seg)
+process.jobPath = cms.Path(process.reco + process.dtLocalRecoAnal)
+# + process.dtLocalRecoAnalT0Seg
 #process.jobPath = cms.Path(process.dtLocalRecoAnal)
 
 
-#f = file('aNewconfigurationFile.cfg', 'w')
-#f.write(process.dumpConfig())
-#f.close()
+# f = file('configuratiodump_cfg.py', 'w')
+# f.write(process.dumpPython())
+# f.close()
 

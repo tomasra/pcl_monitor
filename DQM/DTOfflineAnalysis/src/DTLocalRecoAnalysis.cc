@@ -1,8 +1,8 @@
 /*
  * \file DTLocalRecoAnalysis.cc
  * 
- * $Date: 2008/12/03 10:41:13 $
- * $Revision: 1.1 $
+ * $Date: 2009/03/04 12:34:44 $
+ * $Revision: 1.2 $
  * \author M. Zanetti - INFN Padova
  *
 */
@@ -10,6 +10,7 @@
 #include "DQM/DTOfflineAnalysis/interface/DTLocalRecoAnalysis.h"
 #include "DQM/DTOfflineAnalysis/src/DTSegmentAnalysis.h"
 #include "DQM/DTOfflineAnalysis/src/DTResolutionAnalysis.h"
+#include "DQM/DTOfflineAnalysis/src/DTTreeBuilder.h"
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/Framework/interface/Event.h"
@@ -38,6 +39,7 @@ DTLocalRecoAnalysis::DTLocalRecoAnalysis(const ParameterSet& pset) : theSegmentA
 
   doSegmentAnalysis = pset.getUntrackedParameter<bool>("doSegmentAnalysis", "false");
   doResolutionAnalysis = pset.getUntrackedParameter<bool>("doResolutionAnalysis", "false");
+  doTreeBuilder = pset.getUntrackedParameter<bool>("doTreeBuilder", "false");
 
   // Create the classes which really make the analysis
   if(doSegmentAnalysis)
@@ -46,6 +48,11 @@ DTLocalRecoAnalysis::DTLocalRecoAnalysis(const ParameterSet& pset) : theSegmentA
   if(doResolutionAnalysis)
     theResolutionAnalysis =
       new DTResolutionAnalysis(pset.getParameter<ParameterSet>("resolutionAnalysisConfig"), theFile);
+  if(doTreeBuilder)
+    theTreeBuilder =
+      new DTTreeBuilder(pset.getParameter<ParameterSet>("treeBuilderConfig"), theFile);
+
+
 }
 
 DTLocalRecoAnalysis::~DTLocalRecoAnalysis(){
@@ -60,6 +67,11 @@ void DTLocalRecoAnalysis::beginJob(const EventSetup& setup){
   //dbe->
   if(doSegmentAnalysis)
     theSegmentAnalysis->beginJob(setup);
+  if(doResolutionAnalysis)
+    theResolutionAnalysis->beginJob(setup);
+  if(doTreeBuilder)
+    theTreeBuilder->beginJob(setup);
+
 
 }
 
@@ -68,6 +80,11 @@ void DTLocalRecoAnalysis::endJob() {
     theSegmentAnalysis->endJob();
   if(doResolutionAnalysis)
     theResolutionAnalysis->endJob();
+  if(doTreeBuilder)
+    theTreeBuilder->endJob();
+  
+  
+
  theFile->Close();
 }
 
@@ -81,6 +98,10 @@ void DTLocalRecoAnalysis::analyze(const Event& event, const EventSetup& setup){
 
   if(doResolutionAnalysis)
     theResolutionAnalysis->analyze(event, setup);
+
+  if(doTreeBuilder)
+    theTreeBuilder->analyze(event, setup);
+
 
 }
 
