@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2009/04/14 17:32:06 $
- *  $Revision: 1.1 $
+ *  $Date: 2009/07/16 12:16:17 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -33,8 +33,6 @@ DTSegmentObject::DTSegmentObject() : wheel(0),
 				     nHitsPhi(0),
 				     nHitsTheta(0),
 				     chi2(0.),
-				     hitCounter(0),
-				     tTrig(3),
 				     tTrigMean(3),
 				     tTrigSigma(3),
 				     tTrigKfact(3) {
@@ -59,8 +57,6 @@ DTSegmentObject::DTSegmentObject(int wheel, int station, int sector) : wheel(whe
 								       nHitsPhi(0),
 								       nHitsTheta(0),
 								       chi2(0.),
-								       hitCounter(0),
-								       tTrig(3),
 								       tTrigMean(3),
 								       tTrigSigma(3),
 								       tTrigKfact(3) {
@@ -84,8 +80,6 @@ DTSegmentObject::DTSegmentObject(const DTSegmentObject& segmObj) : wheel(segmObj
 								   nHitsPhi(segmObj.nHitsPhi),
 								   nHitsTheta(segmObj.nHitsTheta),
 								   chi2(segmObj.chi2),
-								   hitCounter(segmObj.hitCounter),
-								   tTrig(segmObj.tTrig),
 								   tTrigMean(segmObj.tTrigMean),
 								   tTrigSigma(segmObj.tTrigSigma),
 								   tTrigKfact(segmObj.tTrigKfact) {
@@ -105,8 +99,12 @@ DTSegmentObject::~DTSegmentObject(){
 
 
 DTHitObject* DTSegmentObject::add1DHit(int wheel, int station, int sector, int sl, int layer, int wire) {
-  DTHitObject* ret = new((*hits)[hitCounter++]) DTHitObject(wheel, station, sector, sl, layer, wire);
-  nHits++;
+  if(wheel != this->wheel || station != this->station || sector != this->sector) {
+    cout << "[DTSegmentObject::add1DHit]***Error: hits doesn't belong to this segment!" << endl;
+  }
+  DTHitObject* ret = new((*hits)[nHits++]) DTHitObject(wheel, station, sector, sl, layer, wire);
+  
+
   if(sl == 2) {
     nHitsTheta++;
   } else {
@@ -120,8 +118,7 @@ DTHitObject* DTSegmentObject::add1DHit(int wheel, int station, int sector, int s
 
   // Operations
 void DTSegmentObject::add1DHit(const DTHitObject& hit) {
-  (*hits)[hitCounter++] = new DTHitObject(hit);
-  nHits++;
+  (*hits)[nHits++] = new DTHitObject(hit);
   if(hit.sl == 2) {
     nHitsTheta++;
   } else {
@@ -131,8 +128,7 @@ void DTSegmentObject::add1DHit(const DTHitObject& hit) {
 
 
 
-void DTSegmentObject::setTTrig(int sl, double ttrig, double mean, double sigma, double kfact) {
-  tTrig.AddAt(ttrig,sl-1);
+void DTSegmentObject::setTTrig(int sl, double mean, double sigma, double kfact) {
   tTrigMean.AddAt(mean,sl-1);
   tTrigSigma.AddAt(sigma, sl-1);
   tTrigKfact.AddAt(kfact, sl-1);
@@ -143,6 +139,21 @@ void DTSegmentObject::setPositionInChamber(double x, double y, double z) {
  Xsl = x;
  Ysl = y;
  Zsl = z;
+}
+
+
+double DTSegmentObject::getTTrig(int sl, double& mean, double& sigma, double& kfact) const {
+  mean = tTrigMean[sl-1];
+  sigma = tTrigSigma[sl-1];
+  kfact = tTrigKfact[sl-1];
+  return mean+kfact*sigma;
+}
+
+
+
+double DTSegmentObject::getTTrig(int sl) const  {
+  double mean, sigma, kfact;
+  return getTTrig(sl, mean, sigma, kfact);
 }
 
 

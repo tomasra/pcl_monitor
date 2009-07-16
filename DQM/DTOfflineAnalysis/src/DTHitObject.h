@@ -4,8 +4,8 @@
 /** \class DTHitObject
  *  No description available.
  *
- *  $Date: 2009/04/14 17:32:06 $
- *  $Revision: 1.1 $
+ *  $Date: 2009/07/16 12:16:17 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -34,9 +34,9 @@ protected:
 public:
 
   // wire ID
-  int wheel;
-  int station;
-  int sector;
+//   int wheel;
+//   int station;
+//   int sector;
   int sl;
   int layer;
   int wire;

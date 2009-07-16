@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2009/04/14 17:32:06 $
- *  $Revision: 1.1 $
+ *  $Date: 2009/07/16 12:16:17 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -14,10 +14,7 @@ using namespace std;
 
 
   
-DTHitObject::DTHitObject() : wheel(0),
-			     station(0),
-			     sector(0),
-			     sl(0),
+DTHitObject::DTHitObject() : sl(0),
 			     layer(0),
 			     wire(0),
 			     X(0.),
@@ -34,10 +31,7 @@ DTHitObject::DTHitObject() : wheel(0),
 }
 
 
-DTHitObject::DTHitObject(int wheel, int station, int sector, int sl, int layer, int wire) : wheel(wheel),
-											    station(station),
-											    sector(sector),
-											    sl(sl),
+DTHitObject::DTHitObject(int wheel, int station, int sector, int sl, int layer, int wire) : sl(sl),
 											    layer(layer),
 											    wire(wire),
 											    X(0.),

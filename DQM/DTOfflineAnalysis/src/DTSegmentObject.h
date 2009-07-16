@@ -4,8 +4,8 @@
 /** \class DTSegmentObject
  *  No description available.
  *
- *  $Date: 2009/04/14 17:32:07 $
- *  $Revision: 1.1 $
+ *  $Date: 2009/07/16 12:16:17 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -36,7 +36,9 @@ public:
 
   DTHitObject * add1DHit(int wheel, int station, int sector, int sl, int layer, int wire);
 
-  void setTTrig(int sl, double ttrig, double mean, double sigma, double kfact);
+  void setTTrig(int sl, double mean, double sigma, double kfact);
+  double getTTrig(int sl, double& mean, double& sigma, double& kfact) const;
+  double getTTrig(int sl) const;
 
   void setPositionInChamber(double x, double y, double z);
 
@@ -77,17 +79,13 @@ public:
   // chi2
   double chi2;
 
-  int hitCounter;
-
 //   // ttrig for the 3 SLs
-  TArrayD tTrig;
   TArrayD tTrigMean;
   TArrayD tTrigSigma;
   TArrayD tTrigKfact;
   
-  
 
-//   // the Collection of hits
+  //   // the Collection of hits
   TClonesArray *hits;
 
 

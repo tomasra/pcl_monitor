@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2009/07/16 12:16:17 $
- *  $Revision: 1.2 $
+ *  $Date: 2009/07/16 12:26:08 $
+ *  $Revision: 1.3 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -140,21 +140,10 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	vector<DTRecHit1D> phiRecHits = phiSeg->specificRecHits();
 	copy(phiRecHits.begin(), phiRecHits.end(), back_inserter(recHits1D_S3));
 	projection = 1;
-	t0phi = (*segment4D).phiSegment()->t0();
-	if(t0phi != 0) {
-	  int t0segn_10time_ns = static_cast<int>(t0phi*10);
-	  float t0segn_ns =t0segn_10time_ns/10.;// time : just 0.1 ns resolution
-	  float dvDrift0 = t0phi -  t0segn_ns;
-	  float dvDrift = abs(dvDrift0);
-	  int signvdrift = static_cast<int>(dvDrift*100);
-	  if (signvdrift==1)  dvDrift = -(dvDrift - 0.01);
-	  vDrift =-dvDrift*10.;
-	  t0phi =  t0segn_ns ;
-	}
-      }      
+	segmObj->t0SegPhi = (*segment4D).phiSegment()->t0(); 
+	segmObj->vDriftCorrPhi = (*segment4D).phiSegment()->vDrift();
+      }
 
-      segmObj->t0SegPhi = t0phi;
-      segmObj->vDriftCorrPhi = vDrift;
 
 
       if((*segment4D).hasZed()) {
@@ -163,21 +152,9 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	copy(zRecHits.begin(), zRecHits.end(), back_inserter(recHits1D_S3));
 	if(projection == -1) projection = 2;
 	else projection = 3;
-	t0theta = (*segment4D).zSegment()->t0();
-	if(t0theta != 0) {
-	  int t0segn_10time_ns = static_cast<int>(t0theta*10);
-	  float t0segn_ns =t0segn_10time_ns/10.;// time : just 0.1 ns resolution
-	  float dvDrift0 = t0theta -  t0segn_ns;
-	  float dvDrift = abs(dvDrift0);
-	  int signvdrift = static_cast<int>(dvDrift*100);
-	  if (signvdrift==1)  dvDrift = -(dvDrift - 0.01);
-	  vDrift =-dvDrift*10.;
-	  t0theta =  t0segn_ns ;
-	}
+	segmObj->t0SegTheta = (*segment4D).zSegment()->t0();
+	segmObj->vDriftCorrTheta = (*segment4D).zSegment()->vDrift();
       }
-
-      segmObj->t0SegTheta = t0theta;
-      segmObj->vDriftCorrTheta = vDrift;
 
       segmObj->proj = projection;
 
@@ -186,11 +163,11 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	float ttrig = 0.;
 	float mean = 0.;
 	float sigma = 0.;
-	float kFact = -1.0;
+	float kFact = 0.0;
 	// FIXME: port to 31X interface
 	tTrigMap->get(supLayId, mean, sigma, kFact, DTTimeUnits::ns); 
 	ttrig = mean + kFact*sigma;
-	segmObj->setTTrig(sl, ttrig, mean, sigma, kFact);
+	segmObj->setTTrig(sl, mean, sigma, kFact);
       }
 
       // Loop over 1D RecHit inside 4D segment

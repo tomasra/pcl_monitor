@@ -1,7 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
 # filter on trigger type
-calibrationEventsFilter = cms.EDFilter("TriggerTypeFilter",
+calibrationEventsFilter = cms.EDFilter("HLTTriggerTypeFilter",
                                        InputLabel = cms.string('source'),
                                        TriggerFedId = cms.int32(812),
                                        # 1=Physics, 2=Calibration, 3=Random, 4=Technical
@@ -44,13 +44,10 @@ from Configuration.StandardSequences.ReconstructionCosmics_cff import *
 
 
 from Configuration.StandardSequences.FrontierConditions_GlobalTag_cff import *
-#GlobalTag.globaltag = "CRZT210_V1::All" # or "IDEAL_V2::All" or... 
-es_prefer_GlobalTag = cms.ESPrefer('PoolDBESSource','GlobalTag')
 
 
-
-reco = cms.Sequence(dtunpacker + dtlocalreco + dtlocalrecoT0Seg)
 #reco = cms.Sequence(dtunpacker + dtlocalreco + dtlocalrecoT0Seg)
+reco = cms.Sequence(dtunpacker + dtlocalreco)
 
 #dt4DSegmentsT0Seg.Reco4DAlgoConfig.Reco2DAlgoConfig.performT0SegCorrection = True
 #dt4DSegmentsT0Seg.Reco4DAlgoConfig.Reco2DAlgoConfig.performT0_vdriftSegCorrection = True
