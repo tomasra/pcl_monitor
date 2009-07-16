@@ -4,8 +4,8 @@
 /** \class Histograms
  *  Collection of histograms for DT RecHit and Segment test.
  *
- *  $Date: 2009/03/04 12:34:44 $
- *  $Revision: 1.2 $
+ *  $Date: 2009/04/14 17:32:07 $
+ *  $Revision: 1.3 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -14,6 +14,8 @@
 #include "TH2F.h"
 #include "TH3F.h"
 #include "TFile.h"
+#include "TProfile.h"
+
 #include "TString.h"
 
 #include <string>

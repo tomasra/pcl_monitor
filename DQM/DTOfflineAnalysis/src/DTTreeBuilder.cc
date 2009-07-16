@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2009/04/14 17:32:07 $
- *  $Revision: 1.1 $
+ *  $Date: 2009/07/16 12:16:17 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -188,7 +188,7 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	float sigma = 0.;
 	float kFact = -1.0;
 	// FIXME: port to 31X interface
-	tTrigMap->get(supLayId, mean, sigma, DTTimeUnits::ns); 
+	tTrigMap->get(supLayId, mean, sigma, kFact, DTTimeUnits::ns); 
 	ttrig = mean + kFact*sigma;
 	segmObj->setTTrig(sl, ttrig, mean, sigma, kFact);
       }
