@@ -47,7 +47,7 @@ dtLocalRecoAnalT0Seg = cms.EDAnalyzer("DTLocalRecoAnalysis",
                                       treeBuilderConfig = cms.PSet(debug = cms.untracked.bool(False),
                                                                    recHits4DLabel  = cms.string('dt4DSegments'),
                                                                    recHitLabel =  cms.string('dt1DRecHits'),
-                                                                   checkNoisyChannels = cms.untracked.bool(True)
+                                                                   checkNoisyChannels = cms.untracked.bool(False)
                                                                    )
                                       
                                  )

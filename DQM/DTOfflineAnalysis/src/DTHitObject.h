@@ -4,8 +4,8 @@
 /** \class DTHitObject
  *  No description available.
  *
- *  $Date: $
- *  $Revision: $
+ *  $Date: 2009/04/14 17:32:06 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -56,9 +56,13 @@ public:
   double sigmaPos;
   // the angle
   double angle;
-  
+  // flag to label noisy channels
   bool isNoisyCell;
-
+  // digi time (ns)
+  double digiTime;
+  // t0 from pulses
+  double t0pulses;
+  
   ClassDef(DTHitObject,1)
 };
 #endif

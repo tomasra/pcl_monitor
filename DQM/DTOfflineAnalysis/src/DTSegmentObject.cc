@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: $
- *  $Revision: $
+ *  $Date: 2009/04/14 17:32:06 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -39,7 +39,6 @@ DTSegmentObject::DTSegmentObject() : wheel(0),
 				     tTrigSigma(3),
 				     tTrigKfact(3) {
   hits = new TClonesArray("DTHitObject");
-  cout << "Default constructor" << endl;
 }
 
 
@@ -66,7 +65,6 @@ DTSegmentObject::DTSegmentObject(int wheel, int station, int sector) : wheel(whe
 								       tTrigSigma(3),
 								       tTrigKfact(3) {
   hits = new TClonesArray("DTHitObject");
-  cout << "Constructor" << endl;
 }
 
 DTSegmentObject::DTSegmentObject(const DTSegmentObject& segmObj) : wheel(segmObj.wheel),
@@ -91,15 +89,31 @@ DTSegmentObject::DTSegmentObject(const DTSegmentObject& segmObj) : wheel(segmObj
 								   tTrigMean(segmObj.tTrigMean),
 								   tTrigSigma(segmObj.tTrigSigma),
 								   tTrigKfact(segmObj.tTrigKfact) {
-  hits = new TClonesArray(*(segmObj.hits));
-  cout << "copy constructor" << endl;
+// new TClonesArray(*(segmObj.hits));
+  hits = (TClonesArray *) segmObj.hits->Clone();
 }
 
 
 
 DTSegmentObject::~DTSegmentObject(){
-  cout << "Destructor" << endl;
-//   delete hits;
+//   hits->Delete();
+//   hits->SetOwner(kTRUE);
+//   hits->Clear();
+  delete hits;
+  
+}
+
+
+DTHitObject* DTSegmentObject::add1DHit(int wheel, int station, int sector, int sl, int layer, int wire) {
+  DTHitObject* ret = new((*hits)[hitCounter++]) DTHitObject(wheel, station, sector, sl, layer, wire);
+  nHits++;
+  if(sl == 2) {
+    nHitsTheta++;
+  } else {
+    nHitsPhi++;
+  }
+
+  return ret;
 }
 
 
@@ -118,10 +132,10 @@ void DTSegmentObject::add1DHit(const DTHitObject& hit) {
 
 
 void DTSegmentObject::setTTrig(int sl, double ttrig, double mean, double sigma, double kfact) {
-  tTrig.AddAt(ttrig,sl);
-  tTrigMean.AddAt(mean,sl);
-  tTrigSigma.AddAt(sigma, sl);
-  tTrigKfact.AddAt(kfact, sl);
+  tTrig.AddAt(ttrig,sl-1);
+  tTrigMean.AddAt(mean,sl-1);
+  tTrigSigma.AddAt(sigma, sl-1);
+  tTrigKfact.AddAt(kfact, sl-1);
 }
   
 

@@ -40,8 +40,7 @@ process.MessageLogger = cms.Service("MessageLogger",
                                     )
 
 
-process.jobPath = cms.Path(process.reco + process.dtLocalRecoAnal)
-# + process.dtLocalRecoAnalT0Seg
+process.jobPath = cms.Path(process.reco + process.dtLocalRecoAnal + process.dtLocalRecoAnalT0Seg)
 #process.jobPath = cms.Path(process.dtLocalRecoAnal)
 
 

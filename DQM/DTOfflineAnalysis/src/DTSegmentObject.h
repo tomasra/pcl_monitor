@@ -4,8 +4,8 @@
 /** \class DTSegmentObject
  *  No description available.
  *
- *  $Date: $
- *  $Revision: $
+ *  $Date: 2009/04/14 17:32:07 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -33,7 +33,9 @@ public:
 
   // Operations
   void add1DHit(const DTHitObject& hit);
-  
+
+  DTHitObject * add1DHit(int wheel, int station, int sector, int sl, int layer, int wire);
+
   void setTTrig(int sl, double ttrig, double mean, double sigma, double kfact);
 
   void setPositionInChamber(double x, double y, double z);

@@ -13,8 +13,8 @@
  *  All histos are produce per SuperLayer.
  *
  *
- *  $Date: 2009/03/04 12:34:44 $
- *  $Revision: 1.2 $
+ *  $Date: 2009/04/14 17:32:07 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -31,7 +31,7 @@ class TH1F;
 class TTree;
 class TClonesArray;
 class DTTtrig;
-
+class DTT0;
 
 class DTTreeBuilder {
 public:
@@ -68,7 +68,7 @@ private:
   TTree *theTree;
   TClonesArray *segmentArray;
   edm::ESHandle<DTTtrig> tTrigMap;
-
+  edm::ESHandle<DTT0> t0Handle;
 
 };
 #endif

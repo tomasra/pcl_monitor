@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2009/03/04 12:34:44 $
- *  $Revision: 1.2 $
+ *  $Date: 2009/04/14 17:32:07 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -27,6 +27,8 @@
 #include "CondFormats/DTObjects/interface/DTStatusFlag.h"
 #include <CondFormats/DTObjects/interface/DTTtrig.h>
 #include <CondFormats/DataRecord/interface/DTTtrigRcd.h>
+#include "CondFormats/DTObjects/interface/DTT0.h"
+#include "CondFormats/DataRecord/interface/DTT0Rcd.h"
 
 
 #include <iterator>
@@ -54,7 +56,6 @@ DTTreeBuilder::~DTTreeBuilder(){}
 
 
 void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
-  debug = true;
   if(debug)
     cout << "[DTTreeBuilder] Analyze #Run: " << event.id().run()
 	 << " #Event: " << event.id().event() << endl;
@@ -78,6 +79,7 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
   }
 
   setup.get<DTTtrigRcd>().get(tTrigMap);
+  setup.get<DTT0Rcd>().get(t0Handle);
 
   int segmCounter = 0;
 
@@ -116,14 +118,13 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
       // Get all 1D RecHits at step 3 within the 4D segment
       vector<DTRecHit1D> recHits1D_S3;
 
-
       // Create the segment object
-      DTSegmentObject segmObj((*chamberId).wheel(), (*chamberId).station(), (*chamberId).sector());
+      DTSegmentObject * segmObj = new((*segmentArray)[segmCounter++]) DTSegmentObject((*chamberId).wheel(), (*chamberId).station(), (*chamberId).sector());
       LocalPoint segment4DLocalPos = (*segment4D).localPosition();
-      segmObj.setPositionInChamber(segment4DLocalPos.x(), segment4DLocalPos.y(), segment4DLocalPos.z());
-      segmObj.phi = angleBtwPiAndPi((*segment4D).localDirection().phi());
-      segmObj.theta = angleBtwPiAndPi((*segment4D).localDirection().theta());
-      segmObj.chi2 = (*segment4D).chi2()/(*segment4D).degreesOfFreedom();
+      segmObj->setPositionInChamber(segment4DLocalPos.x(), segment4DLocalPos.y(), segment4DLocalPos.z());
+      segmObj->phi = angleBtwPiAndPi((*segment4D).localDirection().phi());
+      segmObj->theta = angleBtwPiAndPi((*segment4D).localDirection().theta());
+      segmObj->chi2 = (*segment4D).chi2()/(*segment4D).degreesOfFreedom();
 
 
       int projection = -1;
@@ -152,8 +153,8 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	}
       }      
 
-      segmObj.t0SegPhi = t0phi;
-      segmObj.vDriftCorrPhi = vDrift;
+      segmObj->t0SegPhi = t0phi;
+      segmObj->vDriftCorrPhi = vDrift;
 
 
       if((*segment4D).hasZed()) {
@@ -175,10 +176,10 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	}
       }
 
-      segmObj.t0SegTheta = t0theta;
-      segmObj.vDriftCorrTheta = vDrift;
+      segmObj->t0SegTheta = t0theta;
+      segmObj->vDriftCorrTheta = vDrift;
 
-      segmObj.proj = projection;
+      segmObj->proj = projection;
 
       for(int sl = 1; sl != 4; ++sl) {
 	DTSuperLayerId supLayId((*chamberId), sl);
@@ -189,7 +190,7 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	// FIXME: port to 31X interface
 	tTrigMap->get(supLayId, mean, sigma, DTTimeUnits::ns); 
 	ttrig = mean + kFact*sigma;
-	segmObj.setTTrig(sl, ttrig, mean, sigma, kFact);
+	segmObj->setTTrig(sl, ttrig, mean, sigma, kFact);
       }
 
       // Loop over 1D RecHit inside 4D segment
@@ -203,10 +204,21 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	}
 
 	
-	DTHitObject hitObj(wireId.wheel(), wireId.station(), wireId.sector(),
-			   wireId.superLayer(), wireId.layer(), wireId.wire());
+	DTHitObject *hitObj = segmObj->add1DHit(wireId.wheel(), wireId.station(), wireId.sector(),
+					       wireId.superLayer(), wireId.layer(), wireId.wire());
 	
+	
+	hitObj->digiTime = (*recHit1D).digiTime() ;
 
+	float t0 = 0;
+	float t0rms = 0;
+	// Read the t0 from pulses for this wire (ns)
+	t0Handle->get(wireId,
+		      t0,
+		      t0rms,
+		      DTTimeUnits::ns);
+
+	hitObj->t0pulses = t0;
 
 	// Check for noisy channels and skip them
 	if(checkNoisyChannels) {
@@ -217,7 +229,7 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	  bool isDead = false;
 	  bool isNohv = false;
 	  statusMap->cellStatus(wireId, isNoisy, isFEMasked, isTDCMasked, isTrigMask, isDead, isNohv);
-	  hitObj.isNoisyCell = isNoisy;
+	  hitObj->isNoisyCell = isNoisy;
 	}
 
 	// Get the layer and the wire position
@@ -278,25 +290,25 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 
 	// FIXME
 	// create the DTHitObject
-	hitObj.setLocalPosition((*recHit1D).localPosition().x(),
+	hitObj->setLocalPosition((*recHit1D).localPosition().x(),
 				(*recHit1D).localPosition().y(),
 				(*recHit1D).localPosition().z());
 	
-	hitObj.resDist = distRecHitToWire - distSegmToWire;
-	hitObj.resPos = deltaX;
-	hitObj.distFromWire = distSegmToWire;
-	hitObj.sigmaPos = sqrt((*recHit1D).localPositionError().xx());
-	hitObj.angle = angle;
+	hitObj->resDist = distRecHitToWire - distSegmToWire;
+	hitObj->resPos = deltaX;
+	hitObj->distFromWire = distSegmToWire;
+	hitObj->sigmaPos = sqrt((*recHit1D).localPositionError().xx());
+	hitObj->angle = angle;
 
- 	segmObj.add1DHit(hitObj);
+//  	segmObj->add1DHit(hitObj);
 	
 
       }// End of loop over 1D RecHit inside 4D segment
       
       // FIXME
       // Add the DTSegmentObject to the TClonesArray
-      if(debug) cout << "Add new segment with # hits: " << segmObj.hits->GetEntriesFast() << endl;
-      (*segmentArray)[segmCounter++] = new DTSegmentObject(segmObj);
+      if(debug) cout << "Add new segment with # hits: " << segmObj->hits->GetEntriesFast() << endl;
+//       (*segmentArray)[segmCounter++] = new DTSegmentObject(segmObj);
       if(debug) cout << "    new # of segments is: " << segmCounter << endl;
 //       DTSegmentObject *dcObj = (DTSegmentObject *)segmentArray->At(segmCounter-1);
 //       cout << "    double check # of hits: " << dcObj->hits->GetEntriesFast() << endl;
@@ -307,7 +319,10 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 
 
   theTree->Fill();
-  segmentArray->Clear();
+//   cout << " clear the array" << endl;
+  segmentArray->Delete();
+
+//   segmentArray->Clear();
   
 
 }

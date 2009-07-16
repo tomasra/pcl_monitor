@@ -2,12 +2,14 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: $
- *  $Revision: $
+ *  $Date: 2009/04/14 17:32:06 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
 
 #include "DTHitObject.h"
+#include <iostream>
+using namespace std;
 
 
 
@@ -25,7 +27,11 @@ DTHitObject::DTHitObject() : wheel(0),
 			     resPos(0.),
 			     distFromWire(0.),
 			     sigmaPos(0.),
-			     angle(0.) {}
+			     angle(0.),
+			     isNoisyCell(false),
+			     digiTime(0.),
+			     t0pulses(0.) {
+}
 
 
 DTHitObject::DTHitObject(int wheel, int station, int sector, int sl, int layer, int wire) : wheel(wheel),
@@ -41,12 +47,18 @@ DTHitObject::DTHitObject(int wheel, int station, int sector, int sl, int layer, 
 											    resPos(0.),
 											    distFromWire(0.),
 											    sigmaPos(0.),
-											    angle(0.) {}
+											    angle(0.),
+											    isNoisyCell(false),
+											    digiTime(0.),
+											    t0pulses(0.) {
+
+}
 
 
 
 
-DTHitObject::~DTHitObject(){}
+DTHitObject::~DTHitObject(){
+}
 
 
 void DTHitObject::setLocalPosition(double x, double y, double z) {
