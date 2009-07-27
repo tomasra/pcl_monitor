@@ -8,6 +8,7 @@
 #include "root_lib/TTreeReader.h"
 
 #include "TSystem.h"
+#include "TMath.h"
 #include "TLorentzVector.h"
 #endif
 
@@ -15,12 +16,47 @@
 
 using namespace std;
 
-string inputFile = "DTLocalRecoAnalysisStd.root";
-// string inputFile = "DTLocalRecoAnalysisT0Seg.root";
+
+// int NEVENTS = 500000;
+// int NEVENTS = -1;
+int NEVENTS = 50;
 
 
+string tag = "t0";
+// string tag = "t-2";
+// string tag = "t2";
+// string tag = "t4";
+// string tag = "t-4";
+
+
+string inputFile = "/data/c/cerminar/data/DTAnalysis/DTCalibration/r67647_" + tag + "_V00/DTLocalRecoAnalysisStd_merged.root";
+string outputFile = "/data/c/cerminar/data/DTAnalysis/DTCalibration/histo_" + tag  + "_test.root";
 
 void readTree() {
-  TTreeReader *reader = new TTreeReader(inputFile, "test.root");
-  reader->analyse(-1);
+  TTreeReader *reader = new TTreeReader(inputFile, outputFile);
+  reader->setDebug(6);
+  // all segments
+//   DTCut stdCut;
+//   reader->setCuts("all",stdCut);
+//   // only segments with 12 hits
+//   DTCut hqCut;
+//   hqCut.setSegmNHits(12,12);
+//   reader->setCuts("hq",hqCut);
+
+//   DTCut hqPhiCut;
+//   hqPhiCut.setSegmNHitsPhi(7,9);
+//   reader->setCuts("hqPhi",hqPhiCut);
+
+  DTCut hqPhiVCut;
+  hqPhiVCut.setSegmNHitsPhi(7,9);
+  hqPhiVCut.setSegmPhiAngle((90.-15.)*TMath::DegToRad(), (90.+15.)*TMath::DegToRad());
+  reader->setCuts("hqPhiV",hqPhiVCut);
+
+  DTCut hqPhiVVCut;
+  hqPhiVVCut.setSegmNHitsPhi(7,9);
+  hqPhiVVCut.setSegmNHitsTheta(4,5);
+  hqPhiVVCut.setSegmPhiAngle((90.-5.)*TMath::DegToRad(), (90.+5.)*TMath::DegToRad());
+  reader->setCuts("hqPhiVV",hqPhiVVCut);
+
+  reader->analyse(NEVENTS);
 }

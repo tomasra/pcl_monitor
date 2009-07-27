@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: $
- *  $Revision: $
+ *  $Date: 2009/07/20 08:52:47 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -14,21 +14,26 @@
 #include "DTSegmentObject.h"
 #include "DTHitObject.h"
 #include "Histograms.h"
-
+#include "Utils.h"
 
 
 #include <iostream>
 #include <sstream>
-
-
+#include <vector>
 using namespace std;
 
 
 TTreeReader::TTreeReader(const TString& fileName, const TString& outputFile) : theOutFile(outputFile),
 									       theGranularity(-1),
-									       nevents(0) {
+									       nevents(0),
+									       debug(0) {
   // open the file containing the tree
   TFile *file = new TFile(fileName.Data());
+  if(file == 0) {
+    cerr << "[TTreeReader]***Error: File: " << fileName << " does not exist!" << endl;
+    return;
+  }
+
   // Retrieve the TNtuple
   tree = (TNtuple *) file->Get("DTSegmentTree");
 
@@ -41,14 +46,6 @@ TTreeReader::TTreeReader(const TString& fileName, const TString& outputFile) : t
 
   // default values
   setGranularity("SL");
-
-  // set the cuts here
-  NHITSMIN = 0;
-  PHI_MIN = -9999.;
-  PHI_MAX = 9999.;
-  THETA_MIN = -9999.;
-  THETA_MAX = 9999.;
-
 
 }
 
@@ -72,14 +69,35 @@ void TTreeReader::begin() {
     for(int station = 1; station != 5; ++station) { // loop over stations
       for(int sector = 1; sector != 15; ++sector) { // loop over sectors
 	if(station != 4 && (sector == 13 || sector == 14)) continue;
+
+	// book the segment histos
+	// loop over set of cuts
+	for(map<TString, DTCut>::const_iterator set = cutSets.begin();   
+	    set != cutSets.end();
+	    ++set) {
+	  TString setName = (*set).first;
+	  DTDetId chId(wheel, station, sector, 0, 0, 0);
+	  if(histosSeg[setName].find(chId) == histosSeg[setName].end()) {
+	    histosSeg[setName][chId] = new HSegment(Utils::getHistoNameFromDetIdAndSet(chId, setName));
+	  }
+	}
+
 	for(int sl = 1; sl != 4; ++sl) { // loop over SLs
 	  if(station == 4 && sl == 2) continue;
 	  for(int layer = 1; layer != 5; ++layer) {
 	    DTDetId detId = buildDetid(wheel, station, sector, sl, layer, 0);
-	    if(histos.find(detId) == histos.end()) {
-	      TString name = getNameFromDetId(detId);
-	      histos[detId] = new HRes1DHits(name);
+// 	    TString name = Utils::getHistoNameFromDetId(detId);
+		
+	    // loop over set of cuts
+	    for(map<TString, DTCut>::const_iterator set = cutSets.begin();   
+		set != cutSets.end();
+		++set) {
+	      TString setName = (*set).first;
+	      if(histosRes[setName].find(detId) == histosRes[setName].end()) {
+		histosRes[setName][detId] = new HRes1DHits(Utils::getHistoNameFromDetIdAndSet(detId, setName));
+	      }
 	    }
+
 	  }
 	}
       }
@@ -88,9 +106,8 @@ void TTreeReader::begin() {
 }
 
 void TTreeReader::processEvent(int entry) {
-  int debug = 0;
-  if(entry%100 || debug > 2) {
-    cout << "Process event " << entry << endl;
+  if(entry%100000 == 0 ||  debug > 2) {
+    cout << "-----  Process event " << entry << endl;
   }
   
   
@@ -98,22 +115,67 @@ void TTreeReader::processEvent(int entry) {
 
     DTSegmentObject *oneSeg = (DTSegmentObject *) segments->At(iSegm);
 
+    bool passHqPhiV = false; 
+    DTDetId chId(oneSeg->wheel, oneSeg->station, oneSeg->sector, 0, 0, 0);
     // select segments
-    if(oneSeg->nHits < NHITSMIN) continue;
-    if(oneSeg->phi < PHI_MIN || oneSeg->phi > PHI_MAX) continue;
-    if(oneSeg->theta < THETA_MIN || oneSeg->theta > THETA_MAX) continue;
-    
+    vector<TString> passedCuts;
+    // loop over set of cuts
+    for(map<TString, DTCut>::const_iterator set = cutSets.begin();   
+	set != cutSets.end();
+	++set) {
+      if((*set).second.selectSegm(oneSeg)) {
+	passedCuts.push_back((*set).first);
+	// fill the segment related histos
 
+	histosSeg[(*set).first][chId]->Fill(oneSeg->nHits,
+					    oneSeg->nHitsPhi,
+					    oneSeg->nHitsTheta,
+					    oneSeg->proj,
+					    oneSeg->phi,
+					    oneSeg->theta,
+					    -1,
+					    oneSeg->chi2,
+					    oneSeg->t0SegPhi,
+					    oneSeg->t0SegTheta,
+					    oneSeg->vDriftCorrPhi);
+	if((*set).first == "hqPhiV") passHqPhiV = true;
+      }
+    }
+    if(passedCuts.size() == 0) continue;
+
+    if(passHqPhiV && debug > 5) {
+      cout << "--- New Segment: " << endl;
+      cout << chId << endl;
+      cout << " pos: X: " << oneSeg->Xsl << " Y: " << oneSeg->Ysl << " Z: " << oneSeg->Zsl << endl;
+      cout << " theta: " << oneSeg->theta << " phi: " << oneSeg->phi << endl;
+      for(int i = 0; i != 3; ++i) {
+	cout << " ttrig SL" << i+1 << ": "
+	     << oneSeg->tTrigMean[i] + oneSeg->tTrigKfact[i] * oneSeg->tTrigSigma[i] << endl;
+      }
+    }
+
+     
     for(int iHit = 0; iHit != oneSeg->nHits; ++iHit) { // loop over the hits belonging to the segment
       DTHitObject * hitObj = (DTHitObject *) oneSeg->hits->At(iHit);
       DTDetId detId(oneSeg->wheel, oneSeg->station, oneSeg->sector,
 		    hitObj->sl, hitObj->layer, hitObj->wire);
+      if(passHqPhiV && debug > 5) {
+	cout << "  - Hit on wire: " << detId << endl;
+	cout << "       pos X: " << hitObj->X << " Y: " << hitObj->Y << " Z: " << hitObj->Z << endl;
+	cout << "       res dist: " << hitObj->resDist << endl;
+	cout << "       digi time: " << hitObj->digiTime << endl;
+      }
+
       DTDetId detIdForPlot = buildDetid(oneSeg->wheel, oneSeg->station, oneSeg->sector,
 					hitObj->sl, hitObj->layer, hitObj->wire);
-
-      HRes1DHits *histoRes = histos[detIdForPlot];
-      histoRes->Fill(hitObj->resDist, hitObj->distFromWire, hitObj->resPos,
-		     hitObj->Y, hitObj->angle, hitObj->sigmaPos);
+      vector<TString>::const_iterator cut =  passedCuts.begin();
+//       for(// set<TString>::const_iterator cut = passedCuts.begin();
+// 	  cut != passedCuts.end(); ++cut) {
+      while(cut != passedCuts.end()) {
+	histosRes[*cut][detIdForPlot]->Fill(hitObj->resDist, hitObj->distFromWire, hitObj->resPos,
+					 hitObj->Y, hitObj->angle, hitObj->sigmaPos);
+	++cut;
+      }
     }
   }  
 }
@@ -127,9 +189,18 @@ void TTreeReader::end() {
   theFile->cd();
 
   // Write the histos
-  for(map<DTDetId, HRes1DHits *>::const_iterator hist =  histos.begin();
-      hist != histos.end(); ++hist) {
-    (*hist).second->Write();
+  for(map<TString, DTCut>::const_iterator cut = cutSets.begin();
+      cut != cutSets.end(); ++cut) {
+    map<DTDetId, HRes1DHits *> theHistosRes = histosRes[(*cut).first];
+    for(map<DTDetId, HRes1DHits *>::const_iterator hist =  theHistosRes.begin();
+	hist != theHistosRes.end(); ++hist) {
+      (*hist).second->Write();
+    }
+    map<DTDetId, HSegment *> theHistosSeg = histosSeg[(*cut).first];
+    for(map<DTDetId, HSegment *>::const_iterator hist =  theHistosSeg.begin();
+	hist != theHistosSeg.end(); ++hist) {
+      (*hist).second->Write();
+    }
   }
   theFile->Close();
 }
@@ -165,61 +236,54 @@ void TTreeReader::setGranularity(const TString& granularity) {
 }
 
 
-TString TTreeReader::getNameFromDetId(const DTDetId& detId) const {
-  stringstream wheelStr; 
-  if(detId.wheel == 0) wheelStr << "all";
-  else wheelStr << detId.wheel;
+// TString TTreeReader::getNameFromDetId(const DTDetId& detId) const {
+//   stringstream wheelStr; 
+//   if(detId.wheel == 0) wheelStr << "all";
+//   else wheelStr << detId.wheel;
 
-  stringstream stationStr; 
-  if(detId.station == 0) stationStr << "all";
-  else stationStr << detId.station;
+//   stringstream stationStr; 
+//   if(detId.station == 0) stationStr << "all";
+//   else stationStr << detId.station;
 
-  stringstream sectorStr; 
-  if(detId.sector == 0) sectorStr << "all";
-  else sectorStr << detId.sector;
+//   stringstream sectorStr; 
+//   if(detId.sector == 0) sectorStr << "all";
+//   else sectorStr << detId.sector;
 
-  stringstream slStr; 
-  if(detId.sl == 0) slStr << "all";
-  else slStr << detId.sl;
+//   stringstream slStr; 
+//   if(detId.sl == 0) slStr << "all";
+//   else slStr << detId.sl;
 
-  stringstream layerStr; 
-  if(detId.layer == 0) layerStr << "all";
-  else layerStr << detId.layer;
+//   stringstream layerStr; 
+//   if(detId.layer == 0) layerStr << "all";
+//   else layerStr << detId.layer;
 
-  string namestr = "Wh" + wheelStr.str() +
-    "_St" + stationStr.str() + 
-    "_Se" + sectorStr.str();
+//   string namestr = "Wh" + wheelStr.str() +
+//     "_St" + stationStr.str() + 
+//     "_Se" + sectorStr.str();
     
-  if(detId.sl != 0) {
-    namestr = namestr + "_SL" + slStr.str();
-  }
-  if(detId.layer != 0) {
-    namestr = namestr + "_L" + layerStr.str();
-  }
+//   if(detId.sl != 0) {
+//     namestr = namestr + "_SL" + slStr.str();
+//   }
+//   if(detId.layer != 0) {
+//     namestr = namestr + "_L" + layerStr.str();
+//   }
 
-  return TString(namestr.c_str());
+//   return TString(namestr.c_str());
+// }
+
+
+
+
+
+void TTreeReader::setDebug(int dbg) {
+  debug = dbg;
 }
 
 
 
-void TTreeReader::setMinNHits(int nHits) {
-  NHITSMIN = nHits;
+void TTreeReader::setCuts(const TString& set, const DTCut& cut) {
+  cutSets[set] = cut;
+  cout << "--- Set cut: " << set << endl;
+  cout << cut << endl;
+
 }
-
-
-
-void TTreeReader::setSegmPhiAngle(float min, float max) {
-  PHI_MIN = min;
-  PHI_MAX = max;
-}
-
-
-
-void TTreeReader::setSegmThetaAngle(float min, float max) {
-  THETA_MIN = min;
-  THETA_MAX = max;
-}
-
-
-
-

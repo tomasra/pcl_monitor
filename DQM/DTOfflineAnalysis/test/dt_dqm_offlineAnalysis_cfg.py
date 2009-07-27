@@ -5,22 +5,26 @@ process = cms.Process("DTOffAna")
 # the source
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
-    '/store/data/Commissioning09/Cosmics/RAW/v3/000/105/820/84097095-0172-DE11-BD73-000423D944F8.root',
-    '/store/data/Commissioning09/Cosmics/RAW/v3/000/105/820/4A0A9AAE-ED71-DE11-9F95-001D09F27003.root',
-    '/store/data/Commissioning09/Cosmics/RAW/v3/000/105/820/3E308797-EE71-DE11-986A-001D09F253D4.root',
-    '/store/data/Commissioning09/Cosmics/RAW/v3/000/105/820/12BBDBFC-0272-DE11-B8DF-001D09F2AF96.root',
-    '/store/data/Commissioning09/Cosmics/RAW/v3/000/105/820/0621E5AE-ED71-DE11-9633-001D09F24498.root',
-    '/store/data/Commissioning09/Cosmics/RAW/v3/000/105/812/062964A0-E871-DE11-98BD-000423D94700.root',
-    '/store/data/Commissioning09/Cosmics/RAW/v3/000/105/765/FCC57794-A371-DE11-A624-000423D992A4.root',
-    '/store/data/Commissioning09/Cosmics/RAW/v3/000/105/765/FCB30018-C271-DE11-81CA-000423D951D4.root',
-    '/store/data/Commissioning09/Cosmics/RAW/v3/000/105/765/FC9A95A4-A571-DE11-8A0B-000423D944DC.root',
-    '/store/data/Commissioning09/Cosmics/RAW/v3/000/105/765/FC768B72-C471-DE11-9307-000423D990CC.root',
-    '/store/data/Commissioning09/Cosmics/RAW/v3/000/105/765/FC5B9DAF-B871-DE11-8FAF-001D09F254CE.root',
-    '/store/data/Commissioning09/Cosmics/RAW/v3/000/105/765/FC01DDF5-C371-DE11-B1EF-001D09F24FEC.root',
-    '/store/data/Commissioning09/Cosmics/RAW/v3/000/105/765/FA95271D-A771-DE11-B4FE-001D09F254CE.root',
-    '/store/data/Commissioning09/Cosmics/RAW/v3/000/105/765/FA55CCC6-AC71-DE11-8682-000423D9880C.root',
-    '/store/data/Commissioning09/Cosmics/RAW/v3/000/105/765/FA4E96FA-D871-DE11-B037-000423D99896.root',
-    '/store/data/Commissioning09/Cosmics/RAW/v3/000/105/765/FA4962C4-AC71-DE11-871E-000423D99896.root'    ))
+  '/store/data/Commissioning08/Cosmics/RAW/v1/000/067/647/FEF751C0-0BA3-DD11-9D95-000423D9A212.root',
+          '/store/data/Commissioning08/Cosmics/RAW/v1/000/067/647/FE573C17-47A3-DD11-8BD3-001D09F24664.root',
+          '/store/data/Commissioning08/Cosmics/RAW/v1/000/067/647/FE4944AF-3CA3-DD11-BDEE-000423D99AAA.root',
+          '/store/data/Commissioning08/Cosmics/RAW/v1/000/067/647/FCFFF80E-51A3-DD11-BBC2-001D09F252DA.root',
+          '/store/data/Commissioning08/Cosmics/RAW/v1/000/067/647/FCC91EA4-6CA3-DD11-B66C-000423D98F98.root',
+          '/store/data/Commissioning08/Cosmics/RAW/v1/000/067/647/FCABAB02-04A3-DD11-8192-001D09F29538.root',
+          '/store/data/Commissioning08/Cosmics/RAW/v1/000/067/647/FC95ABE8-06A3-DD11-A964-001617C3B654.root',
+          '/store/data/Commissioning08/Cosmics/RAW/v1/000/067/647/FC5D7150-34A3-DD11-94BA-000423D9989E.root',
+          '/store/data/Commissioning08/Cosmics/RAW/v1/000/067/647/FAC88766-0DA3-DD11-A90B-0030487BC68E.root',
+          '/store/data/Commissioning08/Cosmics/RAW/v1/000/067/647/FA824797-76A3-DD11-A0C6-001D09F23D04.root',
+          '/store/data/Commissioning08/Cosmics/RAW/v1/000/067/647/FA813B87-F8A2-DD11-9325-0030487A18A4.root',
+          '/store/data/Commissioning08/Cosmics/RAW/v1/000/067/647/FA74B515-02A3-DD11-82AB-001D09F2532F.root',
+          '/store/data/Commissioning08/Cosmics/RAW/v1/000/067/647/FA717B22-69A3-DD11-8F9C-001D09F24F1F.root',
+          '/store/data/Commissioning08/Cosmics/RAW/v1/000/067/647/FA212672-F6A2-DD11-A174-001D09F28E80.root',
+          '/store/data/Commissioning08/Cosmics/RAW/v1/000/067/647/FA08C573-F1A2-DD11-903E-001D09F252DA.root',
+          '/store/data/Commissioning08/Cosmics/RAW/v1/000/067/647/F8DEC579-2FA3-DD11-9AA2-001D09F2932B.root',
+          '/store/data/Commissioning08/Cosmics/RAW/v1/000/067/647/F8836370-55A3-DD11-B8B4-001617C3B6CC.root',
+          '/store/data/Commissioning08/Cosmics/RAW/v1/000/067/647/F8828E6F-18A3-DD11-AD77-000423D99AAE.root',
+          '/store/data/Commissioning08/Cosmics/RAW/v1/000/067/647/F87F6BC5-3DA3-DD11-9518-001D09F27003.root'
+      ))
 
 
 process.maxEvents = cms.untracked.PSet(
@@ -41,7 +45,7 @@ process.ttrigsource = cms.ESSource("PoolDBESSource",
                                                               tag = cms.string('ttrig')
                                                               )
                                                      ),
-                                   connect = cms.string('sqlite_file:/afs/cern.ch/cms/CAF/CMSALCA/ALCA_MUONCALIB/DTCALIB/COMM09/ttrig/ttrig_ResidCorr_102183.db'),
+                                   connect = cms.string('sqlite_file:/afs/cern.ch/user/c/cerminar/scratch0/DTCalibration/CMSSW_3_1_1/src/DQM/DTOfflineAnalysis/test/dbs/r67647/merda_t4.db'),
                                    authenticationMethod = cms.untracked.uint32(0)
                                    )
 process.preferTTrigMap = cms.ESPrefer('PoolDBESSource','ttrigsource')

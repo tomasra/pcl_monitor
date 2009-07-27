@@ -3,6 +3,10 @@
 #include "TTreeReader.h"
 #include "DTDetId.h"
 #include "Histograms.h"
+#include "DTHistoPlotter.h"
+#include "Utils.h"
+#include "DTCut.h"
+
 
 #ifdef __CINT__
 #pragma link off all globals;
@@ -15,6 +19,11 @@
 #pragma link C++ class TTreeReader;
 #pragma link C++ class DTDetId;
 #pragma link C++ class HRes1DHits;
+#pragma link C++ class HSegment;
+#pragma link C++ class DTHistoPlotter;
+#pragma link C++ class Utils;
+#pragma link C++ class DTCut;
+
 
 #endif
 
