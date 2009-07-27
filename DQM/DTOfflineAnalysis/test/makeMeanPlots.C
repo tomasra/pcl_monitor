@@ -86,6 +86,8 @@ void makeMeanPlots::Loop()
 
   TH1F *hPar1_theta = new TH1F("hPar1_theta", "VDrift from fit (cm/ns)", 500, 0.001, 0.006); 
 
+  ofstream fout("failed_sl.txt");
+
   for(Int_t mywheel = -2; mywheel<=2; mywheel++){
     for(Int_t mysector = 1; mysector<=12; mysector++){
       for(Int_t mystation = 1; mystation<=4; mystation++){
@@ -94,24 +96,43 @@ void makeMeanPlots::Loop()
 	  if(mySL == 2) continue;
 	  //if(count == 10) break;
 
-	  Double_t mymean[5];
-	  Double_t mymean_err[5];
-	  Double_t x_err[5];
+	  vector <Double_t> mymean;
+	  vector <Double_t> mymean_err;
+	  vector <Double_t> x_mean;
+	  vector <Double_t> x_err;
 
-	  Double_t myt0[5];
-	  Double_t myt0_err[5];
+	  vector <Double_t> myt0;
+	  vector <Double_t> myt0_err;
+	  vector <Double_t> x_t0;
+	  vector <Double_t> x_err_t0;
+
+	  int count_valid_points(0);
 
 	  for(Int_t myttrig = 0; myttrig < 5; myttrig++){
-	    mymean[myttrig] = Ares_mean[mywheel+2][mysector-1][mystation-1][mySL-1][myttrig];
-	    mymean_err[myttrig] = Ares_mean_err[mywheel+2][mysector-1][mystation-1][mySL-1][myttrig];
-	    x_err[myttrig] = 0.;
-	    myt0[myttrig] = t0res_mean[mywheel+2][mysector-1][mystation-1][mySL-1][myttrig];
-	    myt0_err[myttrig] = 0.5;
+
+	    if(Ares_mean_err[mywheel+2][mysector-1][mystation-1][mySL-1][myttrig] > 0.2) continue;
+
+	    mymean.push_back(Ares_mean[mywheel+2][mysector-1][mystation-1][mySL-1][myttrig]);
+	    mymean_err.push_back(Ares_mean_err[mywheel+2][mysector-1][mystation-1][mySL-1][myttrig]);
+	    x_err.push_back(0.);
+	    x_mean.push_back(deltaTtrig[myttrig]);
+
+	    myt0.push_back(t0res_mean[mywheel+2][mysector-1][mystation-1][mySL-1][myttrig]);
+	    myt0_err.push_back(0.5);
+	    x_err_t0.push_back(0.);
+	    x_t0.push_back(deltaTtrig[myttrig]);
+
+	    count_valid_points++;
 	  }
 
 	  cout << " res mean " << t0res_mean[mywheel+2][mysector-1][mystation-1][mySL-1][2] << endl;
 
-	  TGraphErrors mygr(5,deltaTtrig,mymean,x_err,mymean_err);
+	  if(count_valid_points < 2){
+	    fout << mywheel << " " << mysector << " " << mystation << " " << mySL << endl;
+	    continue;
+	  }
+
+	  TGraphErrors mygr(mymean.size(),&x_mean[0],&mymean[0],&x_err[0],&mymean_err[0]);
 	  mygr.Fit("pol1");
 	  TF1 * mygrFit = mygr.GetFunction("pol1");
 	  double par0res = mygrFit->GetParameter("p0");
@@ -132,7 +153,7 @@ void makeMeanPlots::Loop()
 	  if(count == 0) c1.SaveAs("resplots.ps(");
 	  else c1.SaveAs("resplots.ps");
 
-	  TGraphErrors mygrt0(5,deltaTtrig,myt0,x_err,myt0_err);
+	  TGraphErrors mygrt0(myt0.size(),&x_t0[0],&myt0[0],&x_err_t0[0],&myt0_err[0]);
 	  mygrt0.Fit("pol1");
 	  TF1 * mygrt0Fit = mygrt0.GetFunction("pol1");
 	  double par0t0 = mygrt0Fit->GetParameter("p0");
