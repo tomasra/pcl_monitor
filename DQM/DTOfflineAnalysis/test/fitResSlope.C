@@ -1,35 +1,132 @@
-#define makeMeanPlots_cxx
-#include "makeMeanPlots.h"
+#define fitResSlope_cxx
+
+#include "fitResSlope.h"
+
 #include <TH2.h>
+#include <TF1.h>
 #include <TStyle.h>
 #include <TCanvas.h>
+#include <TGraphErrors.h>
 
-void makeMeanPlots::Loop()
+#include <fstream>
+#include <vector>
+#include <string>
+#include <iostream>
+#include <sstream>
+
+using namespace::std;
+
+fitResSlope::fitResSlope(TTree *tree)
 {
-  //   In a ROOT session, you can do:
-  //      Root > .L makeMeanPlots.C
-  //      Root > makeMeanPlots t
-  //      Root > t.GetEntry(12); // Fill t data members with entry number 12
-  //      Root > t.Show();       // Show values of entry 12
-  //      Root > t.Show(16);     // Read and show values of entry 16
-  //      Root > t.Loop();       // Loop on all entries
-  //
+// if parameter tree is not specified (or zero), connect the file
+// used to generate this class and read the Tree.
+   if (tree == 0) {
+      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("residualFits_hqPhiV.root");
+      if (!f) {
+         f = new TFile("residualFits_hqPhiV.root");
+      }
+      tree = (TTree*)gDirectory->Get("res_tree");
 
-  //     This is the loop skeleton where:
-  //    jentry is the global entry number in the chain
-  //    ientry is the entry number in the current Tree
-  //  Note that the argument to GetEntry must be:
-  //    jentry for TChain::GetEntry
-  //    ientry for TTree::GetEntry and TBranch::GetEntry
-  //
-  //       To read only selected branches, Insert statements like:
-  // METHOD1:
-  //    fChain->SetBranchStatus("*",0);  // disable all branches
-  //    fChain->SetBranchStatus("branchname",1);  // activate branchname
-  // METHOD2: replace line
-  //    fChain->GetEntry(jentry);       //read all branches
-  //by  b_branchname->GetEntry(ientry); //read only this branch
- 
+   }
+   Init(tree);
+
+   for(int wheel=0;wheel<5;wheel++){
+     for(int sector=0;sector<14;sector++){
+       for(int station=0;station<4;station++){
+	 for(int sl=0;sl<3;sl++){
+	   ttrigCorr[wheel][sector][station][sl] = 0.;
+	 }
+       }
+     }
+   }
+
+}
+
+fitResSlope::~fitResSlope()
+{
+   if (!fChain) return;
+   delete fChain->GetCurrentFile();
+}
+
+Int_t fitResSlope::GetEntry(Long64_t entry)
+{
+// Read contents of entry.
+   if (!fChain) return 0;
+   return fChain->GetEntry(entry);
+}
+Long64_t fitResSlope::LoadTree(Long64_t entry)
+{
+// Set the environment to read one entry
+   if (!fChain) return -5;
+   Long64_t centry = fChain->LoadTree(entry);
+   if (centry < 0) return centry;
+   if (!fChain->InheritsFrom(TChain::Class()))  return centry;
+   TChain *chain = (TChain*)fChain;
+   if (chain->GetTreeNumber() != fCurrent) {
+      fCurrent = chain->GetTreeNumber();
+      Notify();
+   }
+   return centry;
+}
+
+void fitResSlope::Init(TTree *tree)
+{
+   // The Init() function is called when the selector needs to initialize
+   // a new tree or chain. Typically here the branch addresses and branch
+   // pointers of the tree will be set.
+   // It is normally not necessary to make changes to the generated
+   // code, but the routine can be extended by the user if needed.
+   // Init() will be called many times when running on PROOF
+   // (once per file to be processed).
+
+   // Set branch addresses and branch pointers
+   if (!tree) return;
+   fChain = tree;
+   fCurrent = -1;
+   fChain->SetMakeClass(1);
+
+   fChain->SetBranchAddress("ttrig", &ttrig, &b_ttrig);
+   fChain->SetBranchAddress("wheel", &wheel, &b_theWheel);
+   fChain->SetBranchAddress("station", &station, &b_theStation);
+   fChain->SetBranchAddress("sector", &sector, &b_theSector);
+   fChain->SetBranchAddress("sl", &sl, &b_theSL);
+   fChain->SetBranchAddress("res_mean", &res_mean, &b_res_mean);
+   fChain->SetBranchAddress("res_mean_err", &res_mean_err, &b_res_mean_err);
+   fChain->SetBranchAddress("res_sigma1", &res_sigma1, &b_res_sigma1);
+   fChain->SetBranchAddress("res_sigma2", &res_sigma2, &b_res_sigma2);
+   fChain->SetBranchAddress("t0seg", &t0seg, &b_t0seg);
+   fChain->SetBranchAddress("chi2", &chi2, &b_chi2);
+   Notify();
+}
+
+Bool_t fitResSlope::Notify()
+{
+   // The Notify() function is called when a new file is opened. This
+   // can be either for a new TTree in a TChain or when when a new TTree
+   // is started when using PROOF. It is normally not necessary to make changes
+   // to the generated code, but the routine can be extended by the
+   // user if needed. The return value is currently not used.
+
+   return kTRUE;
+}
+
+void fitResSlope::Show(Long64_t entry)
+{
+// Print contents of entry.
+// If entry is not specified, print current entry
+   if (!fChain) return;
+   fChain->Show(entry);
+}
+Int_t fitResSlope::Cut(Long64_t entry)
+{
+// This function may be called from Loop.
+// returns  1 if entry is accepted.
+// returns -1 otherwise.
+   return 1;
+}
+
+void fitResSlope::Loop()
+{
   if (fChain == 0) return;
 
   gROOT->SetStyle("Plain");
@@ -96,15 +193,15 @@ void makeMeanPlots::Loop()
 	  if(mySL == 2) continue;
 	  //if(count == 10) break;
 
-	  vector <Double_t> mymean;
-	  vector <Double_t> mymean_err;
-	  vector <Double_t> x_mean;
-	  vector <Double_t> x_err;
+	  vector<Double_t> mymean;
+	  vector<Double_t> mymean_err;
+	  vector<Double_t> x_mean;
+	  vector<Double_t> x_err;
 
-	  vector <Double_t> myt0;
-	  vector <Double_t> myt0_err;
-	  vector <Double_t> x_t0;
-	  vector <Double_t> x_err_t0;
+	  vector<Double_t> myt0;
+	  vector<Double_t> myt0_err;
+	  vector<Double_t> x_t0;
+	  vector<Double_t> x_err_t0;
 
 	  int count_valid_points(0);
 
@@ -125,7 +222,7 @@ void makeMeanPlots::Loop()
 	    count_valid_points++;
 	  }
 
-	  cout << " res mean " << t0res_mean[mywheel+2][mysector-1][mystation-1][mySL-1][2] << endl;
+	  //cout << " res mean " << t0res_mean[mywheel+2][mysector-1][mystation-1][mySL-1][2] << endl;
 
 	  if(count_valid_points < 2){
 	    fout << mywheel << " " << mysector << " " << mystation << " " << mySL << endl;
@@ -139,6 +236,8 @@ void makeMeanPlots::Loop()
 	  double par1res = mygrFit->GetParameter("p1");
 	  double ttrigCorrRes  = 99999;
 	  if(par1res != 0) ttrigCorrRes = -par0res/par1res;
+
+	  ttrigCorr[mywheel+2][mysector-1][mystation-1][mySL-1] = par1res;
 
           string stringName1;
           stringstream theStream1;
@@ -155,6 +254,7 @@ void makeMeanPlots::Loop()
 
 	  TGraphErrors mygrt0(myt0.size(),&x_t0[0],&myt0[0],&x_err_t0[0],&myt0_err[0]);
 	  mygrt0.Fit("pol1");
+
 	  TF1 * mygrt0Fit = mygrt0.GetFunction("pol1");
 	  double par0t0 = mygrt0Fit->GetParameter("p0");
 	  double par1t0 = mygrt0Fit->GetParameter("p1");
@@ -182,14 +282,11 @@ void makeMeanPlots::Loop()
 	  else c2.SaveAs("t0plots.ps");
 
 	  count++;
-// 	  int pippo;
-// 	  cin >> pippo;
-// 	  if(pippo == -1) goto end;
 	}
       }
     }
   }
- end:
+
   c1.cd();
   c1.SetGrid(1,1);
   hCorr->Draw("box");
@@ -217,12 +314,49 @@ void makeMeanPlots::Loop()
 
   c1.cd();
   hPar1VsChi2_phi->Draw("box");
-//   c1.SaveAs("resplots.ps");
-
-
 
   c1.SaveAs("resplots.ps)");
   c2.SaveAs("t0plots.ps)");
   
+  return;
+}
 
+void fitResSlope::DumpCorrection(const char *filename)
+{
+  ifstream fin;
+  fin.open(filename);
+  if (!fin){
+    cout << "Error opening file " << filename << endl;
+    assert(0);
+  }
+
+  ofstream fout("outDB.txt");
+
+  int tmp_wheel = 0;
+  int tmp_sector = 0;
+  int tmp_station = 0;
+  int tmp_SL = 0;
+  double tmp_ttrig = 0.;
+  double tmp_t0 = 0.;
+  double tmp_kfact = 0.;
+  int tmp_a = 0;
+  int tmp_b = 0;
+  int tmp_c = 0;
+  int tmp_d = 0;
+
+  while(!fin.eof()){
+
+    fin >> tmp_wheel >> tmp_sector >> tmp_station >> tmp_SL  >> tmp_a >> tmp_b >>
+      tmp_ttrig >> tmp_t0 >> tmp_kfact >> tmp_c >> tmp_d;
+
+    fout << " " << tmp_wheel << " " << tmp_sector << " " << tmp_station << " " <<
+      tmp_SL << " " << tmp_a << " " << tmp_b << " " << tmp_ttrig << " " << tmp_t0 <<
+      " " << tmp_kfact << " " << tmp_c << " " << tmp_d << " " <<
+      ttrigCorr[tmp_wheel+2][tmp_sector-1][tmp_station-1][tmp_SL-1] << endl;
+  }
+
+  fin.close();
+  fout.close();
+
+  return;
 }
