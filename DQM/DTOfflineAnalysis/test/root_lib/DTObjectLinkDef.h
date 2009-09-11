@@ -6,6 +6,8 @@
 #include "DTHistoPlotter.h"
 #include "Utils.h"
 #include "DTCut.h"
+#include "FEDNtupleReader.h"
+#include "FEDNumbering.h"
 
 
 #ifdef __CINT__
@@ -23,6 +25,8 @@
 #pragma link C++ class DTHistoPlotter;
 #pragma link C++ class Utils;
 #pragma link C++ class DTCut;
+#pragma link C++ class FEDNtupleReader;
+#pragma link C++ class FEDNumbering;
 
 
 #endif

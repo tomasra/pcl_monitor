@@ -2,14 +2,15 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: $
- *  $Revision: $
+ *  $Date: 2009/07/27 12:35:32 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
 
 #include "Utils.h"
 
 #include "DTDetId.h"
+#include "TCanvas.h"
 
 #include <sstream>
 
@@ -60,3 +61,37 @@ TString Utils::getHistoNameFromDetIdAndSet(const DTDetId& detId, const TString& 
 }
 
 
+TCanvas * Utils::newCanvas(TString name, TString title,
+			   int xdiv, int ydiv, int form, int w) {
+  static int i = 1;
+  if (name == "") {
+    name = TString("Canvas "+i);
+    i++;
+  }
+  TCanvas *c = 0;
+  if (title == "") title = name;
+  if (w<0) {
+    c = new TCanvas(name,title, form);
+  } else {
+    c = new TCanvas(name,title,form,w);
+  }
+  if (xdiv*ydiv!=0) c->Divide(xdiv,ydiv);
+  c->cd(1);
+  return c;
+}
+
+TCanvas * Utils::newCanvas(TString name, int xdiv, int ydiv, int form, int w) {
+  return newCanvas(name, name,xdiv,ydiv,form,w);
+}
+
+TCanvas * Utils::newCanvas(int xdiv, int ydiv, int form) {
+  return newCanvas("","",xdiv,ydiv,form);
+}
+
+TCanvas * Utils::newCanvas(int form) {
+  return newCanvas(0,0,form);
+}
+
+TCanvas * Utils::newCanvas(TString name, int form, int w) {
+  return newCanvas(name, name, 0,0,form,w);
+}
