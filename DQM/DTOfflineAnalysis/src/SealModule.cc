@@ -29,3 +29,6 @@ DEFINE_FWK_MODULE(TriggerSourceFilter);
 
 #include <DQM/DTOfflineAnalysis/src/DTNDigiFilter.h>
 DEFINE_FWK_MODULE(DTNDigiFilter);
+
+#include "DQM/DTOfflineAnalysis/src/FEDSizeAnalysis.h"
+DEFINE_FWK_MODULE(FEDSizeAnalysis);
