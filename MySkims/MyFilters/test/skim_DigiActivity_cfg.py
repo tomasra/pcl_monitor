@@ -14,17 +14,24 @@ process.GlobalTag.globaltag = 'GR09_E_V6::All'
 
 process.source = cms.Source("PoolSource",
                             fileNames = cms.untracked.vstring(
-    '/store/express/BeamCommissioning09/ExpressPhysics/FEVT/v2/000/123/151/DC4465B0-F6DD-DE11-A7F1-000423D6B444.root',
-    '/store/express/BeamCommissioning09/ExpressPhysics/FEVT/v2/000/123/151/DA95AB4C-F7DD-DE11-B1D4-000423DD2F34.root',
-    '/store/express/BeamCommissioning09/ExpressPhysics/FEVT/v2/000/123/151/C6F6B54F-F7DD-DE11-B5C1-000423D6CA02.root',
-    '/store/express/BeamCommissioning09/ExpressPhysics/FEVT/v2/000/123/151/C499DCD4-FADD-DE11-9D82-001D09F28D4A.root',
-    '/store/express/BeamCommissioning09/ExpressPhysics/FEVT/v2/000/123/151/B4C44A4F-F7DD-DE11-8896-0019B9F709A4.root',
-    '/store/express/BeamCommissioning09/ExpressPhysics/FEVT/v2/000/123/151/B2EFCDAB-F8DD-DE11-B1A5-001D09F2532F.root',
-    '/store/express/BeamCommissioning09/ExpressPhysics/FEVT/v2/000/123/151/A40088D3-FADD-DE11-9EA6-001D09F290BF.root')
+'file:/data/c/cerminar/Skim/r123596_V01/Skim_V01_10.root',
+'file:/data/c/cerminar/Skim/r123596_V01/Skim_V01_5.root',
+'file:/data/c/cerminar/Skim/r123596_V01/Skim_V01_9.root',
+'file:/data/c/cerminar/Skim/r123596_V01/Skim_V01_11.root',
+'file:/data/c/cerminar/Skim/r123596_V01/Skim_V01_7.root',
+'file:/data/c/cerminar/Skim/r123596_V01/Skim_V01_12.root',
+'file:/data/c/cerminar/Skim/r123596_V01/Skim_V01_14.root',
+'file:/data/c/cerminar/Skim/r123596_V01/Skim_V01_6.root',
+'file:/data/c/cerminar/Skim/r123596_V01/Skim_V01_3.root',
+'file:/data/c/cerminar/Skim/r123596_V01/Skim_V01_8.root',
+'file:/data/c/cerminar/Skim/r123596_V01/Skim_V01_4.root',
+'file:/data/c/cerminar/Skim/r123596_V01/Skim_V01_2.root',
+)
 )
 
+
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(1000)
+    input = cms.untracked.int32(-1)
 )
 
 
@@ -132,7 +139,7 @@ process.largeSiStripClusterEvents = cms.EDFilter("LargeSiStripClusterEvents",
 #-------------------------------------------------------------------------------------------
 
 
-
+process.load("DQM.DTOfflineAnalysis.muonAnalysis_cff")
 
 # process.dtBPTX = cms.Path(process.hltL1sL1BPTX*
 #                          process.muonDTDigis*
@@ -142,14 +149,16 @@ process.largeSiStripClusterEvents = cms.EDFilter("LargeSiStripClusterEvents",
 
 process.dtBSC = cms.Path(process.hltL1sL1BSC*
                          process.muonDTDigis*
-                         process.dtNDigiFilter*
                          process.largeSiStripClusterEvents*
+                         process.dtNDigiFilter*
+                         process.muonAnalysis*
                          process.iSpy_sequence)
 
 
 process.dtHLTAct = cms.Path(process.dtHLTActivity*
                             process.muonDTDigis*
                             process.largeSiStripClusterEvents*
+                            process.muonAnalysis*
                             process.iSpy_sequence)
 
 
