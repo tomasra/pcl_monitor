@@ -1,5 +1,4 @@
-<flags EDM_PLUGIN=1>
-<use name=AnalysisDataFormats/SimpleEvent>
+#<flags EDM_PLUGIN=1>
 <use name=FWCore/Framework>
 <use name=DQMServices/Core>
 <use name=DQMServices/Components>
@@ -16,6 +15,7 @@
 <use name=CalibMuon/DTDigiSync>
 <use name=CalibMuon/DTCalibration>
 <use name=EventFilter/Utilities>
+<use name=TrackingTools/TransientTrack>
 
 <use name=boost>
 <use name=rootgraphics>
