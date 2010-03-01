@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2009/07/20 08:52:47 $
- *  $Revision: 1.2 $
+ *  $Date: 2009/07/27 12:35:44 $
+ *  $Revision: 1.3 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -143,6 +143,7 @@ void TTreeReader::processEvent(int entry) {
     }
     if(passedCuts.size() == 0) continue;
 
+//     passHqPhiV = true;
     if(passHqPhiV && debug > 5) {
       cout << "--- New Segment: " << endl;
       cout << chId << endl;

@@ -25,6 +25,7 @@
 #pragma link C++ class DTHistoPlotter;
 #pragma link C++ class Utils;
 #pragma link C++ class DTCut;
+#pragma link C++ class SimTreeReader;
 #pragma link C++ class FEDNtupleReader;
 #pragma link C++ class FEDNumbering;
 

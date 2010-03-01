@@ -1,7 +1,7 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2008/12/03 10:41:16 $
+ *  $Date: 2009/07/27 12:35:32 $
  *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
@@ -726,22 +726,28 @@ void DTHistoPlotter::fitAndDraw(int fileIndex, TH1F *histo) {
 
   RooDataHist hdata("hdata","Binned data",RooArgList(x),histo);
 
-  double meanHisto = histo->GetMean();
-  double rmsHisto = histo->GetRMS();
-
-
-  myg.fitTo(hdata,RooFit::Minos(1),RooFit::Range(meanHisto-1.5*rmsHisto,meanHisto+1.5*rmsHisto),RooFit::Save(0));
-
-
-	    
-  //RooPlot *xplot = x.frame();
   RooPlot *xplot = x.frame();
   hdata.plotOn(xplot);
-  myg.plotOn(xplot);
-  // set the statistics box
-  myg.paramOn(xplot,RooFit::Layout(0.6, 1, 0.8));
-	    
 
+
+  double meanHisto = 0.;
+  double rmsHisto = 0.;
+
+  if(hdata.numEntries(kTRUE) != 0) {
+  
+    meanHisto = histo->GetMean();
+    rmsHisto = histo->GetRMS();
+
+    myg.fitTo(hdata,RooFit::Minos(1),RooFit::Range(meanHisto-1.5*rmsHisto,meanHisto+1.5*rmsHisto),RooFit::Save(0));
+	    
+    //RooPlot *xplot = x.frame();
+    myg.plotOn(xplot);
+    // set the statistics box
+    myg.paramOn(xplot,RooFit::Layout(0.6, 1, 0.8));
+
+  } else {
+    cout << " Histo has no entries: " << hdata.numEntries(kTRUE) << endl;
+  }
   stringstream str; str << "c_" << fileIndex << "_";
   TString canvPrefix(str.str().c_str());
   TCanvas *c = newCanvas(canvPrefix+TString(histo->GetName()));
@@ -849,32 +855,45 @@ void DTHistoPlotter::fitAllInSet(const TString& set, const TString& options) {
  	    RooAddPdf myg("myg","myg",RooArgList(myg1,myg2),RooArgList(frac));
 
 	    RooDataHist hdata("hdata","Binned data",RooArgList(x),histo);
-
-	    double meanHisto = histo->GetMean();
-	    double rmsHisto = histo->GetRMS();
-
-	    myg.fitTo(hdata,RooFit::Minos(1),RooFit::Range(meanHisto-1.5*rmsHisto,meanHisto+1.5*rmsHisto),
-		      RooFit::Save(0));
-
-	    res_mean = mean.getVal();
-	    res_mean_err = mean.getError();
-	    res_sigma1 = sigma1.getVal();
-	    res_sigma2 = sigma2.getVal();
-
-	    
-	    //RooPlot *xplot = x.frame();
 	    RooPlot xplot(x,x.getMin(),x.getMax(),x.getBins());
 	    hdata.plotOn(&xplot);
-	    myg.plotOn(&xplot);
-	    // set the statistics box
-	    myg.paramOn(&xplot,RooFit::Layout(0.6, 1, 0.8));
 	    
+	    double meanHisto = 0.;
+	    double rmsHisto = 0.;
+
+	    if(hdata.numEntries(kTRUE) != 0) {
+	      meanHisto = histo->GetMean();
+	      rmsHisto = histo->GetRMS();
+
+	      myg.fitTo(hdata,RooFit::Minos(1),RooFit::Range(meanHisto-1.5*rmsHisto,meanHisto+1.5*rmsHisto),
+			RooFit::Save(0));
+
+	      res_mean = mean.getVal();
+	      res_mean_err = mean.getError();
+	      res_sigma1 = sigma1.getVal();
+	      res_sigma2 = sigma2.getVal();
+
+	    
+	      //RooPlot *xplot = x.frame();
+	      myg.plotOn(&xplot);
+	      // set the statistics box
+	      myg.paramOn(&xplot,RooFit::Layout(0.6, 1, 0.8));
+	      chi2 = xplot.chiSquare();
+	    
+	    } else {
+	      cout << " Histo has no entries: " << hdata.numEntries(kTRUE) << endl;
+	      res_mean = 0.;
+	      res_mean_err = 0.;
+	      res_sigma1 = 0.;
+	      res_sigma2 = 0.;
+	      chi2 = 0;
+	    }
+
 	    // give a name to the plot
   	    stringstream str; str << "c_" << (*file).first << "_";
  	    TString canvPrefix(str.str().c_str());
 	    TString canvName = canvPrefix + TString(histo->GetName());
 	    xplot.SetTitle(canvName.Data());
-	    chi2 = xplot.chiSquare();
 
 	    // write interesting values to tree
  	    res_tree.Fill();
