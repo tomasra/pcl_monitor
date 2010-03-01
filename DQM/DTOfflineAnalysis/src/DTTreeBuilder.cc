@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2009/07/16 12:26:08 $
- *  $Revision: 1.3 $
+ *  $Date: 2009/07/16 14:47:09 $
+ *  $Revision: 1.4 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -225,6 +225,7 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	LocalPoint wirePosInLay(wireX,(*recHit1D).localPosition().y(),(*recHit1D).localPosition().z());
 	GlobalPoint wirePosGlob = layer->toGlobal(wirePosInLay);
 	LocalPoint wirePosInChamber = chamber->toLocal(wirePosGlob);
+// 	cout << "Wire: " << wireId << " z: " << wirePosInChamber.z() << endl;
 
 	// Segment position at Wire z in chamber local frame
 	LocalPoint segPosAtZWire = (*segment4D).localPosition()
