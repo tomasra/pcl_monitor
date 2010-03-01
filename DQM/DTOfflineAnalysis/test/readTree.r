@@ -19,7 +19,7 @@ using namespace std;
 
 // int NEVENTS = 500000;
 // int NEVENTS = -1;
-int NEVENTS = 50;
+int NEVENTS = 5;
 
 
 string tag = "t0";
@@ -28,24 +28,31 @@ string tag = "t0";
 // string tag = "t4";
 // string tag = "t-4";
 
+string version = "test";
 
-string inputFile = "/data/c/cerminar/data/DTAnalysis/DTCalibration/r67647_" + tag + "_V00/DTLocalRecoAnalysisStd_merged.root";
-string outputFile = "/data/c/cerminar/data/DTAnalysis/DTCalibration/histo_" + tag  + "_test.root";
+
+int debug = 10;
+
+
+// string inputFile = "/data/c/cerminar/data/DTAnalysis/DTCalibration/r67647_" + tag + "_V00/DTLocalRecoAnalysisStd_merged.root";
+string inputFile = "DTLocalRecoAnalysisStd_t4.root";
+
+string outputFile = "/data/c/cerminar/data/DTAnalysis/DTCalibration/histo_" + tag  + "_" + version + ".root";
 
 void readTree() {
   TTreeReader *reader = new TTreeReader(inputFile, outputFile);
-  reader->setDebug(6);
+  reader->setDebug(debug);
   // all segments
 //   DTCut stdCut;
 //   reader->setCuts("all",stdCut);
-//   // only segments with 12 hits
-//   DTCut hqCut;
-//   hqCut.setSegmNHits(12,12);
-//   reader->setCuts("hq",hqCut);
+  // only segments with 12 hits
+  DTCut hqCut;
+  hqCut.setSegmNHits(12,12);
+  reader->setCuts("hq",hqCut);
 
-//   DTCut hqPhiCut;
-//   hqPhiCut.setSegmNHitsPhi(7,9);
-//   reader->setCuts("hqPhi",hqPhiCut);
+  DTCut hqPhiCut;
+  hqPhiCut.setSegmNHitsPhi(7,9);
+  reader->setCuts("hqPhi",hqPhiCut);
 
   DTCut hqPhiVCut;
   hqPhiVCut.setSegmNHitsPhi(7,9);

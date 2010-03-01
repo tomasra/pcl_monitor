@@ -45,7 +45,7 @@ process.ttrigsource = cms.ESSource("PoolDBESSource",
                                                               tag = cms.string('ttrig')
                                                               )
                                                      ),
-                                   connect = cms.string('sqlite_file:/afs/cern.ch/user/c/cerminar/scratch0/DTCalibration/CMSSW_3_1_1/src/DQM/DTOfflineAnalysis/test/dbs/r67647/merda_t4.db'),
+                                   connect = cms.string('sqlite_file:/afs/cern.ch/user/c/cerminar/scratch0/DTCalibration/CMSSW_3_1_1/src/DQM/DTOfflineAnalysis/test/dbs/r67647/merda_t-4.db'),
                                    authenticationMethod = cms.untracked.uint32(0)
                                    )
 process.preferTTrigMap = cms.ESPrefer('PoolDBESSource','ttrigsource')
@@ -68,7 +68,26 @@ process.MessageLogger = cms.Service("MessageLogger",
                                     )
 
 
-process.jobPath = cms.Path(process.reco + process.dtLocalRecoAnal)
+# --- IGUANA cfg --------------------------------------------------------
+process.add_(
+    cms.Service("IguanaService",
+    outputFileName = cms.untracked.string('DTSegments_r67647_t-4.ig'),
+    online = cms.untracked.bool(False),
+    debug = cms.untracked.bool(True)
+    )
+)
+
+process.load("VisReco.Analyzer.VisDTRecSegment4D_cfi")
+process.load('VisReco.Analyzer.VisDTDigi_cfi')
+process.load('VisReco.Analyzer.VisDTRecHit_cfi')
+process.VisDTRecHit.visDTRecHitTag = cms.InputTag("dt1DRecHits")
+
+# -----------------------------------------------------------------------
+
+
+process.jobPath = cms.Path(process.reco + process.dtLocalRecoAnal + process.VisDTDigi * process.VisDTRecSegment4D * process.VisDTRecHit)
+# process.jobPath = cms.Path(process.reco + process.dtLocalRecoAnal)
+
 #process.jobPath = cms.Path(process.dtLocalRecoAnal)
 
 

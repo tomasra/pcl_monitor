@@ -40,6 +40,7 @@ int main(int argc, char* argv[]) {
 	cout << "Program that calculates ttrig corrections and appends them to a" << endl;
 	cout << "txt file. Please provide the root file name with residuals with the -f" << endl;
 	cout << "option and a DB to be changed with the -d option." << endl;
+	return 0;
 	break;
 
       case 'd':
@@ -61,7 +62,7 @@ int main(int argc, char* argv[]) {
 
   fitResSlope res_corrections(theChain);
   res_corrections.Loop();
-  res_corrections.DumpCorrection(db_filename);
+//   res_corrections.DumpCorrection(db_filename);
 
   return 1;
 }
