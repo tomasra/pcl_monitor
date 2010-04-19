@@ -516,8 +516,8 @@ if diffconfig.has_section('Comments'):
     #print 'release: ' + release
     #print 'changes: ' + changes
     if not os.path.exists('doc/'):
-        print "PIPPO"
-
+        print " directory \"doc\" doesn't exist: creating it"
+        os.mkdir('doc/')
     docfilename = 'doc/' + NEWGT + '.wiki'
     docfile = open(docfilename,'w')
     docstring = '| [[http://condb.web.cern.ch/condb/listTags/?GlobalTag=' + NEWGT + '][' + NEWGT + ']] | %GREEN%' + release + '%ENDCOLOR% | ' + scope + ' | As !' + OLDGT + ' with the following updates:' + changes + '. |\n'
