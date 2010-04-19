@@ -515,6 +515,9 @@ if diffconfig.has_section('Comments'):
     #print "scope: " + scope
     #print 'release: ' + release
     #print 'changes: ' + changes
+    if not os.path.exists('doc/'):
+        print "PIPPO"
+
     docfilename = 'doc/' + NEWGT + '.wiki'
     docfile = open(docfilename,'w')
     docstring = '| [[http://condb.web.cern.ch/condb/listTags/?GlobalTag=' + NEWGT + '][' + NEWGT + ']] | %GREEN%' + release + '%ENDCOLOR% | ' + scope + ' | As !' + OLDGT + ' with the following updates:' + changes + '. |\n'
@@ -566,8 +569,9 @@ if diffconfig.has_option('Connect','GlobalConnectReplace'):
 oldfilename = OLDGT + '.conf'
 newconffile  = NEWGT + ".conf"
 
-
+# check if the original conf file exists
 if not os.path.isfile(oldfilename):
+    # FIXME: shoud create conf file if it doesn't exist
     print error("*** Error" + " original GT conf file: " + oldfilename + " doesn't exist!")
     sys.exit(1)
 
