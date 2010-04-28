@@ -471,6 +471,39 @@ class GTEntryCollection:
         for idx in self._tagsInPrep:
             print "   ",self._tagList[idx] 
     
+    def tagsInPrep(self):
+        if len(self._tagsInPrep) != 0:
+            return True
+
+class GTDocGenerator:
+    def __init__(self, gtName, oldGT, scope, release, changelog):
+        self._listTagLink = 'http://condb.web.cern.ch/condb/listTags/?GlobalTag=' + gtName
+        self._gt = gtName
+        self._oldGt = oldGT
+        self._scope = scope
+        self._release = release
+        self._change = changelog
+
+    def isForProd(self, isForProd):
+        self._isForProd = isForProd
+
+    def wikiString(self):
+        wikiString =  '| [[' + self._listTagLink + '][' + self._gt + ']] | %GREEN%' + self._release + '%ENDCOLOR%'
+        if self._isForProd == False:
+            wikiString = wikiString + ' %RED%(Not for prod.[[[#NOTENotProd][1]]])%ENDCOLOR%'
+        wikiString = wikiString + ' | ' + self._scope  + ' | As !' + self._oldGt + ' with the following updates:' + self._change + '. |\n'
+        return wikiString
+
+    def printWikiDoc(self):
+        if not os.path.exists('doc/'):
+            print " directory \"doc\" doesn't exist: creating it"
+            os.mkdir('doc/')
+        docfilename = 'doc/' + NEWGT + '.wiki'
+        docfile = open(docfilename,'w')
+        docstring = self.wikiString()
+        docfile.write(docstring)
+        docfile.close()
+
 
 # read the configuration file
 CONFIGFILE=sys.argv[1]
@@ -559,21 +592,24 @@ if diffconfig.has_option('TagManipulation','closeIOV'):
 scope = ''
 release = ''
 changes = ''
+
+docGenerator = None        
 if diffconfig.has_section('Comments'):
     scope = diffconfig.get('Comments','Scope')
     release = diffconfig.get('Comments','Release')
     changes = diffconfig.get('Comments','Changes')
-    #print "scope: " + scope
-    #print 'release: ' + release
-    #print 'changes: ' + changes
-    if not os.path.exists('doc/'):
-        print " directory \"doc\" doesn't exist: creating it"
-        os.mkdir('doc/')
-    docfilename = 'doc/' + NEWGT + '.wiki'
-    docfile = open(docfilename,'w')
-    docstring = '| [[http://condb.web.cern.ch/condb/listTags/?GlobalTag=' + NEWGT + '][' + NEWGT + ']] | %GREEN%' + release + '%ENDCOLOR% | ' + scope + ' | As !' + OLDGT + ' with the following updates:' + changes + '. |\n'
-    docfile.write(docstring)
-    docfile.close()
+    docGenerator = GTDocGenerator(NEWGT, OLDGT, scope, release, changes)
+#     #print "scope: " + scope
+#     #print 'release: ' + release
+#     #print 'changes: ' + changes
+#     if not os.path.exists('doc/'):
+#         print " directory \"doc\" doesn't exist: creating it"
+#         os.mkdir('doc/')
+#     docfilename = 'doc/' + NEWGT + '.wiki'
+#     docfile = open(docfilename,'w')
+#     docstring = '| [[http://condb.web.cern.ch/condb/listTags/?GlobalTag=' + NEWGT + '][' + NEWGT + ']] | %GREEN%' + release + '%ENDCOLOR% | ' + scope + ' | As !' + OLDGT + ' with the following updates:' + changes + '. |\n'
+#     docfile.write(docstring)
+#     docfile.close()
 
 
 
@@ -796,12 +832,18 @@ if len(falisedToDuplicateIOV) != 0:
 
 
 
-# --------------------------------------------------------------------------
-# Write the new conf file
 
+# Print notifiation of records from prep account
 tagCollection.printTagsInPrep()
 
+# generate the documentation
+if tagCollection.tagsInPrep():
+    docGenerator.isForProd(False)
 
+docGenerator.printWikiDoc()
+
+# --------------------------------------------------------------------------
+# Write the new conf file
 
 # open output conf file
 conf=open(newconffile,'w')
