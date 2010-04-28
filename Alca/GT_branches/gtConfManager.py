@@ -236,12 +236,13 @@ class GTEntry:
             if self._connstring == 'frontier://FrontierProd':
                 oracleConn =  'oracle://cms_orcon_prod'
             elif self._connstring == 'frontier://FrontierPrep':
-                oracleConn =  'oracle://cms_orcon_prep'
+                oracleConn =  'oracle://cms_orcoff_prep'
         return oracleConn + '/' + self._account
 
-
-
-
+    def isInPrepAccount(self):
+        if self._connstring == 'frontier://FrontierPrep':
+            return True
+        return False
 
 
 
@@ -279,6 +280,10 @@ class GTEntryCollection:
         self._accountindexes = dict()
         # global subfix for all accounts
         self._glbAccSubfix = ''
+        # list of tags in the prep-account
+        self._tagsInPrep = []
+        # list of new/modified tags
+        self._newTags = []
         return
 
     def addEntry(self, tag):
@@ -301,8 +306,9 @@ class GTEntryCollection:
         self._tagByTag[tag._tag] = index
         self._tagByRcdAndLabelId[tag.rcdID()] = index
         self._tagOrder.append(index)
-
-
+        if tag.isInPrepAccount():
+            self._tagsInPrep.append(index)
+        # self._newTags.append(index)
         # check where to append the new records
         if tag._account != self._previousaccount:
             # print "Prev account: " + self._previousaccount
@@ -334,14 +340,26 @@ class GTEntryCollection:
             self.getByTag(oldtag)._tag = newtag
             print "   " + oldtag + ": " + newtag
             self._tagByTag[newtag] = index
+            if not index in self._newTags:
+                self._newTags.append(index)
         else:
             print error("*** Warning") + " tag: " + oldtag + " not found!"
         return
 
     def modifyEntryConnection(self, tag, connection):
         if self.hasTag(tag):
+            index = self._tagByTag[tag]
+            if connection == 'frontier://FrontierPrep' and not self.getByTag(tag).isInPrepAccount():
+                self._tagsInPrep.append(index)
+
+            if  connection != 'frontier://FrontierPrep' and self.getByTag(tag).isInPrepAccount():
+                self._tagsInPrep.remove(index)
+
+            if not index in self._newTags:
+                self._newTags.append(index)
             self.getByTag(tag).setConnect(connect)
             print "   " + tag + ": " + connect
+                
         else:
             print error("*** Warning") + " tag: " + tag + " not found!"
         return
@@ -349,6 +367,10 @@ class GTEntryCollection:
     def modifyEntryAccount(self, tag, account):
         if self.hasTag(tag):
             self.getByTag(tag).setAccount(account)
+            index = self._tagByTag[tag]
+
+            if not index in self._newTags:
+                self._newTags.append(index)
             print "   " + tag + ": " + account
         else:
             print error("*** Warning") + " tag: " + tag + " not found!"
@@ -369,6 +391,16 @@ class GTEntryCollection:
         entry._parent = self._tagList[index]._parent
         self._tagList[index] = entry
         self._tagByTag[entry._tag] = index
+
+        if not index in self._newTags:
+            self._newTags.append(index)
+
+        if entry.isInPrepAccount() and not self._tagList[index].isInPrepAccount():
+            self._tagsInPrep.append(index)
+
+        if not entry.isInPrepAccount() and self._tagList[index].isInPrepAccount():
+            self._tagsInPrep.remove(index)
+        
         return
 
     def insertEntry(self, entry):
@@ -385,6 +417,11 @@ class GTEntryCollection:
             self._tagByTag[entry._tag] = listindx
             self._tagByRcdAndLabelId[entry.rcdID()] = listindx
             self._tagOrder.insert(index+1, listindx)
+
+            if entry.isInPrepAccount():
+                self._tagsInPrep.append(index)
+                
+            self._newTags.append(index)
             print "   new entry -> " + str(entry)
             # rearrange (=increment) the other account indexes if > index
             for accIndex in sorted(self._accountindexes.items(), key=itemgetter(1)):
@@ -405,6 +442,10 @@ class GTEntryCollection:
         for accIndex in sorted(self._accountindexes.items(), key=itemgetter(1)):
             if accIndex[1] >= index:
                 self._accountindexes[accIndex[0]] = accIndex[1]-1
+        #remove it from the list of tags in prep account
+        if listindx in self._tagsInPrep:
+            self._tagsInPrep.remove(listindx)
+                
         return
 
     def addAccountSubfix(self, subfix):
@@ -423,6 +464,13 @@ class GTEntryCollection:
         for entry in self._tagList:
             entry.setConnect(newconnect)
         return
+
+    def printTagsInPrep(self):
+        if len(self._tagsInPrep) != 0:
+            print "***Warning: the following " + str(len(self._tagsInPrep)) + " tags are read form preparation account:"
+        for idx in self._tagsInPrep:
+            print "   ",self._tagList[idx] 
+    
 
 # read the configuration file
 CONFIGFILE=sys.argv[1]
@@ -488,7 +536,10 @@ if diffconfig.has_option('Account','GlobalSubfix'):
 checkOnTags = 'None'
 if diffconfig.has_option('TagManipulation','check'):
     checkOnTags = diffconfig.get('TagManipulation','check')
-
+    if passwdfile == 'None':
+        print error("***Error:") + " need to specify \'Passwd\' in [Common]"
+        sys.exit(1)
+        
 duplicateTags = 'None'
 duplicateSuffix = ''
 if diffconfig.has_option('TagManipulation','duplicate'):
@@ -703,17 +754,26 @@ for tagidx in range(0,len(tagstobeduplicated)):
         
 # run checks on tags if requested
 
+tagstobechecked = []
+
 if checkOnTags == 'all':
-    print '-- Check tags -----------------------------'
+    print '-- Check all tags...'
+    tagstobechecked = tagCollection._tagOrder
+if checkOnTags == 'new':
+    print '-- Check new/modified tags...'    
+    tagstobechecked = tagCollection._newTags
+
+
     # loop over all entries in the collection
-    for tagidx in range(0,len(tagCollection._tagOrder)):
-        theTag = tagCollection._tagList[tagCollection._tagOrder[tagidx]]
+    for tagidx in range(0,len(tagstobechecked)):
+        theTag = tagCollection._tagList[tagstobechecked[tagidx]]
         outputAndStatus = listIov(theTag.getOraclePfn(isOnline), theTag._tag, passwdfile)
         if outputAndStatus[0] != 0:
             print ' -----'
             print error("***Error:") + " list IOV failed for tag: " + str(theTag)
             print outputAndStatus[1]
             print ''
+        # print outputAndStatus[1]
 
 
 
@@ -721,7 +781,7 @@ if checkOnTags == 'all':
 if len(failedToDuplicateTag) != 0:
     print "Failed to duplicate the following tags:"
     for tag in failedToDuplicateTag:
-        print tag
+        print "   ", tag
 
 
 
@@ -729,11 +789,19 @@ if len(failedToDuplicateTag) != 0:
 if len(falisedToDuplicateIOV) != 0:
     print "Failed to duplicate IOV for the following tags:"
     for tag in falisedToDuplicateIOV:
-        print tag
+        print "   ", tag
+
+
+
+
 
 
 # --------------------------------------------------------------------------
 # Write the new conf file
+
+tagCollection.printTagsInPrep()
+
+
 
 # open output conf file
 conf=open(newconffile,'w')
