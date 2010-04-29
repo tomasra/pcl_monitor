@@ -126,9 +126,9 @@ L1GmtTriggerSource::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
        }
      }
      
-     if(icsc>0 & debug) cout << "Found " << icsc << " valid CSC candidates in bx wrt. L1A = " 
+     if(debug &&icsc>0 ) cout << "Found " << icsc << " valid CSC candidates in bx wrt. L1A = " 
                                      << igmtrr->getBxInEvent() << endl;
-     if(ihalo>0 & debug) cout << "Found " << ihalo << " valid CSC halo candidates in bx wrt. L1A = " 
+     if(debug && ihalo>0 ) cout << "Found " << ihalo << " valid CSC halo candidates in bx wrt. L1A = " 
                                      << igmtrr->getBxInEvent() << endl;
      if(igmtrr->getBxInEvent()==0 && icsc>0) csc_l1a = true;
      if(igmtrr->getBxInEvent()==0 && ihalo>0) halo_l1a = true;
@@ -142,7 +142,7 @@ L1GmtTriggerSource::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
        }
      }
      
-     if(irpcb>0 & debug) cout << "Found " << irpcb << " valid barrel RPC candidates in bx wrt. L1A = " 
+     if(debug && irpcb>0 ) cout << "Found " << irpcb << " valid barrel RPC candidates in bx wrt. L1A = " 
                                      << igmtrr->getBxInEvent() << endl;
      if(igmtrr->getBxInEvent()==0 && irpcb>0) rpcb_l1a = true;
      
