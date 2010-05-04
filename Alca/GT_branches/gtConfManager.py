@@ -483,7 +483,8 @@ class GTDocGenerator:
         self._scope = scope
         self._release = release
         self._change = changelog
-
+        self._isForProd = True
+        
     def isForProd(self, isForProd):
         self._isForProd = isForProd
 
