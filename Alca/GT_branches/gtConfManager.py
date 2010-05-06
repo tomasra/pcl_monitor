@@ -190,46 +190,7 @@ tagCollection = GTEntryCollection()
 
 
 # --------------------------------------------------------------------------
-
-# parse the config file and fill the collection
-configparser=ConfigParser()
-configparser.read(oldfilename)
-data=stripws(configparser.get("TAGINVENTORY",'tagdata'))
-tagcollection=converttagcollection(data)
-
-# parse the tag inventory
-if len(tagcollection)!=0:
-    for item in tagcollection:
-        # create the tag object and populate it
-        tag = GTEntry()
-        tag.setFromTagInventoryLine(item)
-        tagCollection.addEntry(tag)
-
-# --------------------------------------------------------------------------
-# parse the tag tree
-treesection=' '.join(['TAGTREE', OLDGT])
-
-nodecollection = []
-if configparser.has_option(treesection, 'nodedata'):
-    nodedata=stripws(configparser.get(treesection,'nodedata'))
-    nodecollection=convertnodedata(nodedata)
-
-# FIXME not dinamically read from 
-node = 'Calibration'
-globparent = 'All'
-root=stripws(configparser.get(treesection,'root'))
-if configparser.has_option(treesection, 'leafdata'):
-    leafdata=stripws(configparser.get(treesection,'leafdata'))
-    leafcollection=convertnodecollection(leafdata)
-if len(leafcollection)!=0:
-    #inv=tagInventory.tagInventory(session)
-    for leafdata in leafcollection:
-        # print 'again ',myleaf.nodelabel
-        if leafdata.has_key('tagname') is False:
-            raise ValueError, "tagname is not specified for the leaf node "+leafdata['nodelabel']
-        tag = tagCollection.getByTag(leafdata['tagname'])
-        tag.setFromTagTreeLine(leafdata)
-
+fillGTCollection(oldfilename, OLDGT, tagCollection)
 
 # --------------------------------------------------------------------------
 # manipulate the tag collection according to cfg file
@@ -361,6 +322,9 @@ docGenerator.printWikiDoc()
 
 # --------------------------------------------------------------------------
 # Write the new conf file
+node = tagCollection.nodedata()
+root = tagCollection.parent()
+globparent = tagCollection.root()
 
 # open output conf file
 conf=open(newconffile,'w')

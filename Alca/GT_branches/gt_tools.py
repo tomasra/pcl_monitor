@@ -282,8 +282,29 @@ class GTEntryCollection:
         self._tagsInPrep = []
         # list of new/modified tags
         self._newTags = []
+        self._node = ''
+        self._root = ''
+        self._parent = ''
         return
 
+    def nodedata(self):
+        return  self._node
+
+    def root(self):
+        return self._root
+
+    def parent(self):
+        return self._parent
+
+    def setNodedata(self, node):
+        self._node = node
+
+    def setRoot(self, root):
+        self._root = root
+
+    def setParent(self, parent):
+        self._parent = parent
+    
     def addEntry(self, tag):
         # check if this is already in the collection
         if tag._tag in self._tagByTag or tag.rcdID() in self._tagByRcdAndLabelId:
@@ -504,3 +525,43 @@ class GTDocGenerator:
         docfile.close()
 
 
+def fillGTCollection(gtConfFileName, gtName, gtEntryCollection):
+
+    # parse the config file and fill the collection
+    configparser=ConfigParser()
+    configparser.read(gtConfFileName)
+    data=stripws(configparser.get("TAGINVENTORY",'tagdata'))
+    tagcollection=converttagcollection(data)
+
+    # parse the tag inventory
+    if len(tagcollection)!=0:
+        for item in tagcollection:
+            # create the tag object and populate it
+            tag = GTEntry()
+            tag.setFromTagInventoryLine(item)
+            gtEntryCollection.addEntry(tag)
+
+    # --------------------------------------------------------------------------
+    # parse the tag tree
+    treesection=' '.join(['TAGTREE', gtName])
+
+    nodecollection = []
+    if configparser.has_option(treesection, 'nodedata'):
+        nodedata=stripws(configparser.get(treesection,'nodedata'))
+        nodecollection=convertnodedata(nodedata)
+
+    # FIXME not dinamically read from 
+    gtEntryCollection.setNodedata('Calibration')
+    gtEntryCollection.setParent('All')
+    root=stripws(configparser.get(treesection,'root'))
+    gtEntryCollection.setRoot(root)
+    if configparser.has_option(treesection, 'leafdata'):
+        leafdata=stripws(configparser.get(treesection,'leafdata'))
+        leafcollection=convertnodecollection(leafdata)
+    if len(leafcollection)!=0:
+        for leafdata in leafcollection:
+            # print 'again ',myleaf.nodelabel
+            if leafdata.has_key('tagname') is False:
+                raise ValueError, "tagname is not specified for the leaf node "+leafdata['nodelabel']
+            tag = gtEntryCollection.getByTag(leafdata['tagname'])
+            tag.setFromTagTreeLine(leafdata)
