@@ -142,6 +142,9 @@ class GTEntry:
         self._label = ''
         return
 
+    def tagName(self):
+        return self._tag
+
     def __eq__(self, other):
         return  self._leafnode == other._leafnode and self._parent == other._parent and self._tag == other._tag and self._object == other._object and self._pfn == other._pfn and self._account == other._account and self._record == other._record and self._connstring == other._connstring and self._label == other._label 
 
