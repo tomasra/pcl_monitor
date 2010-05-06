@@ -6,7 +6,7 @@ from ConfigParser import ConfigParser
 from copy import copy
 from optparse import OptionParser, Option, OptionValueError
 #import coral
-from CondCore.TagCollection import Node,tagInventory,CommonUtils,entryComment
+#from CondCore.TagCollection import Node,tagInventory,CommonUtils,entryComment
 from operator import itemgetter
 
 # tools for color printout
@@ -801,17 +801,20 @@ if checkOnTags == 'new':
     tagstobechecked = tagCollection._newTags
 
 
-    # loop over all entries in the collection
-    for tagidx in range(0,len(tagstobechecked)):
-        theTag = tagCollection._tagList[tagstobechecked[tagidx]]
-        outputAndStatus = listIov(theTag.getOraclePfn(isOnline), theTag._tag, passwdfile)
-        if outputAndStatus[0] != 0:
-            print ' -----'
-            print error("***Error:") + " list IOV failed for tag: " + str(theTag)
-            print outputAndStatus[1]
-            print ''
-        # print outputAndStatus[1]
+# loop over all entries in the collection
+for tagidx in range(0,len(tagstobechecked)):
+    theTag = tagCollection._tagList[tagstobechecked[tagidx]]
+    outputAndStatus = listIov(theTag.getOraclePfn(isOnline), theTag._tag, passwdfile)
+    if outputAndStatus[0] != 0:
+        print ' -----'
+        print error("***Error:") + " list IOV failed for tag: " + str(theTag)
+        print outputAndStatus[1]
+        print ''
+    else:
+        print '.',
 
+if len(tagstobechecked) != 0:
+    print 'done'
 
 
 # printout from tag manipulation:
