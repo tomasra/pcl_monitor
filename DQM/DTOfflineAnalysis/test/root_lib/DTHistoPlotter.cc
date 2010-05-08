@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2009/07/27 12:35:32 $
- *  $Revision: 1.1 $
+ *  $Date: 2010/03/01 15:14:25 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -733,7 +733,7 @@ void DTHistoPlotter::fitAndDraw(int fileIndex, TH1F *histo) {
   double meanHisto = 0.;
   double rmsHisto = 0.;
 
-  if(hdata.numEntries(kTRUE) != 0) {
+  if(hdata.numEntries() != 0) {
   
     meanHisto = histo->GetMean();
     rmsHisto = histo->GetRMS();
@@ -746,7 +746,7 @@ void DTHistoPlotter::fitAndDraw(int fileIndex, TH1F *histo) {
     myg.paramOn(xplot,RooFit::Layout(0.6, 1, 0.8));
 
   } else {
-    cout << " Histo has no entries: " << hdata.numEntries(kTRUE) << endl;
+    cout << " Histo has no entries: " << hdata.numEntries() << endl;
   }
   stringstream str; str << "c_" << fileIndex << "_";
   TString canvPrefix(str.str().c_str());
@@ -861,7 +861,7 @@ void DTHistoPlotter::fitAllInSet(const TString& set, const TString& options) {
 	    double meanHisto = 0.;
 	    double rmsHisto = 0.;
 
-	    if(hdata.numEntries(kTRUE) != 0) {
+	    if(hdata.numEntries() != 0) {
 	      meanHisto = histo->GetMean();
 	      rmsHisto = histo->GetRMS();
 
@@ -881,7 +881,7 @@ void DTHistoPlotter::fitAllInSet(const TString& set, const TString& options) {
 	      chi2 = xplot.chiSquare();
 	    
 	    } else {
-	      cout << " Histo has no entries: " << hdata.numEntries(kTRUE) << endl;
+	      cout << " Histo has no entries: " << hdata.numEntries() << endl;
 	      res_mean = 0.;
 	      res_mean_err = 0.;
 	      res_sigma1 = 0.;

@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2009/07/27 12:35:44 $
- *  $Revision: 1.3 $
+ *  $Date: 2009/09/11 10:53:22 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -21,6 +21,8 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <stdlib.h>
+
 using namespace std;
 
 
