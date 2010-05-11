@@ -18,8 +18,8 @@ using namespace std;
 
 
 // int NEVENTS = 500000;
-// int NEVENTS = -1;
-int NEVENTS = 5;
+int NEVENTS = -1;
+//int NEVENTS = 1000;
 
 
 string tag = "t0";
@@ -31,39 +31,43 @@ string tag = "t0";
 string version = "test";
 
 
-int debug = 10;
+int debug = 0;
 
 
 // string inputFile = "/data/c/cerminar/data/DTAnalysis/DTCalibration/r67647_" + tag + "_V00/DTLocalRecoAnalysisStd_merged.root";
-string inputFile = "DTLocalRecoAnalysisStd_t4.root";
+string inputFile = "/data/CMS/DtCalibrationGoodCollV9-100507-V03/DTLocalRecoAnalysisStd.root";
 
-string outputFile = "/data/c/cerminar/data/DTAnalysis/DTCalibration/histo_" + tag  + "_" + version + ".root";
+string outputFile = "test.root";
 
 void readTree() {
   TTreeReader *reader = new TTreeReader(inputFile, outputFile);
   reader->setDebug(debug);
+  reader->setGranularity("station");
+  reader->setGranularity("statByView");
+  reader->setGranularity("chamberByView");
+
   // all segments
 //   DTCut stdCut;
 //   reader->setCuts("all",stdCut);
   // only segments with 12 hits
   DTCut hqCut;
-  hqCut.setSegmNHits(12,12);
-  reader->setCuts("hq",hqCut);
+  hqCut.setSegmNHits(5,100);
+  reader->setCuts("Cut1",hqCut);
 
-  DTCut hqPhiCut;
-  hqPhiCut.setSegmNHitsPhi(7,9);
-  reader->setCuts("hqPhi",hqPhiCut);
+//   DTCut hqPhiCut;
+//   hqPhiCut.setSegmNHitsPhi(7,9);
+//   reader->setCuts("hqPhi",hqPhiCut);
 
-  DTCut hqPhiVCut;
-  hqPhiVCut.setSegmNHitsPhi(7,9);
-  hqPhiVCut.setSegmPhiAngle((90.-15.)*TMath::DegToRad(), (90.+15.)*TMath::DegToRad());
-  reader->setCuts("hqPhiV",hqPhiVCut);
+//   DTCut hqPhiVCut;
+//   hqPhiVCut.setSegmNHitsPhi(7,9);
+//   hqPhiVCut.setSegmPhiAngle((90.-15.)*TMath::DegToRad(), (90.+15.)*TMath::DegToRad());
+//   reader->setCuts("hqPhiV",hqPhiVCut);
 
-  DTCut hqPhiVVCut;
-  hqPhiVVCut.setSegmNHitsPhi(7,9);
-  hqPhiVVCut.setSegmNHitsTheta(4,5);
-  hqPhiVVCut.setSegmPhiAngle((90.-5.)*TMath::DegToRad(), (90.+5.)*TMath::DegToRad());
-  reader->setCuts("hqPhiVV",hqPhiVVCut);
-
+//   DTCut hqPhiVVCut;
+//   hqPhiVVCut.setSegmNHitsPhi(7,9);
+//   hqPhiVVCut.setSegmNHitsTheta(4,5);
+//   hqPhiVVCut.setSegmPhiAngle((90.-5.)*TMath::DegToRad(), (90.+5.)*TMath::DegToRad());
+//   reader->setCuts("hqPhiVV",hqPhiVVCut);
+               
   reader->analyse(NEVENTS);
 }

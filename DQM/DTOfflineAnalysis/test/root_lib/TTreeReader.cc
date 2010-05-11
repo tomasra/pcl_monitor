@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2009/07/27 12:35:44 $
- *  $Revision: 1.3 $
+ *  $Date: 2010/03/01 15:14:25 $
+ *  $Revision: 1.4 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -20,6 +20,8 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <cmath>
+
 using namespace std;
 
 
@@ -46,7 +48,7 @@ TTreeReader::TTreeReader(const TString& fileName, const TString& outputFile) : t
 
   // default values
   setGranularity("SL");
-
+  
 }
 
 TTreeReader::~TTreeReader(){}
@@ -59,14 +61,28 @@ void TTreeReader::setBranchAddresses() {
 }
 
 
-
+TH2F *hDeltaSectVsDeltaStat = 0;
+HSegment *hAll;
 
 void TTreeReader::begin() {
   cout << "Begin" << endl;
 
+  hDeltaSectVsDeltaStat = new TH2F("hDeltaSectVsDeltaStat","hDeltaSectVsDeltaStat", 4, 0, 4, 12, 0, 12);
+  hAll = new HSegment("ALL");
+
   // build the histos with the desired granularity
   for(int wheel = -2; wheel != 3; ++wheel) {   // loop over wheels
     for(int station = 1; station != 5; ++station) { // loop over stations
+
+//       TString setName = "AllSect";
+//       DTDetId chId(wheel, station, 0, 0, 0, 0);
+//       if(histosSeg[setName].find(chId) == histosSeg[setName].end()) {
+// 	histosSeg[setName][chId] = new HSegment(Utils::getHistoNameFromDetIdAndSet(chId, setName));
+//       }
+//       if(histosRes[setName].find(chId) == histosRes[setName].end()) {
+//       	histosRes[setName][chId] = new HRes1DHits(Utils::getHistoNameFromDetIdAndSet(chId, setName));
+//       }
+
       for(int sector = 1; sector != 15; ++sector) { // loop over sectors
 	if(station != 4 && (sector == 13 || sector == 14)) continue;
 
@@ -94,6 +110,7 @@ void TTreeReader::begin() {
 		++set) {
 	      TString setName = (*set).first;
 	      if(histosRes[setName].find(detId) == histosRes[setName].end()) {
+		cout << "book histo for: " << Utils::getHistoNameFromDetIdAndSet(detId, setName) << endl;
 		histosRes[setName][detId] = new HRes1DHits(Utils::getHistoNameFromDetIdAndSet(detId, setName));
 	      }
 	    }
@@ -110,10 +127,30 @@ void TTreeReader::processEvent(int entry) {
     cout << "-----  Process event " << entry << endl;
   }
   
-  
+  //cout << " # segm: " << segments->GetEntriesFast() << endl;
+
+
   for(int iSegm=0; iSegm < segments->GetEntriesFast(); iSegm++) { // loop over segments 
 
     DTSegmentObject *oneSeg = (DTSegmentObject *) segments->At(iSegm);
+
+    if(iSegm != 0) {
+      for(int iPrev = 0; iPrev < iSegm; ++iPrev) {
+	DTSegmentObject *prevSeg = (DTSegmentObject *) segments->At(iPrev);
+	hDeltaSectVsDeltaStat->Fill(fabs(prevSeg->station - oneSeg->station), fabs(prevSeg->sector - oneSeg->sector));	
+      }
+    }
+    hAll->Fill(oneSeg->nHits,
+	       oneSeg->nHitsPhi,
+	       oneSeg->nHitsTheta,
+	       oneSeg->proj,
+	       oneSeg->phi,
+	       oneSeg->theta,
+	       -1,
+	       oneSeg->chi2,
+	       oneSeg->t0SegPhi,
+	       oneSeg->t0SegTheta,
+	       oneSeg->vDriftCorrPhi);
 
     bool passHqPhiV = false; 
     DTDetId chId(oneSeg->wheel, oneSeg->station, oneSeg->sector, 0, 0, 0);
@@ -166,15 +203,16 @@ void TTreeReader::processEvent(int entry) {
 	cout << "       res dist: " << hitObj->resDist << endl;
 	cout << "       digi time: " << hitObj->digiTime << endl;
       }
-
+      int segSl = hitObj->sl;
+      if((theGranularity == 3 || theGranularity == 4) &&   hitObj->sl == 3) segSl = 1;
       DTDetId detIdForPlot = buildDetid(oneSeg->wheel, oneSeg->station, oneSeg->sector,
-					hitObj->sl, hitObj->layer, hitObj->wire);
+					segSl, hitObj->layer, hitObj->wire);
       vector<TString>::const_iterator cut =  passedCuts.begin();
 //       for(// set<TString>::const_iterator cut = passedCuts.begin();
 // 	  cut != passedCuts.end(); ++cut) {
       while(cut != passedCuts.end()) {
 	histosRes[*cut][detIdForPlot]->Fill(hitObj->resDist, hitObj->distFromWire, hitObj->resPos,
-					 hitObj->Y, hitObj->angle, hitObj->sigmaPos);
+					    hitObj->Y, hitObj->angle, hitObj->sigmaPos);
 	++cut;
       }
     }
@@ -203,6 +241,8 @@ void TTreeReader::end() {
       (*hist).second->Write();
     }
   }
+  hDeltaSectVsDeltaStat->Write();
+  hAll->Write();
   theFile->Close();
 }
 
@@ -225,18 +265,33 @@ void TTreeReader::analyse(const int nEventMax) {
 DTDetId TTreeReader::buildDetid(int wheel, int station, int sector, int sl, int layer, int wire) const {
   if(theGranularity == 1) {
     return DTDetId(wheel, station, sector, sl, 0, 0);
+  } else if(theGranularity == 2) {
+    return DTDetId(wheel, station, 0, 0, 0, 0);
+  } else if(theGranularity == 3) {
+    return DTDetId(wheel, station, 0, sl, 0, 0);
+  } else if(theGranularity == 4) {
+    return DTDetId(wheel, station, sector, sl, 0, 0);
   }
-  
   return DTDetId(0, 0, 0, 0, 0, 0);
   
 }
 
 
 void TTreeReader::setGranularity(const TString& granularity) {
-  if(granularity == "SL" || granularity == "sl") theGranularity = 1;
+  if(granularity == "SL" || granularity == "sl") {
+    theGranularity = 1;
+    cout << "Granularity: SL" << endl;
+  } else if(granularity == "Station" || granularity == "station") {
+    cout << "Granularity: Station" << endl;
+    theGranularity = 2;
+  } else if(granularity == "statByView") {
+    cout << "Granularity: Station by view" << endl;
+    theGranularity = 3;
+  } else if(granularity == "chamberByView") {
+    cout << "Granularity: Chamber by view" << endl;
+    theGranularity = 4;
+  }
 }
-
-
 // TString TTreeReader::getNameFromDetId(const DTDetId& detId) const {
 //   stringstream wheelStr; 
 //   if(detId.wheel == 0) wheelStr << "all";
