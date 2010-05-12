@@ -4,8 +4,8 @@
 /*
  * \file DTLocalRecoAnalysis.h
  *
- * $Date: 2008/12/03 10:41:11 $
- * $Revision: 1.1 $
+ * $Date: 2009/04/14 17:32:06 $
+ * $Revision: 1.2 $
  * \author M. Zanetti & G. Cerminara - INFN Padova & Torino
  *
 */
@@ -40,7 +40,7 @@ protected:
 void analyze(const edm::Event& event, const edm::EventSetup& setup);
 
 // BeginJob
-void beginJob(const edm::EventSetup& setup);
+void beginJob();
 
 // EndJob
 void endJob();
