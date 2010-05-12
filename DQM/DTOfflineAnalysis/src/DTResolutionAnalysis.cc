@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2009/03/04 12:34:44 $
- *  $Revision: 1.2 $
+ *  $Date: 2009/04/14 17:32:06 $
+ *  $Revision: 1.3 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -342,7 +342,7 @@ void DTResolutionAnalysis::endJob() {
 
 
 // BeginJob
-void DTResolutionAnalysis::beginJob(const EventSetup& setup) {
+void DTResolutionAnalysis::beginJob() {
   
   // book histos
   for(int wheel = -2; wheel != 3; ++wheel) { // Loop over wheel

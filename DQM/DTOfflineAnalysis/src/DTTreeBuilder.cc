@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/03/01 15:10:24 $
- *  $Revision: 1.5 $
+ *  $Date: 2010/05/12 15:24:25 $
+ *  $Revision: 1.6 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -136,10 +136,10 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 
       int projection = -1;
 
+
 //       float t0phi = -1;
 //       float t0theta = -1;
-      
-//      float vDrift = -1;
+//       float vDrift = -1;
 
       if((*segment4D).hasPhi()) {
 	if(debug) cout << "  segment has phi projection" << endl;
@@ -331,7 +331,7 @@ void DTTreeBuilder::endJob() {
 
 
 // BeginJob
-void DTTreeBuilder::beginJob(const EventSetup& setup) {
+void DTTreeBuilder::beginJob() {
   // create the tree
   theFile->cd();
   

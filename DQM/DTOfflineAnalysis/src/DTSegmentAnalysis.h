@@ -10,8 +10,8 @@
  *  All histos are produce per Chamber
  *
  *
- *  $Date: 2008/12/03 10:41:13 $
- *  $Revision: 1.1 $
+ *  $Date: 2009/03/04 12:34:44 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -37,7 +37,7 @@ public:
   virtual ~DTSegmentAnalysis();
 
   // Operations
-  void beginJob(const edm::EventSetup& setup);
+  void beginJob();
   void analyze(const edm::Event& event, const edm::EventSetup& setup);
   void endJob();
   

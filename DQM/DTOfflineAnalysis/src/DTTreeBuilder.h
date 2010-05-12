@@ -13,8 +13,8 @@
  *  All histos are produce per SuperLayer.
  *
  *
- *  $Date: 2009/07/16 12:16:17 $
- *  $Revision: 1.2 $
+ *  $Date: 2010/05/12 15:24:25 $
+ *  $Revision: 1.3 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -43,7 +43,7 @@ public:
 
   // Operations
   void analyze(const edm::Event& event, const edm::EventSetup& setup);
-  void beginJob(const edm::EventSetup& setup);
+  void beginJob();
   void endJob();
 
 protected:

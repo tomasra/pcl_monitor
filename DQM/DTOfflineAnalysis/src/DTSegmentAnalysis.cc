@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2008/12/03 10:41:13 $
- *  $Revision: 1.1 $
+ *  $Date: 2009/03/04 12:34:44 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -147,7 +147,7 @@ void DTSegmentAnalysis::endJob() {
 
 
 // BeginJob
-void DTSegmentAnalysis::beginJob(const EventSetup& setup) {
+void DTSegmentAnalysis::beginJob() {
   
   // book histos
   

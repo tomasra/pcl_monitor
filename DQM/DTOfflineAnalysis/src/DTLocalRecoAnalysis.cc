@@ -1,8 +1,8 @@
 /*
  * \file DTLocalRecoAnalysis.cc
  * 
- * $Date: 2009/03/04 12:34:44 $
- * $Revision: 1.2 $
+ * $Date: 2009/04/14 17:32:06 $
+ * $Revision: 1.3 $
  * \author M. Zanetti - INFN Padova
  *
 */
@@ -62,15 +62,15 @@ DTLocalRecoAnalysis::~DTLocalRecoAnalysis(){
 
 }
 
-void DTLocalRecoAnalysis::beginJob(const EventSetup& setup){
+void DTLocalRecoAnalysis::beginJob(){
 
   //dbe->
   if(doSegmentAnalysis)
-    theSegmentAnalysis->beginJob(setup);
+    theSegmentAnalysis->beginJob();
   if(doResolutionAnalysis)
-    theResolutionAnalysis->beginJob(setup);
+    theResolutionAnalysis->beginJob();
   if(doTreeBuilder)
-    theTreeBuilder->beginJob(setup);
+    theTreeBuilder->beginJob();
 
 
 }
