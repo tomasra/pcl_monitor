@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2009/07/16 14:47:09 $
- *  $Revision: 1.4 $
+ *  $Date: 2010/03/01 15:10:24 $
+ *  $Revision: 1.5 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -106,14 +106,17 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
    	cout<<"Looping on 4D rechits: -------------------------"<<endl;
 	cout << "   == RecSegment dimension: " << (*segment4D).dimension() << endl;
       }
+
+      // NA: For the time being, keep ALL 4D segments
       // If Statio != 4 skip RecHits with dimension != 4
       // For the Station 4 consider 2D RecHits
-      if((*segment4D).dimension() != 4) {
-	if(debug)
-	  cout << "[DTTreeBuilder]***Warning: RecSegment dimension is not 4 but "
-	       << (*segment4D).dimension() << ", skipping!" << endl;
-	continue;
-      } 
+//       if((*segment4D).dimension() != 4) {
+// 	if(debug)
+// 	  cout << "[DTTreeBuilder]***Warning: RecSegment dimension is not 4 but "
+// 	       << (*segment4D).dimension() << ", skipping!" << endl;
+// 	continue;
+//       }
+      
 
       // Get all 1D RecHits at step 3 within the 4D segment
       vector<DTRecHit1D> recHits1D_S3;
@@ -122,17 +125,21 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
       DTSegmentObject * segmObj = new((*segmentArray)[segmCounter++]) DTSegmentObject((*chamberId).wheel(), (*chamberId).station(), (*chamberId).sector());
       LocalPoint segment4DLocalPos = (*segment4D).localPosition();
       segmObj->setPositionInChamber(segment4DLocalPos.x(), segment4DLocalPos.y(), segment4DLocalPos.z());
-      segmObj->phi = angleBtwPiAndPi((*segment4D).localDirection().phi());
-      segmObj->theta = angleBtwPiAndPi((*segment4D).localDirection().theta());
+
+      float dxdz =angleBtwHPiAndHPi(std::atan2((*segment4D).localDirection().x(),(*segment4D).localDirection().z()));
+      float dydz = angleBtwHPiAndHPi(std::atan2((*segment4D).localDirection().y(),(*segment4D).localDirection().z()));      
+
+      segmObj->phi = dxdz;
+      segmObj->theta = dydz;
       segmObj->chi2 = (*segment4D).chi2()/(*segment4D).degreesOfFreedom();
 
 
       int projection = -1;
 
-      float t0phi = -1;
-      float t0theta = -1;
+//       float t0phi = -1;
+//       float t0theta = -1;
       
-      float vDrift = -1;
+//      float vDrift = -1;
 
       if((*segment4D).hasPhi()) {
 	if(debug) cout << "  segment has phi projection" << endl;
@@ -241,12 +248,12 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	if(sl == 1 || sl == 3) {
 	  // RPhi SL
 	  distSegmToWire = fabs(wirePosInChamber.x() - segPosAtZWire.x());
-	  angle = angleBtwPiAndPi((*segment4D).localDirection().phi());
+	  angle = dxdz;
 	} else if(sl == 2) {
 	  // RZ SL
 	  //x in layer and y in chamber are in opposite direction in sl theta
 	  distSegmToWire = fabs(segPosAtZWire.y() - wirePosInChamber.y());
-	  angle = angleBtwPiAndPi((*segment4D).localDirection().theta());
+	  angle = dydz;
 	}
 
 
@@ -345,5 +352,10 @@ double DTTreeBuilder::angleBtwPiAndPi(double angle) const {
   return angle;
 }
 
+double DTTreeBuilder::angleBtwHPiAndHPi(double angle) const {
+  while(angle >= TMath::PiOver2()) angle -= TMath::Pi();
+  while(angle < -TMath::PiOver2()) angle += TMath::Pi();
+  return angle;
+}
 
 
