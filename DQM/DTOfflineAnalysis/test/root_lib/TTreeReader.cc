@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/03/01 15:14:25 $
- *  $Revision: 1.4 $
+ *  $Date: 2010/05/11 10:21:51 $
+ *  $Revision: 1.5 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -92,7 +92,8 @@ void TTreeReader::begin() {
 	    set != cutSets.end();
 	    ++set) {
 	  TString setName = (*set).first;
-	  DTDetId chId(wheel, station, sector, 0, 0, 0);
+	  //DTDetId chId(wheel, station, sector, 0, 0, 0);
+	  DTDetId chId = buildDetid(wheel, station, sector, 0, 0, 0);
 	  if(histosSeg[setName].find(chId) == histosSeg[setName].end()) {
 	    histosSeg[setName][chId] = new HSegment(Utils::getHistoNameFromDetIdAndSet(chId, setName));
 	  }
@@ -153,7 +154,7 @@ void TTreeReader::processEvent(int entry) {
 	       oneSeg->vDriftCorrPhi);
 
     bool passHqPhiV = false; 
-    DTDetId chId(oneSeg->wheel, oneSeg->station, oneSeg->sector, 0, 0, 0);
+    DTDetId chId = buildDetid(oneSeg->wheel, oneSeg->station, oneSeg->sector, 0, 0, 0);
     // select segments
     vector<TString> passedCuts;
     // loop over set of cuts
@@ -271,6 +272,8 @@ DTDetId TTreeReader::buildDetid(int wheel, int station, int sector, int sl, int 
     return DTDetId(wheel, station, 0, sl, 0, 0);
   } else if(theGranularity == 4) {
     return DTDetId(wheel, station, sector, sl, 0, 0);
+  } else if(theGranularity == 5) {
+    return DTDetId(wheel, station, 0, sl, 0, 0);
   }
   return DTDetId(0, 0, 0, 0, 0, 0);
   
@@ -287,9 +290,12 @@ void TTreeReader::setGranularity(const TString& granularity) {
   } else if(granularity == "statByView") {
     cout << "Granularity: Station by view" << endl;
     theGranularity = 3;
-  } else if(granularity == "chamberByView") {
+  }  else if(granularity == "chamberByView") {
     cout << "Granularity: Chamber by view" << endl;
     theGranularity = 4;
+  } else if(granularity == "statBySL") {
+    cout << "Granularity: Station by SL" << endl;
+    theGranularity = 5;
   }
 }
 // TString TTreeReader::getNameFromDetId(const DTDetId& detId) const {

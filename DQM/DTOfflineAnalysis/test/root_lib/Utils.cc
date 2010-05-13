@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2009/07/27 12:35:32 $
- *  $Revision: 1.1 $
+ *  $Date: 2009/09/11 10:53:22 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -22,8 +22,9 @@ Utils::~Utils(){}
 
 TString Utils::getHistoNameFromDetId(const DTDetId& detId) {
   stringstream wheelStr; 
-  if(detId.wheel == 0) wheelStr << "all";
-  else wheelStr << detId.wheel;
+//   if(detId.wheel == 0) wheelStr << "all";
+//   else wheelStr << detId.wheel;
+  wheelStr << detId.wheel;
 
   stringstream stationStr; 
   if(detId.station == 0) stationStr << "all";

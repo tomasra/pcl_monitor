@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/03/01 15:14:25 $
- *  $Revision: 1.2 $
+ *  $Date: 2010/05/08 11:01:13 $
+ *  $Revision: 1.3 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -105,7 +105,7 @@ TH1F * DTHistoPlotter::plotSegmAngleSLTheta(const int fileN,
 					    const TString& drawOptions) {
   DTDetId detId(wheel, station, sector, 0, 0, 0);
   HSegment *hSeg = getHistoSeg(fileN, set, detId);
-  TH1F *histo = hSeg->hNHitsTheta;
+  TH1F *histo = hSeg->hThetaLoc;
   if(histo !=0) {
     drawHisto(fileN, histo, drawOptions);
   }
@@ -125,6 +125,7 @@ TH1F * DTHistoPlotter::plotSegmAngleSLPhi(const int fileN,
     drawHisto(fileN, histo, drawOptions);
   }
 
+    return histo;
   // Get the number of bins
   const int nBins = histo->GetNbinsX();
 

@@ -35,7 +35,7 @@ int debug = 0;
 
 
 // string inputFile = "/data/c/cerminar/data/DTAnalysis/DTCalibration/r67647_" + tag + "_V00/DTLocalRecoAnalysisStd_merged.root";
-string inputFile = "/data/CMS/DtCalibrationGoodCollV9-100507-V03/DTLocalRecoAnalysisStd.root";
+string inputFile = "/data/CMS/DtCalibrationGoodCollV9-100507-V03_Fix/DTLocalRecoAnalysisStd.root";
 
 string outputFile = "test.root";
 
@@ -44,7 +44,8 @@ void readTree() {
   reader->setDebug(debug);
   reader->setGranularity("station");
   reader->setGranularity("statByView");
-  reader->setGranularity("chamberByView");
+  reader->setGranularity("statBySL");
+  //reader->setGranularity("chamberByView");
 
   // all segments
 //   DTCut stdCut;
@@ -52,6 +53,8 @@ void readTree() {
   // only segments with 12 hits
   DTCut hqCut;
   hqCut.setSegmNHits(5,100);
+  hqCut.setSegmNHitsPhi(6,10);
+  hqCut.setSegmNHitsTheta(4,6);
   reader->setCuts("Cut1",hqCut);
 
 //   DTCut hqPhiCut;
