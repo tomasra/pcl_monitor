@@ -2,14 +2,15 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/05/12 15:24:25 $
- *  $Revision: 1.6 $
+ *  $Date: 2010/05/12 15:29:17 $
+ *  $Revision: 1.7 $
  *  \author G. Cerminara - INFN Torino
  */
 
 #include "DTTreeBuilder.h"
 #include "DTSegmentObject.h"
 #include "DTHitObject.h"
+#include "DTMuObject.h"
 
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/EventSetup.h"
@@ -30,6 +31,11 @@
 #include "CondFormats/DTObjects/interface/DTT0.h"
 #include "CondFormats/DataRecord/interface/DTT0Rcd.h"
 
+#include "DataFormats/MuonReco/interface/Muon.h"
+#include "DataFormats/MuonReco/interface/MuonFwd.h"
+#include "DataFormats/PatCandidates/interface/Muon.h"
+#include "DataFormats/Math/interface/LorentzVector.h"
+#include "DataFormats/MuonReco/interface/MuonSelectors.h"
 
 #include <iterator>
 #include <vector>
@@ -42,13 +48,15 @@
 
 using namespace edm;
 using namespace std;
+using namespace reco;
 
 DTTreeBuilder::DTTreeBuilder(const ParameterSet& pset, TFile* file) : theFile(file) {
   debug = pset.getUntrackedParameter<bool>("debug","false");
   // the name of the 4D rec hits collection
   theRecHits4DLabel = pset.getParameter<string>("recHits4DLabel");
   theRecHitLabel = pset.getParameter<string>("recHitLabel");
-
+  theMuonLabel = pset.getParameter<string>("muonLabel");
+ 
   checkNoisyChannels = pset.getUntrackedParameter<bool>("checkNoisyChannels","false");
 }
 
@@ -300,13 +308,78 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 
     }// End of loop over the segm4D of this ChamerId
  }
-  // -----------------------------------------------------------------------------
+
+
+  // Look at muons -----------------------------------------------------------------------------
+
+  Handle<MuonCollection> muons;
+  event.getByLabel(theMuonLabel, muons);
+
+  int muCounter = 0;
+
+  if(muons.isValid()) {
+    for (MuonCollection::const_iterator muon = muons->begin();
+	 muon!=muons->end(); ++muon) { // loop over all muons
+
+      DTMuObject * muObj = new((*muArray)[muCounter++]) DTMuObject();
+
+      muObj->eta = (*muon).eta();
+      muObj->phi = (*muon).phi();
+      muObj->qpt = (*muon).pt()*(*muon).charge();
+
+      if (muon->isGlobalMuon()) {
+	muObj->nMuHits    =(*muon).globalTrack()->hitPattern().numberOfValidMuonHits();
+	muObj->nStripHits =(*muon).globalTrack()->hitPattern().numberOfValidStripHits();
+	muObj->nPixHits   =(*muon).globalTrack()->hitPattern().numberOfValidPixelHits();
+      } else if (muon->isStandAloneMuon()) {
+	//	muObj->nMuHits    =(*muon).outerTrack()->hitPattern().numberOfValidMuonHits();
+      }
+      
+      
+      float normChi2tk  = -1;
+      float normChi2sta = -1;
+      float normChi2glb = -1;
+      int type = 0;      
+      if(muon->isStandAloneMuon()) {
+	normChi2sta = (*muon).outerTrack()->normalizedChi2();
+	if(muon->isGlobalMuon()) {
+	  normChi2tk = (*muon).innerTrack()->normalizedChi2();
+	  normChi2glb = (*muon).globalTrack()->normalizedChi2();
+	  if(muon->isTrackerMuon()) { 
+	   type = 1; // STA + GLB + TM
+	  } else type = 2; // STA + GLB
+	} else {
+	  if(muon->isTrackerMuon()) {
+	    normChi2tk = (*muon).innerTrack()->normalizedChi2();
+	    type = 3;  // STA + TM
+	  } else type= 5; // STA
+	} 
+      } else {
+	if(muon->isTrackerMuon()) type = 4; // TM
+	normChi2tk = (*muon).innerTrack()->normalizedChi2();
+      }
+          
+
+      muObj->normChi2tk=normChi2tk;
+      muObj->normChi2sta=normChi2sta;
+      muObj->normChi2glb=normChi2glb;
+      muObj->type=type;
+
+      // If you look at MuonSegmentMatcher class you will see a lot of interesting quantities to look at!
+      // you can get the list of matched info using matches()
+      // hChamberMatched->Fill(muon->numberOfChambers());
+
+      int sel = 0;
+      if(muon::isGoodMuon(*muon,muon::GlobalMuonPromptTight)) sel=1;
+      muObj->sel = sel;
+    }
+  }
 
 
   theTree->Fill();
 //   cout << " clear the array" << endl;
   segmentArray->Delete();
-
+  muArray->Delete();
 //   segmentArray->Clear();
   
 
@@ -336,13 +409,14 @@ void DTTreeBuilder::beginJob() {
   theFile->cd();
   
   segmentArray = new TClonesArray("DTSegmentObject");
+  muArray = new TClonesArray("DTMuObject");
 
 
   theTree = new TTree("DTSegmentTree","DTSegmentTree");
   theTree->SetAutoSave(10000000);
 
-  theTree->Branch("segments", "TClonesArray", &segmentArray);
-  
+  theTree->Branch("segments", "TClonesArray", &segmentArray);  
+  theTree->Branch("muons", "TClonesArray", &muArray);
 }
 
 

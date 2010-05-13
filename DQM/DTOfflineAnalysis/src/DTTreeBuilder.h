@@ -13,8 +13,8 @@
  *  All histos are produce per SuperLayer.
  *
  *
- *  $Date: 2010/05/12 15:24:25 $
- *  $Revision: 1.3 $
+ *  $Date: 2010/05/12 15:30:47 $
+ *  $Revision: 1.4 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -59,10 +59,12 @@ private:
   TFile* theFile;
 
   bool debug;
-  // Lable of 4D segments in the event
+  // Label of 4D segments in the event
   std::string theRecHits4DLabel;
-  // Lable of 1D rechits in the event
+  // Label of 1D rechits in the event
   std::string theRecHitLabel;
+  // Label of muon collection in the event
+  std::string theMuonLabel;
   
   // Switch for checking of noisy channels
   bool checkNoisyChannels;
@@ -70,6 +72,7 @@ private:
 
   TTree *theTree;
   TClonesArray *segmentArray;
+  TClonesArray *muArray;
   edm::ESHandle<DTTtrig> tTrigMap;
   edm::ESHandle<DTT0> t0Handle;
 
