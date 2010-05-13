@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/05/12 15:29:17 $
- *  $Revision: 1.7 $
+ *  $Date: 2010/05/13 16:36:19 $
+ *  $Revision: 1.8 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -327,12 +327,15 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
       muObj->phi = (*muon).phi();
       muObj->qpt = (*muon).pt()*(*muon).charge();
 
+      if(debug)
+	cout << "muon eta, phi:" << muObj->eta << " " << muObj->phi << endl;
+      
       if (muon->isGlobalMuon()) {
 	muObj->nMuHits    =(*muon).globalTrack()->hitPattern().numberOfValidMuonHits();
 	muObj->nStripHits =(*muon).globalTrack()->hitPattern().numberOfValidStripHits();
 	muObj->nPixHits   =(*muon).globalTrack()->hitPattern().numberOfValidPixelHits();
       } else if (muon->isStandAloneMuon()) {
-	//	muObj->nMuHits    =(*muon).outerTrack()->hitPattern().numberOfValidMuonHits();
+	muObj->nMuHits    =(*muon).outerTrack()->hitPattern().numberOfValidMuonHits();
       }
       
       
@@ -416,7 +419,7 @@ void DTTreeBuilder::beginJob() {
   theTree->SetAutoSave(10000000);
 
   theTree->Branch("segments", "TClonesArray", &segmentArray);  
-  theTree->Branch("muons", "TClonesArray", &muArray);
+  theTree->Branch("muonCands", "TClonesArray", &muArray);
 }
 
 
