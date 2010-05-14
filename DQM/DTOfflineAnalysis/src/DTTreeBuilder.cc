@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/05/13 16:36:19 $
- *  $Revision: 1.8 $
+ *  $Date: 2010/05/13 17:51:56 $
+ *  $Revision: 1.9 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -331,11 +331,17 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	cout << "muon eta, phi:" << muObj->eta << " " << muObj->phi << endl;
       
       if (muon->isGlobalMuon()) {
-	muObj->nMuHits    =(*muon).globalTrack()->hitPattern().numberOfValidMuonHits();
 	muObj->nStripHits =(*muon).globalTrack()->hitPattern().numberOfValidStripHits();
 	muObj->nPixHits   =(*muon).globalTrack()->hitPattern().numberOfValidPixelHits();
-      } else if (muon->isStandAloneMuon()) {
-	muObj->nMuHits    =(*muon).outerTrack()->hitPattern().numberOfValidMuonHits();
+	muObj->nMuHits    =(*muon).globalTrack()->hitPattern().numberOfValidMuonHits();
+      } else {
+	if (muon->isStandAloneMuon()) {
+	  muObj->nMuHits    =(*muon).outerTrack()->hitPattern().numberOfValidMuonHits();	
+	}
+	if (muon->isTrackerMuon()) {	
+	  muObj->nStripHits =(*muon).innerTrack()->hitPattern().numberOfValidStripHits();
+	  muObj->nPixHits   =(*muon).innerTrack()->hitPattern().numberOfValidPixelHits();
+	}
       }
       
       

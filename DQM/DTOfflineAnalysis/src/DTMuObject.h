@@ -4,8 +4,8 @@
 /** \class DTMuObject
  *  No description available.
  *
- *  $Date: 2009/07/16 14:47:09 $
- *  $Revision: 1.3 $
+ *  $Date: 2010/05/13 17:59:16 $
+ *  $Revision: 1.1 $
  */
 
 #if !defined(__CINT__)||  defined(__MAKECINT__)
@@ -28,10 +28,6 @@ public:
   float eta;
   float phi;
   float qpt;
-
-  int wheel;
-  int station;
-  int sector;
   
   int nMuHits;
   int nStripHits;
