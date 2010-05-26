@@ -30,7 +30,7 @@ diffconfig = ConfigParser()
 diffconfig.optionxform = str
 
 print 'Reading configuration file from ',CONFIGFILE
-diffconfig.read(CONFIGFILE)
+diffconfig.read([ CONFIGFILE, 'GT_branches/Comments.cfg'])
 
 # this is for [COMMON] part of the myconf.conf
 
@@ -54,6 +54,10 @@ if diffconfig.has_option('Common','Environment'):
     if envir == 'online':
         isOnline = True
 
+gttype = 'data'
+if diffconfig.has_option('Common','GTType'):
+    gttype = diffconfig.get('Common','GTType')
+    
 if OLDGT == NEWGT:
     print error("*** Error") + " new and old GT names are the same, old: " + OLDGT + " new: " +  NEWGT
     sys.exit(1)
@@ -86,6 +90,12 @@ if diffconfig.has_option('TagManipulation','check'):
     if passwdfile == 'None':
         print error("***Error:") + " need to specify \'Passwd\' in [Common]"
         sys.exit(1)
+
+
+checkOnOnlineConnect = 'None'
+if diffconfig.has_option('TagManipulation','checkOnlineConnect'):
+    checkOnOnlineConnect = diffconfig.get('TagManipulation','checkOnlineConnect')
+    
 
 duplicateTags = 'None'
 duplicateSuffix = ''
@@ -141,6 +151,8 @@ if diffconfig.has_section("AddRecord"):
         newentry = GTEntry()
         newentry.setFromCfgLine(record)
         newentries.append(newentry)
+        if diffconfig.has_option('TagComments', newentry.tagName()):
+            docGenerator.addChange(diffconfig.get('TagComments', newentry.tagName()))
         #print "   " + str(newentry)
 
 
@@ -199,6 +211,8 @@ if(len(replacetags) != 0):
     print "Replace tags:"
     for oldtag, newtag in replacetags.iteritems():
         tagCollection.modifyEntryTag(oldtag, newtag)
+        if diffconfig.has_option('TagComments', newtag):
+            docGenerator.addChange(diffconfig.get('TagComments', newtag))
 
 if(len(replaceconnect) != 0):
     print "Replace connect:"
@@ -274,6 +288,15 @@ if checkOnTags == 'new':
     print '-- Check new/modified tags...'    
     tagstobechecked = tagCollection._newTags
 
+tagstobecheckedforonlineconn = []
+if checkOnOnlineConnect == 'all':
+    print '-- Check all tags for HLT connect...'
+    tagstobecheckedforonlineconn = tagCollection._tagOrder
+if checkOnOnlineConnect == 'new':
+    print '-- Check new/modified tags for HLT connect...'    
+    tagstobecheckedforonlineconn = tagCollection._newTags
+
+
 
 # loop over all entries in the collection
 for tagidx in range(0,len(tagstobechecked)):
@@ -285,12 +308,23 @@ for tagidx in range(0,len(tagstobechecked)):
         print outputAndStatus[1]
         print ''
     else:
+        iovtable = IOVTable()
+        iovtable.setFromListIOV(outputAndStatus[1])
+        iovtable.checkConsitency(gttype)
         print '.',
 
 if len(tagstobechecked) != 0:
     print 'done'
 
 
+
+# loop over all entries in the collection
+for tagidx in range(0,len(tagstobecheckedforonlineconn)):
+    theTag = tagCollection._tagList[tagstobecheckedforonlineconn[tagidx]]
+    if not theTag.isOnlineConnect():
+        print error("***Error ") + str(theTag) + " has connect: " + theTag._connstring
+    
+   
 # printout from tag manipulation:
 if len(failedToDuplicateTag) != 0:
     print "Failed to duplicate the following tags:"
@@ -362,6 +396,13 @@ conf.close()
 
 
 #------------------------------------------------------------------------------
+
+commitcommand = 'cvs commit -m \"' + NEWGT + '\" ' +  CONFIGFILE
+print commitcommand
+statusAndOutput = commands.getstatusoutput(commitcommand)
+if statusAndOutput[0] != 0:
+    print statusAndOutput[1]
+
 
 print "-----------------------------------------"
 print newconffile+' ready. Please have a look:'

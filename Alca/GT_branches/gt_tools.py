@@ -229,10 +229,14 @@ class GTEntry:
 
     def getOraclePfn(self, online):
         if online == False:
-            if self._connstring == 'frontier://FrontierProd':
-                oracleConn =  'oracle://cms_orcoff_prod'
-            elif self._connstring == 'frontier://FrontierPrep':
+            if self._connstring == 'frontier://FrontierPrep':
                 oracleConn =  'oracle://cms_orcoff_prep'
+            else:
+                oracleConn =  'oracle://cms_orcoff_prod'
+                #             if self._connstring == 'frontier://FrontierProd' or self._connstring == 'frontier://PromptProd':
+                #                 oracleConn =  'oracle://cms_orcoff_prod'
+                #             elif self._connstring == 'frontier://FrontierPrep':
+                #                 oracleConn =  'oracle://cms_orcoff_prep'
         elif online == True:
             if self._connstring == 'frontier://FrontierProd':
                 oracleConn =  'oracle://cms_orcon_prod'
@@ -245,8 +249,10 @@ class GTEntry:
             return True
         return False
 
-
-
+    def isOnlineConnect(self):
+        if self._connstring == 'frontier://(proxyurl=http://localhost:3128)(serverurl=http://localhost:8000/FrontierOnProd)(serverurl=http://localhost:8000/FrontierOnProd)(retrieve-ziplevel=0)(failovertoserver=no)':
+            return True
+        return False
 
 
 class RcdID(tuple):
@@ -259,11 +265,86 @@ class RcdID(tuple):
 
 
 
+class IOVEntry():
+    def __init__(self):
+        self._since = -1
+        self._till = -1
+        self._payloadToken = ""
+
+    def setFromListIOV(self, line):
+        listofentries = line.split('\t')
+        index = 0
+        for entry in listofentries:
+            if entry != '':
+                if index == 0:
+                    self._since = int(entry.rstrip())
+                elif index == 1:
+                    self._till = int(entry.rstrip())
+                elif index == 2:
+                    self._payloadToken = entry.rstrip()
+            index = index + 1
+                
+        return
+
+    def __str__(self):
+        return str(self._since) + ' ' + str(self._till) + ' ' + self._payloadToken
+
+    def since(self):
+        return self._since
+
+    def till(self):
+        return self._till
+
+    def token(self):
+        return self._payloadToken
 
 
 
+class IOVTable():
+    def __init__(self):
+        self._iovList = []
+        self._tagName = ""
+        return
+
+    def addIOVEntry(self, entry):
+        # print "Add IOV : " + str(entry)
+        self._iovList.append(entry)
+
+    def setFromListIOV(self, listiovOutput):
+        listiovlines  = listiovOutput.split('\n')
+        nLines = len(listiovlines)
+        self._tagName = listiovlines[0].split(" ")[1]
+        # print self._tagName
+        for line in range(4, nLines-1):
+            ioventry = IOVEntry()
+            ioventry.setFromListIOV(listiovlines[line])
+            self.addIOVEntry(ioventry)
 
 
+    def checkConsitency(self, tagType):
+        if tagType == "mc":
+            if len(self._iovList) != 1:
+                print warning("***Warning") + " MC tag: " + self._tagName + " contains: " + str(len(self._iovList)) + " IOVs"
+            else:
+                if self._iovList[0].since() != 1 or self._iovList[0].till() != 4294967295:
+                    print warning("***Warning") + " MC tag: " + self._tagName + " has IOV: " + str(self._iovList[0])
+        elif tagType == "data":
+            if self._iovList[0].since() != 1 or self._iovList[len(self._iovList) - 1].till() != 4294967295:
+                print warning("***Warning") + " data tag: " + self._tagName + "is not covering the whole range 1 - inf"
+                self.printList()
+                return
+            if len(self._iovList) != 1:
+                for index in range(0, len(self._iovList)-1):
+                    if (self._iovList[index+1].since() - self._iovList[index].till()) != 1:
+                        print warning("***Warning") + " data tag: " + self._tagName + " has an hole in the IOVs:"
+                        self.printList()
+                        return
+
+    def printList(self):
+        for iov in self._iovList:
+            print iov
+        return
+        
 
 class GTEntryCollection:
     def __init__(self):
@@ -526,6 +607,10 @@ class GTDocGenerator:
         docstring = self.wikiString()
         docfile.write(docstring)
         docfile.close()
+
+    def addChange(self, change):
+        if not change in self._change:
+            self._change = self._change + '<br> - ' + change
 
 
 def fillGTCollection(gtConfFileName, gtName, gtEntryCollection):
