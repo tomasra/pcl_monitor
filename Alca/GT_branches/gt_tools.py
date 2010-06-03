@@ -231,12 +231,12 @@ class GTEntry:
         if online == False:
             if self._connstring == 'frontier://FrontierPrep':
                 oracleConn =  'oracle://cms_orcoff_prep'
+            elif self._connstring == 'frontier://FrontierArc':
+                # no change is needed since it is anyhow frozen
+                oracleConn =  'frontier://FrontierArc'
             else:
                 oracleConn =  'oracle://cms_orcoff_prod'
-                #             if self._connstring == 'frontier://FrontierProd' or self._connstring == 'frontier://PromptProd':
-                #                 oracleConn =  'oracle://cms_orcoff_prod'
-                #             elif self._connstring == 'frontier://FrontierPrep':
-                #                 oracleConn =  'oracle://cms_orcoff_prep'
+
         elif online == True:
             if self._connstring == 'frontier://FrontierProd':
                 oracleConn =  'oracle://cms_orcon_prod'
@@ -460,8 +460,8 @@ class GTEntryCollection:
 
             if not index in self._newTags:
                 self._newTags.append(index)
-            self.getByTag(tag).setConnect(connect)
-            print "   " + tag + ": " + connect
+            self.getByTag(tag).setConnect(connection)
+            print "   " + tag + ": " + connection
                 
         else:
             print error("*** Warning") + " tag: " + tag + " not found!"
