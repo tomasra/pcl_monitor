@@ -398,7 +398,7 @@ conf.close()
 #------------------------------------------------------------------------------
 
 commitcommand = 'cvs commit -m \"' + NEWGT + '\" ' +  CONFIGFILE
-print commitcommand
+#print commitcommand
 statusAndOutput = commands.getstatusoutput(commitcommand)
 if statusAndOutput[0] != 0:
     print statusAndOutput[1]
