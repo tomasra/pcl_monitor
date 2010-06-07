@@ -4,8 +4,8 @@
 /** \class DTHitObject
  *  No description available.
  *
- *  $Date: 2009/07/16 12:16:17 $
- *  $Revision: 1.2 $
+ *  $Date: 2009/07/16 14:47:09 $
+ *  $Revision: 1.3 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -48,6 +48,10 @@ public:
 
   // residual on distance from the wire
   double resDist;
+  // residual on distance from the wire - step 2
+  double resDistS1;
+  // residual on distance from the wire - step 1
+  double resDistS2;
   // residual on position
   double resPos;
   // distance from the wire

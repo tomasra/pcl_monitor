@@ -18,6 +18,7 @@
 <use name=EventFilter/Utilities>
 <use name=TrackingTools/TransientTrack>
 <use name=TrackingTools/Records>
+<use name=RecoLocalMuon/DTRecHit>
 
 <use name=boost>
 <use name=rootgraphics>
