@@ -13,8 +13,8 @@
  *  All histos are produce per SuperLayer.
  *
  *
- *  $Date: 2010/05/12 15:30:47 $
- *  $Revision: 1.4 $
+ *  $Date: 2010/05/13 16:36:20 $
+ *  $Revision: 1.5 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -32,6 +32,7 @@ class TTree;
 class TClonesArray;
 class DTTtrig;
 class DTT0;
+class DTRecHitBaseAlgo;
 
 class DTTreeBuilder {
 public:
@@ -61,6 +62,8 @@ private:
   bool debug;
   // Label of 4D segments in the event
   std::string theRecHits4DLabel;
+  // Label of 2D segments in the event
+  std::string theRecHits2DLabel;
   // Label of 1D rechits in the event
   std::string theRecHitLabel;
   // Label of muon collection in the event
@@ -72,10 +75,14 @@ private:
 
   TTree *theTree;
   TClonesArray *segmentArray;
+  TClonesArray *segment2DArray;
   TClonesArray *muArray;
   edm::ESHandle<DTTtrig> tTrigMap;
   edm::ESHandle<DTT0> t0Handle;
 
+  // Algo to re-reco the hits
+  DTRecHitBaseAlgo *theAlgo;
+  std::string algoName;
 };
 #endif
 
