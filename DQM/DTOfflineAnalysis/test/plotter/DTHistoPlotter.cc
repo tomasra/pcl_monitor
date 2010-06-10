@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2006/07/12 13:10:35 $
- *  $Revision: 1.2 $
+ *  $Date: 2008/12/03 10:41:16 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -69,7 +69,7 @@ TH2F * DTHistoPlotter::plotResVsDistToWire(int wheel, int station, int sector, i
 
 TProfile * DTHistoPlotter::plotResVsSLY(int wheel, int station, int sector, int sl,
 					const TString& drawOptions) {
-  TProfile *profile;
+  TProfile *profile = 0;
   TString histoName;
   if(version == 0) { // FIXME: TO be removed...this is for file containing the TH3F and not the TProfiles
 
@@ -107,7 +107,7 @@ TProfile * DTHistoPlotter::plotResVsSLY(int wheel, int station, int sector, int 
 
 TProfile * DTHistoPlotter::plotResVsSLX(int wheel, int station, int sector, int sl,
 					const TString& drawOptions) {
-  TProfile *profile;
+  TProfile *profile = 0;
   TString histoName;
   if(version == 0) { // FIXME: TO be removed...this is for file containing the TH3F and not the TProfiles
 
