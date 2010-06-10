@@ -1,9 +1,9 @@
 import FWCore.ParameterSet.Config as cms
 
 
-#from RecoLocalMuon.DTRecHit.DTLinearDriftFromDBAlgo_cfi import *
+from RecoLocalMuon.DTRecHit.DTLinearDriftFromDBAlgo_cfi import *
 
-from RecoLocalMuon.DTRecHit.DTParametrizedDriftAlgo_cfi import DTParametrizedDriftAlgo
+#from RecoLocalMuon.DTRecHit.DTParametrizedDriftAlgo_cfi import DTParametrizedDriftAlgo
 
 
 
