@@ -1,19 +1,17 @@
 import FWCore.ParameterSet.Config as cms
 
-process = cms.Process("DTOffAna")
+process = cms.Process("DTOffAna1")
 
 # the source
 process.source = cms.Source("PoolSource",
                             fileNames = cms.untracked.vstring(
-           '/store/data/Commissioning10/MinimumBias/RAW-RECO/Apr1Skim_Muon_skim-v1/0139/5C9CA088-B43E-DF11-9BFE-002618FDA210.root',
-           '/store/data/Commissioning10/MinimumBias/RAW-RECO/Apr1Skim_Muon_skim-v1/0139/1E042A38-CF3E-DF11-8471-002618943973.root',
-           '/store/data/Commissioning10/MinimumBias/RAW-RECO/Apr1Skim_Muon_skim-v1/0139/1896B26A-B03E-DF11-9481-00248C0BE014.root'
+           '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodColl-100505-V02/10e630f492be0d03043b22c5940a2237/good_coll_1_1.root'
                                 ))
 
 process.source.inputCommands = cms.untracked.vstring("keep *", "drop *_MEtoEDMConverter_*_*", "drop L1GlobalTriggerObjectMapRecord_hltL1GtObjectMap__HLT")
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(1000)
+    input = cms.untracked.int32(100)
     )
 
 
@@ -35,6 +33,15 @@ process.load('L1TriggerConfig.L1GtConfigProducers.L1GtTriggerMaskTechTrigConfig_
 process.load('HLTrigger/HLTfilters/hltLevel1GTSeed_cfi')
 
 
+process.dtNDigiFilter = cms.EDFilter("DTNDigiFilter",
+    threshold = cms.untracked.int32(10),
+    debug = cms.untracked.bool(False),
+    dtDigiLabel = cms.InputTag("muonDTDigis"),
+    granularity = cms.untracked.string('perChamber'),
+    cutType = cms.untracked.string('moreThan')
+)
+
+process.load('DQM.DTOfflineAnalysis.dtLocalRecoAnalysis_cfi')
 
 ####################################################################################
 ##################################good collisions############################################
@@ -43,7 +50,7 @@ process.L1T1coll=process.hltLevel1GTSeed.clone()
 process.L1T1coll.L1TechTriggerSeeding = cms.bool(True)
 process.L1T1coll.L1SeedsLogicalExpression = cms.string('0 AND (40 OR 41) AND NOT (36 OR 37 OR 38 OR 39) AND NOT ((42 AND NOT 43) OR (43 AND NOT 42))')
 
-process.l1tcollpath = cms.Path(process.L1T1coll)
+process.l1tcollpath = cms.Path(process.L1T1coll*process.muonDTDigis*process.dtNDigiFilter+process.dtLocalRecoAnal)
 
 process.primaryVertexFilter = cms.EDFilter("VertexSelector",
    src = cms.InputTag("offlinePrimaryVertices"),
@@ -59,7 +66,7 @@ numtrack = cms.untracked.uint32(10),
 thresh = cms.untracked.double(0.25)
 )
 
-process.goodvertex=cms.Path(process.primaryVertexFilter+process.noscraping)
+process.goodvertex=cms.Path(process.primaryVertexFilter+process.noscraping*process.muonDTDigis*process.dtNDigiFilter+process.dtLocalRecoAnal)
 
 
 process.collout = cms.OutputModule("PoolOutputModule",
@@ -73,21 +80,21 @@ process.collout = cms.OutputModule("PoolOutputModule",
     )
 )
 
-# # message logger
-# process.MessageLogger = cms.Service("MessageLogger",
-#                                      debugModules = cms.untracked.vstring('*'),
-#                                      destinations = cms.untracked.vstring('cout'),
-#                                      categories = cms.untracked.vstring('DTNoiseAnalysisTest'), 
-#                                      cout = cms.untracked.PSet(threshold = cms.untracked.string('DEBUG'),
-#                                                                noLineBreaks = cms.untracked.bool(False),
-#                                                                DEBUG = cms.untracked.PSet(
-#                                                                        limit = cms.untracked.int32(0)),
-#                                                                INFO = cms.untracked.PSet(
-#                                                                        limit = cms.untracked.int32(0)),
-#                                                                DTNoiseAnalysisTest = cms.untracked.PSet(
-#                                                                                   limit = cms.untracked.int32(-1))
-#                                                                )
-#                                      )
+# message logger
+process.MessageLogger = cms.Service("MessageLogger",
+                                    debugModules = cms.untracked.vstring('*'),
+                                    destinations = cms.untracked.vstring('cout'),
+                                    categories = cms.untracked.vstring('DTNoiseAnalysisTest'), 
+                                    cout = cms.untracked.PSet(threshold = cms.untracked.string('DEBUG'),
+                                                              noLineBreaks = cms.untracked.bool(False),
+                                                              DEBUG = cms.untracked.PSet(
+                                                                  limit = cms.untracked.int32(0)),
+                                                              INFO = cms.untracked.PSet(
+                                                                  limit = cms.untracked.int32(0)),
+                                                              DTNoiseAnalysisTest = cms.untracked.PSet(
+                                                                  limit = cms.untracked.int32(-1))
+                                                              )
+                                    )
 
 
 

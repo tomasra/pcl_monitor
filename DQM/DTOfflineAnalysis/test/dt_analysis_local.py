@@ -5,70 +5,105 @@ process = cms.Process("DTOffAna3")
 # the source
 process.source = cms.Source("PoolSource",
                             fileNames = cms.untracked.vstring(
-                                'file:/data/c/cerminar/data/DtCalibrationGoodCollV9-100507-V03/good_coll.root'
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_10_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_11_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_12_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_13_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_14_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_15_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_16_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_17_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_19_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_1_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_20_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_21_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_22_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_24_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_25_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_26_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_27_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_28_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_29_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_31_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_32_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_33_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_35_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_38_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_39_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_3_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_40_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_41_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_47_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_48_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_49_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_4_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_50_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_51_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_52_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_53_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_54_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_55_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_56_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_57_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_58_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_59_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_5_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_60_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_61_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_62_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_63_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_64_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_65_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_66_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_67_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_68_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_69_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_6_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_70_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_71_2.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_72_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_73_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_74_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_7_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_8_1.root',
-# '/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_9_1.root'
-                                ))
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_100_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_10_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_113_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_114_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_11_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_121_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_122_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_123_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_12_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_131_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_132_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_13_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_149_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_14_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_152_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_153_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_154_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_155_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_156_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_157_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_158_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_15_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_166_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_167_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_168_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_169_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_16_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_171_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_172_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_173_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_17_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_180_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_181_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_182_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_184_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_185_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_195_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_196_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_197_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_19_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_1_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_20_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_21_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_22_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_24_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_25_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_26_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_27_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_28_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_29_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_31_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_32_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_33_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_35_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_38_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_39_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_3_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_40_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_41_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_47_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_48_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_49_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_4_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_50_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_51_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_52_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_53_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_54_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_55_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_56_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_57_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_58_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_59_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_5_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_60_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_61_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_62_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_63_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_64_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_65_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_66_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_67_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_68_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_69_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_6_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_70_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_71_2.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_72_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_73_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_74_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_75_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_76_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_78_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_7_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_82_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_83_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_8_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_93_1.root',
+'/store/caf/user/cerminar/MinimumBias/DtCalibrationGoodCollV9-100507-V03/af5da1d43807c3c24b74ecca32fc0226/good_coll_9_1.root'                                ))
 
 process.source.inputCommands = cms.untracked.vstring("keep *", "drop *_MEtoEDMConverter_*_*", "drop L1GlobalTriggerObjectMapRecord_hltL1GtObjectMap__HLT")
 
@@ -85,12 +120,12 @@ process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 process.GlobalTag.globaltag = "GR_R_35X_V8::All"
 
                                             
-process.GlobalTag.toGet = cms.VPSet(
-    cms.PSet(record = cms.string("DTTtrigRcd"),
-             tag = cms.string("ttrig"),
-             connect = cms.untracked.string("sqlite_file:ttrigStat1_V0.db")
-             )
-    )
+# process.GlobalTag.toGet = cms.VPSet(
+#     cms.PSet(record = cms.string("DTTtrigRcd"),
+#              tag = cms.string("ttrig"),
+#              connect = cms.untracked.string("sqlite_file:ttrigStat1_V0.db")
+#              )
+#     )
 
 
 
@@ -114,7 +149,7 @@ process.dtNDigiFilter = cms.EDFilter("DTNDigiFilter",
 )
 
 process.load('DQM.DTOfflineAnalysis.dtLocalRecoAnalysis_cfi')
-process.dtLocalRecoAnal.rootFileName = '/data/c/cerminar/data/DtCalibrationGoodCollV9-100507-V03_NewTableV0/DTLocalRecoAnalysisStd.root'
+process.dtLocalRecoAnal.rootFileName = '/data/c/cerminar/data/DtCalibrationGoodCollV9-100507-V03_HS/DTLocalRecoAnalysisStd.root'
 
 ####################################################################################
 ##################################good collisions############################################
@@ -143,7 +178,7 @@ thresh = cms.untracked.double(0.25)
 
 
 process.collout = cms.OutputModule("PoolOutputModule",
-    fileName = cms.untracked.string('/data/c/cerminar/data/DtCalibrationGoodCollV9-100507-V03_NewTableV0/good_coll.root'),
+    fileName = cms.untracked.string('/data/c/cerminar/data/DtCalibrationGoodCollV9-100507-V03_HS/good_coll.root'),
     outputCommands = process.FEVTEventContent.outputCommands,
     dataset = cms.untracked.PSet(
     	      dataTier = cms.untracked.string('RAW-RECO'),
@@ -171,9 +206,24 @@ process.MessageLogger = cms.Service("MessageLogger",
 
 
 
-process.recoonly = cms.Path(process.muonDTDigis*process.dtlocalreco+process.dtLocalRecoAnal) 
+process.recoonly = cms.Path(process.muonDTDigis*process.dtNDigiFilter+process.dtLocalRecoAnal) 
 
 #process.outpath = cms.EndPath(process.collout)
+
+
+process.recoout = cms.OutputModule("PoolOutputModule",
+    fileName = cms.untracked.string('/data/c/cerminar/data/DtCalibrationGoodCollV9-100507-V03_HS/good_coll.root'),
+    outputCommands = process.FEVTEventContent.outputCommands,
+    dataset = cms.untracked.PSet(
+    	      dataTier = cms.untracked.string('RAW-RECO'),
+    	      filterName = cms.untracked.string('GOODCOLL')),
+    SelectEvents = cms.untracked.PSet(
+        SelectEvents = cms.vstring('recoonly')
+    )
+)
+
+
+process.outpath = cms.EndPath(process.recoout)
 
 process.options = cms.untracked.PSet(
     wantSummary = cms.untracked.bool(True)
