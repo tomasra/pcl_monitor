@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/05/14 17:43:26 $
- *  $Revision: 1.10 $
+ *  $Date: 2010/06/07 17:09:52 $
+ *  $Revision: 1.11 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -40,6 +40,8 @@
 #include "DataFormats/Math/interface/LorentzVector.h"
 #include "DataFormats/MuonReco/interface/MuonSelectors.h"
 
+#include "DataFormats/SiPixelCluster/interface/SiPixelCluster.h"
+
 #include <iterator>
 #include <vector>
 
@@ -53,18 +55,21 @@ using namespace edm;
 using namespace std;
 using namespace reco;
 
-DTTreeBuilder::DTTreeBuilder(const ParameterSet& pset, TFile* file) : theFile(file) {
+DTTreeBuilder::DTTreeBuilder(const ParameterSet& pset, TFile* file) : 
+  theFile(file),
+  BX(-999),
+  pix(-999)
+{
   debug = pset.getUntrackedParameter<bool>("debug","false");
   // the name of the 4D rec hits collection
   theRecHits4DLabel = pset.getParameter<string>("recHits4DLabel");
   theRecHits2DLabel = pset.getParameter<string>("recHits2DLabel");
   theRecHitLabel = pset.getParameter<string>("recHitLabel");
   theMuonLabel = pset.getParameter<string>("muonLabel");
- 
+
   checkNoisyChannels = pset.getUntrackedParameter<bool>("checkNoisyChannels","false");
   algoName = pset.getParameter<string>("recAlgo");
   theAlgo = DTRecHitAlgoFactory::get()->create(algoName,pset.getParameter<ParameterSet>("recAlgoConfig"));
-
 
 }
 
@@ -76,6 +81,9 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
     cout << "[DTTreeBuilder] Analyze #Run: " << event.id().run()
 	 << " #Event: " << event.id().event() << endl;
 
+  // get the BX #
+  BX = event.bunchCrossing();
+
   // Get the 4D segment collection from the event
   edm::Handle<DTRecSegment4DCollection> all4DSegments;
   event.getByLabel(theRecHits4DLabel, all4DSegments);
@@ -84,9 +92,14 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
   edm::Handle<DTRecSegment2DCollection> all2DSegments;
   event.getByLabel(theRecHits2DLabel, all2DSegments);
 
-  // Get the rechit collection from the event
+  // Get the DT rechit collection from the event
   Handle<DTRecHitCollection> dtRecHits;
   event.getByLabel(theRecHitLabel, dtRecHits);
+
+  // Get the pixel cluster collection
+  Handle<edmNew::DetSetVector<SiPixelCluster> > clusterColl; 
+  event.getByLabel("siPixelClusters", clusterColl); //name hardcoded beacuse I am lazy...
+  pix = clusterColl->size();
 
   // Get the DT Geometry
   ESHandle<DTGeometry> dtGeom;
@@ -103,6 +116,7 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 
   int segmCounter = 0;
 
+  
 
   // Loop over all chambers containing a 4D segment
   for (DTRecSegment4DCollection::id_iterator chamberId = all4DSegments->id_begin(); chamberId != all4DSegments->id_end(); ++chamberId) {
@@ -336,12 +350,12 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	  dS3 = fabs(wireX - rhS3.localPosition().x());
 	}
 
-	if (fabs(dS3 - distRecHitToWire) > 0.0005) {  
-	  // FIXME must check why!!!
-	  cout << endl << "WARNING: " << distRecHitToWire << " S1=" << dS1 << " S2=" << dS2 << " S3=" << dS3 
-	       << " diff recomputed S3:" <<  dS3 - distRecHitToWire<< endl << endl;
+// 	if (fabs(dS3 - distRecHitToWire) > 0.0005) {  
+// 	  // FIXME must check why!!!
+// 	  cout << endl << "WARNING: " << distRecHitToWire << " S1=" << dS1 << " S2=" << dS2 << " S3=" << dS3 
+// 	       << " diff recomputed S3:" <<  dS3 - distRecHitToWire<< endl << endl;
 
-	}
+// 	}
 	
       }// End of loop over 1D RecHit inside 4D segment
       
@@ -627,6 +641,8 @@ void DTTreeBuilder::beginJob() {
   theTree->Branch("segments", "TClonesArray", &segmentArray); 
   theTree->Branch("segments2D", "TClonesArray", &segment2DArray); 
   theTree->Branch("muonCands", "TClonesArray", &muArray);
+  theTree->Branch("BX", &BX, "BX/I");
+  theTree->Branch("Pix", &pix, "Pix/I");
 }
 
 
