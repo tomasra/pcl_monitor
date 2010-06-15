@@ -330,7 +330,7 @@ class IOVTable():
                     print warning("***Warning") + " MC tag: " + self._tagName + " has IOV: " + str(self._iovList[0])
         elif tagType == "data":
             if self._iovList[0].since() != 1 or self._iovList[len(self._iovList) - 1].till() != 4294967295:
-                print warning("***Warning") + " data tag: " + self._tagName + "is not covering the whole range 1 - inf"
+                print warning("***Warning") + " data tag: " + self._tagName + " is not covering the whole range 1 - inf"
                 self.printList()
                 return
             if len(self._iovList) != 1:
