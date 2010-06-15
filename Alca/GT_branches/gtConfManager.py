@@ -68,6 +68,12 @@ if diffconfig.has_section('Tags'):
     REPLACETAGS = diffconfig.items('Tags')
     replacetags = dict(REPLACETAGS)
 
+globalSuffixForTags = ''
+if diffconfig.has_option('Tags','GlobalSuffix'):
+    globalSuffixForTags = diffconfig.get('Tags','GlobalSuffix')
+
+
+
 replaceconnect = dict()
 if diffconfig.has_section('Connect'):
     REPLACECONNECT = diffconfig.items('Connect')
@@ -247,6 +253,21 @@ if(CONNREP != ''):
 
 # --------------------------------------------------------------------------
 # the tag collection from now on is up-to-date
+
+tagstobeappendedwithsubf = []
+
+if globalSuffixForTags != '':
+    print "Will append subfix: " + globalSuffixForTags + ' for all tags!'
+    tagstobeappendedwithsubf = tagCollection._tagOrder
+
+# loop over all entries in the collection
+for tagidx in range(0,len(tagstobeappendedwithsubf)):
+    theTag1 = tagCollection._tagList[tagstobeappendedwithsubf[tagidx]]
+    oldtag = theTag1._tag
+    newtag = oldtag + globalSuffixForTags
+    if theTag1._account != 'CMS_COND_31X_FROM21X':
+        # change the tag name in the tag collection
+        tagCollection.modifyEntryTag(oldtag, newtag)
 
 tagstobeduplicated = []
 
