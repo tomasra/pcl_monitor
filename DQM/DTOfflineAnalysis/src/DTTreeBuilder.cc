@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/06/07 17:09:52 $
- *  $Revision: 1.11 $
+ *  $Date: 2010/06/13 06:52:11 $
+ *  $Revision: 1.12 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -58,7 +58,9 @@ using namespace reco;
 DTTreeBuilder::DTTreeBuilder(const ParameterSet& pset, TFile* file) : 
   theFile(file),
   BX(-999),
-  pix(-999)
+  pix(-999),
+  runN(-1),
+  eventN(-1)
 {
   debug = pset.getUntrackedParameter<bool>("debug","false");
   // the name of the 4D rec hits collection
@@ -81,8 +83,10 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
     cout << "[DTTreeBuilder] Analyze #Run: " << event.id().run()
 	 << " #Event: " << event.id().event() << endl;
 
-  // get the BX #
+  // get the BX, run, event...
   BX = event.bunchCrossing();
+  runN = event.id().run();
+  eventN = event.id().event();
 
   // Get the 4D segment collection from the event
   edm::Handle<DTRecSegment4DCollection> all4DSegments;
@@ -643,6 +647,8 @@ void DTTreeBuilder::beginJob() {
   theTree->Branch("muonCands", "TClonesArray", &muArray);
   theTree->Branch("BX", &BX, "BX/I");
   theTree->Branch("Pix", &pix, "Pix/I");
+  theTree->Branch("Run", &runN, "Run/I");
+  theTree->Branch("Event", &eventN, "Event/I");
 }
 
 

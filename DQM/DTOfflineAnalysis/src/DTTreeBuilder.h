@@ -13,8 +13,8 @@
  *  All histos are produce per SuperLayer.
  *
  *
- *  $Date: 2010/06/07 17:09:52 $
- *  $Revision: 1.6 $
+ *  $Date: 2010/06/13 06:52:11 $
+ *  $Revision: 1.7 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -79,6 +79,8 @@ private:
   TClonesArray *muArray;
   int BX;
   int pix;
+  int runN;
+  int eventN;
   edm::ESHandle<DTTtrig> tTrigMap;
   edm::ESHandle<DTT0> t0Handle;
 
