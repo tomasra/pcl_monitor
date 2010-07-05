@@ -8,6 +8,7 @@ from optparse import OptionParser, Option, OptionValueError
 #import coral
 #from CondCore.TagCollection import Node,tagInventory,CommonUtils,entryComment
 from operator import itemgetter
+from datetime import date
 
 # tools for color printout
 from color_tools import *
@@ -19,8 +20,25 @@ from gt_tools import *
 
 #if __name__     ==  "__main__":
 
+# set the command line options
+parser = OptionParser()
+
+parser.add_option("--force", action="store_true",dest="force",default=False)
+
+parser.add_option("-t", "--global-tag", dest="newgt",
+                  help="Overwrite new GT name",
+                  type="str", metavar="<new GT>")
+
+# parser.add_option("-s", "--scenario", dest="scenario",
+#                   help="GT scenario: ideal - mc - startup - data - craft09",
+#                   type="str", metavar="<scenario>",action="append")
+
+(options, args) = parser.parse_args()
+
 # read the configuration file
-CONFIGFILE=sys.argv[1]
+# CONFIGFILE=sys.argv[1]
+CONFIGFILE=args[0]
+
 
 if not os.path.isfile(CONFIGFILE):
     print error("*** Error" + " cfg file: " + CONFIGFILE + " doesn't exist!")
@@ -43,6 +61,12 @@ if diffconfig.has_option('Common','AccountGT'):
 
 OLDGT = diffconfig.get('Common','OldGT')
 NEWGT = diffconfig.get('Common','NewGT')
+
+if options.newgt != None:
+    print 'Forcing GT name to: ' + options.newgt
+    NEWGT = options.newgt
+
+
 
 passwdfile = 'None'
 if diffconfig.has_option('Common','Passwd'):
@@ -129,6 +153,12 @@ if diffconfig.has_section('Comments'):
     release = diffconfig.get('Comments','Release')
     changes = diffconfig.get('Comments','Changes')
     docGenerator = GTDocGenerator(NEWGT, OLDGT, scope, release, changes)
+
+# if docGenerator != None:
+#     if closeIOV:
+#         docGenerator
+
+
 #     #print "scope: " + scope
 #     #print 'release: ' + release
 #     #print 'changes: ' + changes
@@ -167,11 +197,14 @@ rmentries = []
 if diffconfig.has_section("RmRecord"):
     rmrecords = diffconfig.items('RmRecord')
     for record in rmrecords:
-        label = record[1]
-        if record[1] == 'None':
-            label = ''
-        rcdId = RcdID([record[0], label])
-        rmentries.append(rcdId)
+        labels =  record[1].split(',')
+        print labels
+        for label in labels:
+            #label = record[1]
+            if record[1] == 'None':
+                label = ''
+            rcdId = RcdID([record[0], label])
+            rmentries.append(rcdId)
 
 
 CONNREP= ''
@@ -194,7 +227,7 @@ if not os.path.isfile(oldfilename):
     print error("*** Error" + " original GT conf file: " + oldfilename + " doesn't exist!")
     sys.exit(1)
 
-if os.path.isfile(newconffile):
+if os.path.isfile(newconffile) and not options.force:
     print warning("*** Warning, the new GT conf file: " + newconffile + " already exists!")
     confirm = raw_input('Overwrite? (y/N)')
     confirm = confirm.lower() #convert to lowercase
@@ -372,6 +405,30 @@ tagCollection.printTagsInPrep()
 # generate the documentation
 if tagCollection.tagsInPrep():
     docGenerator.isForProd(False)
+
+
+if diffconfig.has_option('Comments','Snapshot'):
+    if diffconfig.get('Comments','Snapshot'):
+        # we add a worning for the users to the 'Scope' section
+        lastvalidrun = -1
+        if closeIOV:
+            lastvalidrun = closeIOVTillRun
+        else:
+            # this is a frozen snapshot: take last run from RunInfoRcd
+            # FIXME
+            runinforcd = RcdID(['RunInfoRcd', ''])
+            if tagCollection.hasRcdID(runinforcd):
+                runinfo = tagCollection.getByRcdID(runinforcd)
+                outputAndStatus = listIov(runinfo.getOraclePfn(isOnline), runinfo.tagName(), passwdfile)
+                if outputAndStatus[0] == 0:
+                    iovtable = IOVTable()
+                    iovtable.setFromListIOV(outputAndStatus[1])
+                    lastvalidrun = iovtable.lastIOV().since()
+                else:
+                    print outputAndStatus[1]
+        docGenerator.snapshotValidity(date.today(), lastvalidrun)
+
+
 
 docGenerator.printWikiDoc()
 
