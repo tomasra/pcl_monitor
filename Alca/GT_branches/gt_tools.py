@@ -196,8 +196,14 @@ class GTEntry:
 
         return
 
-    
-        
+    def getCfgFormat(self):
+        """ return the string in the same format used in the cfg file to add a new record to the GT """
+        cfgstring = self._leafnode + '{recordname=' + self._record + ',connect=' + self._connstring + ',account=' + self._account + ',objectname=' + self._object
+        if not self._label == '':
+            cfgstring = cfgstring + ',labelname=' + self._label
+        cfgstring = cfgstring + '}'
+        return cfgstring
+
     def printTag(self):
         print 'Tag: ' + self._tag
         return
@@ -227,6 +233,24 @@ class GTEntry:
         self._pfn = self._connstring+'/'+ self._account
         return
 
+    def setTagName(self, newtag):
+        self._tag = newtag
+        return
+
+    def setEntry(self, tagname, parent, connect, account, object, record, leaf, label):
+        self._tag = tagname
+        self._parent = parent
+        self._connstring = connect
+        self._account = account
+        self._object = object
+        self._record = record
+        self._leafnode = leaf
+        self._label = label
+        self._pfn = connect+'/'+record
+
+        return
+
+    
     def getOraclePfn(self, online):
         if online == False:
             if self._connstring == 'frontier://FrontierPrep':
@@ -345,6 +369,9 @@ class IOVTable():
             print iov
         return
         
+    def lastIOV(self):
+        return  self._iovList[len(self._iovList)-1]
+
 
 class GTEntryCollection:
     def __init__(self):
@@ -611,6 +638,16 @@ class GTDocGenerator:
     def addChange(self, change):
         if not change in self._change:
             self._change = self._change + '<br> - ' + change
+
+    def snapshotValidity(self, date, lastrun = -1):
+        self._scope = self._scope + "<br>%RED%(Snapshot not valid for runs > "
+        if lastrun != -1:
+            self._scope = self._scope + str(lastrun) + " [= " + str(date) + "]"
+        else:
+            self._scope = self._scope + str(date)
+        self._scope = self._scope + ")%ENDCOLOR%[[[#NOTESnapValid][2]]]"
+
+
 
 
 def fillGTCollection(gtConfFileName, gtName, gtEntryCollection):
