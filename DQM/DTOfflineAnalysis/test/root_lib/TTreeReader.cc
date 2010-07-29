@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/05/11 10:21:51 $
- *  $Revision: 1.5 $
+ *  $Date: 2010/05/13 09:34:58 $
+ *  $Revision: 1.6 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -13,6 +13,7 @@
 #include "TNtuple.h"
 #include "DTSegmentObject.h"
 #include "DTHitObject.h"
+#include "DTMuObject.h"
 #include "Histograms.h"
 #include "Utils.h"
 
@@ -28,6 +29,7 @@ using namespace std;
 TTreeReader::TTreeReader(const TString& fileName, const TString& outputFile) : theOutFile(outputFile),
 									       theGranularity(-1),
 									       nevents(0),
+									       filterEvents(0),
 									       debug(0) {
   // open the file containing the tree
   TFile *file = new TFile(fileName.Data());
@@ -58,6 +60,9 @@ TTreeReader::~TTreeReader(){}
 void TTreeReader::setBranchAddresses() {
   // set the addresses of the tree variables
   tree->SetBranchAddress("segments",&segments);
+  tree->SetBranchAddress("muonCands",&muons);
+  tree->SetBranchAddress("Run",&run);
+
 }
 
 
@@ -124,12 +129,9 @@ void TTreeReader::begin() {
 }
 
 void TTreeReader::processEvent(int entry) {
-  if(entry%100000 == 0 ||  debug > 2) {
+  if(entry%10000 == 0 ||  debug > 2) {
     cout << "-----  Process event " << entry << endl;
   }
-  
-  //cout << " # segm: " << segments->GetEntriesFast() << endl;
-
 
   for(int iSegm=0; iSegm < segments->GetEntriesFast(); iSegm++) { // loop over segments 
 
@@ -212,7 +214,7 @@ void TTreeReader::processEvent(int entry) {
 //       for(// set<TString>::const_iterator cut = passedCuts.begin();
 // 	  cut != passedCuts.end(); ++cut) {
       while(cut != passedCuts.end()) {
-	histosRes[*cut][detIdForPlot]->Fill(hitObj->resDist, hitObj->distFromWire, hitObj->resPos,
+	histosRes[*cut][detIdForPlot]->Fill(hitObj->resDist, hitObj->distFromWire, hitObj->resPos,hitObj->X,
 					    hitObj->Y, hitObj->angle, hitObj->sigmaPos);
 	++cut;
       }
@@ -252,7 +254,34 @@ void TTreeReader::analyse(const int nEventMax) {
   if(nEventMax != -1) max = nEventMax;
   begin();
   for(int i = 0; i < max; i++) {
+
     tree->GetEntry(i);
+    
+    if (filterEvents==1) {
+      bool tagEvent=false;
+      // Event quality selection
+      // Select data taking periods
+      if (run< 50000) { // MC
+	tagEvent=true;
+      } else {  // data
+	if (run < 137754) { //Initial period
+	  continue;
+	} else if (run < 139830) { //first round of corrections
+	  continue;
+	} else { //Second round of corrections
+	  //continue;
+	} 
+    
+	for(int iMu=0; iMu < muons->GetEntriesFast(); iMu++) { // loop over events
+	  DTMuObject *oneMu = (DTMuObject *) muons->At(iMu);	
+	
+	  if (fabs(oneMu->eta)<1.2 && oneMu->type!=5) tagEvent=true;
+	} 
+      }
+      if (!tagEvent) continue;
+    }
+  
+
     processEvent(i);
     nevents++;
   }
@@ -264,15 +293,15 @@ void TTreeReader::analyse(const int nEventMax) {
 
 // build a detid depending on the wanted ganularity
 DTDetId TTreeReader::buildDetid(int wheel, int station, int sector, int sl, int layer, int wire) const {
-  if(theGranularity == 1) {
+  if(theGranularity == 1) { // SL
     return DTDetId(wheel, station, sector, sl, 0, 0);
-  } else if(theGranularity == 2) {
+  } else if(theGranularity == 2) { // Station
     return DTDetId(wheel, station, 0, 0, 0, 0);
-  } else if(theGranularity == 3) {
+  } else if(theGranularity == 3) { // statByView : Sl3 is also merged with 1
     return DTDetId(wheel, station, 0, sl, 0, 0);
-  } else if(theGranularity == 4) {
+  } else if(theGranularity == 4) { // chamberByView : Sl3 is also merged with 1
     return DTDetId(wheel, station, sector, sl, 0, 0);
-  } else if(theGranularity == 5) {
+  } else if(theGranularity == 5) { // statBySL
     return DTDetId(wheel, station, 0, sl, 0, 0);
   }
   return DTDetId(0, 0, 0, 0, 0, 0);

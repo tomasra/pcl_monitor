@@ -4,8 +4,8 @@
 /** \class TTreeReader
  *  No description available.
  *
- *  $Date: 2009/07/20 08:52:47 $
- *  $Revision: 1.2 $
+ *  $Date: 2009/07/27 12:35:44 $
+ *  $Revision: 1.3 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -39,6 +39,10 @@ public:
   void setCuts(const TString&set, const DTCut& cut); 
 
 
+  void setFilterEvents(int option) {
+    filterEvents=option;
+  }
+  
   
   void setDebug(int debug);
   
@@ -65,6 +69,9 @@ private:
   TNtuple *tree;
 
   TClonesArray *segments;
+  TClonesArray *muons;
+  int run;
+
 
   // Histograms
   std::map<TString, std::map<DTDetId, HRes1DHits*> > histosRes;
@@ -77,6 +84,7 @@ private:
 
   std::map<TString, DTCut> cutSets;   
 
+  int filterEvents;
   int debug;
 };
 
