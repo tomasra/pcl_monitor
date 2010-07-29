@@ -4,7 +4,7 @@
 /** \class DTOfflineOccupancy
  *  Offline analysis
  *
- *  $Date: 2008/10/21 10:29:45 $
+ *  $Date: 2008/12/03 10:41:13 $
  *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
@@ -12,7 +12,7 @@
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include <FWCore/Framework/interface/EDAnalyzer.h>
-#include "FWCore/ParameterSet/interface/InputTag.h"
+#include "FWCore/Utilities/interface/InputTag.h"
 
 #include <string>
 #include <vector>

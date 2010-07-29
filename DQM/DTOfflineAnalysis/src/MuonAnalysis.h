@@ -4,7 +4,7 @@
 /** \class MuonAnalysis
  *  Offline analysis
  *
- *  $Date: 2008/12/03 10:41:13 $
+ *  $Date: 2009/12/08 14:30:10 $
  *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
@@ -12,7 +12,7 @@
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include <FWCore/Framework/interface/EDAnalyzer.h>
-#include "FWCore/ParameterSet/interface/InputTag.h"
+#include "FWCore/Utilities/interface/InputTag.h"
 
 #include <string>
 #include <vector>

@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/06/13 06:52:11 $
- *  $Revision: 1.12 $
+ *  $Date: 2010/06/28 17:42:31 $
+ *  $Revision: 1.13 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -102,8 +102,9 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 
   // Get the pixel cluster collection
   Handle<edmNew::DetSetVector<SiPixelCluster> > clusterColl; 
-  event.getByLabel("siPixelClusters", clusterColl); //name hardcoded beacuse I am lazy...
-  pix = clusterColl->size();
+//   event.getByLabel("siPixelClusters", clusterColl); //name hardcoded beacuse I am lazy...
+//   pix = clusterColl->size();
+  pix=-1;
 
   // Get the DT Geometry
   ESHandle<DTGeometry> dtGeom;

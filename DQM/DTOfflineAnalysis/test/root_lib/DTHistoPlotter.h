@@ -6,7 +6,7 @@
  *  The time box rising edge can be fitted using exactly the same code that is
  *  used by the calibration application.
  *
- *  $Date: 2008/12/03 10:41:16 $
+ *  $Date: 2009/07/27 12:35:32 $
  *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
@@ -152,10 +152,8 @@ public:
   double computeHistoMedian(TH1F * histo);
 
 
+  //private:
 
-protected:
-
-private:
   TCanvas *drawHisto(int fileIndex, TH1F *histo, const TString& drawOptions = "");
   TCanvas *drawHisto(int fileIndex, TH2F *histo, const TString& drawOptions = "");
 
@@ -164,7 +162,7 @@ private:
 
   void fitAndDraw(int fileIndex, TH1F *histo);
 
-
+private:
 
 
   

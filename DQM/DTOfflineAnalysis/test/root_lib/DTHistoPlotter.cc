@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/05/08 11:01:13 $
- *  $Revision: 1.3 $
+ *  $Date: 2010/05/13 09:34:58 $
+ *  $Revision: 1.4 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -232,7 +232,7 @@ TH1F * DTHistoPlotter::plotSeg1D(const TString& hName,
   else if(hName == "Proj") histo = hSeg->hProj;
   else if(hName == "PhiLoc") histo = hSeg->hPhiLoc;
   else if(hName == "ThetaLoc") histo = hSeg->hThetaLoc;
-  else if(hName == "ImpAngl") histo = hSeg->hImpAngl;
+  //  else if(hName == "ImpAngl") histo = hSeg->hImpAngl;
   else if(hName == "Chi2") histo = hSeg->hChi2;
   else if(hName == "t0Phi") histo = hSeg->ht0Phi;
   else if(hName == "t0Theta") histo = hSeg->ht0Theta;
@@ -917,7 +917,6 @@ void DTHistoPlotter::fitAllInSet(const TString& set, const TString& options) {
       }
     }
   }
- end:
   
   // close the ps file
   TString psName2 = filePdfName + ")";

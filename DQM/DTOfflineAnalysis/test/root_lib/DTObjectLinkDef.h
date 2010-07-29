@@ -1,5 +1,6 @@
 #include "DTSegmentObject.h"
 #include "DTHitObject.h"
+#include "DTMuObject.h"
 #include "TTreeReader.h"
 #include "DTDetId.h"
 #include "Histograms.h"
@@ -17,6 +18,7 @@
 
 
 #pragma link C++ class DTHitObject;
+#pragma link C++ class DTMuObject;
 #pragma link C++ class DTSegmentObject;
 #pragma link C++ class TTreeReader;
 #pragma link C++ class DTDetId;
