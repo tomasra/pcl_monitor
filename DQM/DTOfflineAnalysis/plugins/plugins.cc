@@ -1,13 +1,13 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
 
 #include "DQM/DTOfflineAnalysis/interface/DTLocalRecoAnalysis.h"
-DEFINE_ANOTHER_FWK_MODULE(DTLocalRecoAnalysis);
+DEFINE_FWK_MODULE(DTLocalRecoAnalysis);
 
 #include "DQM/DTOfflineAnalysis/interface/DTLocalReco2DAnalysis.h"
-DEFINE_ANOTHER_FWK_MODULE(DTLocalReco2DAnalysis);
+DEFINE_FWK_MODULE(DTLocalReco2DAnalysis);
 
 #include "DQM/DTOfflineAnalysis/interface/DTTimeAnalysis.h"
-DEFINE_ANOTHER_FWK_MODULE(DTTimeAnalysis);
+DEFINE_FWK_MODULE(DTTimeAnalysis);
 
 #include <DQM/DTOfflineAnalysis/src/DTOfflineOccupancy.h>
 DEFINE_FWK_MODULE(DTOfflineOccupancy);
