@@ -4,8 +4,8 @@
 /** \class TTreeReader
  *  No description available.
  *
- *  $Date: 2009/07/27 12:35:44 $
- *  $Revision: 1.3 $
+ *  $Date: 2010/07/29 14:05:16 $
+ *  $Revision: 1.4 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -16,14 +16,16 @@
 
 
 class TClonesArray;
-class TNtuple;
 class HRes1DHits;
 class HSegment;
+class TTree;
 
 class TTreeReader {
 public:
   /// Constructor
   TTreeReader(const TString& fileName, const TString& outputFile);
+
+  TTreeReader(TTree* tree, const TString& outputFile);
 
   /// Destructor
   virtual ~TTreeReader();
@@ -66,7 +68,7 @@ private:
   
   TString theOutFile;
 
-  TNtuple *tree;
+  TTree *tree;
 
   TClonesArray *segments;
   TClonesArray *muons;

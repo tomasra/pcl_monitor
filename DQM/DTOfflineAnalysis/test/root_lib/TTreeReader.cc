@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/05/13 09:34:58 $
- *  $Revision: 1.6 $
+ *  $Date: 2010/07/29 14:05:14 $
+ *  $Revision: 1.7 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -10,7 +10,7 @@
 
 #include "TString.h"
 #include "TFile.h"
-#include "TNtuple.h"
+#include "TTree.h"
 #include "DTSegmentObject.h"
 #include "DTHitObject.h"
 #include "DTMuObject.h"
@@ -39,19 +39,43 @@ TTreeReader::TTreeReader(const TString& fileName, const TString& outputFile) : t
   }
 
   // Retrieve the TNtuple
-  tree = (TNtuple *) file->Get("DTSegmentTree");
+  tree = (TTree *) file->Get("DTSegmentTree");
 
-  segments = new TClonesArray("DTSegmentObject");
   
   cout << "Read File: " << fileName << endl;
   cout << "Opening tree: " << tree->GetName() << " with "
        << tree->GetEntries() << " entries" << endl;
-  setBranchAddresses();
 
-  // default values
+
+  segments = new TClonesArray("DTSegmentObject");
+  muons  = new TClonesArray("DTMuObject");
+
+  setBranchAddresses();
   setGranularity("SL");
   
 }
+
+
+TTreeReader::TTreeReader(TTree* aTree, const TString& outputFile) :
+  theOutFile(outputFile),
+  tree(aTree),   
+  theGranularity(-1),
+  nevents(0),
+  filterEvents(0),
+  debug(0)
+ {
+
+  cout << "Opening tree: " << tree->GetName() << " with "
+       << tree->GetEntries() << " entries" << endl;
+
+  segments = new TClonesArray("DTSegmentObject");
+  muons  = new TClonesArray("DTMuObject");
+
+  setBranchAddresses();
+  setGranularity("SL");
+}
+
+
 
 TTreeReader::~TTreeReader(){}
 
@@ -256,31 +280,30 @@ void TTreeReader::analyse(const int nEventMax) {
   for(int i = 0; i < max; i++) {
 
     tree->GetEntry(i);
+
+    
     
     if (filterEvents==1) {
-      bool tagEvent=false;
       // Event quality selection
       // Select data taking periods
-      if (run< 50000) { // MC
-	tagEvent=true;
-      } else {  // data
+      if (run> 50000) { // if you happen to use this with MC...
 	if (run < 137754) { //Initial period
 	  continue;
 	} else if (run < 139830) { //first round of corrections
 	  continue;
 	} else { //Second round of corrections
 	  //continue;
-	} 
-    
-	for(int iMu=0; iMu < muons->GetEntriesFast(); iMu++) { // loop over events
-	  DTMuObject *oneMu = (DTMuObject *) muons->At(iMu);	
+	}
+      }
+
+      bool tagEvent=false;
+      for(int iMu=0; iMu < muons->GetEntriesFast(); iMu++) { // loop over events
+	DTMuObject *oneMu = (DTMuObject *) muons->At(iMu);	
 	
-	  if (fabs(oneMu->eta)<1.2 && oneMu->type!=5) tagEvent=true;
-	} 
+	if (fabs(oneMu->eta)<1.2 && oneMu->type!=5) tagEvent=true;
       }
       if (!tagEvent) continue;
     }
-  
 
     processEvent(i);
     nevents++;
