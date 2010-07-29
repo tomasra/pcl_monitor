@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: $
- *  $Revision: $
+ *  $Date: 2009/07/27 12:35:32 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -70,10 +70,14 @@ bool DTCut::selectSegm(const DTSegmentObject* oneSeg) const {
 
   if(oneSeg->nHits < nHits_min ||  oneSeg->nHits > nHits_max) return false;
   if(oneSeg->nHitsPhi < nHitsPhi_min ||  oneSeg->nHitsPhi > nHitsPhi_max) return false;
-  if(oneSeg->nHitsTheta < nHitsTheta_min ||  oneSeg->nHitsTheta > nHitsTheta_max) return false;
   if(oneSeg->phi < phi_min || oneSeg->phi > phi_max) return false;
-  if(oneSeg->theta < theta_min || oneSeg->theta > theta_max) return false;
 
+  
+  if (oneSeg->station!=4) {
+    if(oneSeg->nHitsTheta < nHitsTheta_min ||  oneSeg->nHitsTheta > nHitsTheta_max) return false;
+    if(oneSeg->theta < theta_min || oneSeg->theta > theta_max) return false;
+  }
+  
   return true;
 }
 
