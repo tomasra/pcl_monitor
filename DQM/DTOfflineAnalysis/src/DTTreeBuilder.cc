@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/06/28 17:42:31 $
- *  $Revision: 1.13 $
+ *  $Date: 2010/07/29 13:59:19 $
+ *  $Revision: 1.14 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -549,16 +549,28 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	cout << "muon eta, phi:" << muObj->eta << " " << muObj->phi << endl;
       
       if (muon->isGlobalMuon()) {
-	muObj->nStripHits =(*muon).globalTrack()->hitPattern().numberOfValidStripHits();
-	muObj->nPixHits   =(*muon).globalTrack()->hitPattern().numberOfValidPixelHits();
-	muObj->nMuHits    =(*muon).globalTrack()->hitPattern().numberOfValidMuonHits();
+	
+	const HitPattern& hitP = (*muon).globalTrack()->hitPattern();
+
+	muObj->nStripHits =hitP.numberOfValidStripHits();
+	muObj->nPixHits   =hitP.numberOfValidPixelHits();
+	muObj->nMuHits    =hitP.numberOfValidMuonHits();
+	muObj->nGlbDTValidHits = hitP.numberOfValidMuonDTHits();
+
+	muObj->nGlbDTHits = hitP.numberOfValidMuonDTHits()+hitP.numberOfBadMuonDTHits();
+
       } else {
 	if (muon->isStandAloneMuon()) {
-	  muObj->nMuHits    =(*muon).outerTrack()->hitPattern().numberOfValidMuonHits();	
+	  const HitPattern& hitP = (*muon).outerTrack()->hitPattern();
+
+	  muObj->nMuHits    = hitP.numberOfValidMuonHits();	
+	  muObj->nStaDTValidHits = hitP.numberOfValidMuonDTHits();
+	  muObj->nStaDTHits = hitP.numberOfValidMuonDTHits() + hitP.numberOfBadMuonDTHits();
+
 	}
-	if (muon->isTrackerMuon()) {	
-	  muObj->nStripHits =(*muon).innerTrack()->hitPattern().numberOfValidStripHits();
-	  muObj->nPixHits   =(*muon).innerTrack()->hitPattern().numberOfValidPixelHits();
+	if (muon->isTrackerMuon()) {
+	  muObj->nStripHits =( *muon).innerTrack()->hitPattern().numberOfValidStripHits();
+	  muObj->nPixHits   = (*muon).innerTrack()->hitPattern().numberOfValidPixelHits();
 	}
       }
       

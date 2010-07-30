@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/05/13 17:59:16 $
- *  $Revision: 1.1 $
+ *  $Date: 2010/05/14 17:43:26 $
+ *  $Revision: 1.2 $
  */
 
 #include "DTMuObject.h"
@@ -14,6 +14,10 @@ DTMuObject::DTMuObject() :
   phi(-999),
   qpt(-999),
   nMuHits(-1),
+  nStaDTHits(-1),
+  nGlbDTHits(-1),
+  nStaDTValidHits(-1),
+  nGlbDTValidHits(-1),
   nStripHits(-1),
   nPixHits(-1),
   normChi2tk(-1.),

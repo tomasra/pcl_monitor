@@ -4,8 +4,8 @@
 /** \class DTMuObject
  *  No description available.
  *
- *  $Date: 2010/05/13 17:59:16 $
- *  $Revision: 1.1 $
+ *  $Date: 2010/05/14 17:43:26 $
+ *  $Revision: 1.2 $
  */
 
 #if !defined(__CINT__)||  defined(__MAKECINT__)
@@ -30,6 +30,10 @@ public:
   float qpt;
   
   int nMuHits;
+  int nStaDTHits;
+  int nGlbDTHits;
+  int nStaDTValidHits;
+  int nGlbDTValidHits;
   int nStripHits;
   int nPixHits;
 
