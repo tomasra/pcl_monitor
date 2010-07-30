@@ -4,8 +4,8 @@
 /** \class DTMuObject
  *  No description available.
  *
- *  $Date: 2010/05/14 17:43:26 $
- *  $Revision: 1.2 $
+ *  $Date: 2010/07/30 10:32:47 $
+ *  $Revision: 1.3 $
  */
 
 #if !defined(__CINT__)||  defined(__MAKECINT__)
@@ -57,7 +57,7 @@ public:
 
 private:
 
-  ClassDef(DTMuObject,1)
+  ClassDef(DTMuObject,2)
 };
 #endif
 
