@@ -9,13 +9,13 @@ from optparse import OptionParser, Option, OptionValueError
 #from CondCore.TagCollection import Node,tagInventory,CommonUtils,entryComment
 from operator import itemgetter
 
-# tools for color printout
-from color_tools import *
 
 import commands
 
-from gt_tools import *
-from odict import *
+# tools for color printout
+from Tools.MyCondTools.color_tools import *
+from Tools.MyCondTools.gt_tools import *
+from Tools.MyCondTools.odict import *
 
 if __name__     ==  "__main__":
 
@@ -89,7 +89,11 @@ if __name__     ==  "__main__":
     commentfile = ConfigParser(dict_type=OrderedDict)
     commentfile.optionxform = str
     COMMENTFILENAME = "GT_branches/Comments.cfg"
-    print 'Reading comment file from ',COMMENTFILENAME
+    # cvs update 
+    outandstat = commands.getstatusoutput("cd GT_branches/; cvs update -A Comments.cfg")
+    if outandstat[0] != 0:
+        print outandstat[1]
+    print 'Reading updated comment file from ',COMMENTFILENAME
     commentfile.read([ COMMENTFILENAME ])
 
     # ---------------------------------------------------------------------------
@@ -319,13 +323,16 @@ if __name__     ==  "__main__":
         # write the comment file
         commfile = open(COMMENTFILENAME, 'wb')
         commentfile.write(commfile)
+        # cvs commit
+        outandstat = commands.getstatusoutput("cd GT_branches/; cvs commit -m \"\" Comments.cfg")
+        if outandstat[0] != 0:
+            print outandstat[1]
+            
 
+        
 # TODO:
 # 1. leggi da cfg file
 # 4. update del cfg file da cvs e il commit dopo la modifica
-# 6. update cvs dei commenti
-# 6. azzeramento diff file per nuovi tag
 # 8. meccanismo per rimuovere un record
-# 9. letture di record/label invece che tag
 # 10. shortcuts per connect string: fprep fprod oprep oprod pprod fonline
 
