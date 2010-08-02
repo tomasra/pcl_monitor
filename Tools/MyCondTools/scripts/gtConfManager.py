@@ -219,31 +219,10 @@ if diffconfig.has_option('Connect','GlobalConnectReplace'):
 oldfilename = OLDGT + '.conf'
 newconffile  = NEWGT + ".conf"
 
-# check if the original conf file exists
-if not os.path.isfile(oldfilename):
-    # get the conf file from DB
-    print "Getting the conf file for GT: " + OLDGT + " from DB....be patinet!"
-    dbtoconf_cfg = ConfigParser()
-    dbtoconf_cfg.optionxform = str
-    dbtoconf_cfg.add_section("Common")
-    dbtoconf_cfg.set("Common","Account","CMS_COND_31X_GLOBALTAG")
-    dbtoconf_cfg.set("Common","Conn_string_gtag","frontier://cmsfrontier:8000/FrontierProd/CMS_COND_31X_GLOBALTAG")
-    dbtoconf_cfg.set("Common","Globtag",OLDGT)
-    dbtoconf_cfg.set("Common","Confoutput",oldfilename)
-    dbtoconf_file = open("dbtoconf.cfg", 'wb')
-    dbtoconf_cfg.write(dbtoconf_file)
-    dbtoconf_file.close()
 
-    #dbtoconf_cmd = 'eval `scram runtime -csh`; dbtoconf.py'
-    dbtoconf_cmd = 'dbtoconf.py'
-
-    statusAndOutput = commands.getstatusoutput(dbtoconf_cmd)
-    if statusAndOutput[0] != 0:
-        print statusAndOutput[1]
-    # check again
-    if not os.path.isfile(oldfilename):
-        print error("*** Error" + " original GT conf file: " + oldfilename + " doesn't exist!")
-        sys.exit(1)
+if not confFileFromDB(OLDGT, oldfilename):
+    print error("*** Error" + " original GT conf file: " + oldfilename + " doesn't exist!")
+    sys.exit(1)
 
 if os.path.isfile(newconffile) and not options.force:
     print warning("*** Warning, the new GT conf file: " + newconffile + " already exists!")
