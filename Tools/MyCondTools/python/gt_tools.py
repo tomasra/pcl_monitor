@@ -290,7 +290,7 @@ class RcdID(tuple):
 
 
 
-class IOVEntry():
+class IOVEntry:
     def __init__(self):
         self._since = -1
         self._till = -1
@@ -325,7 +325,7 @@ class IOVEntry():
 
 
 
-class IOVTable():
+class IOVTable:
     def __init__(self):
         self._iovList = []
         self._tagName = ""
