@@ -140,8 +140,22 @@ class GTEntry:
         self._record = ''
         self._connstring = ''
         self._label = ''
+        # Update type: -1 unknown, 0 manual, 1 O2O
+        self._updateType = -1
         return
 
+    def setUpdateType(self, typeCode):
+        if typeCode == "o2o":
+            self._updateType = 1
+        elif typeCode == "manual":
+            self._updateType = 0
+        else:
+            self._updateType = -1
+
+    def updateType(self):
+        return self._updateType
+
+    
     def tagName(self):
         return self._tag
 
@@ -656,9 +670,11 @@ def fillGTCollection(gtConfFileName, gtName, gtEntryCollection):
 
     # parse the config file and fill the collection
     configparser=ConfigParser()
-    configparser.read(gtConfFileName)
+    configparser.read([gtConfFileName, "GT_branches/Categories.cfg"])
     data=stripws(configparser.get("TAGINVENTORY",'tagdata'))
     tagcollection=converttagcollection(data)
+
+    
 
     # parse the tag inventory
     if len(tagcollection)!=0:
@@ -666,6 +682,9 @@ def fillGTCollection(gtConfFileName, gtName, gtEntryCollection):
             # create the tag object and populate it
             tag = GTEntry()
             tag.setFromTagInventoryLine(item)
+            # set the update category if present
+            if configparser.has_option('UpdateType', tag.tagName()):
+                tag.setUpdateType(configparser.get('UpdateType', tag.tagName()))
             gtEntryCollection.addEntry(tag)
 
     # --------------------------------------------------------------------------
