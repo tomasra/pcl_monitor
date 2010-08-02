@@ -12,16 +12,13 @@ import shutil
 from gt_tools import *
 from popcon_monitoring_last_updates import *
 
-GTCRATIONAREA = "/afs/cern.ch/user/c/cerminar/Alca/GlobalTag/CMSSW_3_5_4/src"
-
-#GTSQLITESTORE = "/afs/cern.ch/user/c/cerminar/public/Alca/GlobalTag"
 
 
-def computeModified(gtName, nDays, listofchanges, listofchangesO2O):
+def computeModified(GTCREATIONAREA, gtName, nDays, listofchanges, listofchangesO2O):
     # create the collection of tags
     tagCollection = GTEntryCollection()
-    gtConf =  GTCRATIONAREA + "/" + gtName + ".conf"    
-    gtCategories =  GTCRATIONAREA + "/GT_branches/Categories.cfg"
+    gtConf =  GTCREATIONAREA + "/" + gtName + ".conf"    
+    gtCategories =  GTCREATIONAREA + "/GT_branches/Categories.cfg"
     # --------------------------------------------------------------------------
     fillGTCollection([gtConf,gtCategories], gtName, tagCollection)
 
@@ -83,17 +80,17 @@ def computeModified(gtName, nDays, listofchanges, listofchangesO2O):
 
 if __name__     ==  "__main__":
 
-    GTPROMPT = "GR10_P_V7"
-    GTOFFLINE35X = "GR_R_35X_V8"
-    GTOFFLINE36X = "GR_R_36X_V12"
-    GTOFFLINE37X = "GR_R_37X_V6"
-
     
-    gtList = []
-    gtList.append(GTPROMPT)
-    gtList.append(GTOFFLINE35X)
-    gtList.append(GTOFFLINE36X)
-    gtList.append(GTOFFLINE37X)
+
+    configfile = ConfigParser()
+    configfile.optionxform = str
+
+
+    configfile.read('gtMonitor.cfg')
+    GTCREATIONAREA = configfile.get('Common','GTCreationArea')
+    gtList = configfile.get('Common','GTToMonitor').split(',')
+    mailaddresses = configfile.get('Common','MailAddresses')
+
 
     gtListOfResults = []
     
@@ -107,7 +104,7 @@ if __name__     ==  "__main__":
         print "Updates for GT: " +  gt
         listChange = []
         listChangeO2O = []
-        mapUpdates = computeModified(gt,1,listChange, listChangeO2O)
+        mapUpdates = computeModified(GTCREATIONAREA, gt,1,listChange, listChangeO2O)
         gtListOfResults.append(mapUpdates)
         totalListOfChanges.append(listChange)
         totalListOfChangesO2O.append(listChangeO2O)
@@ -152,7 +149,7 @@ today = datetime.today()
 SENDMAIL = "/usr/sbin/sendmail" # sendmail location
 
 p = os.popen("%s -t" % SENDMAIL, "w")
-p.write("To: gianluca.cerminara@cern.ch\n")
+p.write("To: " + mailaddresses + "\n")
 p.write("Subject: [GT-MONITOR] "+str(today) +"\n")
 p.write("\n") # blank line separating headers from body
 
