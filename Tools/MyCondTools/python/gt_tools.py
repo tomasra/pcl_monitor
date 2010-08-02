@@ -140,7 +140,20 @@ class GTEntry:
         self._record = ''
         self._connstring = ''
         self._label = ''
+        # Update type: -1 unknown, 0 manual, 1 O2O
+        self._updateType = -1
         return
+
+    def setUpdateType(self, typeCode):
+        if typeCode == "o2o":
+            self._updateType = 1
+        elif typeCode == "manual":
+            self._updateType = 0
+        else:
+            self._updateType = -1
+
+    def updateType(self):
+        return self._updateType
 
     def tagName(self):
         return self._tag
@@ -651,12 +664,41 @@ class GTDocGenerator:
 
 
 
+def confFileFromDB(gt, gtConfFileName):
+    # check if the original conf file exists
+    if not os.path.isfile(gtConfFileName):
+        # get the conf file from DB
+        print "Getting the conf file for GT: " + gt + " from DB....be patinet!"
+        dbtoconf_cfg = ConfigParser()
+        dbtoconf_cfg.optionxform = str
+        dbtoconf_cfg.add_section("Common")
+        dbtoconf_cfg.set("Common","Account","CMS_COND_31X_GLOBALTAG")
+        dbtoconf_cfg.set("Common","Conn_string_gtag","frontier://cmsfrontier:8000/FrontierProd/CMS_COND_31X_GLOBALTAG")
+        dbtoconf_cfg.set("Common","Globtag",gt)
+        dbtoconf_cfg.set("Common","Confoutput",gtConfFileName)
+        dbtoconf_file = open("dbtoconf.cfg", 'wb')
+        dbtoconf_cfg.write(dbtoconf_file)
+        dbtoconf_file.close()
+
+        #dbtoconf_cmd = 'eval `scram runtime -csh`; dbtoconf.py'
+        dbtoconf_cmd = 'dbtoconf.py'
+
+        statusAndOutput = commands.getstatusoutput(dbtoconf_cmd)
+        if statusAndOutput[0] != 0:
+            print statusAndOutput[1]
+
+        # check again
+        if not os.path.isfile(gtConfFileName):
+            return False
+
+    return True
+
 
 def fillGTCollection(gtConfFileName, gtName, gtEntryCollection):
 
     # parse the config file and fill the collection
     configparser=ConfigParser()
-    configparser.read(gtConfFileName)
+    configparser.read([gtConfFileName, "GT_branches/Categories.cfg"])
     data=stripws(configparser.get("TAGINVENTORY",'tagdata'))
     tagcollection=converttagcollection(data)
 
@@ -666,6 +708,9 @@ def fillGTCollection(gtConfFileName, gtName, gtEntryCollection):
             # create the tag object and populate it
             tag = GTEntry()
             tag.setFromTagInventoryLine(item)
+            # set the update category if present
+            if configparser.has_option('UpdateType', tag.tagName()):
+                tag.setUpdateType(configparser.get('UpdateType', tag.tagName()))
             gtEntryCollection.addEntry(tag)
 
     # --------------------------------------------------------------------------
