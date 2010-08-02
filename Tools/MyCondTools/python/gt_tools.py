@@ -698,7 +698,7 @@ def fillGTCollection(gtConfFileName, gtName, gtEntryCollection):
 
     # parse the config file and fill the collection
     configparser=ConfigParser()
-    configparser.read([gtConfFileName, "GT_branches/Categories.cfg"])
+    configparser.read(gtConfFileName)
     data=stripws(configparser.get("TAGINVENTORY",'tagdata'))
     tagcollection=converttagcollection(data)
 
