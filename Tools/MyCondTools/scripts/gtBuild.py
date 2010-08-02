@@ -144,7 +144,7 @@ if __name__     ==  "__main__":
             gtName = scenario + release + "_T"
             gtNames.append(gtName)
             gtlistnames = gtlistnames + " " + gtName
-            confbuild_cmd = "cmsenv; ./gtConfManager.py --force -t " + gtName + " " + cfgfile
+            confbuild_cmd = "cmsenv; gtConfManager.py --force -t " + gtName + " " + cfgfile
             print confbuild_cmd
             confbuild_out = commands.getstatusoutput(confbuild_cmd)
             if confbuild_out[0] != 0:
@@ -190,14 +190,14 @@ if __name__     ==  "__main__":
         topdirname = str(today)
         runDir = GTVALIDATIONAREA + '/' + topdirname + '/' + releaseVal1 + '/src/'
         #os.chdir(runDir)
-        runAll_cmd = 'ssh lxbuild150 \" cd ' + runDir + '; source env.csh; gtLoadAll.py --local all \"'
+        runAll_cmd = 'ssh lxbuild150 \" cd ' + runDir + '; source env.csh; rehash; gtLoadAll.py --local all \"'
         print runAll_cmd
         runAll_out = commands.getstatusoutput(runAll_cmd)
         if runAll_out[0] != 0:
             print runAll_out[1]
 
         # 5 - run the matrix in screen
-        runTheMatrix_cmd = 'ssh lxbuild150 \" cd ' + runDir + '; source env.csh; gtRunTheMatrix.py --local all \"'
+        runTheMatrix_cmd = 'ssh lxbuild150 \" cd ' + runDir + '; source env.csh; rehash; gtRunTheMatrix.py --local all \"'
         print runTheMatrix_cmd
         runTheMatrix_out = commands.getstatusoutput(runTheMatrix_cmd)
         if runTheMatrix_out[0] != 0:
