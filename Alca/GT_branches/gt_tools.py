@@ -279,6 +279,7 @@ class GTEntry:
         return False
 
 
+
 class RcdID(tuple):
     def __new__(cls, *args, **kw):
         return tuple.__new__(cls, *args, **kw)
@@ -599,7 +600,8 @@ class GTEntryCollection:
         if len(self._tagsInPrep) != 0:
             print "***Warning: the following " + str(len(self._tagsInPrep)) + " tags are read form preparation account:"
         for idx in self._tagsInPrep:
-            print "   ",self._tagList[idx] 
+            tag = self._tagList[idx] 
+            print "   tag:", tag.tagName()," obj: ",tag._object," account: ",tag._account
     
     def tagsInPrep(self):
         if len(self._tagsInPrep) != 0:
