@@ -133,8 +133,11 @@ if __name__     ==  "__main__":
 
     if  'all' in options.scenario:
         options.scenario = ['DESIGN','MC','START','GR_R','CRAFT09']
-
+    elif 'mc' in options.scenario:
+        options.scenario = ['DESIGN','MC','START']
+        
     cvsstatus = []
+    gtchanges = []
     
     for release in options.releases:
         gtNames = []
@@ -142,6 +145,13 @@ if __name__     ==  "__main__":
         for scenario in options.scenario:
             cfgfile = "GT_branches/GT_" + release + "_" + scenario + ".cfg"
             gtName = scenario + release + "_T"
+
+
+            diffconfig = ConfigParser()
+            diffconfig.optionxform = str
+            diffconfig.read(cfgfile)
+            gtName = diffconfig.get('Common','NewGT')
+
             gtNames.append(gtName)
             gtlistnames = gtlistnames + " " + gtName
             confbuild_cmd = "cmsenv; gtConfManager.py --force -t " + gtName + " " + cfgfile
@@ -149,6 +159,8 @@ if __name__     ==  "__main__":
             confbuild_out = commands.getstatusoutput(confbuild_cmd)
             if confbuild_out[0] != 0:
                 print confbuild_out[1]
+            else:
+                gtchanges.append(confbuild_out[1])
             cvs_cmd = "cvs status " + cfgfile
             cvs_out = commands.getstatusoutput(cvs_cmd)
             if cvs_out[0] != 0:
@@ -178,7 +190,7 @@ if __name__     ==  "__main__":
         else:
             releaseVal1 = latestRels[2]
 
-        gtvalidation_cmd = "ssh lxbuild150 \" cd " + GTVALIDATIONAREA + "; gtValidation.py -r " + releaseVal1 + " --auto " + gtlistnames + "\""
+        gtvalidation_cmd = 'ssh lxbuild150 "cd ' + GTVALIDATIONAREA + '; gtValidation.py -r ' + releaseVal1 + ' --auto ' + gtlistnames + '"'
 
         print gtvalidation_cmd
         gtvalidation_out = commands.getstatusoutput(gtvalidation_cmd)
@@ -190,14 +202,14 @@ if __name__     ==  "__main__":
         topdirname = str(today)
         runDir = GTVALIDATIONAREA + '/' + topdirname + '/' + releaseVal1 + '/src/'
         #os.chdir(runDir)
-        runAll_cmd = 'ssh lxbuild150 \" cd ' + runDir + '; source env.csh; rehash; gtLoadAll.py --local all \"'
+        runAll_cmd = 'ssh lxbuild150 "cd ' + runDir + '; source env.csh; rehash; gtLoadAll.py --local all"'
         print runAll_cmd
         runAll_out = commands.getstatusoutput(runAll_cmd)
         if runAll_out[0] != 0:
             print runAll_out[1]
 
         # 5 - run the matrix in screen
-        runTheMatrix_cmd = 'ssh lxbuild150 \" cd ' + runDir + '; source env.csh; rehash; gtRunTheMatrix.py --local all \"'
+        runTheMatrix_cmd = 'ssh lxbuild150 "cd ' + runDir + '; source env.csh; rehash; gtRunTheMatrix.py  --local all "'
         print runTheMatrix_cmd
         runTheMatrix_out = commands.getstatusoutput(runTheMatrix_cmd)
         if runTheMatrix_out[0] != 0:
@@ -232,7 +244,15 @@ if __name__     ==  "__main__":
         p.write("\n")
         p.write('--- versioning:\n')
         for cvss in cvsstatus:
-            p.write(cvss)
+            revisionline = ''
+            for line in cvss.splitlines():
+                if 'File' in line:
+                    revisionline = revisionline + line
+                    print line
+                if 'Working revision' in line:
+                    print '    ' + line + '\n'
+                    revisionline = revisionline + line
+            p.write(revisionline)
             p.write("\n")
 
         p.write("\n")
@@ -246,9 +266,11 @@ if __name__     ==  "__main__":
         p.write('--- run the matrix:\n')
         for line in runmatrixfilelines:
             print line
-            p.write("  " + line)
+            if not 'exit: 0 0 0 0' in line:
+                p.write("  " + line)
         p.write("\n")
         p.write('--- details:\n')
-        p.write(gtvalidation_out[1])
+        for gtchange in gtchanges:
+            p.write(gtchange)
         p.write('\n\n')
 

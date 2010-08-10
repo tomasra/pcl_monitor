@@ -10,11 +10,12 @@ from datetime import date
 import shutil
 
 
-
-GTCRATIONAREA = "/afs/cern.ch/user/c/cerminar/Alca/GlobalTag/CMSSW_3_5_4/src"
-
+# ---- SETUP -----------------------------------------------------------------
+# directory where the sqlite of the Global-Tags are created
+GTCREATIONAREA = "/afs/cern.ch/user/c/cerminar/Alca/GlobalTag/CMSSW_3_5_4/src"
+# directory where the sqlite of the Global-Tag are stored and read from after creation
 GTSQLITESTORE = "/afs/cern.ch/user/c/cerminar/public/Alca/GlobalTag"
-
+# ----------------------------------------------------------------------------
 
 if __name__     ==  "__main__":
     
@@ -30,7 +31,7 @@ if __name__     ==  "__main__":
     parser.add_option("--force", action="store_true",dest="force",default=False, help="force even if no sqlite found")
     parser.add_option("-f", "--file", dest="file",
                       help="file with tags for addpkg", type="str", metavar="<filename>",default="None")
-    parser.add_option("--auto", action="store_true",dest="auto",default=False, help="guess the tag type from the name")
+    parser.add_option("--auto", action="store_true",dest="auto",default=False, help="guess the global-tag type from the name")
     
     (options, args) = parser.parse_args()
     #print "OPTIONS: ", options
@@ -85,7 +86,7 @@ if __name__     ==  "__main__":
 
     # copy the sqlite file in the public if not already there
     for gt in args:
-        newsqlite = GTCRATIONAREA+'/'+gt+'.db'
+        newsqlite = GTCREATIONAREA+'/'+gt+'.db'
         sqlitefile = GTSQLITESTORE+'/'+gt+'.db'
         if os.path.exists(newsqlite):
             shutil.move(newsqlite, sqlitefile)
@@ -95,7 +96,7 @@ if __name__     ==  "__main__":
                 print '***Error: no sqlite file for GT: ' + gt
                 if not options.force:
                     args.remove(gt)
-            newsqlite = GTCRATIONAREA+'/'+gt+'.db'
+            newsqlite = GTCREATIONAREA+'/'+gt+'.db'
 #             if not os.path.exists(newsqlite):
 #                 print '***Error: no sqlite file for GT: ' + gt
 #                 args.remove(gt) # FIXME: really needed?
@@ -121,7 +122,7 @@ if __name__     ==  "__main__":
         isMc = True
     
     # prepare the loadall test
-    statandout = commands.getstatusoutput("cp /afs/cern.ch/user/c/cerminar/Alca/GlobalTag/loadall_from_gt_cfg.py .")
+    statandout = commands.getstatusoutput("cp /afs/cern.ch/user/c/cerminar/public/Alca/GlobalTag/loadall_from_gt_cfg.py .")
     if statandout[0] != 0:
         print statandout[1]
         sys.exit(1)
