@@ -42,6 +42,8 @@ if not os.path.isfile(CONFIGFILE):
     print error("*** Error" + " cfg file: " + CONFIGFILE + " doesn't exist!")
     sys.exit(1)
 
+cvsUpdate(CONFIGFILE)
+
 diffconfig = ConfigParser()
 diffconfig.optionxform = str
 
@@ -474,12 +476,7 @@ conf.close()
 
 #------------------------------------------------------------------------------
 
-commitcommand = 'cvs commit -m \"' + NEWGT + '\" ' +  CONFIGFILE
-#print commitcommand
-statusAndOutput = commands.getstatusoutput(commitcommand)
-if statusAndOutput[0] != 0:
-    print statusAndOutput[1]
-
+cvsCommit(CONFIGFILE, NEWGT)
 
 print "-----------------------------------------"
 print newconffile+' ready. Please have a look:'
