@@ -737,3 +737,19 @@ def fillGTCollection(gtConfFileName, gtName, gtEntryCollection):
                 raise ValueError, "tagname is not specified for the leaf node "+leafdata['nodelabel']
             tag = gtEntryCollection.getByTag(leafdata['tagname'])
             tag.setFromTagTreeLine(leafdata)
+
+
+def cvsUpdate(filename):
+    #print "cvs update " + filename
+    # cvs update 
+    outandstat = commands.getstatusoutput("cvs update -A " + filename)
+    if outandstat[0] != 0:
+        print outandstat[1]
+
+def cvsCommit(filename, comment):
+    #print "cvs commit " + filename
+    outandstat = commands.getstatusoutput('cvs commit -m "' + comment + '" ' + filename)
+    if outandstat[0] != 0:
+        print outandstat[1]
+
+
