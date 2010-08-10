@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/07/29 13:59:19 $
- *  $Revision: 1.14 $
+ *  $Date: 2010/07/30 10:32:47 $
+ *  $Revision: 1.15 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -550,6 +550,7 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
       
       if (muon->isGlobalMuon()) {
 	
+	// Info from the GLB fit
 	const HitPattern& hitP = (*muon).globalTrack()->hitPattern();
 
 	muObj->nStripHits =hitP.numberOfValidStripHits();
@@ -559,8 +560,14 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 
 	muObj->nGlbDTHits = hitP.numberOfValidMuonDTHits()+hitP.numberOfBadMuonDTHits();
 
+
+	// Info from the STA fit
+	const HitPattern& hitPSTA = (*muon).outerTrack()->hitPattern();
+	muObj->nStaDTValidHits = hitPSTA.numberOfValidMuonDTHits();
+	muObj->nStaDTHits = hitPSTA.numberOfValidMuonDTHits() + hitPSTA.numberOfBadMuonDTHits();
+
       } else {
-	if (muon->isStandAloneMuon()) {
+	if (muon->isStandAloneMuon()) { // STA Only
 	  const HitPattern& hitP = (*muon).outerTrack()->hitPattern();
 
 	  muObj->nMuHits    = hitP.numberOfValidMuonHits();	
@@ -568,7 +575,7 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	  muObj->nStaDTHits = hitP.numberOfValidMuonDTHits() + hitP.numberOfBadMuonDTHits();
 
 	}
-	if (muon->isTrackerMuon()) {
+	if (muon->isTrackerMuon()) { // TK Only
 	  muObj->nStripHits =( *muon).innerTrack()->hitPattern().numberOfValidStripHits();
 	  muObj->nPixHits   = (*muon).innerTrack()->hitPattern().numberOfValidPixelHits();
 	}
