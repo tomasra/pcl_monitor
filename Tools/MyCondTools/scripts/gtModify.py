@@ -17,6 +17,11 @@ from Tools.MyCondTools.color_tools import *
 from Tools.MyCondTools.gt_tools import *
 from Tools.MyCondTools.odict import *
 
+
+
+
+
+
 if __name__     ==  "__main__":
 
     # set the command line options
@@ -89,10 +94,7 @@ if __name__     ==  "__main__":
     commentfile = ConfigParser(dict_type=OrderedDict)
     commentfile.optionxform = str
     COMMENTFILENAME = "GT_branches/Comments.cfg"
-    # cvs update 
-    outandstat = commands.getstatusoutput("cd GT_branches/; cvs update -A Comments.cfg")
-    if outandstat[0] != 0:
-        print outandstat[1]
+    cvsUpdate(COMMENTFILENAME)
     print 'Reading updated comment file from ',COMMENTFILENAME
     commentfile.read([ COMMENTFILENAME ])
 
@@ -132,13 +134,14 @@ if __name__     ==  "__main__":
         if not os.path.isfile(cfg):
             print "Cfg: " + CONFIGFILE + " doesn't exist!"
             sys.exit(1)
-            
 
+            
         diffconfig = ConfigParser(dict_type=OrderedDict)
         diffconfig.optionxform = str
 
         print "---------------------------------------------------------------"
         print 'Reading configuration file from ',cfg
+        cvsUpdate(cfg)
         diffconfig.read(cfg)
 
         #print "FILENAME: " + diffconfig.filename
@@ -206,6 +209,7 @@ if __name__     ==  "__main__":
                     print "tag check: done"
                 diffconfig.set('AddRecord',newentry.tagName(), newentry.getCfgFormat())
                 # write the comment to the file
+                cvscomment = ''
                 if options.comment != 'NONE':
                     if options.newtag != 'NONE':
                         if (not commentfile.has_option("TagComments",options.newtag)):
@@ -215,9 +219,12 @@ if __name__     ==  "__main__":
                         # this comment is added only to the particular scenario file
                         prevcomment = diffconfig.get("Comments", "Changes")
                         diffconfig.set("Comments", "Changes",prevcomment + "<br> - " + options.comment)
+                    cvscomment = options.comment
 
                 configfile = open(cfg, 'wb')
                 diffconfig.write(configfile)
+                configfile.close()
+                cvsCommit(cfg,cvscomment)
 
             if options.check:
                 isOnline = False
@@ -228,6 +235,7 @@ if __name__     ==  "__main__":
                 print "--- list IOV: " 
                 outputAndStatus = listIov(oldentry.getOraclePfn(isOnline), oldentry.tagName(), passwdfile)
                 print outputAndStatus[1]
+
         elif options.reset:
             
             print warning("*** Warning, reset GT conf file: " + cfg)
@@ -262,8 +270,11 @@ if __name__     ==  "__main__":
             newconfig.set("Comments","Scope",diffconfig.get("Comments","Scope"))
             newconfig.set("Comments","Changes",'')
 
-            
-
+            # write the file
+            configfile = open(cfg, 'wb')
+            newconfig.write(configfile)
+            configfile.close()
+            cvsCommit(cfg,'reset for new GT')
             
         else:
             # no old entry is specified: a new tag must be created from command line options
@@ -299,6 +310,11 @@ if __name__     ==  "__main__":
                 
             print newentry
 
+            # write the file
+            configfile = open(cfg, 'wb')
+            diffconfig.write(configfile)
+            configfile.close()
+            cvsCommit(cfg,'new record added')
 
 
             # write the comment to the file
@@ -314,19 +330,12 @@ if __name__     ==  "__main__":
 
 
 
-        configfile = open(cfg, 'wb')
-        if not options.reset:
-            diffconfig.write(configfile)
-        else:
-            newconfig.write(configfile)
-            
+
         # write the comment file
         commfile = open(COMMENTFILENAME, 'wb')
         commentfile.write(commfile)
-        # cvs commit
-        outandstat = commands.getstatusoutput("cd GT_branches/; cvs commit -m \"\" Comments.cfg")
-        if outandstat[0] != 0:
-            print outandstat[1]
+        commfile.close()
+        cvsCommit(COMMENTFILENAME, '')
             
 
         
