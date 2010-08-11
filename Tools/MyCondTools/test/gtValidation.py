@@ -227,7 +227,7 @@ if __name__     ==  "__main__":
         env.write('eval `scram runtime -csh`\n')
         env.write('scram b -j 4\n')
         env.write('setenv PYTHONPATH ${PYTHONPATH}:${CMSSW_RELEASE_BASE}/bin/slc5_ia32_gcc434/\n')
-        env.write('rehash/\n')
+        env.write('rehash\n')
         env.close()
 
 
