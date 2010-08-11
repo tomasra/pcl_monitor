@@ -14,6 +14,7 @@ from operator import itemgetter
 import datetime
 from datetime import date
 import commands
+import shutil
 
 #from gt_tools import *
 #from odict import *
@@ -123,7 +124,7 @@ if __name__     ==  "__main__":
 
     GTCREATIONAREA = "/afs/cern.ch/user/c/cerminar/Alca/GlobalTag/CMSSW_3_5_4/src"
     GTVALIDATIONAREA = "/build/cerminar/GlobalTag/Nightly"
-
+    CONFSTORE = "/afs/cern.ch/user/c/cerminar/public/Alca/GlobalTag/Nightly/"
 
 
     # 1 - create the conf files for the various GTs
@@ -151,6 +152,7 @@ if __name__     ==  "__main__":
             diffconfig.optionxform = str
             diffconfig.read(cfgfile)
             gtName = diffconfig.get('Common','NewGT')
+            gtNameOld = diffconfig.get('Common','OldGT')
 
             gtNames.append(gtName)
             gtlistnames = gtlistnames + " " + gtName
@@ -161,6 +163,14 @@ if __name__     ==  "__main__":
                 print confbuild_out[1]
             else:
                 gtchanges.append(confbuild_out[1])
+
+            # copy the new conf file on the public
+            shutil.copy(gtName + ".conf", CONFSTORE + gtName + ".conf")
+            # remove the old one
+            try:
+                os.remove(CONFSTORE + gtNameOld + ".conf")
+            except:
+                print "No file: " + CONFSTORE + gtNameOld + ".conf was found!"
             cvs_cmd = "cvs status " + cfgfile
             cvs_out = commands.getstatusoutput(cvs_cmd)
             if cvs_out[0] != 0:
