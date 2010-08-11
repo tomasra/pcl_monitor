@@ -533,17 +533,20 @@ class GTEntryCollection:
         # get the leaf name from the previous one
         entry._leafnode = self._tagList[index]._leafnode
         entry._parent = self._tagList[index]._parent
-        self._tagList[index] = entry
-        self._tagByTag[entry._tag] = index
-
-        if not index in self._newTags:
-            self._newTags.append(index)
 
         if entry.isInPrepAccount() and not self._tagList[index].isInPrepAccount():
             self._tagsInPrep.append(index)
 
         if not entry.isInPrepAccount() and self._tagList[index].isInPrepAccount():
             self._tagsInPrep.remove(index)
+
+        # reassing this entry
+        self._tagList[index] = entry
+        self._tagByTag[entry._tag] = index
+
+        if not index in self._newTags:
+            self._newTags.append(index)
+
         
         return
 
@@ -615,6 +618,7 @@ class GTEntryCollection:
         for idx in self._tagsInPrep:
             tag = self._tagList[idx] 
             print "   tag:", tag.tagName()," obj: ",tag._object," account: ",tag._account
+            
     
     def tagsInPrep(self):
         if len(self._tagsInPrep) != 0:
