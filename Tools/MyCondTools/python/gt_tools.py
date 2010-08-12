@@ -69,7 +69,7 @@ def convertnodecollection(value):
 # python wrappers of cmscon commands
 
 def listIov(connect, tag, passwd):
-    listiovCommand = '../bin/slc5_ia32_gcc434/cmscond_list_iov -c ' + connect + '  -t ' + tag
+    listiovCommand = 'cmscond_list_iov -c ' + connect + '  -t ' + tag
     if passwd != 'None':
         listiovCommand = listiovCommand + ' -P ' + passwd
     statusAndOutput = commands.getstatusoutput(listiovCommand)
@@ -102,7 +102,7 @@ def duplicateIovTag(connect, tag, newtag, passwd):
         index = index + 1
     iovLoadFile.close()
     
-    loadiovCommand = '../bin/slc5_ia32_gcc434/cmscond_load_iov -c ' + connect + ' ' + iovLoadFileName
+    loadiovCommand = 'cmscond_load_iov -c ' + connect + ' ' + iovLoadFileName
     if passwd != 'None':
         loadiovCommand = loadiovCommand + ' -P ' + passwd
 
@@ -116,7 +116,7 @@ def duplicateIovTag(connect, tag, newtag, passwd):
 
     
 def duplicateIov(connect, tag, run, passwd):
-    duplicateiovCommand = "../bin/slc5_ia32_gcc434/cmscond_duplicate_iov -c " + connect + '  -t ' + tag + ' -f ' + run + ' -s ' + run
+    duplicateiovCommand = "cmscond_duplicate_iov -c " + connect + '  -t ' + tag + ' -f ' + run + ' -s ' + run
     if passwd != 'None':
         duplicateiovCommand = duplicateiovCommand + ' -P ' + passwd
 
