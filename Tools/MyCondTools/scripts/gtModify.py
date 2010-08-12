@@ -65,6 +65,9 @@ if __name__     ==  "__main__":
     parser.add_option("--list", action="store_true",dest="list",default=False)
     parser.add_option("--check", action="store_true",dest="check",default=False)
     parser.add_option("--reset", action="store_true",dest="reset",default=False)
+    parser.add_option("-v", "--version", dest="version",
+                      help="version of the new GT (used with --reset)", type="str", metavar="<version>",default="NONE")
+
     
     
     #    parser.add_option("-t", "--globaltag", dest="gt",
@@ -237,6 +240,10 @@ if __name__     ==  "__main__":
                 print outputAndStatus[1]
 
         elif options.reset:
+
+            if options.version == 'NONE':
+                print error("***Error:") + " new version not specified, use -v option!"
+                sys.exit(1)
             
             print warning("*** Warning, reset GT conf file: " + cfg)
             confirm = raw_input('Proceed? (y/N)')
@@ -251,7 +258,15 @@ if __name__     ==  "__main__":
             # starting tag
             newconfig.add_section("Common")
             newconfig.set("Common",'OldGT', diffconfig.get('Common','NewGT'))
-            newconfig.set("Common",'NewGT', 'PIPPO')
+
+            # new GT name
+            newgtname = diffconfig.get('Common','NewGT').split('_V')[0] + '_V' + options.version
+
+            if newgtname == diffconfig.get('Common','NewGT'):
+                print "New tag : " + newgtname + " equal to old tag: " + diffconfig.get('Common','NewGT') + " skipping the reset"
+                continue
+            
+            newconfig.set("Common",'NewGT', newgtname)
             newconfig.set("Common",'Passwd', diffconfig.get('Common','Passwd'))
             newconfig.set("Common",'Environment', diffconfig.get('Common','Environment'))
             newconfig.set("Common",'GTType', diffconfig.get('Common','GTType'))
