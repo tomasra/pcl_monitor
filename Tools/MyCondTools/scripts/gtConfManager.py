@@ -314,7 +314,7 @@ falisedToDuplicateIOV = []
 # loop over all entries in the collection
 for tagidx in range(0,len(tagstobeduplicated)):
     theTag1 = tagCollection._tagList[tagstobeduplicated[tagidx]]
-    if oldtag._account == 'CMS_COND_31X_FROM21X':
+    if theTag1._account == 'CMS_COND_31X_FROM21X':
         continue
     oldtag = theTag1._tag
     newtag = oldtag + duplicateSuffix
