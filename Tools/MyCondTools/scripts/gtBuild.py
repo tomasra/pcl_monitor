@@ -242,7 +242,7 @@ if __name__     ==  "__main__":
         SENDMAIL = "/usr/sbin/sendmail" # sendmail location
     
         p = os.popen("%s -t" % SENDMAIL, "w")
-        p.write("To: gianluca.cerminara@cern.ch\n")
+        p.write("To: gianluca.cerminara@cern.ch,cms-alca-globaltag@cern.ch\n")
         p.write("Subject: [GT-Nightly] " + releaseVal1 + " GTs: " + gtlistnames + "\n")
 
         
@@ -281,6 +281,8 @@ if __name__     ==  "__main__":
         p.write("\n")
         p.write('--- details:\n')
         for gtchange in gtchanges:
+            p.write('\n   ------- \n')
             p.write(gtchange)
+            
         p.write('\n\n')
 
