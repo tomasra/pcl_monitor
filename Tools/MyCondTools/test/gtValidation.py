@@ -197,7 +197,7 @@ if __name__     ==  "__main__":
         #print "Now in dir: " + os.getcwd()
 
     # for older release use the customization file...
-    if not 'CMSSW_3_8' in  options.release:
+    if 'CMSSW_3_7' in  options.release or 'CMSSW_3_6' in  options.release:
 
         # check if Standard Sequence already exists
         if not os.path.exists('Configuration/StandardSequences/'):
@@ -208,7 +208,7 @@ if __name__     ==  "__main__":
 
         # add the custom cfg to read the GT from sqlite
         for gt in args:
-            sedcommand = "cat ~/scripts/customGT.py_template | sed s/TEMPLATEGLOBALTAG/" + gt + "/g > Configuration/StandardSequences/python/customGT_" + gt + ".py"
+            sedcommand = "cat /afs/cern.ch/user/c/cerminar/public/Alca/GlobalTag/customGT.py_template | sed s/TEMPLATEGLOBALTAG/" + gt + "/g > Configuration/StandardSequences/python/customGT_" + gt + ".py"
             outandstat = commands.getstatusoutput(sedcommand)
             if outandstat[0] != 0:
                 print outandstat[1]
