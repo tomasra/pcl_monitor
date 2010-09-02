@@ -356,6 +356,10 @@ if checkOnOnlineConnect == 'new':
 # loop over all entries in the collection
 for tagidx in range(0,len(tagstobechecked)):
     theTag = tagCollection._tagList[tagstobechecked[tagidx]]
+    if theTag._account == "CMS_COND_31X_FROM21X":
+        #print "skip tag: " + str(theTag)
+        continue
+    
     outputAndStatus = listIov(theTag.getOraclePfn(isOnline), theTag._tag, passwdfile)
     if outputAndStatus[0] != 0:
         print ' -----'
