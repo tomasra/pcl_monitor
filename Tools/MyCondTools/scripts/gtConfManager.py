@@ -303,10 +303,14 @@ for tagidx in range(0,len(tagstobeappendedwithsubf)):
 
 tagstobeduplicated = []
 
+
+
+
+
 if duplicateTags == 'all':
     print "Will duplicate all tags!"
     tagstobeduplicated = tagCollection._tagOrder
-else:
+elif duplicateTags != 'None' :
     for tagname in duplicateTags.split(','):
         tag = tagCollection.getByTag(tagname)
         print "Will duplicate tag: " + str(tag)
