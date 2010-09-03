@@ -209,7 +209,7 @@ if __name__ == '__main__':
 
     np=4 # default: four threads
     releasearea = os.environ["CMSSW_BASE"]
-    if 'CMSSW_3_6' in  releasearea or 'CMSSW_3_5' in  releasearea :
+    if 'CMSSW_3_6' in  releasearea or 'CMSSW_3_7' in  releasearea :
         ret = runGTSelection(gts, globaltagsandWfIds, options.local, np, options.original, options.show)
     else:
         ret = runGTSelectionNew(gts, globaltagsandWfIds, options.local, np, options.original, options.show)
