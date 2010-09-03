@@ -306,6 +306,12 @@ tagstobeduplicated = []
 if duplicateTags == 'all':
     print "Will duplicate all tags!"
     tagstobeduplicated = tagCollection._tagOrder
+else:
+    for tagname in duplicateTags.split(','):
+        tag = tagCollection.getByTag(tagname)
+        print "Will duplicate tag: " + str(tag)
+        tagstobeduplicated.append(tagCollection._tagByTag[tagname])
+
 
 failedToDuplicateTag = []
 falisedToDuplicateIOV = []
