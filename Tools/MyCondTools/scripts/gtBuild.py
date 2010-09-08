@@ -99,6 +99,15 @@ def getLatestRelNames(release):
         return [maxRel, maxPre, maxNightly]
 
 
+
+def executeCommad(command):
+    output = commands.getstatusoutput(command)
+    if output[0] != 0:
+        print output[1]
+
+    return output
+
+
 if __name__     ==  "__main__":
 
     # set the command line options
@@ -158,11 +167,8 @@ if __name__     ==  "__main__":
             gtlistnames = gtlistnames + " " + gtName
             confbuild_cmd = "cmsenv; gtConfManager.py --force -t " + gtName + " " + cfgfile
             print confbuild_cmd
-            confbuild_out = commands.getstatusoutput(confbuild_cmd)
-            if confbuild_out[0] != 0:
-                print confbuild_out[1]
-            else:
-                gtchanges.append(confbuild_out[1])
+            confbuild_out = executeCommad(confbuild_cmd)
+            gtchanges.append(confbuild_out[1])
 
             # copy the new conf file on the public
             shutil.copy(gtName + ".conf", CONFSTORE + gtName + ".conf")
@@ -172,9 +178,7 @@ if __name__     ==  "__main__":
             except:
                 print "No file: " + CONFSTORE + gtNameOld + ".conf was found!"
             cvs_cmd = "cvs status " + cfgfile
-            cvs_out = commands.getstatusoutput(cvs_cmd)
-            if cvs_out[0] != 0:
-                print cvs_out[1]
+            cvs_out = executeCommad(cvs_cmd)
             cvsstatus.append(cvs_out[1])
             
 
@@ -182,9 +186,7 @@ if __name__     ==  "__main__":
         # 2 - produce the sqlite files
         gtcreate_cmd = "cmsenv; gtCreate.py " + gtlistnames
         print gtcreate_cmd
-        gtcreate_out = commands.getstatusoutput(gtcreate_cmd)
-        if gtcreate_out[0] != 0:
-            print gtcreate_out[1]
+        gtcreate_out = executeCommad(gtcreate_cmd)
 
         # 3 - create the validation area
         #os.chdir(GTVALIDATIONAREA)
@@ -200,49 +202,69 @@ if __name__     ==  "__main__":
         else:
             releaseVal1 = latestRels[2]
 
-        gtvalidation_cmd = 'ssh lxbuild150 "cd ' + GTVALIDATIONAREA + '; gtValidation.py -r ' + releaseVal1 + ' --auto ' + gtlistnames + '"'
+        # get the tag file
+        tagfile = GTVALIDATIONAREA + "/SwTags/swTags_" + release + ".txt"
+        cvstag_cmd = 'ssh lxbuild150 "cd ' + GTVALIDATIONAREA + '; cvs co -d SwTags  UserCode/cerminar/Alca/RelIntegration/ "'
+        cvstag_out = executeCommad(cvstag_cmd)
+        
+        
+        gtvalidation_cmd = 'ssh lxbuild150 "cd ' + GTVALIDATIONAREA + '; gtValidation.py -f ' + tagfile + ' -r ' + releaseVal1 + ' --auto ' + gtlistnames + '"'
 
         print gtvalidation_cmd
-        gtvalidation_out = commands.getstatusoutput(gtvalidation_cmd)
-        if gtvalidation_out[0] != 100:
-            print gtvalidation_out[1]
-        
-        # 4 - run_all test
+        gtvalidation_out = executeCommad(gtvalidation_cmd)
+#         gtvalidation_out = commands.getstatusoutput(gtvalidation_cmd)
+#         if gtvalidation_out[0] != 100:
+#             print gtvalidation_out[1]
+
+        # 3a - compile and report about the compilatin status
         today = date.today()
         topdirname = str(today)
         runDir = GTVALIDATIONAREA + '/' + topdirname + '/' + releaseVal1 + '/src/'
+
+        compile_cmd = 'ssh lxbuild150 "cd ' + runDir + '; source env.csh |& tee compilation.out"'
+        compile_out = executeCommad(compile_cmd)
+
+        # check that the compilation was succesfull using the file 'compilationError.log'
+        compilationResults = 'Success!\n' 
+        if os.path.exists(runDir + 'compilationError.log'):
+            print "*** Compilation ERROR: details in " +  runDir + 'compilation.out'
+            print compile_out[1]
+            compilationResults = "*** Compilation ERROR: details in:\n " +  runDir + 'compilation.out\n'
+            
+        showtags_cmd = 'ssh lxbuild150 "cd ' + runDir + '; cmsenv; showtags -r "'
+        print showtags_cmd 
+        showtags_out = executeCommad(showtags_cmd)
+        
+        # 4 - run_all test
         #os.chdir(runDir)
         runAll_cmd = 'ssh lxbuild150 "cd ' + runDir + '; source env.csh; rehash; gtLoadAll.py --local all"'
         print runAll_cmd
-        runAll_out = commands.getstatusoutput(runAll_cmd)
-        if runAll_out[0] != 0:
-            print runAll_out[1]
+        runAll_out = executeCommad(runAll_cmd)
 
         # 5 - run the matrix in screen
         runTheMatrix_cmd = 'ssh lxbuild150 "cd ' + runDir + '; source env.csh; rehash; gtRunTheMatrix.py  --local all "'
         print runTheMatrix_cmd
-        runTheMatrix_out = commands.getstatusoutput(runTheMatrix_cmd)
-        if runTheMatrix_out[0] != 0:
-            print runTheMatrix_out[1]
+        runTheMatrix_out = executeCommad(runTheMatrix_cmd)
         
         # 6 - build the report
         # read the loadall results
         loadallfile = open(runDir + "/loadAllTest_local.out", "r")
         loadallfilelines = loadallfile.readlines()
         loadallfile.close()
-        print loadallfilelines
+        #print loadallfilelines
         # 7 - send the report
 
         runmatrixfile = open(runDir + "/runall-report-step123-.log", "r")
         runmatrixfilelines = runmatrixfile.readlines()
         runmatrixfile.close()
-        print runmatrixfilelines
+        #print runmatrixfilelines
         
 
         SENDMAIL = "/usr/sbin/sendmail" # sendmail location
     
         p = os.popen("%s -t" % SENDMAIL, "w")
-        p.write("To: gianluca.cerminara@cern.ch,cms-alca-globaltag@cern.ch\n")
+        p.write("To: gianluca.cerminara@cern.ch,cms-alca-globaltag@cern.ch,Rainer.Mankel@cern.ch\n")
+        #p.write("To: gianluca.cerminara@cern.ch\n")
         p.write("Subject: [GT-Nightly] " + releaseVal1 + " GTs: " + gtlistnames + "\n")
 
         
@@ -252,7 +274,16 @@ if __name__     ==  "__main__":
         p.write("Run dir: " + runDir + "\n")
 
         p.write("\n")
-        p.write('--- versioning:\n')
+        p.write('--- compilation:\n')
+        for tags in showtags_out[1].splitlines():
+            if not 'Test Release based on' in tags and not 'Base Release in' in tags and not 'Your Test release' in tags and not 'MyCondTools' in tags:
+                p.write(tags + '\n')
+        p.write('\n')
+        p.write('Status: ' + compilationResults)
+
+        
+        p.write("\n")
+        p.write('--- GT versioning:\n')
         for cvss in cvsstatus:
             revisionline = ''
             for line in cvss.splitlines():
@@ -269,17 +300,17 @@ if __name__     ==  "__main__":
         p.write('--- load all:\n')
         #p.write(runAll_out[1])
         for line in loadallfilelines:
-            print line
+            print line.rstrip()
             p.write("  " + line)
         p.write("\n")
         p.write("\n")
         p.write('--- run the matrix:\n')
         for line in runmatrixfilelines:
-            print line
+            print line.rstrip()
             if not 'exit: 0 0 0 0' in line:
                 p.write("  " + line)
         p.write("\n")
-        p.write('--- details:\n')
+        p.write('--- GT details:\n')
         for gtchange in gtchanges:
             p.write('\n   ------- \n')
             p.write(gtchange)
