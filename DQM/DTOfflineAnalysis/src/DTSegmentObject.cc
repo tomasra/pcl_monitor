@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2009/07/16 12:16:17 $
- *  $Revision: 1.2 $
+ *  $Date: 2009/07/16 14:47:09 $
+ *  $Revision: 1.3 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -35,8 +35,14 @@ DTSegmentObject::DTSegmentObject() : wheel(0),
 				     chi2(0.),
 				     tTrigMean(3),
 				     tTrigSigma(3),
-				     tTrigKfact(3) {
+				     tTrigKfact(3),
+				     nAvailableHits(0),
+				     Xglob(0.),
+				     Yglob(0.),
+				     Zglob(0.)
+{
   hits = new TClonesArray("DTHitObject");
+  availableHits = new TClonesArray("DTHitObject");
 }
 
 
@@ -59,8 +65,14 @@ DTSegmentObject::DTSegmentObject(int wheel, int station, int sector) : wheel(whe
 								       chi2(0.),
 								       tTrigMean(3),
 								       tTrigSigma(3),
-								       tTrigKfact(3) {
+								       tTrigKfact(3),
+								       nAvailableHits(0),
+								       Xglob(0.),
+								       Yglob(0.),
+								       Zglob(0.)
+{
   hits = new TClonesArray("DTHitObject");
+  availableHits = new TClonesArray("DTHitObject");
 }
 
 DTSegmentObject::DTSegmentObject(const DTSegmentObject& segmObj) : wheel(segmObj.wheel),
@@ -82,9 +94,15 @@ DTSegmentObject::DTSegmentObject(const DTSegmentObject& segmObj) : wheel(segmObj
 								   chi2(segmObj.chi2),
 								   tTrigMean(segmObj.tTrigMean),
 								   tTrigSigma(segmObj.tTrigSigma),
-								   tTrigKfact(segmObj.tTrigKfact) {
+								   tTrigKfact(segmObj.tTrigKfact),
+								   nAvailableHits(0),
+								   Xglob(0.),
+								   Yglob(0.),
+								   Zglob(0.)
+{
 // new TClonesArray(*(segmObj.hits));
   hits = (TClonesArray *) segmObj.hits->Clone();
+  availableHits = (TClonesArray *) segmObj.availableHits->Clone();
 }
 
 
@@ -94,6 +112,7 @@ DTSegmentObject::~DTSegmentObject(){
 //   hits->SetOwner(kTRUE);
 //   hits->Clear();
   delete hits;
+  delete availableHits;
   
 }
 
@@ -102,6 +121,7 @@ DTHitObject* DTSegmentObject::add1DHit(int wheel, int station, int sector, int s
   if(wheel != this->wheel || station != this->station || sector != this->sector) {
     cout << "[DTSegmentObject::add1DHit]***Error: hits doesn't belong to this segment!" << endl;
   }
+
   DTHitObject* ret = new((*hits)[nHits++]) DTHitObject(wheel, station, sector, sl, layer, wire);
   
 
@@ -127,6 +147,17 @@ void DTSegmentObject::add1DHit(const DTHitObject& hit) {
 }
 
 
+DTHitObject* DTSegmentObject::addAvailable1DHit(int wheel, int station, int sector, int sl, int layer, int wire) {
+  if(wheel != this->wheel || station != this->station || sector != this->sector) {
+    cout << "[DTSegmentObject::addAvailable1DHit]***Error: hits doesn't belong to segment's chamber!" << endl;
+  }
+
+  DTHitObject* ret = new((*availableHits)[nAvailableHits++]) DTHitObject(wheel, station, sector, sl, layer, wire);
+
+  return ret;
+}
+
+
 
 void DTSegmentObject::setTTrig(int sl, double mean, double sigma, double kfact) {
   tTrigMean.AddAt(mean,sl-1);
@@ -139,6 +170,12 @@ void DTSegmentObject::setPositionInChamber(double x, double y, double z) {
  Xsl = x;
  Ysl = y;
  Zsl = z;
+}
+
+void DTSegmentObject::setGlobalPosition(float x, float y, float z) {
+ Xglob = x;
+ Yglob = y;
+ Zglob = z;
 }
 
 

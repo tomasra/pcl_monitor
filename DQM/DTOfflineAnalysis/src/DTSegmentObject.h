@@ -4,8 +4,8 @@
 /** \class DTSegmentObject
  *  No description available.
  *
- *  $Date: 2009/07/16 12:16:17 $
- *  $Revision: 1.2 $
+ *  $Date: 2009/07/16 14:47:09 $
+ *  $Revision: 1.3 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -35,12 +35,14 @@ public:
   void add1DHit(const DTHitObject& hit);
 
   DTHitObject * add1DHit(int wheel, int station, int sector, int sl, int layer, int wire);
+  DTHitObject * addAvailable1DHit(int wheel, int station, int sector, int sl, int layer, int wire);
 
   void setTTrig(int sl, double mean, double sigma, double kfact);
   double getTTrig(int sl, double& mean, double& sigma, double& kfact) const;
   double getTTrig(int sl) const;
 
   void setPositionInChamber(double x, double y, double z);
+  void setGlobalPosition(float x, float y, float z);
 
 protected:
 
@@ -85,14 +87,23 @@ public:
   TArrayD tTrigKfact;
   
 
-  //   // the Collection of hits
+  // the Collection of hits belonging to the segments
   TClonesArray *hits;
 
+
+  // the Collection of available 1D hits
+  int nAvailableHits;
+  TClonesArray *availableHits;
+
+  // Global coordinates
+  float Xglob;
+  float Yglob;
+  float Zglob;
 
 private:
 //   static TClonesArray * s_hits;
 
-  ClassDef(DTSegmentObject,1)
+  ClassDef(DTSegmentObject,2)
 };
 #endif
 

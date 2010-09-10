@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/07/30 10:32:47 $
- *  $Revision: 1.15 $
+ *  $Date: 2010/08/10 14:33:25 $
+ *  $Revision: 1.16 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -168,6 +168,9 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
       segmObj->phi = dxdz;
       segmObj->theta = dydz;
       segmObj->chi2 = (*segment4D).chi2()/(*segment4D).degreesOfFreedom();
+
+      GlobalPoint segment4DGlobalPos = chamber->toGlobal(segment4DLocalPos);
+      segmObj->setGlobalPosition(segment4DGlobalPos.x(), segment4DGlobalPos.y(), segment4DGlobalPos.z());
 
 
       int projection = -1;
@@ -367,6 +370,32 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
       // Add the DTSegmentObject to the TClonesArray
       if(debug) cout << "Add new segment with # hits: " << segmObj->hits->GetEntriesFast() << endl;
       if(debug) cout << "    new # of segments is: " << segmCounter << endl;
+
+      
+
+      // Add available 1D hits for this chamber
+      
+      for (int sl = 1; sl <=3; ++sl) {
+	if ((*chamberId).station()==4 && sl==3) continue;
+	for (int layer = 1; layer <=4; ++layer) {
+	  DTLayerId lId((*chamberId),sl,layer);
+	  DTRecHitCollection::range range = dtRecHits->get(lId);
+	  for (DTRecHitCollection::const_iterator recHit1D = range.first; recHit1D!=range.second; ++recHit1D) {
+	    DTWireId wireId = (*recHit1D).wireId();
+	    DTHitObject *hitObj = segmObj->addAvailable1DHit(wireId.wheel(), wireId.station(), wireId.sector(),wireId.superLayer(), wireId.layer(), wireId.wire());
+	    
+	    hitObj->digiTime = (*recHit1D).digiTime() ;
+	    hitObj->setLocalPosition((*recHit1D).localPosition().x(),
+				     (*recHit1D).localPosition().y(),
+				     (*recHit1D).localPosition().z());
+	    hitObj->distFromWire = ((*recHit1D).localPosition(DTEnums::Right)-(*recHit1D).localPosition(DTEnums::Left)).mag()/2.;
+	    
+	    hitObj->sigmaPos = sqrt((*recHit1D).localPositionError().xx());
+
+	  }
+	}
+      }
+      
 
     }// End of loop over the segm4D of this ChamerId
   }
