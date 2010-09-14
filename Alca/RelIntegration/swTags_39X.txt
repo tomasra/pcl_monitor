@@ -1,0 +1,5 @@
+HLTrigger/Configuration                          V01-20-02      
+HLTrigger/HLTanalyzers                           V03-02-31-01   
+HLTrigger/special                                V01-16-01      
+RecoEgamma/EgammaHLTAlgos                        V00-05-01      
+RecoEgamma/EgammaHLTProducers			 V00-04-34      
