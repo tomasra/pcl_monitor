@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/07/29 14:05:14 $
- *  $Revision: 1.7 $
+ *  $Date: 2010/07/29 17:14:51 $
+ *  $Revision: 1.8 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -326,6 +326,8 @@ DTDetId TTreeReader::buildDetid(int wheel, int station, int sector, int sl, int 
     return DTDetId(wheel, station, sector, sl, 0, 0);
   } else if(theGranularity == 5) { // statBySL
     return DTDetId(wheel, station, 0, sl, 0, 0);
+  } else if(theGranularity == 6) { // statByLayer
+    return DTDetId(wheel, station, 0, sl, layer, 0);
   }
   return DTDetId(0, 0, 0, 0, 0, 0);
   
@@ -348,6 +350,8 @@ void TTreeReader::setGranularity(const TString& granularity) {
   } else if(granularity == "statBySL") {
     cout << "Granularity: Station by SL" << endl;
     theGranularity = 5;
+  } else if(granularity == "statByLayer") {
+    theGranularity = 6;
   }
 }
 // TString TTreeReader::getNameFromDetId(const DTDetId& detId) const {

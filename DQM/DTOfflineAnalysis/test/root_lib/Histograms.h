@@ -41,7 +41,7 @@ class HRes1DHits{
 			   //"Res. dist from wire vs Y",
  			   200, -200, 200, 600, -0.4, 0.4);
 
-//     hResPos = new TH1F(N+"_hResPos", "Res. on position", 200, -0.4, 0.4);
+    hResPos = new TH1F(N+"_hResPos", N+"_hResPos", 200, -0.4, 0.4);
     
 //     hPullPos = new TH1F(N+"_hPullPos", "Pulls on position", 100, -5, 5);
 
@@ -62,7 +62,7 @@ class HRes1DHits{
     hResDistVsAngle = (TH2F *) file->Get(name_+"_hResDistVsAngle");
     hResDistVsX = (TH2F *) file->Get(name_+"_hResDistVsX");
     hResDistVsY = (TH2F *) file->Get(name_+"_hResDistVsY");
-//     hResPos = (TH1F *) file->Get(name_+"_hResPos");
+    hResPos = (TH1F *) file->Get(name_+"_hResPos");
 //     hPullPos = (TH1F *) file->Get(name_+"_hPullPos");
 //     hResPosVsAngle = (TH2F *) file->Get(name_+"_hResPosVsAngle");
 
@@ -83,7 +83,7 @@ class HRes1DHits{
     delete hResDistVsDist;
     delete hResDistVsAngle;
     delete hResDistVsY;
-//     delete hResPos;
+    delete hResPos;
 //     delete hPullPos;
 //     delete hResPosVsAngle;
 }
@@ -92,7 +92,7 @@ class HRes1DHits{
     hResDist->Fill(deltaDist);
     hResDistVsDist->Fill(distFromWire, deltaDist);
     hResDistVsAngle->Fill(angle, deltaDist);
-//     hResPos->Fill(deltaX);
+    hResPos->Fill(deltaX);
 //     hPullPos->Fill(deltaX/sigma);
 //     hResPosVsAngle->Fill(angle, deltaX);
     hResDistVsX->Fill(hitX, deltaDist);
@@ -104,7 +104,7 @@ class HRes1DHits{
     hResDist->Write();
     hResDistVsDist->Write();
     hResDistVsAngle->Write();
-//     hResPos->Write();
+    hResPos->Write();
 //     hPullPos->Write();
 //     hResPosVsAngle->Write();
     hResDistVsX->Write();
