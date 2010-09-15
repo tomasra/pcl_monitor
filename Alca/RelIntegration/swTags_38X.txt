@@ -1,1 +1,18 @@
-
+V01-19-08       FastSimulation/Configuration
+V04-08-14       FastSimulation/HighLevelTrigger
+V00-03-16       FastSimulation/Muons
+V01-20-03       HLTrigger/Configuration
+V03-02-31-01    HLTrigger/HLTanalyzers
+V00-00-75       HLTrigger/JetMET
+V02-10-03       HLTrigger/Muon
+V01-16-01       HLTrigger/special
+V01-05-00       RecoBTag/SecondaryVertex
+V05-08-00       RecoBTag/SoftLepton
+V01-16-03       RecoEgamma/EgammaElectronAlgos
+V01-10-01       RecoEgamma/EgammaElectronProducers
+V00-05-01       RecoEgamma/EgammaHLTAlgos
+V00-04-34       RecoEgamma/EgammaHLTProducers
+V01-02-01-01    RecoHI/HiTracking
+V00-05-00-01    RecoMuon/GlobalTrackingTools
+V01-02-28       RecoMuon/TrackerSeedGenerator
+V01-03-01       RecoTracker/TkTrackingRegions
