@@ -3,3 +3,4 @@ V00-09-10      CalibTracker/SiStripQuality
 V00-05-00-01   RecoMuon/GlobalTrackingTools
 V01-02-28      RecoMuon/TrackerSeedGenerator
 CondFormats/ESObjects V00-00-11
+RecoEcal/EgammaClusterProducers V00-07-13
