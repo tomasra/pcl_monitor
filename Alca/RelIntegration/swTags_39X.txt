@@ -7,3 +7,4 @@ V02-05-01      DataFormats/CaloRecHit
 V00-07-13      RecoEcal/EgammaClusterProducers                  
 V00-12-20      RecoLocalCalo/EcalRecAlgos                       
 V02-01-00      RecoLocalCalo/EcalRecProducers  
+V00-19-04      L1Trigger/CSCTrackFinder
