@@ -187,12 +187,12 @@ class HSegment{
     hDeltaT0      = new TH1F(N+"_hDeltaT0","Delta t0 (ns)",100,-20,20);
     hDeltaT0->Sumw2();
 
-    hVDrift = new TH1F(N+"_hVDrift", "V drift",100,-1,-0.96);
+    hVDrift = new TH1F(N+"_hVDrift", "V drift",100,-0.1,0.1);
     hVDrift->Sumw2();
     
     hVDriftVsPhi = new TH2F(N+"_hVDriftVsPhi", "V_drift vs phi",
 			    100, -1.58, 1.58,
-			    100,-1,-0.96);
+			    100,-0.1,0.1);
 
     hNSegm = new TH1F(N+"hNSegm","# of segments", 100, 0, 100);
     hNSegm->Sumw2();
@@ -255,9 +255,10 @@ class HSegment{
     ht0Theta->Fill(t0Theta);
     ht0PhiVsPhi->Fill(phi,t0Phi);
     hDeltaT0->Fill(t0Theta-t0Phi);
-    hVDrift->Fill(vDrift);
-    hVDriftVsPhi->Fill(phi,vDrift);
-
+    if (vDrift!=0.) {
+      hVDrift->Fill(vDrift);
+      hVDriftVsPhi->Fill(phi,vDrift);
+    }
   }
   
   void Write() {
