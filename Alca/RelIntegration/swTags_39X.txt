@@ -1,8 +1,0 @@
-V00-00-11      CondFormats/ESObjects                            
-V02-05-01      DataFormats/CaloRecHit                           
-V00-07-14      RecoEcal/EgammaClusterProducers                  
-V00-12-20      RecoLocalCalo/EcalRecAlgos                       
-V02-01-02      RecoLocalCalo/EcalRecProducers  
-V00-19-04      L1Trigger/CSCTrackFinder
-V00-01-23      RecoEcal/Configuration
-V00-06-17      RecoEcal/EgammaClusterAlgos 
