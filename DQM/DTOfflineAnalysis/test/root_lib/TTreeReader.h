@@ -4,8 +4,8 @@
 /** \class TTreeReader
  *  No description available.
  *
- *  $Date: 2010/07/29 14:05:16 $
- *  $Revision: 1.4 $
+ *  $Date: 2010/07/29 17:14:25 $
+ *  $Revision: 1.5 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -45,6 +45,9 @@ public:
     filterEvents=option;
   }
   
+  void setMinPt(float pt) {
+    ptmin=pt;
+  }
   
   void setDebug(int debug);
   
@@ -87,6 +90,7 @@ private:
   std::map<TString, DTCut> cutSets;   
 
   int filterEvents;
+  float ptmin;
   int debug;
 };
 

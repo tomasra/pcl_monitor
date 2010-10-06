@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/07/29 17:14:51 $
- *  $Revision: 1.8 $
+ *  $Date: 2010/09/14 13:23:37 $
+ *  $Revision: 1.9 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -16,6 +16,7 @@
 #include "DTMuObject.h"
 #include "Histograms.h"
 #include "Utils.h"
+#include "TMath.h"
 
 
 #include <iostream>
@@ -26,10 +27,40 @@
 using namespace std;
 
 
+TH1F* hMuonQualityChi2Sta=new TH1F("hMuonQualityChi2Sta","hChi2Sta", 100, 0, 10);
+TH1F* hMuonQualityNHitsGlb=new TH1F("hMuonQualityNHitsGlb","hHitsGlb", 60, 0, 60);
+TH1F* hMuonQualityChi2Glb=new TH1F("hMuonQualityChi2Glb","hChi2Glb", 100, 0, 10);
+TH1F* hMuonQualityNHitsSta=new TH1F("hMuonQualityNHitsSta","hHitsSta", 60, 0, 60);
+
+
+// ---> Study of theta eff.
+TH2F* hThetaEffNum1;
+TH2F* hThetaEffDen;
+TH2F* hThetaEffNum2;
+TH2F* hThetaEffNum3;
+TH2F* hThetaEffNum4;
+TH1F* hNAvThetaHits;
+
+TH1F* hThetaHitsPosition1= new TH1F ("hThetaHitsPosition1", "0 Theta Hits", 10,0,10) ;
+TH1F* hThetaHitsPosition2=new TH1F ("hThetaHitsPosition2", "# Theta Hits >=3, outside window ", 10,0,10);
+TH1F* hThetaHitsPosition3=new TH1F ("hThetaHitsPosition3", "# Theta Hits>=3, in window", 10,0,10);
+TH1F* hThetaHitsPosition4=new TH1F ("hThetaHitsPosition4", "# Theta Hits >=4, outside window ", 10,0,10) ;
+TH1F* hThetaHitsPosition5=new TH1F ("hThetaHitsPosition5", "# Theta Hits >= 4, in window", 10,0,10) ;
+TH1F* hDistAv=new TH1F ("hDistAv","Distance in wire",10,0,10);
+TH1F* hDistHits=new TH1F ("hDistHits","Distance in wire",10,0,10);
+
+TH1F* hDistHits2L=new TH1F ("hDistHits2L","Distance in wire",10,0,10);
+
+bool insideThetaWindow(float theta, int wheel, int station);
+// <---
+
+
+
 TTreeReader::TTreeReader(const TString& fileName, const TString& outputFile) : theOutFile(outputFile),
 									       theGranularity(-1),
 									       nevents(0),
 									       filterEvents(0),
+									       ptmin(0.),
 									       debug(0) {
   // open the file containing the tree
   TFile *file = new TFile(fileName.Data());
@@ -62,11 +93,12 @@ TTreeReader::TTreeReader(TTree* aTree, const TString& outputFile) :
   theGranularity(-1),
   nevents(0),
   filterEvents(0),
+  ptmin(0.),
   debug(0)
  {
 
-  cout << "Opening tree: " << tree->GetName() << " with "
-       << tree->GetEntries() << " entries" << endl;
+   cout << "Opening tree: " << tree->GetName() << " ... ";
+   cout << tree->GetEntries() << " entries" << endl;
 
   segments = new TClonesArray("DTSegmentObject");
   muons  = new TClonesArray("DTMuObject");
@@ -95,6 +127,21 @@ HSegment *hAll;
 
 void TTreeReader::begin() {
   cout << "Begin" << endl;
+
+
+  hThetaEffNum1 =new TH2F ("hThetaEffNum1","hThetaEffNum1",12 ,0.5,12.5,15,0.5,15.5);
+  hThetaEffDen = new TH2F("hThetaEffDen","hThetaEffDen",12,0.5,12.5,15,0.5,15.5);
+
+  hThetaEffNum2 =new TH2F ("hThetaEffNum2","hThetaEffNum2",12 ,0.5,12.5,15,0.5,15.5);
+  
+
+  hThetaEffNum3 =new TH2F ("hThetaEffNum3","hThetaEffNum3",12 ,0.5,12.5,15,0.5,15.5);
+  
+
+  hThetaEffNum4 =new TH2F ("hThetaEffNum4","hThetaEffNum4",12 ,0.5,12.5,15,0.5,15.5);
+  hNAvThetaHits=new TH1F("hNAvThetaHits"  ,"hTheta available Hits if non efficient with 3 or 4 Theta Hits",20,0,20. );
+  
+
 
   hDeltaSectVsDeltaStat = new TH2F("hDeltaSectVsDeltaStat","hDeltaSectVsDeltaStat", 4, 0, 4, 12, 0, 12);
   hAll = new HSegment("ALL");
@@ -153,13 +200,113 @@ void TTreeReader::begin() {
 }
 
 void TTreeReader::processEvent(int entry) {
-  if(entry%10000 == 0 ||  debug > 2) {
-    cout << "-----  Process event " << entry << endl;
+
+  //---> Muon quality plots
+  
+  for(int iMu=0; iMu < muons->GetEntriesFast(); iMu++) { // loop over events
+    DTMuObject *oneMu = (DTMuObject *) muons->At(iMu);	
+    
+    // Barrel GLOBAL muons with pt>10 
+    if (fabs(oneMu->eta)<1.2 && oneMu->type<3 && TMath::Abs(oneMu->qpt) >=10) {
+      hMuonQualityChi2Sta->Fill(oneMu->normChi2sta);
+      hMuonQualityChi2Glb->Fill(oneMu->normChi2glb);
+      hMuonQualityNHitsGlb->Fill(oneMu->nGlbDTHits);
+      hMuonQualityNHitsSta->Fill(oneMu->nStaDTHits);
+    }
   }
+
+  //<----
 
   for(int iSegm=0; iSegm < segments->GetEntriesFast(); iSegm++) { // loop over segments 
 
     DTSegmentObject *oneSeg = (DTSegmentObject *) segments->At(iSegm);
+
+    // <---- Theta efficiency plots
+    int thetaCase =0;   
+    if (oneSeg->station!=4 && 
+	oneSeg->nHitsPhi>=8 && 
+	oneSeg->phi>-25*TMath::DegToRad() && oneSeg->phi< 25*TMath::DegToRad()) {
+	
+      hThetaEffDen->Fill(oneSeg->sector,(5*oneSeg->station -2)+ oneSeg->wheel );
+      if(oneSeg->nHitsTheta ==0)
+	{
+	  thetaCase=1;
+	}      
+    
+      if (oneSeg->nHitsTheta >=3){
+	if( insideThetaWindow(oneSeg->theta,oneSeg->wheel,oneSeg->station)) {
+	  hThetaEffNum2 -> Fill( oneSeg->sector,(5*oneSeg->station -2)+ oneSeg->wheel  );
+	  thetaCase = 3 ;
+	}
+	else {
+	  hThetaEffNum1 -> Fill( oneSeg->sector,(5*oneSeg->station -2)+ oneSeg->wheel  );
+	  thetaCase = 2;
+	}
+      }
+
+      if (oneSeg->nHitsTheta >=4){
+	if ( insideThetaWindow(oneSeg->theta,oneSeg->wheel,oneSeg->station)){
+	  hThetaEffNum4 -> Fill( oneSeg->sector,(5*oneSeg->station -2)+ oneSeg->wheel  );
+	  thetaCase = 5;
+	} 
+	else {
+	  hThetaEffNum3->Fill( oneSeg->sector,(5*oneSeg->station -2)+ oneSeg->wheel  );
+	  thetaCase = 4;
+	}
+      }
+
+      
+      int nAvTheta = 0;
+      for(int iHit = 0; iHit != oneSeg->nAvailableHits; ++iHit) { // loop over the available hits 
+	DTHitObject * hitObj = (DTHitObject *) oneSeg->availableHits->At(iHit);
+
+	for (int jHit=iHit + 1; jHit != oneSeg->nAvailableHits;++jHit){//second loop over available hits
+	  DTHitObject * hitObj1 = (DTHitObject *) oneSeg->availableHits->At(jHit);
+	  // DTDetId detId1(oneSeg->wheel, oneSeg->station, oneSeg->sector,
+	  //	 hitObj1->sl, hitObj1->layer, hitObj1->wire);
+	
+	  if ( (hitObj->sl-hitObj1->sl)==0 && fabs(hitObj->layer - hitObj1->layer) ==1    ){
+	  
+	    int distAv;
+	    distAv =  fabs(hitObj->wire - hitObj1->wire);
+	    hDistAv->Fill(distAv);
+	  }
+	}
+	if (hitObj->sl==2) {
+	  nAvTheta++;
+	} 
+      } //end loop on available Theta-hits 
+
+      for (int iHit = 0; iHit != oneSeg->nHits; ++iHit  ){//loop over hits
+	
+	DTHitObject * hitObj3 = (DTHitObject *) oneSeg->hits->At(iHit);
+	for (int jHit = iHit + 1; jHit != oneSeg->nHits; ++jHit){ //second loop over hits
+	  DTHitObject * hitObj4 = (DTHitObject *) oneSeg->hits->At(jHit);
+		
+	  if ( (hitObj3->sl-hitObj4->sl)==0 && fabs(hitObj3->layer - hitObj4->layer) ==1    ){
+	  
+	    int distHits ;
+	    distHits=  fabs(hitObj3->wire - hitObj4->wire);
+	    hDistHits->Fill(distHits);
+	  }
+	  if ( (hitObj3->sl-hitObj4->sl)==0 && fabs(hitObj3->layer - hitObj4->layer) ==2   ){
+	  
+	    int distHits ;
+	    distHits=  fabs(hitObj3->wire - hitObj4->wire);
+	    hDistHits2L->Fill(distHits);
+	  }
+	}
+
+
+	hNAvThetaHits->Fill(nAvTheta);
+	if(thetaCase==1){hThetaHitsPosition1->Fill(nAvTheta);}
+	else if(thetaCase==2){hThetaHitsPosition2->Fill(nAvTheta);}
+	else if(thetaCase==3){hThetaHitsPosition3->Fill(nAvTheta);}
+	else if(thetaCase==4){hThetaHitsPosition4->Fill(nAvTheta);}
+	else if(thetaCase==5 ){hThetaHitsPosition5->Fill(nAvTheta);}
+      }
+    }
+    //< ---
 
     if(iSegm != 0) {
       for(int iPrev = 0; iPrev < iSegm; ++iPrev) {
@@ -167,6 +314,7 @@ void TTreeReader::processEvent(int entry) {
 	hDeltaSectVsDeltaStat->Fill(fabs(prevSeg->station - oneSeg->station), fabs(prevSeg->sector - oneSeg->sector));	
       }
     }
+    
     hAll->Fill(oneSeg->nHits,
 	       oneSeg->nHitsPhi,
 	       oneSeg->nHitsTheta,
@@ -231,7 +379,7 @@ void TTreeReader::processEvent(int entry) {
 	cout << "       digi time: " << hitObj->digiTime << endl;
       }
       int segSl = hitObj->sl;
-      if((theGranularity == 3 || theGranularity == 4) &&   hitObj->sl == 3) segSl = 1;
+      if((theGranularity == 3 || theGranularity == 4) &&   hitObj->sl == 3) segSl = 1; // "byView"
       DTDetId detIdForPlot = buildDetid(oneSeg->wheel, oneSeg->station, oneSeg->sector,
 					segSl, hitObj->layer, hitObj->wire);
       vector<TString>::const_iterator cut =  passedCuts.begin();
@@ -270,6 +418,29 @@ void TTreeReader::end() {
   }
   hDeltaSectVsDeltaStat->Write();
   hAll->Write();
+
+  hMuonQualityChi2Sta ->Write();
+  hMuonQualityChi2Glb ->Write();
+  hMuonQualityNHitsGlb->Write ();
+  hMuonQualityNHitsSta->Write();
+
+  hThetaEffDen->Write();
+  hThetaEffNum1->Write();
+  hThetaEffNum2->Write();
+  hThetaEffNum3->Write(); 
+  hThetaEffNum4->Write();
+  hNAvThetaHits->Write();  
+
+  hThetaHitsPosition1->Write();
+  hThetaHitsPosition2->Write();
+  hThetaHitsPosition3->Write();
+  hThetaHitsPosition4->Write();
+  hThetaHitsPosition5->Write();
+  hDistAv->Write();
+  hDistHits->Write();
+  hDistHits2L->Write();
+
+
   theFile->Close();
 }
 
@@ -281,9 +452,12 @@ void TTreeReader::analyse(const int nEventMax) {
 
     tree->GetEntry(i);
 
+      if(i%25000 == 0 ||  debug > 2) {
+	cout << "-----  Process event " << i << endl;
+      }
+
     
-    
-    if (filterEvents==1) {
+    if (filterEvents>=1) {
       // Event quality selection
       // Select data taking periods
       if (run> 50000) { // if you happen to use this with MC...
@@ -300,7 +474,7 @@ void TTreeReader::analyse(const int nEventMax) {
       for(int iMu=0; iMu < muons->GetEntriesFast(); iMu++) { // loop over events
 	DTMuObject *oneMu = (DTMuObject *) muons->At(iMu);	
 	
-	if (fabs(oneMu->eta)<1.2 && oneMu->type!=5) tagEvent=true;
+	if (fabs(oneMu->eta)<1.2 && oneMu->type!=5 && fabs(oneMu->qpt) >ptmin) tagEvent=true;	
       }
       if (!tagEvent) continue;
     }
@@ -328,7 +502,10 @@ DTDetId TTreeReader::buildDetid(int wheel, int station, int sector, int sl, int 
     return DTDetId(wheel, station, 0, sl, 0, 0);
   } else if(theGranularity == 6) { // statByLayer
     return DTDetId(wheel, station, 0, sl, layer, 0);
+  } else if(theGranularity == 7) { // chamberByLayer
+    return DTDetId(wheel, station, sector, sl, layer, 0);
   }
+
   return DTDetId(0, 0, 0, 0, 0, 0);
   
 }
@@ -351,7 +528,11 @@ void TTreeReader::setGranularity(const TString& granularity) {
     cout << "Granularity: Station by SL" << endl;
     theGranularity = 5;
   } else if(granularity == "statByLayer") {
+    cout << "Granularity: Station by Layer" << endl;
     theGranularity = 6;
+  } else if(granularity == "chamberByLayer") {
+    cout << "Granularity: Chamber by Layer" << endl;
+    theGranularity = 7;
   }
 }
 // TString TTreeReader::getNameFromDetId(const DTDetId& detId) const {
@@ -403,5 +584,49 @@ void TTreeReader::setCuts(const TString& set, const DTCut& cut) {
   cutSets[set] = cut;
   cout << "--- Set cut: " << set << endl;
   cout << cut << endl;
+}
 
+
+
+
+bool insideThetaWindow(float theta, int wheel, int station) {
+  
+  double zMax=-1;
+  double zMin=-1;
+  double r=-1;
+
+  if( station==1){
+    r=4.44; 
+  }
+  else if(station==2){
+    r=5.23;
+  }
+  else if(station==3){
+    r=6.30;
+  }
+
+  if ( wheel==0){   
+    zMin=0    ;
+    zMax=1.199; 
+  }
+  else if ( TMath::Abs(wheel)==1 ){
+    zMin=1.4785;
+    zMax=3.8765;
+  }
+  else if (TMath::Abs(wheel)==2){
+    zMin=4.1345;
+    zMax=6.5325;
+  } 
+    
+  float thetaMax =TMath::ATan(zMax/r);
+  float thetaMin =TMath::ATan(zMin/r);
+
+
+  if (wheel==0) {
+    //  cout<<thetaMax<<endl; 
+    return (TMath::Abs(theta)<thetaMax);
+  }
+
+  //    cout << -thetaMax << " " << theta << -thetaMin << " " << (theta>-thetaMax && theta < -thetaMin) << endl;
+  return (theta>-thetaMax && theta < -thetaMin);
 }

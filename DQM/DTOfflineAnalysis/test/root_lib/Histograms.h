@@ -29,7 +29,7 @@ class HRes1DHits{
     hResDistVsAngle = new TH2F(N+"_hResDistVsAngle",
 			       N+"_hResDistVsAngle",
 			       //"Res dist from wire vs angle",
-			       100,-3.15,3.15, 200, -0.4, 0.4);
+			       200,-3.15,3.15, 200, -0.4, 0.4);
     
     hResDistVsX = new TH2F(N+"_hResDistVsX",
 			   N+"_hResDistVsX",
