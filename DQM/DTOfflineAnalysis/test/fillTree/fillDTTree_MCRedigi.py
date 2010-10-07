@@ -46,8 +46,6 @@ process.source = cms.Source("PoolSource",
 
 process.source.inputCommands = cms.untracked.vstring("keep *", "drop *_MEtoEDMConverter_*_*", "drop L1GlobalTriggerObjectMapRecord_hltL1GtObjectMap__HLT")
 
-# message logger
-process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 
 process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32(-1)
@@ -69,7 +67,8 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 process.load("Configuration/StandardSequences/Reconstruction_cff")
 process.load('Configuration.EventContent.EventContent_cff')
 
-
+# message logger
+process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 
 #process.GlobalTag.globaltag = "MC_38Y_V12::All"
 process.GlobalTag.globaltag = "START38_V12::All"
