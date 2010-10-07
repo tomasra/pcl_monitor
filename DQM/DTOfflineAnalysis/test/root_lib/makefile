@@ -12,21 +12,22 @@ DllSuf        = so
 EVENTLIB      = $(EVENTO)
 OutPutOpt     = -o
 
-ROOTCFLAGS    = $(shell root-config --cflags)
+ROOTCFLAGS    = $(shell root-config --cflags) 
 ROOTLIBS      = $(shell root-config --libs)
 ROOTGLIBS     = $(shell root-config --glibs)
 
+ROOFITINCL    =  -I $(shell scram tool info roofitcore | grep "INCLUDE=" | sed s/"INCLUDE="//)
+ROOFITLIBS    =  -L $(shell scram tool info roofitcore | grep "LIBDIR=" | sed s/"LIBDIR="//) -l RooFit -l RooFitCore
 
-# CXX		= /usr/local/gcc-alt-2.95.2/bin/c++
-CXX		= /usr/bin/c++
-#CXX		= /usr/local/gcc-alt-3.2/bin/c++
-CXXFLAGS      = -O -Wall -fPIC $(ROOTCFLAGS)
-LD	 	= /usr/bin/c++
-#LD	 	= /usr/local/gcc-alt-3.2/bin/c++\
+
+CXX		= $(shell scram tool info cxxcompiler | grep "CXX=" | sed s/"CXX="//)
+
+CXXFLAGS      = -O -Wall -fPIC $(ROOTCFLAGS) $(ROOFITINCL)
+LD	 	= $(CXX)
 LDFLAGS       = 
 SONAME	      = libEvent.so
-SOFLAGS       = -shared -Wl,-soname,$(SONAME)
-LIBS          = $(ROOTLIBS) -lm -ldl -rdynamic
+SOFLAGS       = $(shell root-config --ldflags --libs) -shared -Wl,-soname,$(SONAME)
+LIBS          = $(ROOTLIBS) $(ROOFITLIBS) -lm -ldl -rdynamic
 GLIBS         = $(ROOTGLIBS) -L/usr/X11R6/lib \
                 -lXpm -lX11 -lm -ldl -rdynamic
 
@@ -50,7 +51,9 @@ $(PROGRAM):     $(OBJS) main.o
 
 $(SONAME):	$(OBJS)
 		@echo "Linking $(SONAME):"
-		$(LD) -rdynamic $(OBJS) $(SOFLAGS) -o $(SONAME)
+		$(LD) $(LIBS) $(OBJS) $(SOFLAGS) -o $(SONAME) 
+
+#-L/afs/cern.ch/cms/slc5_ia32_gcc434/lcg/root/5.22.00d-cms16/lib  -lPhysics /afs/cern.ch/cms/slc5_ia32_gcc434/lcg/roofit/5.26.00-cms3/lib/libRooFit.so /afs/cern.ch/cms/slc5_ia32_gcc434/lcg/roofit/5.26.00-cms3/lib/libRooFitCore.so
 
 clean:          cleandict
 		rm -f $(OBJS) main.o core
