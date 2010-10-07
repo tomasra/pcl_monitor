@@ -18,7 +18,6 @@ process.maxEvents = cms.untracked.PSet(
     )
 
 
-#process.load("DQM.DTOfflineAnalysis.dt_dqm_offlineAnalysis_common_cff")
 process.load("DQM.DTOfflineAnalysis.dtLocalRecoAnalysis_cfi")
 
 
@@ -27,8 +26,7 @@ process.load('Configuration/StandardSequences/Geometry_cff')
 
 
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
-#process.GlobalTag.globaltag = "GR_R_35X_V8::All"
-process.GlobalTag.globaltag = "GR_R_36X_V12::All"
+process.GlobalTag.globaltag = "GR_R_38X_V13::All"
 
 process.GlobalTag.toGet = cms.VPSet(
     cms.PSet(record = cms.string("DTTtrigRcd"),
