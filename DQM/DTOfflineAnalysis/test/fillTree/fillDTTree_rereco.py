@@ -29,13 +29,12 @@ process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 process.GlobalTag.globaltag = "GR_R_38X_V13::All"
 
 process.GlobalTag.toGet = cms.VPSet(
-    cms.PSet(record = cms.string("DTTtrigRcd"),
-             tag = cms.string("ttrig"),
-             connect = cms.untracked.string("sqlite_file:Data_v5.db"))
-#    cms.PSet(record = cms.string("DTMtimeRcd"),
-#             tag = cms.string("vdrift"),
-             #              connect = cms.untracked.string("sqlite_file:../calib/MyTables/MC_vdrift_543_532.db"))
-#             connect = cms.untracked.string("sqlite_file:vdrift_543_v8_p3_sigma.db"))
+#    cms.PSet(record = cms.string("DTTtrigRcd"),
+#             tag = cms.string("ttrig"),
+#             connect = cms.untracked.string("sqlite_file:Data_v5.db"))
+    cms.PSet(record = cms.string("DTMtimeRcd"),
+             tag = cms.string("vdrift"),
+             connect = cms.untracked.string("sqlite_file:vdrift_543_v5s1_statByLayer_sigma_a.db"))
 )
 
 ### Non-standard DB alignment
@@ -74,7 +73,7 @@ process.Filter  = cms.Sequence(process.hltL1DoubleMuOpen_Tight)
 
 process.primaryVertexFilter = cms.EDFilter("VertexSelector",
    src = cms.InputTag("offlinePrimaryVertices"),
-   cut = cms.string("!isFake && ndof > 4 && abs(z) <= 15 && position.Rho <= 2"), # tracksSize() > 3 for the older cut
+   cut = cms.string("!isFake && ndof > 4 && abs(z) <= 25 && position.Rho <= 2"), # tracksSize() > 3 for the older cut
    filter = cms.bool(True),   # otherwise it won't filter the events, just produce an empty vertex collection.
 )
 
@@ -86,22 +85,10 @@ thresh = cms.untracked.double(0.25)
 )
 
 
-
-#process.dtLocalRecoAnal.rootFileName = '/data/DT/DtCalibV9-100610/DTLocalReco_param_tof2_prop1_ttrigv6_3-5.root'
-
-#process.dtLocalRecoAnal.rootFileName = '/data/DT/DtCalibrationGoodColl-MuonDPG_skim-v6_V2/DTLocalReco_linear_tof0_prop0_tablev4_b.root'
 process.dtLocalRecoAnal.rootFileName = 'DTLocalReco.root'
 
+
 process.jobPath = cms.Path(process.noscraping*process.primaryVertexFilter*process.muonDTDigis*process.dtlocalreco+process.dt2DSegments+process.muonreco+process.dtLocalRecoAnal)
-
-#process.jobPath = cms.Path(process.noscraping*process.primaryVertexFilter*process.Filter*process.dt2DSegments+process.dtLocalRecoAnal)
-
-#process.jobPath = cms.Path(process.muonDTDigis*process.muonreco+process.dtLocalRecoAnal)
-
-
-# standard
-#process.dtLocalRecoAnal.rootFileName = '/data/DT/DtCalibrationGoodColl-MuonDPG_skim-v6_V2/DTLocalReco_std.root'
-#process.jobPath = cms.Path(process.dt2DSegments*process.dtLocalRecoAnal)
 
 
 
