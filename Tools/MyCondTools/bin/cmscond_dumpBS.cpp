@@ -105,6 +105,8 @@ int cond::ListIOVUtilities::execute(){
       TVectorD x0_err(nIOVS);
       TVectorD y0(nIOVS);
       TVectorD y0_err(nIOVS);
+      TVectorD sigmaZ(nIOVS);
+      TVectorD sigmaZ_err(nIOVS);
 
       TVectorD iovs(nIOVS);
       TVectorD iovs_err(nIOVS);
@@ -155,7 +157,10 @@ int cond::ListIOVUtilities::execute(){
 	    x0_err[counter] = mybs.GetBeamWidthX();// FIXME: check
 	    y0[counter] = mybs.GetY();
 	    y0_err[counter] = mybs.GetBeamWidthY();// FIXME: check
-	    
+	    sigmaZ[counter] = mybs.GetSigmaZ();
+	    sigmaZ_err[counter] = mybs.GetSigmaZError();
+
+
 	    if (lumi_till == 4294967295) {
 	      lumi_till = lumi_since + 1;
 	    }
@@ -201,6 +206,16 @@ int cond::ListIOVUtilities::execute(){
 	graph_y0.SetTitle(streamY.str().c_str());
 	cout << " # of points: " << graph_y0.GetN() << endl;
 	graph_y0.Write();
+
+	TGraphErrors graph_sigmaZ(iovs, sigmaZ, iovs_err, sigmaZ_err);
+	graph_sigmaZ.SetName("gSIGMAZ");
+	stringstream streamSigmaZ; streamSigmaZ << "run #: " << theRun << "  sigma-z (cm)";
+	graph_sigmaZ.SetTitle(streamSigmaZ.str().c_str());
+
+	cout << " # of points: " << graph_sigmaZ.GetN() << endl;
+	graph_sigmaZ.Write();
+
+
 
 	file.Close();
       }
