@@ -138,9 +138,9 @@ int cond::ListIOVUtilities::execute(){
 	}
 	
         if (details) {
-          pool::Ref<cond::PayloadWrapper> wrapper =
-            session.getTypedObject<cond::PayloadWrapper>(ioviterator->wrapperToken());
-          if (wrapper.ptr()) std::cout << " \t "<< wrapper->summary();
+//           pool::RefBase wrapper =
+//             session.getObject(ioviterator->wrapperToken());
+//           std::cout << " \t "<< wrapper.summary();
 
 	  pool::Ref<BeamSpotObjects> bs =
             session.getTypedObject<BeamSpotObjects>(ioviterator->wrapperToken());
@@ -155,6 +155,10 @@ int cond::ListIOVUtilities::execute(){
 	    x0_err[counter] = mybs.GetBeamWidthX();// FIXME: check
 	    y0[counter] = mybs.GetY();
 	    y0_err[counter] = mybs.GetBeamWidthY();// FIXME: check
+	    
+	    if (lumi_till == 4294967295) {
+	      lumi_till = lumi_since + 1;
+	    }
 
 	    iovs[counter] = lumi_since + ((lumi_till - lumi_since)/2.);
 	    iovs_err[counter] = (lumi_till  - lumi_since)/2.; 
@@ -180,6 +184,9 @@ int cond::ListIOVUtilities::execute(){
 	TFile file(fileName.str().c_str(),"RECREATE");
 
 	file.cd();
+
+	
+
 	TGraphErrors graph_x0(iovs, x0, iovs_err, x0_err);
 	graph_x0.SetName("gX0");
 	stringstream streamX; streamX << "run #: " << theRun << "  X0 (cm)";
