@@ -75,6 +75,7 @@ def listIov(connect, tag, passwd):
     statusAndOutput = commands.getstatusoutput(listiovCommand)
     if statusAndOutput[0] != 0:
         print warning("Warning") + ": listiov for tag: " + tag + " failed!"
+        print listiovCommand
         print statusAndOutput[1]
 
     return statusAndOutput
@@ -304,12 +305,13 @@ class RcdID(tuple):
 
 
 class IOVEntry:
-    def __init__(self):
+    def __init__(self, timetype = "runnumber"):
         self._since = -1
         self._till = -1
         self._payloadToken = ""
+        self._timeType = timetype
 
-    def setFromListIOV(self, line):
+    def setFromListIOV(self, line, timetype = "runnumber"):
         listofentries = line.split('\t')
         index = 0
         for entry in listofentries:
@@ -325,8 +327,11 @@ class IOVEntry:
         return
 
     def __str__(self):
-        return str(self._since) + ' ' + str(self._till) + ' ' + self._payloadToken
-
+        if self._timeType == "runnumber":
+            return str(self._since) + '\t' + str(self._till) + '\t' + self._payloadToken
+        elif self._timeType == "lumiid":
+            return str(self.sinceRL()[0]) + ":" + str(self.sinceRL()[1]) + '\t' + str(self.tillRL()[0]) + ":" + str(self.tillRL()[1]) + '\t' + self._payloadToken
+            
     def since(self):
         return self._since
 
@@ -336,12 +341,37 @@ class IOVEntry:
     def token(self):
         return self._payloadToken
 
+    def sinceRL(self):
+        return self.unpackLumiid(self.since())
 
+    def tillRL(self):
+        return self.unpackLumiid(self.till())
+
+    def sinceR(self):
+        if self._timeType == "runnumber":
+            return self._since
+        elif self._timeType == "lumiid":
+            return self.sinceRL()[0]
+
+    def tillR(self):
+        if self._timeType == "runnumber":
+            return self._till
+        elif self._timeType == "lumiid":
+            return self.tillRL()[0]
+
+        
+    def unpackLumiid(self, lumiid):
+        kLowMask = 0XFFFFFFFF
+        run = lumiid >> 32
+        lumi = lumiid & kLowMask
+        return (run, lumi)
 
 class IOVTable:
     def __init__(self):
         self._iovList = []
         self._tagName = ""
+        self._timeType = ""
+        self._containerName = ""
         return
 
     def addIOVEntry(self, entry):
@@ -352,9 +382,11 @@ class IOVTable:
         listiovlines  = listiovOutput.split('\n')
         nLines = len(listiovlines)
         self._tagName = listiovlines[0].split(" ")[1]
+        self._timeType = listiovlines[1].split(" ")[1]
+        self._containerName = listiovlines[2].split(" ")[1]
         # print self._tagName
         for line in range(4, nLines-1):
-            ioventry = IOVEntry()
+            ioventry = IOVEntry(self._timeType)
             ioventry.setFromListIOV(listiovlines[line])
             self.addIOVEntry(ioventry)
 
@@ -367,21 +399,27 @@ class IOVTable:
                 if self._iovList[0].since() != 1 or self._iovList[0].till() != 4294967295:
                     print warning("***Warning") + " MC tag: " + self._tagName + " has IOV: " + str(self._iovList[0])
         elif tagType == "data":
-            if self._iovList[0].since() != 1 or self._iovList[len(self._iovList) - 1].till() != 4294967295:
+            if self._iovList[0].sinceR() != 1 or self._iovList[len(self._iovList) - 1].tillR() != 4294967295:
                 print warning("***Warning") + " data tag: " + self._tagName + " is not covering the whole range 1 - inf"
                 self.printList()
                 return
             if len(self._iovList) != 1:
                 for index in range(0, len(self._iovList)-1):
-                    if (self._iovList[index+1].since() - self._iovList[index].till()) != 1:
+                    if (self._iovList[index+1].sinceR() - self._iovList[index].tillR()) != 1:
                         print warning("***Warning") + " data tag: " + self._tagName + " has an hole in the IOVs:"
                         self.printList()
                         return
 
     def printList(self):
+        print "Tag " + self._tagName
+        print "TimeType " + self._timeType
+        print "PayloadContainerName " + self._containerName
+        print "since    till    payloadToken"
         for iov in self._iovList:
             print iov
+        print "Total # of payload objects: " + str(len(self._iovList))
         return
+    
         
     def lastIOV(self):
         return  self._iovList[len(self._iovList)-1]
