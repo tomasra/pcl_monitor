@@ -16,11 +16,14 @@ def get_map():
     run_data = server.DataExporter.export('RUN', 'GLOBAL', 'csv_runs', sel_runtable)
     for line in run_data.split("\n"):
         run=line.split(',')[0]
+        print run
+        print line
         if run.isdigit():
 
-    # we need to do something to avoid parsing commas in comment column
-            group=line.split('",')[8]
-            energy=group.split(',')[0]
+            # we need to do something to avoid parsing commas in comment column
+            group=line.split(',')[8]
+            print "GROUP: " + group
+            #energy=group.split(',')[0]
             fill=group.split(',')[1]
             runfillmap[run]=fill
 
