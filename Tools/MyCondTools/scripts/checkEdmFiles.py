@@ -5,6 +5,7 @@ from optparse import OptionParser
 import commands
 from stat import *
 from ConfigParser import ConfigParser
+from Tools.MyCondTools.color_tools import *
 
 from datetime import date
 from datetime import datetime
@@ -31,12 +32,13 @@ if __name__     ==  "__main__":
     # check that the dir does not yet exist
     releasearea = ''
     try:
-    print "Looking for CMSSW environment....",
+        print "Looking for CMSSW environment....",
         releasearea = os.environ["CMSSW_BASE"]
     except:
         print "no release area found"
         sys.exit(1)
-        
+    print "done"
+    
     topdirname = releasearea + "/src/"
 
     os.chdir(topdirname)
@@ -64,19 +66,33 @@ if __name__     ==  "__main__":
 
     
     fileList = os.listdir(topdirname)
-    for filename in fileList:
-        if os.path.isdir(filename) == True:
+    for dirname in fileList:
+        if os.path.isdir(dirname) == True:
             for gt in gts:
-                if gt in filename:
+                if gt in dirname:
                     # list the root files in the directory
-                    print "GT: " + gt + " relval: " + globaltagsandWfIds[gt]
-                    
-                    print filename
+                    print "GT: " + blue(gt) + " relval: " + globaltagsandWfIds[gt]
+                    rootfiles = os.listdir(topdirname + "/" + dirname)
+                    for rootfile in rootfiles:
+                        #print rootfile
+                        if "root" in rootfile or rootfile == "reco.root" or rootfile == "raw.root":
+                            #print rootfile
+                            command = "edmEventSize -v " + dirname + "/" + rootfile
+                            outandstat = commands.getstatusoutput(command)
+                            nEvents = 0
+                            # print rootfile
+                            if outandstat[0] != 0:
+                                if "DQM" in rootfile:
+                                    continue 
+                                elif not "contains no Events" in outandstat[1]: 
+                                    print outandstat[1]
+                                    sys.exit(1)
+                            else:
+                                nEvents = int((outandstat[1].split("\n")[1]).split()[3])
 
-
-
-
-
+                            print "    " + rootfile + "\t\t\t # events: " + str(nEvents)
+                            
+                            
     sys.exit(0)
 
 
