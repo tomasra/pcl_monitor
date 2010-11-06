@@ -122,15 +122,16 @@ if __name__     ==  "__main__":
         isMc = True
     
     # prepare the loadall test
-    statandout = commands.getstatusoutput("cp /afs/cern.ch/user/c/cerminar/public/Alca/GlobalTag/loadall_from_gt_cfg.py .")
-    if statandout[0] != 0:
-        print statandout[1]
-        sys.exit(1)
+    if not os.path.exists("loadall_from_gt_cfg.py"):
+        statandout = commands.getstatusoutput("cp /afs/cern.ch/user/c/cerminar/public/Alca/GlobalTag/loadall_from_gt_cfg.py .")
+        if statandout[0] != 0:
+            print statandout[1]
+            sys.exit(1)
         
     # check if GTTools are already here
     if not os.path.exists('Tools/MyCondTools/'):
         print "addpkg Tools/MyCondTools"
-        outandstat = commands.getstatusoutput('cvs co -d Tools/MyCondTools -r VTOOLS03 UserCode/cerminar/Tools/MyCondTools')
+        outandstat = commands.getstatusoutput('cvs co -d Tools/MyCondTools -r VTOOLS04 UserCode/cerminar/Tools/MyCondTools')
         if outandstat[0] != 0:
             print outandstat[1]
 

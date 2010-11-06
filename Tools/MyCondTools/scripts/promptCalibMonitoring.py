@@ -23,6 +23,7 @@ tags = db.allTags()
 tag = 'runinfo_31X_hlt'
 promptCalibDir = '/afs/cern.ch/cms/CAF/CMSALCA/ALCA_PROMPT/'
 webArea = '/afs/cern.ch/user/c/cerminar/www/PromptCalibMonitoring/'
+#webArea = './'
 # for inspecting last run after run has stopped  
 #tag = 'runsummary_test'
 
@@ -103,13 +104,14 @@ if __name__ == "__main__":
 
     #print getRunList(144114)
     runList = getRunList(144115)
+#    runList = getRunList(147116)
 
     runForHisto    = array('d')
     timeFromEnd    = array('d')
-    failed         = array('d')
-
+    noFile         = array('d')
+    noPayload      = array('d')
     timeFromBegin  = array('d')
-#    timeFromBeginFailed = array('d')
+#    timeFromBeginNoFile = array('d')
 
     
     sumTimeFromEnd = 0.
@@ -155,6 +157,7 @@ if __name__ == "__main__":
 
         # --- look for the file on AFS
         isFileFound = False
+        emptyPayload = False
         # find the file in the afs area
         fileList = os.listdir(promptCalibDir)
 
@@ -181,6 +184,14 @@ if __name__ == "__main__":
                 deltaTFromEnd = modifDate - runInfo.stopTime()
                 deltaTFromEndH = deltaTFromEnd.seconds/(60.*60.)
 
+                # check the file size
+                fileSize = os.path.getsize(promptCalibDir + dbFile)
+                if fileSize == 1:
+                    emptyPayload = True
+
+
+
+
         # fill the arrays used for histogramming
         runForHisto.append(float(runInfo.run()))
 
@@ -188,9 +199,18 @@ if __name__ == "__main__":
 
         if isFileFound:
             print "   file time: " + str(modifDate) + " Delta_T begin (h): " + str(deltaTFromBeginH) + " Delta_T end (h): " + str(deltaTFromEndH)
-            timeFromEnd.append(deltaTFromEndH)
-            timeFromBegin.append(deltaTFromBeginH)
-            failed.append(0.)
+            if not emptyPayload:
+                timeFromEnd.append(deltaTFromEndH)
+                timeFromBegin.append(deltaTFromBeginH)
+                noFile.append(0.)
+                noPayload.append(0.)
+            else:
+                print "   " + warning("***Warning") + ": no payload in sqlite file!"
+                timeFromEnd.append(0.)
+                timeFromBegin.append(deltaTFromBeginH)
+                noFile.append(0.)
+                noPayload.append(deltaTFromEndH)
+                
             sumTimeFromEnd += deltaTFromEndH
             sumTimeFromBegin += deltaTFromBeginH
             nSqliteFiles += 1
@@ -200,7 +220,9 @@ if __name__ == "__main__":
 
             timeFromEnd.append(0.)
             timeFromBegin.append(0.)
-            failed.append(1000.)
+            noFile.append(1000.)
+            noPayload.append(0.)
+            
 
     # --- printout
     print "--------------------------------------------------"
@@ -219,9 +241,15 @@ if __name__ == "__main__":
     hTimeFromBegin.SetFillColor(40)
     fill1DHisto(hTimeFromBegin, runForHisto, timeFromBegin)
     
+    hNoFile = TH1F("hNoFile","time (h) from the end of the run",int(len(runForHisto)),0,int(len(runForHisto)))
+    hNoFile.SetFillColor(45)
+    fill1DHisto(hNoFile, runForHisto, noFile, True)
+
     hNoPayload = TH1F("hNoPayload","time (h) from the end of the run",int(len(runForHisto)),0,int(len(runForHisto)))
-    hNoPayload.SetFillColor(45)
-    fill1DHisto(hNoPayload, runForHisto, failed, True)
+    hNoPayload.SetFillColor(49)
+    fill1DHisto(hNoPayload, runForHisto, noPayload, True)
+
+
 
     # superimpose the average
     lineAverageFromEnd = TLine(0, averageTimeFromEnd, int(len(runForHisto)), averageTimeFromEnd)
@@ -238,6 +266,7 @@ if __name__ == "__main__":
 
     legend = TLegend(0.8,0.8,1,1)
 #    legend.AddEntry(hTimeFromEnd,"payload","F")
+    legend.AddEntry(hNoFile,"No file","F")
     legend.AddEntry(hNoPayload,"No payload","F")
     
 
@@ -254,25 +283,27 @@ if __name__ == "__main__":
 
     
     c2 = TCanvas("cTimeFromEnd","cTimeFromEnd",800,600)
-    hNoPayload.Draw("")
-    hNoPayload.GetXaxis().SetTitle("run #")
-    hNoPayload.GetXaxis().SetTitleOffset(1.6)
-    hNoPayload.GetYaxis().SetTitle("delay (hours)")
-    hNoPayload.LabelsOption("v","X")
+    hNoFile.Draw("")
+    hNoFile.GetXaxis().SetTitle("run #")
+    hNoFile.GetXaxis().SetTitleOffset(1.6)
+    hNoFile.GetYaxis().SetTitle("delay (hours)")
+    hNoFile.LabelsOption("v","X")
     hTimeFromEnd.Draw("same")
-    hNoPayload.GetYaxis().SetRangeUser(0,hTimeFromEnd.GetMaximum()*1.05)
+    hNoPayload.Draw("same")
+    hNoFile.GetYaxis().SetRangeUser(0,hTimeFromEnd.GetMaximum()*1.05)
     lineAverageFromEnd.Draw("same")
     legend.Draw("same")
     c2.Print(webArea + 'cTimeFromEnd.png')
+#    c2.Print(webArea + 'cTimeFromEnd.root')
 
     c3 = TCanvas("cTimeFromBegin","cTimeFromBegin",800,600)
-    hNoPayload.Draw("")
-    hNoPayload.GetXaxis().SetTitle("run #")
-    hNoPayload.GetXaxis().SetTitleOffset(1.6)
-    hNoPayload.GetYaxis().SetTitle("delay (hours)")
-    hNoPayload.LabelsOption("v","X")
+    hNoFile.Draw("")
+    hNoFile.GetXaxis().SetTitle("run #")
+    hNoFile.GetXaxis().SetTitleOffset(1.6)
+    hNoFile.GetYaxis().SetTitle("delay (hours)")
+    hNoFile.LabelsOption("v","X")
     hTimeFromBegin.Draw("same")
-    hNoPayload.GetYaxis().SetRangeUser(0,hTimeFromBegin.GetMaximum()*1.05)
+    hNoFile.GetYaxis().SetRangeUser(0,hTimeFromBegin.GetMaximum()*1.05)
     lineAverageFromBegin.Draw("same")
     legend.Draw("same")
     c3.Print(webArea + 'cTimeFromBegin.png')

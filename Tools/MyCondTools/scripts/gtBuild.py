@@ -207,6 +207,10 @@ if __name__     ==  "__main__":
         cvstag_cmd = 'ssh lxbuild150 "cd ' + GTVALIDATIONAREA + '; cvs co -d SwTags  UserCode/cerminar/Alca/RelIntegration/ "'
         cvstag_out = executeCommad(cvstag_cmd)
         
+        today = date.today()
+        topdirname = str(today)
+        runDir = GTVALIDATIONAREA + '/' + topdirname + '/' + releaseVal1 + '/src/'
+        relDir = GTVALIDATIONAREA + '/' + topdirname + '/' + releaseVal1 +'/'
         
         gtvalidation_cmd = 'ssh lxbuild150 "cd ' + GTVALIDATIONAREA + '; gtValidation.py -f ' + tagfile + ' -r ' + releaseVal1 + ' --auto ' + gtlistnames + '"'
 
@@ -217,10 +221,6 @@ if __name__     ==  "__main__":
 #             print gtvalidation_out[1]
 
         # 3a - compile and report about the compilatin status
-        today = date.today()
-        topdirname = str(today)
-        runDir = GTVALIDATIONAREA + '/' + topdirname + '/' + releaseVal1 + '/src/'
-
         compile_cmd = 'ssh lxbuild150 "cd ' + runDir + '; source env.csh |& tee compilation.out"'
         compile_out = executeCommad(compile_cmd)
 

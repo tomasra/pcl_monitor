@@ -6,6 +6,7 @@ import commands
 from stat import *
 from ConfigParser import ConfigParser
 from datetime import datetime
+import shutil
 
 
 
@@ -20,6 +21,14 @@ if __name__     ==  "__main__":
     parser.add_option("--online", action="store_true",dest="online")
 
     (options, args) = parser.parse_args()
+
+    # read the configuration file
+    config = ConfigParser()
+    config.optionxform = str
+    config.read(['GT_branches/Common.cfg'])
+    GTSQLITESTORE = config.get('Common','GTStoreArea')
+
+
     #print "OPTIONS: ", options
     #print "ARGS: ", args
 
@@ -68,6 +77,12 @@ if __name__     ==  "__main__":
             logfile.write("GT (online) " + gt + " created on: " + str(today) + "\n")
         else:
             logfile.write("GT " + gt + " created on: " + str(today) + "\n")
+            # move the sqlite to the store area
+            newsqlite = gt + '.db'
+            sqlitefile = GTSQLITESTORE+'/'+gt+'.db'
+            if os.path.exists(newsqlite):
+                shutil.move(newsqlite, sqlitefile)
+
         print ''
 
 

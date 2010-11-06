@@ -89,9 +89,6 @@ if __name__     ==  "__main__":
 
     # get the releases currently managed
     known_releases = cfgfile.get('Common','Releases').split(',')
-    # wild-card for releases
-    if 'all' in options.releases:
-        options.releases = known_releases
 
     # read the cfg file containing comments
     commentfile = ConfigParser(dict_type=OrderedDict)
@@ -110,25 +107,38 @@ if __name__     ==  "__main__":
         if not commentfile.has_option("TagComments",options.newtag):
             print warning("***Warning") + " no comments for tag: " + options.newtag
 
-    if 'all' in options.scenario:
-        options.scenario = ['DESIGN','MC','START',"GR_R","CRAFT09"]
-    elif 'mc' in options.scenario:
-        options.scenario = ['DESIGN','MC','START']
  
     basedir = "GT_branches/"
     gtConfList = []
 
+    for conffile in args:
+        gtConfList.append(conffile)
+    
+
     #print "------------------------"
-    for gttype in options.scenario:
-        for release in options.releases:
-            print "--- Scenario: " + gttype + " release: " + release
-            gtConf = 'GT_' + release + "_" + gttype + ".cfg"
-            CONFIGFILE = basedir + gtConf            
-            if os.path.isfile(CONFIGFILE):
-                print '    configuration file: ',CONFIGFILE
-                gtConfList.append(CONFIGFILE)
-            else:
-                print "    cfg: " + CONFIGFILE + " doesn't exist!"
+    if options.scenario != None and options.releases != None:
+        # wild card for scenarios
+        if 'all' in options.scenario:
+            options.scenario = ['DESIGN','MC','START',"GR_R","CRAFT09"]
+        elif 'mc' in options.scenario:
+            options.scenario = ['DESIGN','MC','START']
+
+
+        # wild-card for releases
+        if 'all' in options.releases:
+            options.releases = known_releases
+
+
+        for gttype in options.scenario:
+            for release in options.releases:
+                print "--- Scenario: " + gttype + " release: " + release
+                gtConf = 'GT_' + release + "_" + gttype + ".cfg"
+                CONFIGFILE = basedir + gtConf            
+                if os.path.isfile(CONFIGFILE):
+                    print '    configuration file: ',CONFIGFILE
+                    gtConfList.append(CONFIGFILE)
+                else:
+                    print "    cfg: " + CONFIGFILE + " doesn't exist!"
 
 
 
@@ -151,8 +161,11 @@ if __name__     ==  "__main__":
 
         # get the old GT name
         OLDGT = diffconfig.get('Common','OldGT')
+        nextGT = diffconfig.get('Common','NewGT')
+
         oldfilename = OLDGT + '.conf'
-        print "--- GT: " + OLDGT
+        print "--- Original GT: " + OLDGT
+        print '        Next GT: ' + nextGT
         # create the collection of tags
         tagCollection = GTEntryCollection()
 
@@ -202,6 +215,7 @@ if __name__     ==  "__main__":
                 if outputAndStatus[0] != 0:
                     print ' -----'
                     print error("***Error:") + " list IOV failed for tag: " + str(newentry)
+                    print "         account: " + newentry._account
                     print outputAndStatus[1]
                     print ''
                     sys.exit(1)
@@ -237,8 +251,11 @@ if __name__     ==  "__main__":
                 gttype =  diffconfig.get('Common','GTType')
                 print "--- list IOV: " 
                 outputAndStatus = listIov(oldentry.getOraclePfn(isOnline), oldentry.tagName(), passwdfile)
-                print outputAndStatus[1]
+                iovtable = IOVTable()
+                iovtable.setFromListIOV(outputAndStatus[1])
+                iovtable.printList()
 
+                
         elif options.reset:
 
             if options.version == 'NONE':
@@ -285,6 +302,12 @@ if __name__     ==  "__main__":
             newconfig.set("Comments","Scope",diffconfig.get("Comments","Scope"))
             newconfig.set("Comments","Changes",'')
 
+            newconfig.add_section("Pending")
+            if diffconfig.has_section("Pending"):
+                for item in diffconfig.items("Pending"):
+                    newconfig.set("Pending",item[0],item[1])
+            
+            
             # write the file
             configfile = open(cfg, 'wb')
             newconfig.write(configfile)

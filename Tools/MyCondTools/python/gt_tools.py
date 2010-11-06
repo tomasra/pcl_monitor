@@ -331,6 +331,8 @@ class IOVEntry:
             return str(self._since) + '\t' + str(self._till) + '\t' + self._payloadToken
         elif self._timeType == "lumiid":
             return str(self.sinceRL()[0]) + ":" + str(self.sinceRL()[1]) + '\t' + str(self.tillRL()[0]) + ":" + str(self.tillRL()[1]) + '\t' + self._payloadToken
+        elif self._timeType == "timestamp":
+            return str(self._since) + '\t' + str(self._till) + '\t' + self._payloadToken
             
     def since(self):
         return self._since
