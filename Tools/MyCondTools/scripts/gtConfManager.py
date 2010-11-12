@@ -18,46 +18,57 @@ from Tools.MyCondTools.gt_tools import *
 
 #if __name__     ==  "__main__":
 
-# set the command line options
+# --------------------------------------------------------------------------
+# --- set the command line options and parse arguments
 parser = OptionParser()
 
-parser.add_option("--force", action="store_true",dest="force",default=False)
+# this options forces the overwrite of the conf file if it already exists
+parser.add_option("--force",
+                  action="store_true",
+                  dest="force",
+                  help="forces overwrite of the conf file",
+                  default=False)
 
-parser.add_option("-t", "--global-tag", dest="newgt",
+parser.add_option("-t", "--global-tag",
+                  dest="newgt",
                   help="Overwrite new GT name",
-                  type="str", metavar="<new GT>")
-
-# parser.add_option("-s", "--scenario", dest="scenario",
-#                   help="GT scenario: ideal - mc - startup - data - craft09",
-#                   type="str", metavar="<scenario>",action="append")
+                  type="str",
+                  metavar="<new GT>")
 
 (options, args) = parser.parse_args()
 
-# read the configuration file
-# CONFIGFILE=sys.argv[1]
+# thsi is the configuration file for the GT branch
 CONFIGFILE=args[0]
 
+# --------------------------------------------------------------------------
+# ---  Parse the configration file
 
+# check that the file exists
 if not os.path.isfile(CONFIGFILE):
     print error("*** Error" + " cfg file: " + CONFIGFILE + " doesn't exist!")
     sys.exit(1)
 
+# update for possible modifications
 cvsUpdate(CONFIGFILE)
 
 diffconfig = ConfigParser()
 diffconfig.optionxform = str
 
 print 'Reading configuration file from ',CONFIGFILE
-diffconfig.read([ CONFIGFILE, 'GT_branches/Comments.cfg'])
+diffconfig.read(['GT_branches/Common.cfg', CONFIGFILE, 'GT_branches/Comments.cfg'])
 
-# this is for [COMMON] part of the myconf.conf
-
-
-#------------------------------------------------------
-# general configuration
+# --------------------------------------------------------------------------
+# --- general configuration
 ACCOUNT = 'CMS_COND_31X_GLOBALTAG'
 if diffconfig.has_option('Common','AccountGT'):
     ACCOUNT =  diffconfig.get('Common','AccountGT')
+
+gtconnstring = diffconfig.get('Common','GTConnectString')
+
+passwdfile = 'None'
+if diffconfig.has_option('Common','Passwd'):
+    passwdfile = diffconfig.get('Common','Passwd')
+
 
 OLDGT = diffconfig.get('Common','OldGT')
 NEWGT = diffconfig.get('Common','NewGT')
@@ -66,11 +77,10 @@ if options.newgt != None:
     print 'Forcing GT name to: ' + options.newgt
     NEWGT = options.newgt
 
-
-
-passwdfile = 'None'
-if diffconfig.has_option('Common','Passwd'):
-    passwdfile = diffconfig.get('Common','Passwd')
+# check that the new GT is not already in oracle
+if gtExists(NEWGT, gtconnstring, passwdfile):
+    print error("***Error: GT: " + NEWGT + " is already in oracle: cannot be modified!!!")
+    sys.exit(1)
 
 isOnline = False
 if diffconfig.has_option('Common','Environment'):
@@ -154,29 +164,6 @@ if diffconfig.has_section('Comments'):
     changes = diffconfig.get('Comments','Changes')
     docGenerator = GTDocGenerator(NEWGT, OLDGT, scope, release, changes)
 
-# if docGenerator != None:
-#     if closeIOV:
-#         docGenerator
-
-
-#     #print "scope: " + scope
-#     #print 'release: ' + release
-#     #print 'changes: ' + changes
-#     if not os.path.exists('doc/'):
-#         print " directory \"doc\" doesn't exist: creating it"
-#         os.mkdir('doc/')
-#     docfilename = 'doc/' + NEWGT + '.wiki'
-#     docfile = open(docfilename,'w')
-#     docstring = '| [[http://condb.web.cern.ch/condb/listTags/?GlobalTag=' + NEWGT + '][' + NEWGT + ']] | %GREEN%' + release + '%ENDCOLOR% | ' + scope + ' | As !' + OLDGT + ' with the following updates:' + changes + '. |\n'
-#     docfile.write(docstring)
-#     docfile.close()
-
-
-
-
-# RMTAGS = diffconfig.items('RmTags')
-# rmtags = dict(RMTAGS)
-
 # read the new records from cfg
 newentries = []
 if diffconfig.has_section("AddRecord"):
@@ -222,7 +209,7 @@ oldfilename = OLDGT + '.conf'
 newconffile  = NEWGT + ".conf"
 
 
-if not confFileFromDB(OLDGT, oldfilename):
+if not confFileFromDB(OLDGT, oldfilename, gtconnstring, passwdfile):
     print error("*** Error" + " original GT conf file: " + oldfilename + " doesn't exist!")
     sys.exit(1)
 
