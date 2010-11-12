@@ -18,9 +18,12 @@ from Tools.MyCondTools.gt_tools import *
 if __name__     ==  "__main__":
 
     # set the command line options
-    parser = OptionParser()
+    usage = "usage: %prog [options] gt1 gt2 ..."
+    version="%prog $Revision: $"
+    parser = OptionParser(usage=usage, version=version)
 
-    parser.add_option("--online", action="store_true",dest="online")
+    parser.add_option("-o", "--online", action="store_true",dest="online",help="write to oracle")
+    parser.add_option("-r", "--remote", action="store_true",dest="remote",help="run the command in the CMS network")
 
     (options, args) = parser.parse_args()
 
@@ -59,13 +62,12 @@ if __name__     ==  "__main__":
         # the config file is:
         CONFIGFILE = gt + '.conf'
 
-        # if online manipulate the cfg  
+        # if online manipulate the cfg to change the connection string
         if options.online:
             
             conffile = open(CONFIGFILE, "r")
             inlines = conffile.readlines()
             conffile.close()
-
 
             newconffile = open(CONFIGFILE, "w")
             for line in inlines:
@@ -80,21 +82,25 @@ if __name__     ==  "__main__":
 
             newconffile.close()
 
-
+        # actually creates the GT
         print '--- Create GT: ' + gt
         execstring = 'createglobaltag ' + CONFIGFILE + ' ' + gt
         evaloutands = commands.getstatusoutput(execstring)
-        print evaloutands[1]
         today = datetime.today()
-        if options.online:
-            logfile.write("GT (online) " + gt + " created on: " + str(today) + "\n")
-        else:
-            logfile.write("GT " + gt + " created on: " + str(today) + "\n")
-            # move the sqlite to the store area
-            newsqlite = gt + '.db'
-            sqlitefile = GTSQLITESTORE+'/'+gt+'.db'
-            if os.path.exists(newsqlite):
-                shutil.move(newsqlite, sqlitefile)
+        print evaloutands[1]
+        print "GT created on: " + str(today)
+
+        # write the log if operation was succesful
+        if evaloutands[0] ==0:
+            if options.online:
+                logfile.write("GT (online) " + gt + " created on: " + str(today) + "\n")
+            else:
+                logfile.write("GT " + gt + " created on: " + str(today) + "\n")
+                # move the sqlite to the store area
+                newsqlite = gt + '.db'
+                sqlitefile = GTSQLITESTORE+'/'+gt+'.db'
+                if os.path.exists(newsqlite):
+                    shutil.move(newsqlite, sqlitefile)
 
         print ''
 

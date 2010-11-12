@@ -131,7 +131,7 @@ if __name__     ==  "__main__":
     (options, args) = parser.parse_args()
 
 
-    GTCREATIONAREA = "/afs/cern.ch/user/c/cerminar/Alca/GlobalTag/CMSSW_3_5_4/src"
+    GTCREATIONAREA = "/afs/cern.ch/user/c/cerminar/Alca/GlobalTag/CMSSW_3_9_2/src"
     GTVALIDATIONAREA = "/build/cerminar/GlobalTag/Nightly"
     CONFSTORE = "/afs/cern.ch/user/c/cerminar/public/Alca/GlobalTag/Nightly/"
 
