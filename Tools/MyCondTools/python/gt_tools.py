@@ -129,6 +129,19 @@ def duplicateIov(connect, tag, run, passwd):
     return duplicateiovStatusAndOutput
           
 
+def tagtreeList(globaltag, gtconnect, authpath):
+    command = "cmscond_tagtree_list -c " + gtconnect + " -T " + globaltag
+    if authpath != "" and authpath != None:
+         command += " -P " + authpath
+    statusandoutput = commands.getstatusoutput(command)
+    return statusandoutput
+
+
+def gtExists(globaltag, gtconnect, authpath):
+    statusandoutput = tagtreeList(globaltag, gtconnect, authpath)
+    if 'does not exist' in statusandoutput[1]:
+        return False
+    return True
 
 class GTEntry:
     def __init__(self):
@@ -708,7 +721,7 @@ class GTDocGenerator:
 
 
 
-def confFileFromDB(gt, gtConfFileName):
+def confFileFromDB(gt, gtConfFileName, gtConnString, authpath):
     # check if the original conf file exists
     if not os.path.isfile(gtConfFileName):
         # get the conf file from DB
@@ -717,7 +730,9 @@ def confFileFromDB(gt, gtConfFileName):
         dbtoconf_cfg.optionxform = str
         dbtoconf_cfg.add_section("Common")
         dbtoconf_cfg.set("Common","Account","CMS_COND_31X_GLOBALTAG")
-        dbtoconf_cfg.set("Common","Conn_string_gtag","frontier://cmsfrontier:8000/FrontierProd/CMS_COND_31X_GLOBALTAG")
+        #dbtoconf_cfg.set("Common","Conn_string_gtag","frontier://cmsfrontier:8000/FrontierProd/CMS_COND_31X_GLOBALTAG")
+        dbtoconf_cfg.set("Common","Conn_string_gtag",gtConnString)
+        dbtoconf_cfg.set("Common","AuthPath",authpath)
         dbtoconf_cfg.set("Common","Globtag",gt)
         dbtoconf_cfg.set("Common","Confoutput",gtConfFileName)
         dbtoconf_file = open("dbtoconf.cfg", 'wb')
