@@ -41,8 +41,11 @@ if __name__     ==  "__main__":
     # --- read command line options
     # description
     usage = "usage: %prog [options] gt1 gt2 ..."
-    revision = '$Revision: 1.4 $'
-    vnum = revision.lstrip('$Revision: ').rstrip(' $')
+    revision = '$Revision: 1.5 $'
+    vnum = revision.lstrip('$')
+    vnum = vnum.lstrip('Revision: ')
+    vnum = vnum.rstrip(' $')
+
     version="%prog version: " + vnum
     description = "Create one or more GTs starting from the conf file. The destination can be an sqlite or can be modified to write to oracle"
 
