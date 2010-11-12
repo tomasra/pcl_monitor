@@ -12,7 +12,7 @@ import shutil
 
 # ---- SETUP -----------------------------------------------------------------
 # directory where the sqlite of the Global-Tags are created
-GTCREATIONAREA = "/afs/cern.ch/user/c/cerminar/Alca/GlobalTag/CMSSW_3_5_4/src"
+GTCREATIONAREA = "/afs/cern.ch/user/c/cerminar/Alca/GlobalTag/CMSSW_3_9_2/src"
 # directory where the sqlite of the Global-Tag are stored and read from after creation
 GTSQLITESTORE = "/afs/cern.ch/user/c/cerminar/public/Alca/GlobalTag"
 # ----------------------------------------------------------------------------
