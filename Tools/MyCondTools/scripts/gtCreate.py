@@ -7,6 +7,8 @@ from stat import *
 from ConfigParser import ConfigParser
 from datetime import datetime
 import shutil
+from Tools.MyCondTools.color_tools import *
+from Tools.MyCondTools.gt_tools import *
 
 
 
@@ -27,6 +29,8 @@ if __name__     ==  "__main__":
     config.optionxform = str
     config.read(['GT_branches/Common.cfg'])
     GTSQLITESTORE = config.get('Common','GTStoreArea')
+    gtconnstring  = config.get('Common','GTConnectString')
+    passwdfile    = config.get('Common','Passwd')
 
 
     #print "OPTIONS: ", options
@@ -43,6 +47,15 @@ if __name__     ==  "__main__":
     for gt in args:
         if ".conf" in gt:
             gt = gt.rstrip(".conf")
+
+
+            # check that the new GT is not already in oracle
+            if gtExists(gt, gtconnstring, passwdfile):
+                print error("***Error: GT: " + gt + " is already in oracle: cannot be modified!!!")
+                continue
+
+
+
         # the config file is:
         CONFIGFILE = gt + '.conf'
 
