@@ -19,12 +19,107 @@ from Tools.MyCondTools.odict import *
 
 
 
+def resetQueue(cfgName, cfgFile, newVersion):
+    # print confirmation message
+    print warning("*** Warning, reset GT conf file: " + cfgName)
+    confirm = raw_input('Proceed? (y/N)')
+    confirm = confirm.lower() #convert to lowercase
+    if confirm != 'y':
+        return
 
+    print "Resetting: " + cfgName
+            
+    newconfig = ConfigParser(dict_type=OrderedDict)
+    newconfig.optionxform = str
+    # starting tag
+    newconfig.add_section("Common")
+    newconfig.set("Common",'OldGT', cfgFile.get('Common','NewGT'))
+
+    # new GT name
+    newgtname = cfgFile.get('Common','NewGT').split('_V')[0] + '_V' + newVersion
+
+    if newgtname == cfgFile.get('Common','NewGT'):
+        print "New tag : " + newgtname + " equal to old tag: " + cfgFile.get('Common','NewGT') + " skipping the reset"
+        return
+            
+    newconfig.set("Common",'NewGT', newgtname)
+    newconfig.set("Common",'Passwd', cfgFile.get('Common','Passwd'))
+    newconfig.set("Common",'Environment', cfgFile.get('Common','Environment'))
+    newconfig.set("Common",'GTType', cfgFile.get('Common','GTType'))
+            
+    newconfig.add_section("Tags")
+    newconfig.add_section("Connect")
+    newconfig.add_section("Account")
+    newconfig.add_section("AddRecord")
+    newconfig.add_section("RmRecord")
+
+    newconfig.add_section("TagManipulation")
+    newconfig.set("TagManipulation",'check', 'new')
+
+    newconfig.add_section("Comments")
+    newconfig.set("Comments","Release",cfgFile.get("Comments","Release"))
+    newconfig.set("Comments","Scope",cfgFile.get("Comments","Scope"))
+    newconfig.set("Comments","Changes",'')
+    
+    newconfig.add_section("Pending")
+    if cfgFile.has_section("Pending"):
+        for item in cfgFile.items("Pending"):
+            newconfig.set("Pending",item[0],item[1])
+            
+            
+    # write the file
+    configfile = open(cfgName, 'wb')
+    newconfig.write(configfile)
+    configfile.close()
+    cvsCommit(cfgName,'reset for new GT')
+    return
+
+
+def getEntryByTag(gtCollection, tagName, entry):
+    if not tagCollection.hasTag(tagName):
+        print warning("***Warning ") + "tag " + tagName + " not found in this GT"
+        return False
+    # get the old entry for this tag
+    print tagCollection.getByTag(tagName)
+    entry = tagCollection.getByTag(tagName)
+    print entry
+    return True
+
+
+def getEntryByRcd(gtCollection, rcdAndLabel, entry):
+    rcdandlbl = options.record.split(',')
+    if len(rcdandlbl) == 1:
+        rcdandlbl.append('')
+    rcdId = RcdID ([rcdandlbl[0],rcdandlbl[1]])
+    if not tagCollection.hasRcdID(rcdId):
+        print warning("***Warning ") + str(rcdId) + " not found in this GT"
+        return False
+    print tagCollection.getByRcdID(rcdId)
+    entry = tagCollection.getByRcdID(rcdId)
+    print entry
+    return True
+
+def checkIOV(newentry, gttype, isOnline, passwd):              
+    # list IOV            
+    outputAndStatus = listIov(newentry.getOraclePfn(isOnline), newentry.tagName(), passwd)
+    if outputAndStatus[0] != 0:
+        print ' -----'
+        print error("***Error:") + " list IOV failed for tag: " + str(newentry)
+        print "         account: " + newentry._account
+        print outputAndStatus[1]
+        print ''
+        sys.exit(1)
+    else:
+        iovtable = IOVTable()
+        iovtable.setFromListIOV(outputAndStatus[1])
+        iovtable.checkConsitency(gttype)
+        print "tag check: done"
 
 
 if __name__     ==  "__main__":
 
-    # set the command line options
+    # ---------------------------------------------------------
+    # --- set the command line options
     parser = OptionParser()
 
     
@@ -62,9 +157,9 @@ if __name__     ==  "__main__":
                       help="comment", type="str", metavar="<comment>",default="NONE")
 
     
-    parser.add_option("--list", action="store_true",dest="list",default=False)
-    parser.add_option("--check", action="store_true",dest="check",default=False)
-    parser.add_option("--reset", action="store_true",dest="reset",default=False)
+    parser.add_option("--dump", action="store_true",dest="list",default=False, help="dump the entry in the GT")
+    parser.add_option("--check", action="store_true",dest="check",default=False, help="check the IOV of the tag")
+    parser.add_option("--reset", action="store_true",dest="reset",default=False, help="clean the queue")
     parser.add_option("-v", "--version", dest="version",
                       help="version of the new GT (used with --reset)", type="str", metavar="<version>",default="NONE")
 
@@ -88,7 +183,9 @@ if __name__     ==  "__main__":
     cfgfile.read([ CONFIGFILE ])
 
     # get the releases currently managed
-    known_releases = cfgfile.get('Common','Releases').split(',')
+    known_releases         = cfgfile.get('Common','Releases').split(',')
+    gtconnstring           = cfgfile.get('Common','GTConnectString')
+    passwdfile             = cfgfile.get('Common','Passwd')
 
     # read the cfg file containing comments
     commentfile = ConfigParser(dict_type=OrderedDict)
@@ -157,8 +254,6 @@ if __name__     ==  "__main__":
         cvsUpdate(cfg)
         diffconfig.read(cfg)
 
-        #print "FILENAME: " + diffconfig.filename
-
         # get the old GT name
         OLDGT = diffconfig.get('Common','OldGT')
         nextGT = diffconfig.get('Common','NewGT')
@@ -170,34 +265,47 @@ if __name__     ==  "__main__":
         tagCollection = GTEntryCollection()
 
         # --------------------------------------------------------------------------
+        # fill the collection
         fillGTCollection(oldfilename, OLDGT, tagCollection)
 
+        # 1. Manipulate an existing entry
         if options.oldtag != "NONE" or options.record != "NONE":
+            # original entry
             oldentry = GTEntry()
-            # build the record ID
-            if options.record != "NONE":
+            
+            if options.oldtag != "NONE":
+                tagName = options.oldtag
+                if not tagCollection.hasTag(tagName):
+                    print warning("***Warning ") + "tag " + tagName + " not found in this GT"
+                    continue
+                oldentry = tagCollection.getByTag(tagName)
+
+            elif options.record != "NONE":
                 rcdandlbl = options.record.split(',')
                 if len(rcdandlbl) == 1:
                     rcdandlbl.append('')
                 rcdId = RcdID ([rcdandlbl[0],rcdandlbl[1]])
                 if not tagCollection.hasRcdID(rcdId):
-                    print str(rcdId) + " not found in this GT"
+                    print warning("***Warning ") + str(rcdId) + " not found in this GT"
                     continue
                 oldentry = tagCollection.getByRcdID(rcdId)
-            elif options.oldtag != "NONE":
-                # check that the tag/record is in the GT
-                if not tagCollection.hasTag(options.oldtag):
-                    print "tag " + options.oldtag + " not found in this GT"
-                    continue
-                # get the old entry for this tag
-                oldentry = tagCollection.getByTag(options.oldtag)
-
+            
+            # A -> dump the entry
             if options.list:
                 # some useful printout for this tag
                 print " -- List: " + str(oldentry)
                 print "     cfg string:"
                 print "     " + oldentry.getCfgFormat()
-            elif options.newtag != 'NONE' or  options.newconnect != 'NONE' or  options.newaccount != 'NONE':
+
+            
+            # B -> modify the entry
+            if  options.newtag != 'NONE' or  options.newconnect != 'NONE' or  options.newaccount != 'NONE':
+                # check that the GT is not already in oracle
+                if gtExists(nextGT, gtconnstring, passwdfile):
+                    print error("***Error: GT: " + nextGT + " is already in oracle: cannot be modified!!!")
+                    continue
+                    
+                # modify the relevant properties
                 newentry = oldentry
                 if  options.newtag != 'NONE':
                     newentry.setTagName(options.newtag)
@@ -205,26 +313,19 @@ if __name__     ==  "__main__":
                     newentry.setConnect(options.newconnect)
                 if options.newaccount != 'NONE':
                     newentry.setAccount(options.newaccount)
+
                 # check the tag
                 isOnline = False
                 if  diffconfig.get('Common','Environment') != 'offline':
                     isOnline = True
                 passwdfile =  diffconfig.get('Common','Passwd')
                 gttype =  diffconfig.get('Common','GTType')
-                outputAndStatus = listIov(newentry.getOraclePfn(isOnline), newentry.tagName(), passwdfile)
-                if outputAndStatus[0] != 0:
-                    print ' -----'
-                    print error("***Error:") + " list IOV failed for tag: " + str(newentry)
-                    print "         account: " + newentry._account
-                    print outputAndStatus[1]
-                    print ''
-                    sys.exit(1)
-                else:
-                    iovtable = IOVTable()
-                    iovtable.setFromListIOV(outputAndStatus[1])
-                    iovtable.checkConsitency(gttype)
-                    print "tag check: done"
+
+                checkIOV(newentry, gttype, isOnline, passwdfile)
+
+                # add the new entry to the collection
                 diffconfig.set('AddRecord',newentry.tagName(), newentry.getCfgFormat())
+
                 # write the comment to the file
                 cvscomment = ''
                 if options.comment != 'NONE':
@@ -243,6 +344,8 @@ if __name__     ==  "__main__":
                 configfile.close()
                 cvsCommit(cfg,cvscomment)
 
+
+            # B -> check IOV
             if options.check:
                 isOnline = False
                 if  diffconfig.get('Common','Environment') != 'offline':
@@ -255,70 +358,26 @@ if __name__     ==  "__main__":
                 iovtable.setFromListIOV(outputAndStatus[1])
                 iovtable.printList()
 
-                
+        # 2. Reset the queue
         elif options.reset:
 
             if options.version == 'NONE':
                 print error("***Error:") + " new version not specified, use -v option!"
                 sys.exit(1)
-            
-            print warning("*** Warning, reset GT conf file: " + cfg)
-            confirm = raw_input('Proceed? (y/N)')
-            confirm = confirm.lower() #convert to lowercase
-            if confirm != 'y':
-                continue
+            resetQueue(cfg, diffconfig, options.version)
 
-            print "Resetting: " + cfg
-            
-            newconfig = ConfigParser(dict_type=OrderedDict)
-            newconfig.optionxform = str
-            # starting tag
-            newconfig.add_section("Common")
-            newconfig.set("Common",'OldGT', diffconfig.get('Common','NewGT'))
-
-            # new GT name
-            newgtname = diffconfig.get('Common','NewGT').split('_V')[0] + '_V' + options.version
-
-            if newgtname == diffconfig.get('Common','NewGT'):
-                print "New tag : " + newgtname + " equal to old tag: " + diffconfig.get('Common','NewGT') + " skipping the reset"
-                continue
-            
-            newconfig.set("Common",'NewGT', newgtname)
-            newconfig.set("Common",'Passwd', diffconfig.get('Common','Passwd'))
-            newconfig.set("Common",'Environment', diffconfig.get('Common','Environment'))
-            newconfig.set("Common",'GTType', diffconfig.get('Common','GTType'))
-            
-            newconfig.add_section("Tags")
-            newconfig.add_section("Connect")
-            newconfig.add_section("Account")
-            newconfig.add_section("AddRecord")
-            newconfig.add_section("RmRecord")
-
-            newconfig.add_section("TagManipulation")
-            newconfig.set("TagManipulation",'check', 'new')
-
-            newconfig.add_section("Comments")
-            newconfig.set("Comments","Release",diffconfig.get("Comments","Release"))
-            newconfig.set("Comments","Scope",diffconfig.get("Comments","Scope"))
-            newconfig.set("Comments","Changes",'')
-
-            newconfig.add_section("Pending")
-            if diffconfig.has_section("Pending"):
-                for item in diffconfig.items("Pending"):
-                    newconfig.set("Pending",item[0],item[1])
-            
-            
-            # write the file
-            configfile = open(cfg, 'wb')
-            newconfig.write(configfile)
-            configfile.close()
-            cvsCommit(cfg,'reset for new GT')
-            
+        # 3. Add a new entry to the GT
         else:
             # no old entry is specified: a new tag must be created from command line options
             if options.newtag == 'NONE' or options.newconnect == 'NONE' or options.newaccount == 'NONE' or options.newobject == 'NONE' or options.newrecord == 'NONE'  or options.newleaf == 'NONE':
                 print error("***Error:") + " specify <newtag> <newrecord> <newconnect> <newaccount> <newobject> <newleaf> [ <newlabel> ] to create a new entry!"
                 sys.exit(1)
+
+
+            # check that the GT is not already in oracle
+            if gtExists(nextGT, gtconnstring, passwdfile):
+                print error("***Error: GT: " + nextGT + " is already in oracle: cannot be modified!!!")
+                continue
 
             # create the new entry
             newentry = GTEntry()
