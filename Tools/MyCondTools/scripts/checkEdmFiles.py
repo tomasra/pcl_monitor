@@ -89,8 +89,11 @@ if __name__     ==  "__main__":
                                     sys.exit(1)
                             else:
                                 nEvents = int((outandstat[1].split("\n")[1]).split()[3])
-
-                            print "    " + rootfile + "\t\t\t # events: " + str(nEvents)
+                                
+                            # get the file size
+                            size = os.path.getsize(dirname + "/" + rootfile)
+                            
+                            print "    " + rootfile + "\t\t\t # events: " + str(nEvents) + "\t\t\t size: " + str(size)
                             
                             
     sys.exit(0)
