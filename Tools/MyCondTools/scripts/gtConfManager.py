@@ -16,7 +16,203 @@ from Tools.MyCondTools.color_tools import *
 from Tools.MyCondTools.gt_tools import *
 
 
-#if __name__     ==  "__main__":
+def createGTConfiguration(queueCfg, force, gtName):
+    # --------------------------------------------------------------------------
+    # ---  Parse the configration file
+    
+    # check that the file exists
+    if not os.path.isfile(CONFIGFILE):
+        print error("*** Error" + " cfg file: " + CONFIGFILE + " doesn't exist!")
+        sys.exit(1)
+
+    # update for possible modifications
+    cvsUpdate(CONFIGFILE)
+
+    diffconfig = ConfigParser()
+    diffconfig.optionxform = str
+
+    print 'Reading configuration file from ',CONFIGFILE
+    diffconfig.read(['GT_branches/Common.cfg', CONFIGFILE, 'GT_branches/Comments.cfg'])
+
+
+    # --------------------------------------------------------------------------
+    # --- general configuration
+    ACCOUNT = 'CMS_COND_31X_GLOBALTAG'
+    if diffconfig.has_option('Common','AccountGT'):
+        ACCOUNT =  diffconfig.get('Common','AccountGT')
+
+    gtconnstring = diffconfig.get('Common','GTConnectString')
+
+    passwdfile = 'None'
+    if diffconfig.has_option('Common','Passwd'):
+        passwdfile = diffconfig.get('Common','Passwd')
+
+
+    OLDGT = diffconfig.get('Common','OldGT')
+    NEWGT = diffconfig.get('Common','NewGT')
+
+    if options.newgt != None:
+        print 'Forcing GT name to: ' + options.newgt
+        NEWGT = options.newgt
+
+    # check that the new GT is not already in oracle
+    if gtExists(NEWGT, gtconnstring, passwdfile):
+        print error("***Error: GT: " + NEWGT + " is already in oracle: cannot be modified!!!")
+        sys.exit(1)
+
+    isOnline = False
+    if diffconfig.has_option('Common','Environment'):
+        envir = diffconfig.get('Common','Environment')
+        if envir == 'online':
+            isOnline = True
+
+    gttype = 'data'
+    if diffconfig.has_option('Common','GTType'):
+        gttype = diffconfig.get('Common','GTType')
+    
+    if OLDGT == NEWGT:
+        print error("*** Error") + " new and old GT names are the same, old: " + OLDGT + " new: " +  NEWGT
+        sys.exit(1)
+
+    # reads the tags to be substituted and create a dict
+    replacetags = dict()
+    if diffconfig.has_section('Tags'):
+        REPLACETAGS = diffconfig.items('Tags')
+        replacetags = dict(REPLACETAGS)
+
+    globalSuffixForTags = ''
+    if diffconfig.has_option('Tags','GlobalSuffix'):
+        globalSuffixForTags = diffconfig.get('Tags','GlobalSuffix')
+
+
+
+    replaceconnect = dict()
+    if diffconfig.has_section('Connect'):
+        REPLACECONNECT = diffconfig.items('Connect')
+        replaceconnect = dict(REPLACECONNECT)
+
+    replaceaccount = dict()
+    if diffconfig.has_section('Account'):
+        REPLACEACCOUNT = diffconfig.items('Account')
+        replaceaccount = dict(REPLACEACCOUNT)
+
+
+    NEWSUBFIX = ''
+    if diffconfig.has_option('Account','GlobalSubfix'):
+        NEWSUBFIX = diffconfig.get('Account','GlobalSubfix')
+
+
+    checkOnTags = 'None'
+    if diffconfig.has_option('TagManipulation','check'):
+        checkOnTags = diffconfig.get('TagManipulation','check')
+        if passwdfile == 'None':
+            print error("***Error:") + " need to specify \'Passwd\' in [Common]"
+            sys.exit(1)
+
+
+    checkOnOnlineConnect = 'None'
+    if diffconfig.has_option('TagManipulation','checkOnlineConnect'):
+        checkOnOnlineConnect = diffconfig.get('TagManipulation','checkOnlineConnect')
+
+
+    duplicateTags = 'None'
+    duplicateSuffix = ''
+    if diffconfig.has_option('TagManipulation','duplicate'):
+        duplicateTags = diffconfig.get('TagManipulation','duplicate')
+        duplicateSuffix = diffconfig.get('TagManipulation','duplicateSuffix')
+
+    closeIOV = False
+    closeIOVTillRun = -1
+    if diffconfig.has_option('TagManipulation','closeIOV'):
+        if diffconfig.get('TagManipulation','closeIOV') == 'all':
+            closeIOVTillRun = diffconfig.get('TagManipulation','closeIOVtoRUN')
+            closeIOV = True
+
+
+
+    # write the comment file in twiki format
+    scope = ''
+    release = ''
+    changes = ''
+
+    docGenerator = None        
+    if diffconfig.has_section('Comments'):
+        scope = diffconfig.get('Comments','Scope')
+        release = diffconfig.get('Comments','Release')
+        changes = diffconfig.get('Comments','Changes')
+        docGenerator = GTDocGenerator(NEWGT, OLDGT, scope, release, changes)
+
+    # read the new records from cfg
+    newentries = []
+    if diffconfig.has_section("AddRecord"):
+        newrecords = diffconfig.items('AddRecord')
+        #print newrecords
+        #print "New records to be added:"
+        for record in newrecords:
+            newentry = GTEntry()
+            newentry.setFromCfgLine(record)
+            newentries.append(newentry)
+            if diffconfig.has_option('TagComments', newentry.tagName()):
+                docGenerator.addChange(diffconfig.get('TagComments', newentry.tagName()))
+            #print "   " + str(newentry)
+
+
+    # read Rcd to be removed
+    rmentries = []
+    if diffconfig.has_section("RmRecord"):
+        rmrecords = diffconfig.items('RmRecord')
+        for record in rmrecords:
+            labels =  record[1].split(',')
+            print labels
+            for label in labels:
+                #label = record[1]
+                if record[1] == 'None':
+                    label = ''
+                rcdId = RcdID([record[0], label])
+                rmentries.append(rcdId)
+
+
+    CONNREP= ''
+    if diffconfig.has_option('Connect','GlobalConnectReplace'):
+        CONNREP= diffconfig.get('Connect','GlobalConnectReplace')
+        #print "- Replacing connect string with: " + CONNREP
+
+    #try:
+    #    CONNREP= diffconfig.get('Connect','GlobalConnectReplace')
+    #except:
+    #    print "  - No \'GlobalConnectReplace\' fount in config file"
+
+
+    oldfilename = OLDGT + '.conf'
+    newconffile  = NEWGT + ".conf"
+
+
+    if not confFileFromDB(OLDGT, oldfilename, gtconnstring, passwdfile):
+        print error("*** Error" + " original GT conf file: " + oldfilename + " doesn't exist!")
+        sys.exit(1)
+
+    if os.path.isfile(newconffile) and not options.force:
+        print warning("*** Warning, the new GT conf file: " + newconffile + " already exists!")
+        confirm = raw_input('Overwrite? (y/N)')
+        confirm = confirm.lower() #convert to lowercase
+        if confirm != 'y':
+            sys.exit(1)
+
+
+
+    # create the collection of tags
+    tagCollection = GTEntryCollection()
+
+
+    # --------------------------------------------------------------------------
+    fillGTCollection(oldfilename, OLDGT, tagCollection)
+
+    
+    
+
+
+
+if __name__     ==  "__main__":
 
 # --------------------------------------------------------------------------
 # --- set the command line options and parse arguments
@@ -361,7 +557,7 @@ for tagidx in range(0,len(tagstobechecked)):
     if outputAndStatus[0] != 0:
         print ' -----'
         print error("***Error:") + " list IOV failed for tag: " + str(theTag)
-        print outputAndStatus[1]
+        #print outputAndStatus[1]
         print ''
     else:
         iovtable = IOVTable()

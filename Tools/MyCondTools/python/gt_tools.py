@@ -6,12 +6,13 @@ from optparse import OptionParser, Option, OptionValueError
 #import coral
 #from CondCore.TagCollection import Node,tagInventory,CommonUtils,entryComment
 from operator import itemgetter
+#import datetime
+from datetime import datetime
 
 # tools for color printout
 from color_tools import *
 
 import commands
-
 
 def stripws(myinput):
     result=('').join(myinput.split(' '))
@@ -139,7 +140,7 @@ def tagtreeList(globaltag, gtconnect, authpath):
 
 def gtExists(globaltag, gtconnect, authpath):
     statusandoutput = tagtreeList(globaltag, gtconnect, authpath)
-    if 'does not exist' in statusandoutput[1]:
+    if 'does not exist' in statusandoutput[1] or "identifier is too long" in statusandoutput[1]:
         return False
     return True
 
@@ -389,6 +390,9 @@ class IOVTable:
         self._containerName = ""
         return
 
+    def containerName(self):
+        return self._containerName
+
     def addIOVEntry(self, entry):
         # print "Add IOV : " + str(entry)
         self._iovList.append(entry)
@@ -416,7 +420,7 @@ class IOVTable:
         elif tagType == "data":
             if self._iovList[0].sinceR() != 1 or self._iovList[len(self._iovList) - 1].tillR() != 4294967295:
                 print warning("***Warning") + " data tag: " + self._tagName + " is not covering the whole range 1 - inf"
-                self.printList()
+                #self.printList()
                 return
             if len(self._iovList) != 1:
                 for index in range(0, len(self._iovList)-1):
@@ -812,3 +816,140 @@ def cvsCommit(filename, comment):
         print outandstat[1]
 
 
+# given a release cycle like 38X extracts the single digits
+def getReleaseDigits(cycle):
+    #print release
+    firstDigi = cycle[0]
+    secondDigi = cycle.lstrip(cycle[0]).rstrip('X')
+    digits = []
+    digits.append(firstDigi)
+    digits.append(secondDigi)
+    return digits
+
+# get the list of releases installed through scram list
+# relType can be all - pre - final - nightly - patch
+def getReleaseList(relType = 'all'):
+    releases = []
+
+    scram_cmd = 'scram list -c CMSSW'
+    scram_out = commands.getstatusoutput(scram_cmd)
+    for line in scram_out[1].splitlines():
+        #print "Linea: " + line
+        onerel = line.split()[1]
+        if 'all' in relType:
+            releases.append(onerel)
+            continue
+        if 'pre' in relType and 'pre' in onerel:
+            releases.append(onerel)
+            continue
+        if 'final' in relType and not 'pre' in onerel and not "_X_" in onerel and not 'patch' in onerel:
+            releases.append(onerel)
+            continue
+        if 'patch' in relType and 'patch' in onerel:
+            releases.append(onerel)
+            continue
+        if 'nightly' in relType and "_X_" in onerel:
+            releases.append(onerel)
+            continue
+    return releases
+
+
+# given a list of releaseases extracts the last one in a given cycle
+def getLastRelease(releases, cycle):
+    digits = getReleaseDigits(cycle)
+
+    match = 'CMSSW_' + digits[0] + '_' + digits[1] + '_'
+
+
+    maxDate = datetime(1979,10,06,9,0,0)
+    maxThirdDigits = -1
+    maxPreDigits = -1
+    maxPatchDigits = -1
+    maxRel = None
+            
+    for onerel in releases:
+        if match in onerel:
+            # nigtly builds
+            if "_X_" in onerel:
+                #print 'Nightly: ' + onerel
+                datestring = onerel.lstrip(match+"_X_")
+                datedigits = datestring.split('-')
+                nightlyDate = datetime(int(datedigits[0]),int(datedigits[1]),int(datedigits[2]),int(datedigits[3].lstrip('0').rstrip('00')),0,0)
+                if nightlyDate > maxDate:
+                    maxDate = nightlyDate
+                    maxRel = onerel
+
+            # pre releases, reelases and patches
+            # final releases, prerelease and patches
+            else:
+                digis = onerel.split('_')
+                thirdDigits = int(digis[3])
+                #print thirdDigits
+                if thirdDigits >= maxThirdDigits:
+                    if thirdDigits > maxThirdDigits:
+                        maxThirdDigits = thirdDigits
+                        maxPatchDigits = -1
+                        maxPreDigits = -1
+                    if not "pre" in  onerel:
+                        if 'patch' in onerel:
+                            patchDigits = int(digis[4].lstrip('patch'))
+                            if patchDigits > maxPatchDigits:
+                                maxPatchDigitsRel = patchDigits
+                                maxRel = onerel
+                        else:
+                            maxRel = onerel
+                    else:
+                        if len(digis[4].lstrip('pre')) > 2:
+                            continue
+                        preDigits = int(digis[4].lstrip('pre'))
+                        if preDigits > maxPreDigits:
+                            maxPreDigits = preDigits
+                            maxRel = onerel
+    return maxRel
+
+
+
+# look for plugin definitions in the so libraries ad fills a dictionary
+# of lists of records where the key is the object
+def getObjectsAndRecords(swBaseDir, swScramArch, release):
+    from collections import defaultdict
+
+    objectRecords = defaultdict(list)
+    
+    libDir = swBaseDir + release + "/lib/" + swScramArch + "/"
+    libraries =  os.listdir(libDir)
+    for lib in libraries:
+        if "pluginCondCore" in lib and "Plugins.so" in lib:
+            #print libDir + lib
+            # run nm to get the DataProxy plugin name
+            nm_cmd = "nm -C " + libDir + lib + '| grep "vtable for DataProxy<" '
+            nm_out = commands.getstatusoutput(nm_cmd)
+            if nm_out[0] == 0:
+                # parse the output
+                dataproxies = nm_out[1].split('\n')
+                for dataproxy in dataproxies:
+                    preamble = dataproxy.split("DataProxy")
+                    rcd = (dataproxy.lstrip(preamble[0] + "DataProxy").lstrip("<")).split()[0].rstrip(",")
+                    objectName = dataproxy.split(rcd + ", ")[1].rstrip(">").rstrip(" ")
+
+#                     if objectName == "EcalCondObjectContainer<float":
+#                         objectName = "EcalFloatCondObjectContainer"
+#                     elif objectName == "ESCondObjectContainer<ESPedestal":
+#                         objectName = "ESPedestal"
+#                     elif objectName == "ESCondObjectContainer<ESChannelStatusCode":
+#                         objectName = "ESChannelStatus"
+#                     elif objectName == "ESCondObjectContainer<EcalMGPAGainRatio":
+#                         objectName = "EcalGainRatios"
+#                     elif objectName == "ESCondObjectContainer<EcalTPGPedestal":
+#                         objectName = "EcalTPGPedestals"
+#                     elif objectName == "ESCondObjectContainer<EcalTPGPedestal":
+#                         objectName = "EcalChannelStatus"
+
+#                     elif objectName == "PhysicsTools::Calibration::Histogram3D<double":
+#                         objectName = "PhysicsTools::Calibration::HistogramD3D"
+
+                    #elif 
+
+                    objectRecords[objectName].append(rcd)
+                #print nm_out[1]
+    return objectRecords

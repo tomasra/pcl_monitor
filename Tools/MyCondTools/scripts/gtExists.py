@@ -10,12 +10,24 @@ from optparse import OptionParser, Option, OptionValueError
 from Tools.MyCondTools.color_tools import *
 from Tools.MyCondTools.gt_tools import *
 
+from ConfigParser import ConfigParser
     
 if __name__     ==  "__main__":
     parser = OptionParser()
     (options, args) = parser.parse_args()
 
-    gtconnect = "oracle://cms_orcoff_prod/CMS_COND_31X_GLOBALTAG"
+    # read a global configuration file
+    cfgfile = ConfigParser()
+    cfgfile.optionxform = str
+
+    CONFIGFILE = "GT_branches/Common.cfg"
+    print 'Reading configuration file from ',CONFIGFILE
+    cfgfile.read([ CONFIGFILE ])
+
+    # get the releases currently managed
+    gtconnect         = cfgfile.get('Common','GTConnectString')
+    authpath             = cfgfile.get('Common','Passwd')
+
     authpath  = "/afs/cern.ch/cms/DB/conddb"
 
     for globaltag in args:

@@ -144,51 +144,50 @@ if __name__     ==  "__main__":
             warningMsg = warningMsg+'\n'
             listOfWarning.append(warningMsg)
 
-today = datetime.today()
+    today = datetime.today()
 
-SENDMAIL = "/usr/sbin/sendmail" # sendmail location
-
-p = os.popen("%s -t" % SENDMAIL, "w")
-p.write("To: " + mailaddresses + "\n")
-p.write("Subject: [GT-MONITOR] "+str(today) +"\n")
-p.write("\n") # blank line separating headers from body
-
-if len(listOfWarning) == 0:
-    message = 'SUCCESS: updates to GTs: '
-    for gt in gtList:
-        message = message + gt + ' '
-    message = message + ' are consistent!\n'
-
-    p.write(message)
+    SENDMAIL = "/usr/sbin/sendmail" # sendmail location
     
-for lines in listOfWarning:
-    p.write(lines)
+    p = os.popen("%s -t" % SENDMAIL, "w")
+    p.write("To: " + mailaddresses + "\n")
+    p.write("Subject: [GT-MONITOR] "+str(today) +"\n")
+    p.write("\n") # blank line separating headers from body
+    
+    if len(listOfWarning) == 0:
+        message = 'SUCCESS: updates to GTs: '
+        for gt in gtList:
+            message = message + gt + ' '
+            message = message + ' are consistent!\n'
+            p.write(message)
+    
+    for lines in listOfWarning:
+        p.write(lines)
+    
 
-
-p.write('\n')
-p.write('\n')
-p.write('\n')
-p.write('\n')
-p.write('\n')
-p.write('------------------------------------------------------------------\n')
-p.write('--- List of updates follow:\n\n\n')
-for idx in range(0, len(gtList)):
-    gt = gtList[idx]
-    p.write('--------------------------------------------\n')
-    p.write('Updates for GT: ' + gt + '\n\n')
-    listofchanges = totalListOfChanges[idx]
-    for line in listofchanges:
-        p.write(line +'\n')
-    listofchangesO2O = totalListOfChangesO2O[idx]
-    if len(listofchangesO2O):
-        p.write('O2O:\n')
-    for line in listofchangesO2O:
-        p.write(line +'\n')
+        p.write('\n')
+        p.write('\n')
+        p.write('\n')
+        p.write('\n')
+        p.write('\n')
+        p.write('------------------------------------------------------------------\n')
+        p.write('--- List of updates follow:\n\n\n')
+        for idx in range(0, len(gtList)):
+            gt = gtList[idx]
+            p.write('--------------------------------------------\n')
+            p.write('Updates for GT: ' + gt + '\n\n')
+            listofchanges = totalListOfChanges[idx]
+            for line in listofchanges:
+                p.write(line +'\n')
+            listofchangesO2O = totalListOfChangesO2O[idx]
+            if len(listofchangesO2O):
+                p.write('O2O:\n')
+            for line in listofchangesO2O:
+                p.write(line +'\n')
         
-    p.write('\n\n')
+            p.write('\n\n')
 
 
 
-sts = p.close()
-if sts != 0:
-    print "Sendmail exit status", sts
+        sts = p.close()
+        if sts != 0:
+            print "Sendmail exit status", sts
