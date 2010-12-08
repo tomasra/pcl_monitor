@@ -4,8 +4,8 @@
 /** \class DTCut
  *  No description available.
  *
- *  $Date: $
- *  $Revision: $
+ *  $Date: 2009/07/27 12:35:32 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -13,6 +13,7 @@
 
 
 class DTSegmentObject;
+class DTHitObject;
 
 class DTCut {
 public:
@@ -32,6 +33,7 @@ public:
 
   // Operations
   bool selectSegm(const DTSegmentObject* oneSeg) const;
+  bool selectHit(const DTHitObject* oneHit) const;
 
   // set the cuts here
   int nHits_min;
@@ -44,6 +46,9 @@ public:
   double phi_max;
   double theta_min;
   double theta_max;
+
+  int selectLR;
+  
 
 protected:
 

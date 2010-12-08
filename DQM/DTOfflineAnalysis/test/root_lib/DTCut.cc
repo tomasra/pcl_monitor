@@ -2,13 +2,14 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2009/07/27 12:35:32 $
- *  $Revision: 1.1 $
+ *  $Date: 2010/07/29 13:49:55 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - INFN Torino
  */
 
 #include "DTCut.h"
 #include "DTSegmentObject.h"
+#include "DTHitObject.h"
 #include <iostream>
 
 using namespace std;
@@ -23,7 +24,8 @@ DTCut::DTCut() :  nHits_min(0),
 		  phi_min(-9999),
 		  phi_max(9999),
 		  theta_min(-9999),
-		  theta_max(9999) {}
+		  theta_max(9999),
+		  selectLR(0) {}
 
 DTCut::~DTCut(){}
 
@@ -80,6 +82,17 @@ bool DTCut::selectSegm(const DTSegmentObject* oneSeg) const {
   
   return true;
 }
+
+
+bool DTCut::selectHit(const DTHitObject* oneHit) const {
+  bool isLeft =  (oneHit->resDist*oneHit->resPos < 0);
+
+  if (selectLR==1 && isLeft) return false;
+  if (selectLR==-1 && !isLeft) return false;
+
+  return true;
+}
+
 
 
 
