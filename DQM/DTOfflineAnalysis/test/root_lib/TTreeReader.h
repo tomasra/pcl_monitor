@@ -4,8 +4,8 @@
 /** \class TTreeReader
  *  No description available.
  *
- *  $Date: 2010/07/29 17:14:25 $
- *  $Revision: 1.5 $
+ *  $Date: 2010/10/06 15:20:43 $
+ *  $Revision: 1.6 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -44,11 +44,21 @@ public:
   void setFilterEvents(int option) {
     filterEvents=option;
   }
-  
+
+  void setFilterSL(bool option) {
+    filterSL=option;
+  }  
+
   void setMinPt(float pt) {
     ptmin=pt;
   }
   
+  void setRunRange(int runMin, int runMax) {
+    runmin =runMin;
+    runmax =runMax;
+  }
+  
+
   void setDebug(int debug);
   
 
@@ -90,7 +100,11 @@ private:
   std::map<TString, DTCut> cutSets;   
 
   int filterEvents;
+  int selectLR;    // -1 = L hits; 1=R hits; 0=both
+  bool filterSL;   // skip predefined list of SLs
   float ptmin;
+  int runmin;
+  int runmax;
   int debug;
 };
 

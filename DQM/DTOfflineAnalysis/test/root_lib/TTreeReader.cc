@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/09/14 13:23:37 $
- *  $Revision: 1.9 $
+ *  $Date: 2010/10/06 15:22:02 $
+ *  $Revision: 1.10 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -27,11 +27,17 @@
 using namespace std;
 
 
+TH1S* hRun=new TH1S("hRun","hRun", 1000, 130000, 150000);
+
+// ---> Muon quality distributions
+
 TH1F* hMuonQualityChi2Sta=new TH1F("hMuonQualityChi2Sta","hChi2Sta", 100, 0, 10);
 TH1F* hMuonQualityNHitsGlb=new TH1F("hMuonQualityNHitsGlb","hHitsGlb", 60, 0, 60);
+TH1F* hMuonQualityNVHitsGlb=new TH1F("hMuonQualityNVHitsGlb","hVHitsGlb", 60, 0, 60);
 TH1F* hMuonQualityChi2Glb=new TH1F("hMuonQualityChi2Glb","hChi2Glb", 100, 0, 10);
 TH1F* hMuonQualityNHitsSta=new TH1F("hMuonQualityNHitsSta","hHitsSta", 60, 0, 60);
-
+TH1F* hMuonQualityNVHitsSta=new TH1F("hMuonQualityNVHitsSta","hVHitsSta", 60, 0, 60);
+// <---
 
 // ---> Study of theta eff.
 TH2F* hThetaEffNum1;
@@ -56,12 +62,65 @@ bool insideThetaWindow(float theta, int wheel, int station);
 
 
 
-TTreeReader::TTreeReader(const TString& fileName, const TString& outputFile) : theOutFile(outputFile),
-									       theGranularity(-1),
-									       nevents(0),
-									       filterEvents(0),
-									       ptmin(0.),
-									       debug(0) {
+vector<DTDetId> badSLs;
+
+bool skipBadSL(const DTDetId& id) {
+
+  if (badSLs.size()==0) {
+    badSLs.push_back(DTDetId(-2, 2, 3, 2, 0, 0));
+    badSLs.push_back(DTDetId(-2, 2, 4, 2, 0, 0));
+    badSLs.push_back(DTDetId(-2, 2, 5, 2, 0, 0));
+    badSLs.push_back(DTDetId(-2, 2, 6, 2, 0, 0));
+    badSLs.push_back(DTDetId(-2, 2, 9, 2, 0, 0));
+    badSLs.push_back(DTDetId(-2, 2, 11, 2, 0, 0));
+    badSLs.push_back(DTDetId(-2, 2, 12, 2, 0, 0));
+
+    badSLs.push_back(DTDetId(-1, 2, 1, 2, 0, 0));
+    badSLs.push_back(DTDetId(-1, 2, 3, 2, 0, 0));
+    badSLs.push_back(DTDetId(-1, 2, 4, 2, 0, 0));
+    badSLs.push_back(DTDetId(-1, 2, 7, 2, 0, 0));
+    badSLs.push_back(DTDetId(-1, 2, 8, 2, 0, 0));
+    badSLs.push_back(DTDetId(-1, 2, 9, 2, 0, 0));
+    badSLs.push_back(DTDetId(-1, 2, 11, 2, 0, 0));
+    badSLs.push_back(DTDetId(-1, 2, 12, 2, 0, 0));
+
+    badSLs.push_back(DTDetId(0, 2, 5, 2, 0, 0));
+    badSLs.push_back(DTDetId(0, 2, 6, 2, 0, 0));
+    badSLs.push_back(DTDetId(0, 2, 7, 2, 0, 0));
+    badSLs.push_back(DTDetId(0, 2, 8, 2, 0, 0));
+    badSLs.push_back(DTDetId(0, 2, 9, 2, 0, 0));
+    badSLs.push_back(DTDetId(0, 2, 12, 2, 0, 0));
+
+    badSLs.push_back(DTDetId(1, 2, 1, 2, 0, 0));
+    badSLs.push_back(DTDetId(1, 2, 4, 2, 0, 0));
+
+    badSLs.push_back(DTDetId(2, 2, 11, 2, 0, 0));
+    badSLs.push_back(DTDetId(2, 2, 7, 2, 0, 0));
+  }
+
+  //  cout << badSLs.size() << " " << id <<endl;
+
+  for (vector<DTDetId>::const_iterator i=badSLs.begin();
+       i!=badSLs.end(); ++i) {
+    if (id==(*i)) return true;
+  }
+  return false;
+}
+
+
+
+
+
+TTreeReader::TTreeReader(const TString& fileName, const TString& outputFile) : 
+  theOutFile(outputFile),
+  theGranularity(-1),
+  nevents(0),
+  filterEvents(0),
+  filterSL(false),
+  ptmin(0.),
+  runmin(-1),
+  runmax(-1),
+  debug(0) {
   // open the file containing the tree
   TFile *file = new TFile(fileName.Data());
   if(file == 0) {
@@ -93,7 +152,10 @@ TTreeReader::TTreeReader(TTree* aTree, const TString& outputFile) :
   theGranularity(-1),
   nevents(0),
   filterEvents(0),
+  filterSL(false),
   ptmin(0.),
+  runmin(-1),
+  runmax(-1),
   debug(0)
  {
 
@@ -122,7 +184,6 @@ void TTreeReader::setBranchAddresses() {
 }
 
 
-TH2F *hDeltaSectVsDeltaStat = 0;
 HSegment *hAll;
 
 void TTreeReader::begin() {
@@ -143,7 +204,6 @@ void TTreeReader::begin() {
   
 
 
-  hDeltaSectVsDeltaStat = new TH2F("hDeltaSectVsDeltaStat","hDeltaSectVsDeltaStat", 4, 0, 4, 12, 0, 12);
   hAll = new HSegment("ALL");
 
   // build the histos with the desired granularity
@@ -201,17 +261,29 @@ void TTreeReader::begin() {
 
 void TTreeReader::processEvent(int entry) {
 
+
+  hRun->Fill(run);
+
   //---> Muon quality plots
   
   for(int iMu=0; iMu < muons->GetEntriesFast(); iMu++) { // loop over events
     DTMuObject *oneMu = (DTMuObject *) muons->At(iMu);	
     
-    // Barrel GLOBAL muons with pt>10 
-    if (fabs(oneMu->eta)<1.2 && oneMu->type<3 && TMath::Abs(oneMu->qpt) >=10) {
+    // Barrel EWK muons (no isolation & dxy cut)
+    if (fabs(oneMu->eta)<1.2 && 
+	oneMu->type==1 && 
+	TMath::Abs(oneMu->qpt)>=20 
+	//	&& oneMu->normChi2glb < 10. //&& 
+	//	oneMu->nGlbDTValidHits>0 &&
+	//	oneMu->nPixHits>0
+	) {
       hMuonQualityChi2Sta->Fill(oneMu->normChi2sta);
       hMuonQualityChi2Glb->Fill(oneMu->normChi2glb);
       hMuonQualityNHitsGlb->Fill(oneMu->nGlbDTHits);
       hMuonQualityNHitsSta->Fill(oneMu->nStaDTHits);
+      hMuonQualityNVHitsGlb->Fill(oneMu->nGlbDTValidHits);
+      hMuonQualityNVHitsSta->Fill(oneMu->nStaDTValidHits);
+
     }
   }
 
@@ -222,99 +294,95 @@ void TTreeReader::processEvent(int entry) {
     DTSegmentObject *oneSeg = (DTSegmentObject *) segments->At(iSegm);
 
     // <---- Theta efficiency plots
-    int thetaCase =0;   
-    if (oneSeg->station!=4 && 
-	oneSeg->nHitsPhi>=8 && 
-	oneSeg->phi>-25*TMath::DegToRad() && oneSeg->phi< 25*TMath::DegToRad()) {
+    if (false) {
+      int thetaCase =0;
+      if (oneSeg->station!=4 && 
+	  oneSeg->nHitsPhi>=8 && 
+	  oneSeg->phi>-25*TMath::DegToRad() && oneSeg->phi< 25*TMath::DegToRad()) {
 	
-      hThetaEffDen->Fill(oneSeg->sector,(5*oneSeg->station -2)+ oneSeg->wheel );
-      if(oneSeg->nHitsTheta ==0)
-	{
-	  thetaCase=1;
-	}      
+	hThetaEffDen->Fill(oneSeg->sector,(5*oneSeg->station -2)+ oneSeg->wheel );
+	if(oneSeg->nHitsTheta ==0)
+	  {
+	    thetaCase=1;
+	  }      
     
-      if (oneSeg->nHitsTheta >=3){
-	if( insideThetaWindow(oneSeg->theta,oneSeg->wheel,oneSeg->station)) {
-	  hThetaEffNum2 -> Fill( oneSeg->sector,(5*oneSeg->station -2)+ oneSeg->wheel  );
-	  thetaCase = 3 ;
+	if (oneSeg->nHitsTheta >=3){
+	  if( insideThetaWindow(oneSeg->theta,oneSeg->wheel,oneSeg->station)) {
+	    hThetaEffNum2 -> Fill( oneSeg->sector,(5*oneSeg->station -2)+ oneSeg->wheel  );
+	    thetaCase = 3 ;
+	  }
+	  else {
+	    hThetaEffNum1 -> Fill( oneSeg->sector,(5*oneSeg->station -2)+ oneSeg->wheel  );
+	    thetaCase = 2;
+	  }
 	}
-	else {
-	  hThetaEffNum1 -> Fill( oneSeg->sector,(5*oneSeg->station -2)+ oneSeg->wheel  );
-	  thetaCase = 2;
-	}
-      }
 
-      if (oneSeg->nHitsTheta >=4){
-	if ( insideThetaWindow(oneSeg->theta,oneSeg->wheel,oneSeg->station)){
-	  hThetaEffNum4 -> Fill( oneSeg->sector,(5*oneSeg->station -2)+ oneSeg->wheel  );
-	  thetaCase = 5;
-	} 
-	else {
-	  hThetaEffNum3->Fill( oneSeg->sector,(5*oneSeg->station -2)+ oneSeg->wheel  );
-	  thetaCase = 4;
+	if (oneSeg->nHitsTheta >=4){
+	  if ( insideThetaWindow(oneSeg->theta,oneSeg->wheel,oneSeg->station)){
+	    hThetaEffNum4 -> Fill( oneSeg->sector,(5*oneSeg->station -2)+ oneSeg->wheel  );
+	    thetaCase = 5;
+	  } 
+	  else {
+	    hThetaEffNum3->Fill( oneSeg->sector,(5*oneSeg->station -2)+ oneSeg->wheel  );
+	    thetaCase = 4;
+	  }
 	}
-      }
-
       
-      int nAvTheta = 0;
-      for(int iHit = 0; iHit != oneSeg->nAvailableHits; ++iHit) { // loop over the available hits 
-	DTHitObject * hitObj = (DTHitObject *) oneSeg->availableHits->At(iHit);
+	int nAvTheta = 0;
+	for(int iHit = 0; iHit != oneSeg->nAvailableHits; ++iHit) { // loop over the available hits 
+	  DTHitObject * hitObj = (DTHitObject *) oneSeg->availableHits->At(iHit);
 
-	for (int jHit=iHit + 1; jHit != oneSeg->nAvailableHits;++jHit){//second loop over available hits
-	  DTHitObject * hitObj1 = (DTHitObject *) oneSeg->availableHits->At(jHit);
-	  // DTDetId detId1(oneSeg->wheel, oneSeg->station, oneSeg->sector,
-	  //	 hitObj1->sl, hitObj1->layer, hitObj1->wire);
+	  for (int jHit=iHit + 1; jHit != oneSeg->nAvailableHits;++jHit){//second loop over available hits
+	    DTHitObject * hitObj1 = (DTHitObject *) oneSeg->availableHits->At(jHit);
+	    // DTDetId detId1(oneSeg->wheel, oneSeg->station, oneSeg->sector,
+	    //	 hitObj1->sl, hitObj1->layer, hitObj1->wire);
 	
-	  if ( (hitObj->sl-hitObj1->sl)==0 && fabs(hitObj->layer - hitObj1->layer) ==1    ){
+	    if ( (hitObj->sl-hitObj1->sl)==0 && fabs(hitObj->layer - hitObj1->layer) ==1    ){
 	  
-	    int distAv;
-	    distAv =  fabs(hitObj->wire - hitObj1->wire);
-	    hDistAv->Fill(distAv);
+	      int distAv;
+	      distAv =  fabs(hitObj->wire - hitObj1->wire);
+	      hDistAv->Fill(distAv);
+	    }
 	  }
-	}
-	if (hitObj->sl==2) {
-	  nAvTheta++;
-	} 
-      } //end loop on available Theta-hits 
+	  if (hitObj->sl==2) {
+	    nAvTheta++;
+	  } 
+	} //end loop on available Theta-hits 
 
-      for (int iHit = 0; iHit != oneSeg->nHits; ++iHit  ){//loop over hits
+	for (int iHit = 0; iHit != oneSeg->nHits; ++iHit  ){//loop over hits
 	
-	DTHitObject * hitObj3 = (DTHitObject *) oneSeg->hits->At(iHit);
-	for (int jHit = iHit + 1; jHit != oneSeg->nHits; ++jHit){ //second loop over hits
-	  DTHitObject * hitObj4 = (DTHitObject *) oneSeg->hits->At(jHit);
+	  DTHitObject * hitObj3 = (DTHitObject *) oneSeg->hits->At(iHit);
+	  for (int jHit = iHit + 1; jHit != oneSeg->nHits; ++jHit){ //second loop over hits
+	    DTHitObject * hitObj4 = (DTHitObject *) oneSeg->hits->At(jHit);
 		
-	  if ( (hitObj3->sl-hitObj4->sl)==0 && fabs(hitObj3->layer - hitObj4->layer) ==1    ){
+	    if ( (hitObj3->sl-hitObj4->sl)==0 && fabs(hitObj3->layer - hitObj4->layer) ==1    ){
 	  
-	    int distHits ;
-	    distHits=  fabs(hitObj3->wire - hitObj4->wire);
-	    hDistHits->Fill(distHits);
-	  }
-	  if ( (hitObj3->sl-hitObj4->sl)==0 && fabs(hitObj3->layer - hitObj4->layer) ==2   ){
+	      int distHits ;
+	      distHits=  fabs(hitObj3->wire - hitObj4->wire);
+	      hDistHits->Fill(distHits);
+	    }
+	    if ( (hitObj3->sl-hitObj4->sl)==0 && fabs(hitObj3->layer - hitObj4->layer) ==2   ){
 	  
-	    int distHits ;
-	    distHits=  fabs(hitObj3->wire - hitObj4->wire);
-	    hDistHits2L->Fill(distHits);
+	      int distHits ;
+	      distHits=  fabs(hitObj3->wire - hitObj4->wire);
+	      hDistHits2L->Fill(distHits);
+	    }
 	  }
+
+
+	  hNAvThetaHits->Fill(nAvTheta);
+	  if(thetaCase==1){hThetaHitsPosition1->Fill(nAvTheta);}
+	  else if(thetaCase==2){hThetaHitsPosition2->Fill(nAvTheta);}
+	  else if(thetaCase==3){hThetaHitsPosition3->Fill(nAvTheta);}
+	  else if(thetaCase==4){hThetaHitsPosition4->Fill(nAvTheta);}
+	  else if(thetaCase==5 ){hThetaHitsPosition5->Fill(nAvTheta);}
 	}
-
-
-	hNAvThetaHits->Fill(nAvTheta);
-	if(thetaCase==1){hThetaHitsPosition1->Fill(nAvTheta);}
-	else if(thetaCase==2){hThetaHitsPosition2->Fill(nAvTheta);}
-	else if(thetaCase==3){hThetaHitsPosition3->Fill(nAvTheta);}
-	else if(thetaCase==4){hThetaHitsPosition4->Fill(nAvTheta);}
-	else if(thetaCase==5 ){hThetaHitsPosition5->Fill(nAvTheta);}
       }
-    }
-    //< ---
-
-    if(iSegm != 0) {
-      for(int iPrev = 0; iPrev < iSegm; ++iPrev) {
-	DTSegmentObject *prevSeg = (DTSegmentObject *) segments->At(iPrev);
-	hDeltaSectVsDeltaStat->Fill(fabs(prevSeg->station - oneSeg->station), fabs(prevSeg->sector - oneSeg->sector));	
-      }
-    }
+    } //< --- end of theta eff plots
     
+
+    //-------------------- Segment plots
+
     hAll->Fill(oneSeg->nHits,
 	       oneSeg->nHitsPhi,
 	       oneSeg->nHitsTheta,
@@ -367,11 +435,21 @@ void TTreeReader::processEvent(int entry) {
       }
     }
 
+
+
+    //-------------------- Hit plots
      
     for(int iHit = 0; iHit != oneSeg->nHits; ++iHit) { // loop over the hits belonging to the segment
       DTHitObject * hitObj = (DTHitObject *) oneSeg->hits->At(iHit);
       DTDetId detId(oneSeg->wheel, oneSeg->station, oneSeg->sector,
 		    hitObj->sl, hitObj->layer, hitObj->wire);
+
+      if (filterSL && skipBadSL(detId)) {
+	continue;
+      }
+
+
+
       if(passHqPhiV && debug > 5) {
 	cout << "  - Hit on wire: " << detId << endl;
 	cout << "       pos X: " << hitObj->X << " Y: " << hitObj->Y << " Z: " << hitObj->Z << endl;
@@ -382,12 +460,22 @@ void TTreeReader::processEvent(int entry) {
       if((theGranularity == 3 || theGranularity == 4) &&   hitObj->sl == 3) segSl = 1; // "byView"
       DTDetId detIdForPlot = buildDetid(oneSeg->wheel, oneSeg->station, oneSeg->sector,
 					segSl, hitObj->layer, hitObj->wire);
-      vector<TString>::const_iterator cut =  passedCuts.begin();
-//       for(// set<TString>::const_iterator cut = passedCuts.begin();
-// 	  cut != passedCuts.end(); ++cut) {
-      while(cut != passedCuts.end()) {
-	histosRes[*cut][detIdForPlot]->Fill(hitObj->resDist, hitObj->distFromWire, hitObj->resPos,hitObj->X,
-					    hitObj->Y, hitObj->angle, hitObj->sigmaPos);
+
+      
+
+      vector<TString>::const_iterator cut =  passedCuts.begin();      
+
+      while(cut != passedCuts.end()) {	
+	
+	if (cutSets[*cut].selectHit(hitObj)) {
+	    histosRes[*cut][detIdForPlot]->Fill(hitObj->resDist, 
+						hitObj->distFromWire, 
+						hitObj->resPos,
+						hitObj->X,
+						hitObj->Y, 
+						hitObj->angle, 
+						hitObj->sigmaPos);
+	    }
 	++cut;
       }
     }
@@ -416,13 +504,16 @@ void TTreeReader::end() {
       (*hist).second->Write();
     }
   }
-  hDeltaSectVsDeltaStat->Write();
   hAll->Write();
+
+  hRun->Write();
 
   hMuonQualityChi2Sta ->Write();
   hMuonQualityChi2Glb ->Write();
   hMuonQualityNHitsGlb->Write ();
   hMuonQualityNHitsSta->Write();
+  hMuonQualityNVHitsGlb->Write ();
+  hMuonQualityNVHitsSta->Write();
 
   hThetaEffDen->Write();
   hThetaEffNum1->Write();
@@ -455,19 +546,11 @@ void TTreeReader::analyse(const int nEventMax) {
       if(i%25000 == 0 ||  debug > 2) {
 	cout << "-----  Process event " << i << endl;
       }
-
     
     if (filterEvents>=1) {
-      // Event quality selection
-      // Select data taking periods
       if (run> 50000) { // if you happen to use this with MC...
-	if (run < 137754) { //Initial period
-	  continue;
-	} else if (run < 139830) { //first round of corrections
-	  continue;
-	} else { //Second round of corrections
-	  //continue;
-	}
+	if (runmin>0 && run<runmin) continue;
+	if (runmax>0 && run>=runmax) continue;
       }
 
       bool tagEvent=false;
@@ -630,3 +713,7 @@ bool insideThetaWindow(float theta, int wheel, int station) {
   //    cout << -thetaMax << " " << theta << -thetaMin << " " << (theta>-thetaMax && theta < -thetaMin) << endl;
   return (theta>-thetaMax && theta < -thetaMin);
 }
+
+
+
+
