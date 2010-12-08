@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: $
- *  $Revision: $
+ *  $Date: 2009/07/20 08:52:46 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -58,6 +58,16 @@ bool DTDetId::operator<(const DTDetId& aDetId) const {
   return false;
 }
 
+
+bool DTDetId::operator==(const DTDetId& aDetId) const {
+  if (wheel == aDetId.wheel &&
+      station == aDetId.station &&
+      (sector ==0 || aDetId.sector == 0 || sector == aDetId.sector) &&
+      sl == aDetId.sl &&
+      (layer == 0 || aDetId.layer == 0 || layer == aDetId.layer) &&
+      (wire == 0 || aDetId.wire==0 || wire == aDetId.wire)) return true;
+  return false;
+}
 
 
 // bool matchesGranularity(const int granularity, const DTDetId& aDetId) const {

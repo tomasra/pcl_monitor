@@ -4,8 +4,8 @@
 /** \class DTDetId
  *  No description available.
  *
- *  $Date: $
- *  $Revision: $
+ *  $Date: 2009/07/20 08:52:46 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
 #include <iosfwd>
@@ -22,6 +22,10 @@ public:
   
   // strict ordering 
   bool operator<(const DTDetId& aDetId) const;
+
+  // Equality
+  bool operator==(const DTDetId& aDetId) const;
+
   
 //   bool matchesGranularity(const int granularity, const DTDetId& detid) const;
 
