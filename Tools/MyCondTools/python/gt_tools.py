@@ -681,6 +681,51 @@ class GTEntryCollection:
         if len(self._tagsInPrep) != 0:
             return True
 
+    def dumpToConfFile(self, newconffile, newgt, gtaccount):
+        # --------------------------------------------------------------------------
+        # Write the new conf file
+        node = self.nodedata()
+        root = self.parent()
+        globparent = self.root()
+
+        # open output conf file
+        conf=open(newconffile,'w')
+        conf.write('[COMMON]\n')
+        conf.write('connect=sqlite_file:' + newgt + '.db\n')
+        #conf.write('#connect=oracle://cms_orcoff_int2r/'+ACCOUNT+'\n')
+        conf.write('#connect=oracle://cms_orcon_prod/'+gtaccount+'\n')
+        conf.write('\n')
+        conf.write('[TAGINVENTORY]\n')
+        conf.write('tagdata=\n')
+        for tagidx in range(0,len(self._tagOrder)):
+            outline = self._tagList[self._tagOrder[tagidx]].getTagInvetoryLine()
+            if tagidx != len(self._tagOrder) - 1:
+                outline=outline+';'
+            outline=outline+'\n'
+            conf.write(outline)
+
+        conf.write("\n")
+
+        conf.write('[TAGTREE '+newgt+']\n')
+
+        conf.write('root='+root+'\n')
+        conf.write('nodedata='+node+'{parent='+globparent+'}\n')
+        conf.write('leafdata=\n')
+        #counter = 0
+        for tagidx in range(0,len(self._tagOrder)):
+            outline = self._tagList[self._tagOrder[tagidx]].getTagTreeLine()
+            #counter = counter + 1
+            if tagidx != len(self._tagOrder) - 1:
+                outline=outline+';'
+            outline=outline+'\n'
+            conf.write(outline)
+
+        conf.close()
+
+
+
+
+
 class GTDocGenerator:
     def __init__(self, gtName, oldGT, scope, release, changelog):
         self._listTagLink = 'http://condb.web.cern.ch/condb/listTags/?GlobalTag=' + gtName
