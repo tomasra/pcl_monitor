@@ -4,14 +4,15 @@
 /** \class L1GmtTriggerSource
  *  No description available.
  *
- *  $Date: $
- *  $Revision: $
+ *  $Date: 2008/12/03 10:41:14 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
 
 
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDAnalyzer.h"
+#include "FWCore/Utilities/interface/InputTag.h"
 
 class HBxDistance;
 class TFile;

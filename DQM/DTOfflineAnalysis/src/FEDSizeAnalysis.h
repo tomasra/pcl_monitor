@@ -4,13 +4,14 @@
 /** \class FEDSizeAnalysis
  *  No description available.
  *
- *  $Date: $
- *  $Revision: $
+ *  $Date: 2009/09/11 10:51:03 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
 
 
 #include <FWCore/Framework/interface/EDAnalyzer.h>
+#include "FWCore/Utilities/interface/InputTag.h"
 
 #include <string>
 #include <vector>
