@@ -70,30 +70,31 @@ if __name__     ==  "__main__":
                 for j in range(0, len(objectRecords[obj])):
                     rcd = objectRecords[obj][j]
                     print "            [" + str(j) + "] rcd: " + rcd
+                    
+        if options.tags != None:
+            for i in range(0, len(options.tags)):
+                listiovout = listIov(options.connects[i], options.tags[i], passwd)
+                obj = ""
+                if listiovout[0] == 0:
+                    iovtable = IOVTable()
+                    iovtable.setFromListIOV(listiovout[1])
+                    obj = iovtable.containerName()
+                else:
+                    print listiovout[1]
+                    sys.exit(1)
 
-        for i in range(0, len(options.tags)):
-            listiovout = listIov(options.connects[i], options.tags[i], passwd)
-            obj = ""
-            if listiovout[0] == 0:
-                iovtable = IOVTable()
-                iovtable.setFromListIOV(listiovout[1])
-                obj = iovtable.containerName()
-            else:
-                print listiovout[1]
-                sys.exit(1)
+                if obj in objectRecords:
+                    print "--- Release: " + cycle
+                    print "    Tag: " + options.tags[i] + " connect: " + options.connects[i]
+                    print "    Obj: " + obj
+                    for j in range(0, len(objectRecords[obj])):
+                        rcd = objectRecords[obj][j]
+                        print "            [" + str(j) + "] rcd: " + rcd
+                else:
+                    print "   Obj: " + obj + " not found!"
+                #print tag
 
-            if obj in objectRecords:
-                print "--- Release: " + cycle
-                print "    Tag: " + options.tags[i] + " connect: " + options.connects[i]
-                print "    Obj: " + obj
-                for j in range(0, len(objectRecords[obj])):
-                    rcd = objectRecords[obj][j]
-                    print "            [" + str(j) + "] rcd: " + rcd
-            else:
-                print "   Obj: " + obj + " not found!"
-            #print tag
-
-            #def listIov(connect, tag, passwd):
+                #def listIov(connect, tag, passwd):
 
 
              
