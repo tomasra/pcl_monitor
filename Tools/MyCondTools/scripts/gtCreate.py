@@ -67,7 +67,7 @@ if __name__     ==  "__main__":
     # --- read command line options
     # description
     usage = "usage: %prog [options] gt1 gt2 ..."
-    revision = '$Revision: 1.6 $'
+    revision = '$Revision: 1.7 $'
     vnum = revision.lstrip('$')
     vnum = vnum.lstrip('Revision: ')
     vnum = vnum.rstrip(' $')
@@ -153,13 +153,14 @@ if __name__     ==  "__main__":
             if len(checksum_cmd) != 4:
                 checksum_cmd += ","
             checksum_cmd += gtSums[gt]
-        remote_cmd += checksum_cmd 
+        if len(checksum_cmd) != 4:
+            remote_cmd += checksum_cmd 
         remote_cmd += '"'
         #print remote_cmd
 
-        print remote_cmd
-        sys.exit(1)
-        #statandout = commands.getstatusoutput(remote_cmd)
+        #print remote_cmd
+        #sys.exit(1)
+        statandout = commands.getstatusoutput(remote_cmd)
         print statandout[1]
         if statandout[0] == 0:
 
