@@ -10,6 +10,32 @@ import shutil
 from Tools.MyCondTools.color_tools import *
 from Tools.MyCondTools.gt_tools import *
 
+import md5
+
+def sumfile(fobj):
+    '''Returns an md5 hash for an object with read() method.'''
+    m = md5.new()
+    while True:
+        d = fobj.read(8096)
+        if not d:
+            break
+        m.update(d)
+    return m.hexdigest()
+
+
+def md5sum(fname):
+    '''Returns an md5 hash for file fname, or stdin if fname is "-".'''
+    if fname == '-':
+        ret = sumfile(sys.stdin)
+    else:
+        try:
+            f = file(fname, 'rb')
+        except:
+            return 'Failed to open file'
+        ret = sumfile(f)
+        f.close()
+    return ret
+
 
 def editConfFileConnect(filename, newfilename, globaltag, newconnect):
     # read the original file
@@ -41,7 +67,7 @@ if __name__     ==  "__main__":
     # --- read command line options
     # description
     usage = "usage: %prog [options] gt1 gt2 ..."
-    revision = '$Revision: 1.5 $'
+    revision = '$Revision: 1.6 $'
     vnum = revision.lstrip('$')
     vnum = vnum.lstrip('Revision: ')
     vnum = vnum.rstrip(' $')
@@ -55,6 +81,7 @@ if __name__     ==  "__main__":
     # set the command line options
     parser.add_option("-o", "--online", action="store_true",dest="online",help="write to oracle")
     parser.add_option("-r", "--remote", action="store_true",dest="remote",help="run the command in the CMS network")
+    parser.add_option("-c", "--check-sum", dest="checksum",help="check the conf file check-sum against the externally provided one (mainly for remote management)")
 
     # read options and arguments
     (options, args) = parser.parse_args()
@@ -78,14 +105,33 @@ if __name__     ==  "__main__":
         os.mkdir(logdirname)
 
 
+    print args
 
     # ---------------------------------------------------------
     # --- create the GT list
     gtlist = []
-    for gt in args:
+    checksums = []
+    gtSums = dict()
+    if options.checksum != None:
+        checksums = options.checksum.split(",")
+        
+    for index in range(0, len(args)):
+        gt = args[index]
         if ".conf" in gt:
             gt = gt.rstrip(".conf")
 
+        # compute the md5checksum for each conf file
+        filename = gt + ".conf"
+        checksum = md5sum(filename)
+        # print filename + " md5sum: " + checksum
+        gtSums[gt] = checksum
+        if options.checksum != None:
+            md5sum_orig = checksums[index]
+            if md5sum_orig != checksum:
+                print error("***Error: inconsistent md5sum for file: " + filename)
+                print "      md5sum: computed " +  checksum + " ref: " + md5sum_orig
+                continue
+            
         # check that the new GT is not already in oracle
         if gtExists(gt, gtconnstring, passwdfile):
             print error("***Error: GT: " + gt + " is already in oracle: cannot be modified!!!")
@@ -94,18 +140,26 @@ if __name__     ==  "__main__":
         else:
             gtlist.append(gt)
 
+
     # ---------------------------------------------------------
     # --- if exectution is remote just send the command over ssh
     if options.remote:
         remote_cmd = "ssh " + remotemachine + ' "cd ' + remotedir + remoteversion + '/src/; source env.sh; gtCreate.py'
         if options.online:
             remote_cmd += " --online"
+        checksum_cmd = " -c "
         for gt in gtlist:
             remote_cmd += " " + gt
+            if len(checksum_cmd) != 4:
+                checksum_cmd += ","
+            checksum_cmd += gtSums[gt]
+        remote_cmd += checksum_cmd 
         remote_cmd += '"'
         #print remote_cmd
-        
-        statandout = commands.getstatusoutput(remote_cmd)
+
+        print remote_cmd
+        sys.exit(1)
+        #statandout = commands.getstatusoutput(remote_cmd)
         print statandout[1]
         if statandout[0] == 0:
 
