@@ -238,13 +238,22 @@ if __name__     ==  "__main__":
 
     # map between relval process and GT type
     RELVALMAP = dict()
-    RELVALMAP['mc'] = '2'
-    RELVALMAP['design'] = '2'
-    RELVALMAP['ideal'] = '2'
-    RELVALMAP['startup'] = '25'
-    RELVALMAP['hlt'] = '4.1'
-    RELVALMAP['data'] = '4.1'
-    RELVALMAP['cosmics'] = '4.2'
+    if 'CMSSW_3_7' in  options.release or 'CMSSW_3_6' in  options.release or 'CMSSW_3_8' in  options.release or 'CMSSW_3_9' in  options.release :
+        RELVALMAP['mc'] = '2'
+        RELVALMAP['design'] = '2'
+        RELVALMAP['ideal'] = '2'
+        RELVALMAP['startup'] = '25'
+        RELVALMAP['hlt'] = '4.1'
+        RELVALMAP['data'] = '4.1'
+        RELVALMAP['cosmics'] = '4.2'
+    else:
+        RELVALMAP['mc'] = '11'
+        RELVALMAP['design'] = '11'
+        RELVALMAP['ideal'] = '11'
+        RELVALMAP['startup'] = '25'
+        RELVALMAP['hlt'] = '4.6'
+        RELVALMAP['data'] = '4.6'
+        RELVALMAP['cosmics'] = '4.2'
 
 
 
