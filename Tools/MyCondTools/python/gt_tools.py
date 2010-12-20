@@ -306,6 +306,8 @@ class GTEntry:
             return True
         return False
 
+    def pfn(self):
+        return  self._connstring + "/" + self._account
 
 
 class RcdID(tuple):
@@ -443,6 +445,9 @@ class IOVTable:
     def lastIOV(self):
         return  self._iovList[len(self._iovList)-1]
 
+    def size(self):
+        return len(self._iovList)
+
 
 class GTEntryCollection:
     def __init__(self):
@@ -469,6 +474,9 @@ class GTEntryCollection:
         self._parent = ''
         return
 
+    def size(self):
+        return len(self._tagOrder)
+    
     def nodedata(self):
         return  self._node
 
