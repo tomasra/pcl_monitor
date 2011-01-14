@@ -259,6 +259,13 @@ if __name__     ==  "__main__":
         nextGT = diffconfig.get('Common','NewGT')
 
         oldfilename = OLDGT + '.conf'
+
+        if not confFileFromDB(OLDGT, oldfilename, gtconnstring, passwdfile):
+            print error("*** Error" + " original GT conf file: " + oldfilename + " doesn't exist!")
+        return 5
+
+
+
         print "--- Original GT: " + OLDGT
         print '        Next GT: ' + nextGT
         # create the collection of tags
