@@ -262,7 +262,7 @@ if __name__     ==  "__main__":
 
         if not confFileFromDB(OLDGT, oldfilename, gtconnstring, passwdfile):
             print error("*** Error" + " original GT conf file: " + oldfilename + " doesn't exist!")
-             sys.exit(5)
+            sys.exit(5)
 
 
 
