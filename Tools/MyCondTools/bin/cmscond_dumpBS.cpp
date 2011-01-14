@@ -8,7 +8,6 @@
 #include "CondFormats/Common/interface/TimeConversions.h"
 
 #include "CondCore/IOVService/interface/IOVProxy.h"
-#include "CondFormats/Common/interface/PayloadWrapper.h"
 #include "CondFormats/BeamSpotObjects/interface/BeamSpotObjects.h"
 
 #include <boost/program_options.hpp>
@@ -144,10 +143,13 @@ int cond::ListIOVUtilities::execute(){
 //             session.getObject(ioviterator->wrapperToken());
 //           std::cout << " \t "<< wrapper.summary();
 
-	  pool::Ref<BeamSpotObjects> bs =
+	  //pool::Ref<BeamSpotObjects> bs =
+          //  session.getTypedObject<BeamSpotObjects>(ioviterator->wrapperToken());
+
+	  boost::shared_ptr<BeamSpotObjects> bs =
             session.getTypedObject<BeamSpotObjects>(ioviterator->wrapperToken());
 
- 	  if (bs.ptr()) {
+ 	  if (bs) {
 	    const BeamSpotObjects mybs = *bs;
 	    std::cout << std::endl << mybs << std::endl;
 
