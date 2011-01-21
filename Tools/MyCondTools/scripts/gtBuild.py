@@ -143,7 +143,7 @@ if __name__     ==  "__main__":
     gtsByRelease = dict()
 
     if  'all' in options.scenario:
-        options.scenario = ['DESIGN','MC','START','GR_R','CRAFT09']
+        options.scenario = ['DESIGN','MC','START','GR_R']
     elif 'mc' in options.scenario:
         options.scenario = ['DESIGN','MC','START']
         
@@ -155,8 +155,11 @@ if __name__     ==  "__main__":
         gtlistnames = ''
         for scenario in options.scenario:
             cfgfile = "GT_branches/GT_" + release + "_" + scenario + ".cfg"
-            gtName = scenario + release + "_T"
 
+            confbuild_cmd = "cmsenv; gtConfManager.py --force " + cfgfile
+            print confbuild_cmd
+            confbuild_out = executeCommad(confbuild_cmd)
+            gtchanges.append(confbuild_out[1])
 
             diffconfig = ConfigParser()
             diffconfig.optionxform = str
@@ -166,10 +169,7 @@ if __name__     ==  "__main__":
 
             gtNames.append(gtName)
             gtlistnames = gtlistnames + " " + gtName
-            confbuild_cmd = "cmsenv; gtConfManager.py --force -t " + gtName + " " + cfgfile
-            print confbuild_cmd
-            confbuild_out = executeCommad(confbuild_cmd)
-            gtchanges.append(confbuild_out[1])
+
 
             # copy the new conf file on the public
             shutil.copy(gtName + ".conf", CONFSTORE + gtName + ".conf")
