@@ -14,6 +14,10 @@ def modifyCommandForGT(command, gtName, isLocal):
     if command == None:
         return command
 
+
+    command = command.replace('EVENTS: 2000000', 'EVENTS: 200')
+    #print "COMMAND: " + command
+
     releasearea = os.environ["CMSSW_BASE"]
     if 'CMSSW_3_6' in  releasearea  or 'CMSSW_3_5' in  releasearea :
         command = command.replace('auto:mc',gtName+"::All")
