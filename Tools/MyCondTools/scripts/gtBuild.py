@@ -27,6 +27,11 @@ def getLatestRelNames(release):
     secondDigi = release.lstrip(release[0]).rstrip('X')
     #print firstDigi + " - " + secondDigi
     scram_cmd = 'scram list -c CMSSW'
+
+    if int(firstDigi) >= 4:
+        scram_cmd = 'export SCRAM_ARCH=slc5_amd64_gcc434; scram list -c CMSSW'
+    
+
     scram_out = commands.getstatusoutput(scram_cmd)
     if scram_out[0] == 0:
         maxThirdDigitsRel = -1
@@ -50,7 +55,7 @@ def getLatestRelNames(release):
             if match in onerel:
                 if "_X_" in onerel:
                     #print 'Nightly: ' + onerel
-                    datestring = onerel.lstrip(match+"_X_")
+                    datestring = onerel.split("_X_")[1]
                     datedigits = datestring.split('-')
                     nightlyDate = datetime.datetime(int(datedigits[0]),int(datedigits[1]),int(datedigits[2]),int(datedigits[3].lstrip('0').rstrip('00')),0,0)
                     if nightlyDate > maxDate:
@@ -163,7 +168,7 @@ if __name__     ==  "__main__":
         for scenario in options.scenario:
             cfgfile = "GT_branches/GT_" + release + "_" + scenario + ".cfg"
 
-            confbuild_cmd = "pwd; cmsenv; gtConfManager.py --force " + cfgfile
+            confbuild_cmd = "cmsenv; gtConfManager.py --force " + cfgfile
             print confbuild_cmd
             confbuild_out = executeCommad(confbuild_cmd)
             gtchanges.append(confbuild_out[1])
@@ -239,7 +244,7 @@ if __name__     ==  "__main__":
             print compile_out[1]
             compilationResults = "*** Compilation ERROR: details in:\n " +  runDir + 'compilation.out\n'
             
-        showtags_cmd = 'ssh lxbuild150 "cd ' + runDir + '; cmsenv; showtags -r "'
+        showtags_cmd = 'ssh lxbuild150 "cd ' + runDir + '; source env.csh; showtags -r "'
         print showtags_cmd 
         showtags_out = executeCommad(showtags_cmd)
         

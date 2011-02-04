@@ -925,7 +925,7 @@ def getLastRelease(releases, cycle):
             # nigtly builds
             if "_X_" in onerel:
                 #print 'Nightly: ' + onerel
-                datestring = onerel.lstrip(match+"_X_")
+                datestring = onerel.split("_X_")[1]
                 datedigits = datestring.split('-')
                 nightlyDate = datetime(int(datedigits[0]),int(datedigits[1]),int(datedigits[2]),int(datedigits[3].lstrip('0').rstrip('00')),0,0)
                 if nightlyDate > maxDate:
