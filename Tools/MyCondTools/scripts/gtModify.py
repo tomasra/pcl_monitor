@@ -216,9 +216,9 @@ if __name__     ==  "__main__":
     if options.scenario != None and options.releases != None:
         # wild card for scenarios
         if 'all' in options.scenario:
-            options.scenario = ['DESIGN','MC','START',"GR_R","CRAFT09"]
+            options.scenario = ['DESIGN','MC','START',"GR_R","START_HI"]
         elif 'mc' in options.scenario:
-            options.scenario = ['DESIGN','MC','START']
+            options.scenario = ['DESIGN','MC','START',"START_HI"]
 
 
         # wild-card for releases
