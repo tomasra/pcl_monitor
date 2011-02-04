@@ -12,7 +12,7 @@ import shutil
 
 # ---- SETUP -----------------------------------------------------------------
 # directory where the sqlite of the Global-Tags are created
-GTCREATIONAREA = "/afs/cern.ch/user/c/cerminar/Alca/GlobalTag/CMSSW_3_9_2/src"
+GTCREATIONAREA = "/afs/cern.ch/user/c/cerminar/Alca/GlobalTag/CMSSW_3_10_0/src"
 # directory where the sqlite of the Global-Tag are stored and read from after creation
 GTSQLITESTORE = "/afs/cern.ch/user/c/cerminar/public/Alca/GlobalTag"
 # ----------------------------------------------------------------------------
@@ -72,7 +72,7 @@ if __name__     ==  "__main__":
             releasearea =  os.getcwd() + "/" + options.release
         else:
             # create the CMSSW area
-            scramproj = 'scram project CMSSW ' + options.release
+            scramproj = 'export SCRAM_ARCH=slc5_amd64_gcc434; scram project CMSSW ' + options.release
             scramprojOutAndStat = commands.getstatusoutput(scramproj)
             if scramprojOutAndStat[0] != 0:
                 print scramprojOutAndStat[1]
@@ -80,7 +80,7 @@ if __name__     ==  "__main__":
             releasearea =  os.getcwd() + "/" + options.release
 
     os.chdir(releasearea + '/src/')
-    evaloutands = commands.getstatusoutput('eval `scramv1 runtime -sh`')
+    evaloutands = commands.getstatusoutput('export SCRAM_ARCH=slc5_amd64_gcc434; eval `scramv1 runtime -sh`')
     if evaloutands[0] != 0:
         print evaloutands[1]
 
@@ -161,7 +161,7 @@ if __name__     ==  "__main__":
         loadallscript_local_name = "test_loadAll_" + gt + "_local.csh"
         loadallscript_local = open(loadallscript_local_name, 'w')
         loadallscript_local.write("#!/bin/tcsh\n")
-        loadallscript_local.write("eval `scram runtime -csh`\n")
+        loadallscript_local.write("export SCRAM_ARCH=slc5_amd64_gcc434; eval `scram runtime -csh`\n")
         loadallscript_local.write(loadallcommand_local)
         loadallscript_local.write("if($status != 0) then\n")
         loadallscript_local.write('    echo \"*** Failure in loadall_from_gt test! Check the output file: loadall_test_'+gt+'_local.out\"\n')
@@ -183,7 +183,7 @@ if __name__     ==  "__main__":
         loadallscript_frontier_name = "test_loadAll_" + gt + "_frontier.csh"
         loadallscript_frontier = open(loadallscript_frontier_name, 'w')
         loadallscript_frontier.write("#!/bin/tcsh\n")
-        loadallscript_frontier.write("eval `scram runtime -csh`\n")
+        loadallscript_frontier.write("export SCRAM_ARCH=slc5_amd64_gcc434; eval `scram runtime -csh`\n")
         loadallscript_frontier.write(loadallcommand_frontier)
         loadallscript_frontier.write("if($status != 0) then\n")
         loadallscript_frontier.write('    echo \"*** Failure in loadall_from_gt test! Check the output file: loadall_test_'+gt+'_frontier.out\"\n')
@@ -217,7 +217,7 @@ if __name__     ==  "__main__":
     # check-out sw tags if addpkg file has been provided
     if not options.file == 'None':
         print "Checkout tags from file: " +  options.file
-        outandstat = commands.getstatusoutput('eval `scramv1 runtime -sh`; addpkg -f ' + options.file + " ; checkdeps -a")
+        outandstat = commands.getstatusoutput('export SCRAM_ARCH=slc5_amd64_gcc434; eval `scramv1 runtime -sh`; addpkg -f ' + options.file + " ; checkdeps -a")
         if outandstat[0] != 0:
             print outandstat[1]
 
@@ -225,13 +225,13 @@ if __name__     ==  "__main__":
     if not os.path.exists('env.csh'):
         env = open('env.csh', 'w')
         env.write('# source this script\n')
-        env.write('eval `scram runtime -csh`\n')
+        env.write('setenv SCRAM_ARCH slc5_amd64_gcc434; eval `scram runtime -csh`\n')
         env.write('scram b -j 4\n')
         env.write('if( $status != 0) then\n')
         env.write('    echo "Compilation Error"\n')
         env.write('    touch compilationError.log\n')
         env.write('endif\n')
-        env.write('setenv PYTHONPATH ${PYTHONPATH}:${CMSSW_RELEASE_BASE}/bin/slc5_ia32_gcc434/\n')
+        env.write('setenv PYTHONPATH ${PYTHONPATH}:${CMSSW_RELEASE_BASE}/bin/slc5_amd64_gcc434/\n')
         env.write('rehash\n')
         env.close()
 
