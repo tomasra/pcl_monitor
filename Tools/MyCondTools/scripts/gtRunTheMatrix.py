@@ -19,6 +19,8 @@ def modifyCommandForGT(command, gtName, isLocal):
     #print "COMMAND: " + command
 
     releasearea = os.environ["CMSSW_BASE"]
+    username = os.environ["USER"]
+    usernameinit = username[0]
     if 'CMSSW_3_6' in  releasearea  or 'CMSSW_3_5' in  releasearea :
         command = command.replace('auto:mc',gtName+"::All")
         command = command.replace('auto:startup',gtName+"::All")
@@ -29,7 +31,7 @@ def modifyCommandForGT(command, gtName, isLocal):
             command = command + " --customise  Configuration/StandardSequences/customGT_" + gtName + ".py"
 
     else:
-        conditionOpt = gtName + "::All,sqlite_file:/afs/cern.ch/user/c/cerminar/public/Alca/GlobalTag/" + gtName + ".db"
+        conditionOpt = gtName + "::All,sqlite_file:/afs/cern.ch/user/" + usernameinit + "/" + username + "/public/Alca/GlobalTag/" + gtName + ".db"
         command = command.replace('auto:mc',conditionOpt)
         command = command.replace('auto:startup',conditionOpt)
         command = command.replace('auto:craft08',conditionOpt)
