@@ -132,9 +132,16 @@ if __name__     ==  "__main__":
     (options, args) = parser.parse_args()
 
 
-    GTCREATIONAREA = "/afs/cern.ch/user/c/cerminar/Alca/GlobalTag/CMSSW_3_9_2/src"
-    GTVALIDATIONAREA = "/build/cerminar/GlobalTag/Nightly"
-    CONFSTORE = "/afs/cern.ch/user/c/cerminar/public/Alca/GlobalTag/Nightly/"
+    config = ConfigParser()
+    config.optionxform = str
+    config.read(['GT_branches/Common.cfg']) 
+    gpnArea = config.get("Common","gpnArea")
+    cmsswVersion = config.get("Common","gpnCMSSWVersion")
+    gtStore = config.get("Common","GTStoreArea")
+    
+    GTCREATIONAREA = gpnArea + cmsswVersion + "/src"
+    GTVALIDATIONAREA =  config.get("Common","testArea")
+    CONFSTORE = gtStore + "Nightly/"
 
 
     # 1 - create the conf files for the various GTs
@@ -156,7 +163,7 @@ if __name__     ==  "__main__":
         for scenario in options.scenario:
             cfgfile = "GT_branches/GT_" + release + "_" + scenario + ".cfg"
 
-            confbuild_cmd = "cmsenv; gtConfManager.py --force " + cfgfile
+            confbuild_cmd = "pwd; cmsenv; gtConfManager.py --force " + cfgfile
             print confbuild_cmd
             confbuild_out = executeCommad(confbuild_cmd)
             gtchanges.append(confbuild_out[1])
@@ -264,7 +271,7 @@ if __name__     ==  "__main__":
         SENDMAIL = "/usr/sbin/sendmail" # sendmail location
     
         p = os.popen("%s -t" % SENDMAIL, "w")
-        p.write("To: gianluca.cerminara@cern.ch,cms-alca-globaltag@cern.ch,Rainer.Mankel@cern.ch\n")
+        p.write("To: gianluca.cerminara@cern.ch,cms-alca-globaltag@cern.ch\n")
         #p.write("To: gianluca.cerminara@cern.ch\n")
         p.write("Subject: [GT-Nightly] " + releaseVal1 + " GTs: " + gtlistnames + "\n")
 
