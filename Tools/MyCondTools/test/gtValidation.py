@@ -9,12 +9,14 @@ from ConfigParser import ConfigParser
 from datetime import date
 import shutil
 
+username = os.environ["USER"]
+userinit = username[0]
 
 # ---- SETUP -----------------------------------------------------------------
 # directory where the sqlite of the Global-Tags are created
-GTCREATIONAREA = "/afs/cern.ch/user/c/cerminar/Alca/GlobalTag/CMSSW_3_10_0/src"
+GTCREATIONAREA = "/afs/cern.ch/user/" + userinit + "/" + username + "/Alca/GlobalTag/CMSSW_3_10_0/src"
 # directory where the sqlite of the Global-Tag are stored and read from after creation
-GTSQLITESTORE = "/afs/cern.ch/user/c/cerminar/public/Alca/GlobalTag"
+GTSQLITESTORE = "/afs/cern.ch/user/" + userinit + "/" + username + "/public/Alca/GlobalTag"
 # ----------------------------------------------------------------------------
 
 if __name__     ==  "__main__":
