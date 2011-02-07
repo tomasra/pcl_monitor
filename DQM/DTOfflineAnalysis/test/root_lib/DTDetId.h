@@ -4,8 +4,8 @@
 /** \class DTDetId
  *  No description available.
  *
- *  $Date: 2009/07/20 08:52:46 $
- *  $Revision: 1.1 $
+ *  $Date: 2010/12/08 15:04:01 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - INFN Torino
  */
 #include <iosfwd>
@@ -16,6 +16,10 @@ public:
   /// Constructor
   // NOTE: use 0 for all
   DTDetId(int aWheel, int aStation, int aSector, int aSl, int aLayer, int aWire);
+
+  DTDetId();
+
+
 
   /// Destructor
   virtual ~DTDetId();

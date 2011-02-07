@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2009/07/20 08:52:46 $
- *  $Revision: 1.1 $
+ *  $Date: 2010/12/08 15:04:01 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -23,6 +23,16 @@ DTDetId::DTDetId(int aWheel,
 			      sl(aSl),
 			      layer(aLayer),
 			      wire(aWire) {}
+
+
+DTDetId::DTDetId() : wheel(-1),
+		     station(-1),
+		     sector(-1),
+		     sl(-1),
+		     layer(-1),
+		     wire(-1) {}
+
+
 
 DTDetId::~DTDetId(){}
 
