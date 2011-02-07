@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2009/07/16 14:47:09 $
- *  $Revision: 1.3 $
+ *  $Date: 2010/09/10 12:49:11 $
+ *  $Revision: 1.4 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -192,6 +192,12 @@ double DTSegmentObject::getTTrig(int sl) const  {
   double mean, sigma, kfact;
   return getTTrig(sl, mean, sigma, kfact);
 }
+
+
+// const DTDetId DTSegmentObject::chamberId() const {
+//   return DTDetId(wheel, station, sector, 0, 0, 0);
+// }
+
 
 
 

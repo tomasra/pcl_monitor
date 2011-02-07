@@ -4,8 +4,8 @@
 /** \class DTSegmentObject
  *  No description available.
  *
- *  $Date: 2009/07/16 14:47:09 $
- *  $Revision: 1.3 $
+ *  $Date: 2010/09/10 12:49:11 $
+ *  $Revision: 1.4 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -43,6 +43,8 @@ public:
 
   void setPositionInChamber(double x, double y, double z);
   void setGlobalPosition(float x, float y, float z);
+
+//   const DTDetId chamberId() const;
 
 protected:
 
