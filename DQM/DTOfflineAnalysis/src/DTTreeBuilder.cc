@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/08/10 14:33:25 $
- *  $Revision: 1.16 $
+ *  $Date: 2010/09/10 12:49:12 $
+ *  $Revision: 1.17 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -247,8 +247,7 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	if(checkNoisyChannels) {
 	  bool isNoisy = false;
 	  bool isFEMasked = false;
-	  bool isTDCMasked = false;
-	  bool isTrigMask = false;
+	  bool isTDCMasked = false;bool isTrigMask = false;
 	  bool isDead = false;
 	  bool isNohv = false;
 	  statusMap->cellStatus(wireId, isNoisy, isFEMasked, isTDCMasked, isTrigMask, isDead, isNohv);
