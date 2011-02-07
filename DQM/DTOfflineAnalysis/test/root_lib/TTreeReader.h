@@ -4,8 +4,8 @@
 /** \class TTreeReader
  *  No description available.
  *
- *  $Date: 2010/10/06 15:20:43 $
- *  $Revision: 1.6 $
+ *  $Date: 2010/12/08 15:10:01 $
+ *  $Revision: 1.7 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -19,6 +19,9 @@ class TClonesArray;
 class HRes1DHits;
 class HSegment;
 class TTree;
+class DTCalibrationMap;
+
+
 
 class TTreeReader {
 public:
@@ -62,7 +65,9 @@ public:
   void setDebug(int debug);
   
 
-  
+  void setCalibrationMap(const std::string& filename,
+			 const std::string& granularity,
+			 unsigned int fields);
 
   
 protected:
@@ -90,6 +95,8 @@ private:
 
   // Histograms
   std::map<TString, std::map<DTDetId, HRes1DHits*> > histosRes;
+  std::map<TString, std::map<DTDetId, HRes1DHits*> > histosResS1;
+
   std::map<TString, std::map<DTDetId, HSegment*> > histosSeg;
   
   // 1 -> SL
@@ -106,6 +113,10 @@ private:
   int runmin;
   int runmax;
   int debug;
+
+  bool readCalibTable;
+  DTCalibrationMap *calibMap;
+
 };
 
 #endif

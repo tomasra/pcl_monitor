@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/10/06 15:22:02 $
- *  $Revision: 1.10 $
+ *  $Date: 2010/12/08 15:10:01 $
+ *  $Revision: 1.11 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -17,7 +17,7 @@
 #include "Histograms.h"
 #include "Utils.h"
 #include "TMath.h"
-
+#include "DTCalibrationMap.h"
 
 #include <iostream>
 #include <sstream>
@@ -60,7 +60,8 @@ TH1F* hDistHits2L=new TH1F ("hDistHits2L","Distance in wire",10,0,10);
 bool insideThetaWindow(float theta, int wheel, int station);
 // <---
 
-
+bool doStep1 = true;
+// bool doStep1 = false;
 
 vector<DTDetId> badSLs;
 
@@ -120,7 +121,9 @@ TTreeReader::TTreeReader(const TString& fileName, const TString& outputFile) :
   ptmin(0.),
   runmin(-1),
   runmax(-1),
-  debug(0) {
+  debug(0),
+  readCalibTable(false),
+  calibMap(0) {
   // open the file containing the tree
   TFile *file = new TFile(fileName.Data());
   if(file == 0) {
@@ -249,7 +252,9 @@ void TTreeReader::begin() {
 	      if(histosRes[setName].find(detId) == histosRes[setName].end()) {
 		cout << "book histo for: " << Utils::getHistoNameFromDetIdAndSet(detId, setName) << endl;
 		histosRes[setName][detId] = new HRes1DHits(Utils::getHistoNameFromDetIdAndSet(detId, setName));
-	      }
+		if(doStep1)
+		  histosResS1[setName][detId] = new HRes1DHits(Utils::getHistoNameFromDetIdAndSet(detId, setName) + "_S1");
+	      } 
 	    }
 
 	  }
@@ -382,6 +387,20 @@ void TTreeReader::processEvent(int entry) {
     
 
     //-------------------- Segment plots
+    double vdrift = oneSeg->vDriftCorrPhi;
+    DTDetId segmDetid(oneSeg->wheel, oneSeg->station, oneSeg->sector, 0, 0, 0);
+    if(readCalibTable) {
+      DTDetId sl1Id = segmDetid;
+      sl1Id.sl = 1;
+      DTDetId sl3Id = segmDetid;
+      sl3Id.sl = 3;
+      // FIXME: assume that SL1 and 3 have the same  vdrift
+      if (vdrift != 0.) 
+	vdrift = calibMap->meanVDrift(sl1Id)*(1. - oneSeg->vDriftCorrPhi);
+      if(debug > 5)
+	cout << segmDetid << " vdrift: " << calibMap->meanVDrift(sl1Id) << endl;
+    }
+
 
     hAll->Fill(oneSeg->nHits,
 	       oneSeg->nHitsPhi,
@@ -393,9 +412,11 @@ void TTreeReader::processEvent(int entry) {
 	       oneSeg->chi2,
 	       oneSeg->t0SegPhi,
 	       oneSeg->t0SegTheta,
-	       oneSeg->vDriftCorrPhi);
+	       vdrift,
+	       oneSeg->Xsl,
+	       oneSeg->Ysl);
 
-    bool passHqPhiV = false; 
+    bool passHqPhiV = false;
     DTDetId chId = buildDetid(oneSeg->wheel, oneSeg->station, oneSeg->sector, 0, 0, 0);
     // select segments
     vector<TString> passedCuts;
@@ -417,7 +438,9 @@ void TTreeReader::processEvent(int entry) {
 					    oneSeg->chi2,
 					    oneSeg->t0SegPhi,
 					    oneSeg->t0SegTheta,
-					    oneSeg->vDriftCorrPhi);
+					    vdrift,
+					    oneSeg->Xsl,
+					    oneSeg->Ysl);
 	if((*set).first == "hqPhiV") passHqPhiV = true;
       }
     }
@@ -471,16 +494,29 @@ void TTreeReader::processEvent(int entry) {
 	    histosRes[*cut][detIdForPlot]->Fill(hitObj->resDist, 
 						hitObj->distFromWire, 
 						hitObj->resPos,
+
 						hitObj->X,
 						hitObj->Y, 
 						hitObj->angle, 
-						hitObj->sigmaPos);
+						hitObj->sigmaPos,
+						oneSeg->theta);
+	    if(doStep1)
+	      histosResS1[*cut][detIdForPlot]->Fill(hitObj->resDistS1, 
+						    hitObj->distFromWire, 
+						    hitObj->resPos,
+						    hitObj->X,
+						    hitObj->Y, 
+						    hitObj->angle, 
+						    hitObj->sigmaPos,
+						    oneSeg->theta);
+
 	    }
 	++cut;
       }
     }
   }  
 }
+
 
 
 void TTreeReader::end() {
@@ -498,6 +534,12 @@ void TTreeReader::end() {
 	hist != theHistosRes.end(); ++hist) {
       (*hist).second->Write();
     }
+    map<DTDetId, HRes1DHits *> theHistosResS1 = histosResS1[(*cut).first];
+    for(map<DTDetId, HRes1DHits *>::const_iterator hist =  theHistosResS1.begin();
+	hist != theHistosResS1.end(); ++hist) {
+      (*hist).second->Write();
+    }
+
     map<DTDetId, HSegment *> theHistosSeg = histosSeg[(*cut).first];
     for(map<DTDetId, HSegment *>::const_iterator hist =  theHistosSeg.begin();
 	hist != theHistosSeg.end(); ++hist) {
@@ -717,3 +759,9 @@ bool insideThetaWindow(float theta, int wheel, int station) {
 
 
 
+void  TTreeReader::setCalibrationMap(const std::string& filename,
+				     const std::string& granularity,
+				     unsigned int fields) {
+  readCalibTable = true;
+  calibMap = new DTCalibrationMap(filename, granularity, fields);
+}
