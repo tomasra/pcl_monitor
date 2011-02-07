@@ -30,6 +30,12 @@ class HRes1DHits{
 			       N+"_hResDistVsAngle",
 			       //"Res dist from wire vs angle",
 			       200,-3.15,3.15, 200, -0.4, 0.4);
+
+    hResDistVsTheta = new TH2F(N+"_hResDistVsTheta",
+			       N+"_hResDistVsTheta",
+			       //"Res dist from wire vs angle",
+			       200,-3.15,3.15, 200, -0.4, 0.4);
+
     
     hResDistVsX = new TH2F(N+"_hResDistVsX",
 			   N+"_hResDistVsX",
@@ -60,6 +66,8 @@ class HRes1DHits{
     hResDist = (TH1F *) file->Get(name_+"_hResDist");
     hResDistVsDist = (TH2F *) file->Get(name_+"_hResDistVsDist");
     hResDistVsAngle = (TH2F *) file->Get(name_+"_hResDistVsAngle");
+    hResDistVsTheta = (TH2F *) file->Get(name_+"_hResDistVsTheta");
+
     hResDistVsX = (TH2F *) file->Get(name_+"_hResDistVsX");
     hResDistVsY = (TH2F *) file->Get(name_+"_hResDistVsY");
     hResPos = (TH1F *) file->Get(name_+"_hResPos");
@@ -74,6 +82,7 @@ class HRes1DHits{
       hResDistVsX->SetYTitle("|d_hit|-|d_extr| (cm)");
       hResDistVsY->SetXTitle("Local Y (cm)");
       hResDistVsY->SetYTitle("|d_hit|-|d_extr| (cm)");
+      hResDistVsTheta->SetYTitle("phi |d_hit|-|d_extr| (cm) vs angle in theta SL");
     }
   }
 
@@ -82,16 +91,19 @@ class HRes1DHits{
     delete hResDist;
     delete hResDistVsDist;
     delete hResDistVsAngle;
+    delete hResDistVsTheta;
     delete hResDistVsY;
     delete hResPos;
 //     delete hPullPos;
 //     delete hResPosVsAngle;
 }
 
-  void Fill(float deltaDist, float distFromWire, float deltaX, float hitX, float hitY, float angle, float sigma) {
+  void Fill(float deltaDist, float distFromWire, float deltaX, float hitX, float hitY, float angle, float sigma, float angleTheta) {
     hResDist->Fill(deltaDist);
     hResDistVsDist->Fill(distFromWire, deltaDist);
     hResDistVsAngle->Fill(angle, deltaDist);
+    hResDistVsTheta->Fill(angleTheta, deltaDist);
+
     hResPos->Fill(deltaX);
 //     hPullPos->Fill(deltaX/sigma);
 //     hResPosVsAngle->Fill(angle, deltaX);
@@ -104,6 +116,8 @@ class HRes1DHits{
     hResDist->Write();
     hResDistVsDist->Write();
     hResDistVsAngle->Write();
+    hResDistVsTheta->Write();
+
     hResPos->Write();
 //     hPullPos->Write();
 //     hResPosVsAngle->Write();
@@ -117,9 +131,12 @@ class HRes1DHits{
   TH1F * hResDist;
   TH2F * hResDistVsDist;
   TH2F * hResDistVsAngle;
+  TH2F * hResDistVsTheta;
+
   TH1F * hResPos;
   TH1F * hPullPos;
   TH2F * hResPosVsAngle;
+
   TH2F * hResDistVsX;
   TH2F * hResDistVsY;
   TString name;
@@ -187,12 +204,20 @@ class HSegment{
     hDeltaT0      = new TH1F(N+"_hDeltaT0","Delta t0 (ns)",100,-20,20);
     hDeltaT0->Sumw2();
 
-    hVDrift = new TH1F(N+"_hVDrift", "V drift",100,-0.1,0.1);
+    hVDrift = new TH1F(N+"_hVDrift", "V drift",100,0.0047, 0.0060);
     hVDrift->Sumw2();
     
     hVDriftVsPhi = new TH2F(N+"_hVDriftVsPhi", "V_drift vs phi",
 			    100, -1.58, 1.58,
-			    100,-0.1,0.1);
+			    100,0.0047, 0.0060);
+
+    hVDriftVsX = new TH2F(N+"_hVDriftVsX", "V_drift vs X",
+			  200, -200, 200,
+			  100, 0.0047, 0.0060);
+
+    hVDriftVsY = new TH2F(N+"_hVDriftVsY", "V_drift vs Y",
+			  200, -200, 200,
+			  100, 0.0047, 0.0060);
 
     hNSegm = new TH1F(N+"hNSegm","# of segments", 100, 0, 100);
     hNSegm->Sumw2();
@@ -218,7 +243,10 @@ class HSegment{
     hDeltaT0 = (TH1F*) file->Get(name_+"_hDeltaT0");
     hVDrift = (TH1F*) file->Get(name_+"_hVDrift");
     hVDriftVsPhi = (TH2F*) file->Get(name_+"_hVDriftVsPhi");
+    hVDriftVsX = (TH2F*) file->Get(name_+"_hVDriftVsX");
+    hVDriftVsY = (TH2F*) file->Get(name_+"_hVDriftVsY");
     hNSegm = (TH1F*) file->Get(name_+"_hNSegm");
+
   }
 
 
@@ -238,7 +266,9 @@ class HSegment{
 	    float chi2,
 	    float t0Phi,
 	    float t0Theta,
-	    float vDrift) {
+	    float vDrift,
+	    float Xsl,
+	    float Ysl) {
 
     hNHits->Fill(nHits);
     hNHitsPhi->Fill(nHitsPhi);
@@ -258,6 +288,8 @@ class HSegment{
     if (vDrift!=0.) {
       hVDrift->Fill(vDrift);
       hVDriftVsPhi->Fill(phi,vDrift);
+      hVDriftVsX->Fill(Xsl,vDrift);
+      hVDriftVsY->Fill(Ysl,vDrift);
     }
   }
   
@@ -279,6 +311,8 @@ class HSegment{
     hDeltaT0->Write();
     hVDrift->Write();
     hVDriftVsPhi->Write();
+    hVDriftVsX->Write();
+    hVDriftVsY->Write();
     hNSegm->Write();
   }
 
@@ -303,6 +337,8 @@ class HSegment{
   TH1F* hDeltaT0;
   TH1F* hVDrift;
   TH2F* hVDriftVsPhi;
+  TH2F* hVDriftVsX;
+  TH2F* hVDriftVsY;
   TH1F* hNSegm;
   TString name;
 
