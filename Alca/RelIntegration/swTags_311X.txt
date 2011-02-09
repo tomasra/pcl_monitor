@@ -1,1 +1,6 @@
+Alignment/CommonAlignmentProducer                V01-07-05-01
+CalibMuon/DTCalibration                          V01-08-05
+Calibration/EcalAlCaRecoProducers                V00-17-54-01
+Calibration/HcalAlCaRecoProducers                V00-04-42
+Calibration/TkAlCaRecoProducers                  V00-03-14
 
