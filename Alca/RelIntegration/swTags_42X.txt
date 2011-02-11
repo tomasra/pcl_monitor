@@ -1,6 +1,1 @@
 Configuration/PyReleaseValidation gc110208_V1
-V01-07-05-01        Alignment/CommonAlignmentProducer
-V01-08-05      CalibMuon/DTCalibration
-V00-17-56      Calibration/EcalAlCaRecoProducers
-V00-04-42      Calibration/HcalAlCaRecoProducers
-
