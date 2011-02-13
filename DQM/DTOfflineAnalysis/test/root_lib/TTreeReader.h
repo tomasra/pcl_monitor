@@ -4,8 +4,8 @@
 /** \class TTreeReader
  *  No description available.
  *
- *  $Date: 2010/12/08 15:10:01 $
- *  $Revision: 1.7 $
+ *  $Date: 2011/02/07 21:55:34 $
+ *  $Revision: 1.8 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -48,9 +48,16 @@ public:
     filterEvents=option;
   }
 
+  /// Hack to skip problematic SLs
   void setFilterSL(bool option) {
     filterSL=option;
   }  
+
+  /// Deprecated; use a cut instead
+  /// 1 : Select only R; -1: select only L; 0: both
+  void setSelectLR(int option) {
+    selectLR=option;
+  }
 
   void setMinPt(float pt) {
     ptmin=pt;
