@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/09/10 12:49:12 $
- *  $Revision: 1.17 $
+ *  $Date: 2011/02/07 21:58:12 $
+ *  $Revision: 1.18 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -33,6 +33,8 @@
 #include <CondFormats/DataRecord/interface/DTTtrigRcd.h>
 #include "CondFormats/DTObjects/interface/DTT0.h"
 #include "CondFormats/DataRecord/interface/DTT0Rcd.h"
+#include "CondFormats/DataRecord/interface/DTMtimeRcd.h"
+#include "CondFormats/DTObjects/interface/DTMtime.h"
 
 #include "DataFormats/MuonReco/interface/Muon.h"
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
@@ -119,9 +121,15 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
   setup.get<DTTtrigRcd>().get(tTrigMap);
   setup.get<DTT0Rcd>().get(t0Handle);
 
+
+  // Get the map of ttrig from the Setup
+  setup.get<DTMtimeRcd>().get(mTimeHandle);
+  const DTMtime *mTimeMap = &*mTimeHandle;
+
+
   int segmCounter = 0;
 
-  
+
 
   // Loop over all chambers containing a 4D segment
   for (DTRecSegment4DCollection::id_iterator chamberId = all4DSegments->id_begin(); chamberId != all4DSegments->id_end(); ++chamberId) {
@@ -180,26 +188,75 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 //       float t0theta = -1;
 //       float vDrift = -1;
 
+
+
+
       if((*segment4D).hasPhi()) {
 	if(debug) cout << "  segment has phi projection" << endl;
+	DTSuperLayerId supLayIdPhi1((*chamberId), 1);
+	DTSuperLayerId supLayIdPhi2((*chamberId), 3);
+	float hitResolution = 0;//FIXME: should use this!	
+	// get the vdrift of the 2 phi SLs and take the average
+	float vDrift1 = 0.;
+	// vdrift is cm/ns , resolution is cm
+	mTimeMap->get(supLayIdPhi1,
+		      vDrift1,
+		      hitResolution,
+		      DTVelocityUnits::cm_per_ns);
+
+	float vDrift2 = 0.;
+	// vdrift is cm/ns , resolution is cm
+	mTimeMap->get(supLayIdPhi2,
+		      vDrift2,
+		      hitResolution,
+		      DTVelocityUnits::cm_per_ns);
+
+	float vdrift = vDrift1 + vDrift2 / 2.;
+
 	const DTChamberRecSegment2D* phiSeg = (*segment4D).phiSegment();
 	vector<DTRecHit1D> phiRecHits = phiSeg->specificRecHits();
 	copy(phiRecHits.begin(), phiRecHits.end(), back_inserter(recHits1D_S3));
 	projection = 1;
-	segmObj->t0SegPhi = (*segment4D).phiSegment()->t0(); 
-	segmObj->vDriftCorrPhi = (*segment4D).phiSegment()->vDrift();
+	// 	segmObj->vDriftCorrPhi = (*segment4D).phiSegment()->vDrift();
+	float dVdrift = (*segment4D).phiSegment()->vDrift();
+	if ((*segment4D).phiSegment()->ist0Valid()) {
+	  segmObj->vDriftCorrPhi =  vdrift*(1. - dVdrift);
+	  segmObj->t0SegPhi = (*segment4D).phiSegment()->t0(); 
+	} else {
+	  segmObj->vDriftCorrPhi =  -1.;
+	  segmObj->t0SegPhi = -1.;
+	}
       }
 
 
 
       if((*segment4D).hasZed()) {
+	DTSuperLayerId supLayIdTheta((*chamberId), 2);
+	float hitResolution = 0;//FIXME: should use this!	
+	// get the vdrift of the 2 phi SLs and take the average
+	float vdrift = 0.;
+	// vdrift is cm/ns , resolution is cm
+	mTimeMap->get(supLayIdTheta,
+		      vdrift,
+		      hitResolution,
+		      DTVelocityUnits::cm_per_ns);
+
+
 	const DTSLRecSegment2D* zSeg = (*segment4D).zSegment();
 	vector<DTRecHit1D> zRecHits = zSeg->specificRecHits();
 	copy(zRecHits.begin(), zRecHits.end(), back_inserter(recHits1D_S3));
 	if(projection == -1) projection = 2;
 	else projection = 3;
-	segmObj->t0SegTheta = (*segment4D).zSegment()->t0();
-	segmObj->vDriftCorrTheta = (*segment4D).zSegment()->vDrift();
+	// 	segmObj->t0SegTheta = (*segment4D).zSegment()->t0();
+	float dVdrift = (*segment4D).zSegment()->vDrift();
+	if ((*segment4D).zSegment()->ist0Valid()) {
+	  segmObj->vDriftCorrTheta =  vdrift*(1. - dVdrift);
+	  segmObj->t0SegTheta = (*segment4D).zSegment()->t0();
+	} else {
+	  segmObj->vDriftCorrTheta =  -1.;
+	  segmObj->t0SegTheta = -1.;
+	}
+	// 	segmObj->vDriftCorrTheta = (*segment4D).zSegment()->vDrift();
       }
 
       segmObj->proj = projection;

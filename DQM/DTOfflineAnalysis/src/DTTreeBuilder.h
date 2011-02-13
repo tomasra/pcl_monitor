@@ -13,8 +13,8 @@
  *  All histos are produce per SuperLayer.
  *
  *
- *  $Date: 2010/06/13 06:52:11 $
- *  $Revision: 1.7 $
+ *  $Date: 2010/06/28 17:42:31 $
+ *  $Revision: 1.8 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -33,6 +33,7 @@ class TClonesArray;
 class DTTtrig;
 class DTT0;
 class DTRecHitBaseAlgo;
+class DTMtime;
 
 class DTTreeBuilder {
 public:
@@ -83,6 +84,10 @@ private:
   int eventN;
   edm::ESHandle<DTTtrig> tTrigMap;
   edm::ESHandle<DTT0> t0Handle;
+  edm::ESHandle<DTMtime> mTimeHandle;
+  
+
+  
 
   // Algo to re-reco the hits
   DTRecHitBaseAlgo *theAlgo;
