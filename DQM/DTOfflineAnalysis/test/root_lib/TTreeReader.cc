@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/12/08 15:10:01 $
- *  $Revision: 1.11 $
+ *  $Date: 2011/02/07 21:55:31 $
+ *  $Revision: 1.12 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -117,6 +117,7 @@ TTreeReader::TTreeReader(const TString& fileName, const TString& outputFile) :
   theGranularity(-1),
   nevents(0),
   filterEvents(0),
+  selectLR(0),
   filterSL(false),
   ptmin(0.),
   runmin(-1),
@@ -155,6 +156,7 @@ TTreeReader::TTreeReader(TTree* aTree, const TString& outputFile) :
   theGranularity(-1),
   nevents(0),
   filterEvents(0),
+  selectLR(0),
   filterSL(false),
   ptmin(0.),
   runmin(-1),
@@ -488,8 +490,13 @@ void TTreeReader::processEvent(int entry) {
 
       vector<TString>::const_iterator cut =  passedCuts.begin();      
 
-      while(cut != passedCuts.end()) {	
-	
+      bool isLeft =  (hitObj->resDist*hitObj->resPos < 0);
+
+      if (selectLR==1 && isLeft) continue;
+      if (selectLR==-1 && !isLeft) continue;
+
+      while(cut != passedCuts.end()) {
+
 	if (cutSets[*cut].selectHit(hitObj)) {
 	    histosRes[*cut][detIdForPlot]->Fill(hitObj->resDist, 
 						hitObj->distFromWire, 
