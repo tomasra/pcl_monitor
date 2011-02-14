@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2011/02/07 21:55:31 $
- *  $Revision: 1.12 $
+ *  $Date: 2011/02/13 22:36:38 $
+ *  $Revision: 1.13 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -161,8 +161,9 @@ TTreeReader::TTreeReader(TTree* aTree, const TString& outputFile) :
   ptmin(0.),
   runmin(-1),
   runmax(-1),
-  debug(0)
- {
+  debug(0),
+  readCalibTable(false),
+  calibMap(0) {
 
    cout << "Opening tree: " << tree->GetName() << " ... ";
    cout << tree->GetEntries() << " entries" << endl;
