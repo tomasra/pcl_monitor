@@ -1,2 +1,12 @@
-Configuration/PyReleaseValidation gc110208_V1
+
+CalibTracker/SiStripQuality       V00-09-13
+Calibration/TkAlCaRecoProducers   V00-03-15
+CommonTools/ConditionDBWriter     V00-00-06
+Configuration/EventContent        V04-01-10
+Configuration/PyReleaseValidation V01-19-53
+Configuration/StandardSequences   gc110216_pcl
+DQMOffline/CalibTracker           V00-03-11
+
+
+
 
