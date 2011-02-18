@@ -1,20 +1,4 @@
 
-CalibTracker/SiStripQuality       V00-09-13
-Calibration/TkAlCaRecoProducers   V00-03-15
-CommonTools/ConditionDBWriter     V00-00-06
-Configuration/EventContent        V04-01-10
-Configuration/PyReleaseValidation V01-19-53
-Configuration/StandardSequences   gc110216_pcl
-DQMOffline/CalibTracker           V00-03-11
-
-# tags di SiStrip
-#CondFormats/SiStripObjects V18-00-03
-#CalibFormats/SiStripObjects V16-00-01
-#CalibTracker/Records V03-00-00
-#CalibTracker/SiStripESProducers V51-00-00
-#CondCore/SiStripPlugins V02-00-02
-#CondFormats/DataRecord V06-14-12
-
 
 
 
