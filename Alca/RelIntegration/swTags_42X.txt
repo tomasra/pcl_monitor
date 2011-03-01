@@ -1,7 +1,2 @@
 CalibMuon/DTCalibration V01-09-00
 CalibMuon/Configuration V00-00-23
-
-V00-00-08     CondCore/PhysicsToolsPlugins
-V09-01-01     CondFormats/Common
-V06-14-14     CondFormats/DataRecord
-V01-03-07     CondFormats/PhysicsToolsObjects
