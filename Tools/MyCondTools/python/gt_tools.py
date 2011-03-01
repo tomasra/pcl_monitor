@@ -736,7 +736,7 @@ class GTEntryCollection:
 
 class GTDocGenerator:
     def __init__(self, gtName, oldGT, scope, release, changelog):
-        self._listTagLink = 'http://condb.web.cern.ch/condb/listTags/?GlobalTag=' + gtName
+        self._listTagLink = 'http://condb.web.cern.ch/condb/gtlist/?GlobalTag=' + gtName
         self._gt = gtName
         self._oldGt = oldGT
         self._scope = scope
@@ -879,30 +879,35 @@ def getReleaseDigits(cycle):
     digits.append(secondDigi)
     return digits
 
-# get the list of releases installed through scram list
+# get the list of releases (and correspondig AFS directory) installed through scram list
 # relType can be all - pre - final - nightly - patch
-def getReleaseList(relType = 'all'):
+def getReleaseList(swScramArch, relType = 'all'):
     releases = []
 
-    scram_cmd = 'scram list -c CMSSW'
+    scram_cmd = 'export SCRAM_ARCH=' + swScramArch + '; scram list -c CMSSW'
     scram_out = commands.getstatusoutput(scram_cmd)
+
     for line in scram_out[1].splitlines():
         #print "Linea: " + line
         onerel = line.split()[1]
+        oneDir = line.split()[2]
+
+        relAndArea = onerel, oneDir
+
         if 'all' in relType:
-            releases.append(onerel)
+            releases.append(relAndArea)
             continue
         if 'pre' in relType and 'pre' in onerel:
-            releases.append(onerel)
+            releases.append(relAndArea)
             continue
         if 'final' in relType and not 'pre' in onerel and not "_X_" in onerel and not 'patch' in onerel:
-            releases.append(onerel)
+            releases.append(relAndArea)
             continue
         if 'patch' in relType and 'patch' in onerel:
-            releases.append(onerel)
+            releases.append(relAndArea)
             continue
         if 'nightly' in relType and "_X_" in onerel:
-            releases.append(onerel)
+            releases.append(relAndArea)
             continue
     return releases
 
@@ -918,9 +923,10 @@ def getLastRelease(releases, cycle):
     maxThirdDigits = -1
     maxPreDigits = -1
     maxPatchDigits = -1
-    maxRel = None
+    maxRel = None, None
             
-    for onerel in releases:
+    for relAndArea in releases:
+        onerel = relAndArea[0]
         if match in onerel:
             # nigtly builds
             if "_X_" in onerel:
@@ -930,7 +936,7 @@ def getLastRelease(releases, cycle):
                 nightlyDate = datetime(int(datedigits[0]),int(datedigits[1]),int(datedigits[2]),int(datedigits[3].lstrip('0').rstrip('00')),0,0)
                 if nightlyDate > maxDate:
                     maxDate = nightlyDate
-                    maxRel = onerel
+                    maxRel = relAndArea
 
             # pre releases, reelases and patches
             # final releases, prerelease and patches
@@ -948,28 +954,27 @@ def getLastRelease(releases, cycle):
                             patchDigits = int(digis[4].lstrip('patch'))
                             if patchDigits > maxPatchDigits:
                                 maxPatchDigitsRel = patchDigits
-                                maxRel = onerel
+                                maxRel = relAndArea
                         else:
-                            maxRel = onerel
+                            maxRel = relAndArea
                     else:
                         if len(digis[4].lstrip('pre')) > 2:
                             continue
                         preDigits = int(digis[4].lstrip('pre'))
                         if preDigits > maxPreDigits:
                             maxPreDigits = preDigits
-                            maxRel = onerel
+                            maxRel = relAndArea
     return maxRel
 
 
 
 # look for plugin definitions in the so libraries ad fills a dictionary
 # of lists of records where the key is the object
-def getObjectsAndRecords(swBaseDir, swScramArch, release):
+def getObjectsAndRecords(swScramArch, release):
     from collections import defaultdict
 
     objectRecords = defaultdict(list)
-    
-    libDir = swBaseDir + release + "/lib/" + swScramArch + "/"
+    libDir = release[1] + "/lib/" + swScramArch + "/"
     libraries =  os.listdir(libDir)
     for lib in libraries:
         if "pluginCondCore" in lib and "Plugins.so" in lib:
