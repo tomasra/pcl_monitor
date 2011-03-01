@@ -29,6 +29,8 @@ if __name__     ==  "__main__":
                       help="connect string", type="str",
                       metavar="<connect>",action="append")
     
+    parser.add_option("-n", "--nightly", action="store_true",dest="useNightly",
+                      default=False, help="use last available nighlty")
 
     
     (options, args) = parser.parse_args()
@@ -45,22 +47,26 @@ if __name__     ==  "__main__":
     cfgfile.read([ CONFIGFILE ])
 
     # get the releases currently managed
-    swBaseDir         = cfgfile.get('Common','cmsswBaseArea')
-    swScramArch       = cfgfile.get('Common','scramArch')
-    passwd             = cfgfile.get('Common','Passwd')
-
+    swBaseDir           = cfgfile.get('Common','cmsswBaseArea')
+    swScramArch         = cfgfile.get('Common','scramArch')
+    passwd              = cfgfile.get('Common','Passwd')
 
 
     objects = args
 
+    releaseType = 'pre,final'
+    if options.useNightly:
+        releaseType += ",nightly"
+
+
     for cycle in options.releases:
         # get the list of available release
-        releases = getReleaseList('pre,final')
+        releasesAndArea = getReleaseList(swScramArch, releaseType)
         #print releases
-        maxRel = getLastRelease(releases, cycle)
-        print maxRel    
+        maxRel = getLastRelease(releasesAndArea, cycle)
+        #print maxRel    
         # get list of plugin libraries
-        objectRecords = getObjectsAndRecords(swBaseDir, swScramArch, maxRel)    
+        objectRecords = getObjectsAndRecords(swScramArch, maxRel)    
 
 
         for obj in objects:
