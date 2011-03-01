@@ -16,93 +16,11 @@ from datetime import date
 import commands
 import shutil
 
+from Tools.MyCondTools.gt_tools import *
+
 #from gt_tools import *
 #from odict import *
 
-
-
-def getLatestRelNames(release):
-    #print release
-    firstDigi = release[0]
-    secondDigi = release.lstrip(release[0]).rstrip('X')
-    #print firstDigi + " - " + secondDigi
-    scram_cmd = 'scram list -c CMSSW'
-
-    if int(firstDigi) >= 4:
-        scram_cmd = 'export SCRAM_ARCH=slc5_amd64_gcc434; scram list -c CMSSW'
-    
-
-    scram_out = commands.getstatusoutput(scram_cmd)
-    if scram_out[0] == 0:
-        maxThirdDigitsRel = -1
-        maxPatchDigitsRel = -1
-        maxRel = None
-        
-        maxThirdDigitsPre = -1
-        maxPreDigitsPre = -1
-        maxPre = None
-        
-        maxDate = datetime.datetime(1979,10,06,9,0,0)
-        maxNightly = None
-            
-
-        # print scram_out[1]
-
-        for line in scram_out[1].splitlines():
-            #print "Linea: " + line
-            onerel = line.split()[1]
-            match = 'CMSSW_' + firstDigi + '_' + secondDigi + '_'
-            if match in onerel:
-                if "_X_" in onerel:
-                    #print 'Nightly: ' + onerel
-                    datestring = onerel.split("_X_")[1]
-                    datedigits = datestring.split('-')
-                    nightlyDate = datetime.datetime(int(datedigits[0]),int(datedigits[1]),int(datedigits[2]),int(datedigits[3].lstrip('0').rstrip('00')),0,0)
-                    if nightlyDate > maxDate:
-                        maxDate = nightlyDate
-                        maxNightly = onerel
-                        
-                elif "pre" in  onerel:
-                    #print "pre: " + onerel
-                    digis = onerel.split('_')
-                    thirdDigits = int(digis[3])
-                    #print thirdDigits
-                    if thirdDigits >= maxThirdDigitsPre:
-                        maxThirdDigitsPre = thirdDigits
-                        if 'pre' in onerel:
-                            if len(digis[4].lstrip('pre')) > 2:
-                                continue
-                            preDigits = int(digis[4].lstrip('pre'))
-                            #print ' pre: ' + str(preDigits)
-                            if preDigits > maxPreDigitsPre:
-                                maxPreDigitsPre = preDigits
-                                maxPre = onerel
-                        else:
-                            maxPre = onerel
-                else:
-                    #print "rel: " + onerel
-                    digis = onerel.split('_')
-                    thirdDigits = int(digis[3])
-                    #print thirdDigits
-                    if thirdDigits >= maxThirdDigitsRel:
-                        #print 'A'
-                        maxThirdDigitsRel = thirdDigits
-                        if 'patch' in onerel:
-                            patchDigits = int(digis[4].lstrip('patch'))
-                            #print ' patch: ' + str(patchDigits)
-                            if patchDigits > maxPatchDigitsRel:
-                                maxPatchDigitsRel = patchDigits
-                                maxRel = onerel
-                        else:
-                            maxRel = onerel
-
-        if maxRel != None:
-            print "Max rel: " + maxRel
-        else:
-            print "Max pre: " + maxPre
-        print "Max Nightly: " + maxNightly
-
-        return [maxRel, maxPre, maxNightly]
 
 
 
@@ -143,6 +61,12 @@ if __name__     ==  "__main__":
     gpnArea = config.get("Common","gpnArea")
     cmsswVersion = config.get("Common","gpnCMSSWVersion")
     gtStore = config.get("Common","GTStoreArea")
+
+    # get the releases currently managed
+    swScramArch         = config.get('Common','scramArch')
+    passwd              = config.get('Common','Passwd')
+
+
     
     GTCREATIONAREA = gpnArea + cmsswVersion + "/src"
     GTVALIDATIONAREA =  config.get("Common","testArea")
@@ -203,21 +127,23 @@ if __name__     ==  "__main__":
 
         # 3 - create the validation area
         #os.chdir(GTVALIDATIONAREA)
-        latestRels = getLatestRelNames(release)
 
-        # build area for last nightly and for last pre (or release)
-        releaseVal1 = ''
+        
         if not options.nightly:
-            if latestRels[0] != None:
-                releaseVal1 = latestRels[0]
-            else:
-                releaseVal1 = latestRels[1]
+            relType = 'pre,final'
         else:
-            releaseVal1 = latestRels[2]
+            relType = "nightly"
+
+        # get the list of available release
+        releasesAndArea = getReleaseList(swScramArch, relType)
+        #print releases
+        maxRel = getLastRelease(releasesAndArea, release)
+        releaseVal1 = maxRel[0]
+
 
         # get the tag file
         tagfile = GTVALIDATIONAREA + "/SwTags/swTags_" + release + ".txt"
-        cvstag_cmd = 'ssh lxbuild150 "cd ' + GTVALIDATIONAREA + '; cvs co -d SwTags  UserCode/cerminar/Alca/RelIntegration/ "'
+        cvstag_cmd = 'ssh lxbuild150 "cd ' + GTVALIDATIONAREA + '/SwTags/; cvs update -A swTags_' + release + '.txt"'
         cvstag_out = executeCommad(cvstag_cmd)
         
         today = date.today()
