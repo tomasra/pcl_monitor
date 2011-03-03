@@ -764,6 +764,23 @@ class GTDocGenerator:
         docfile.write(docstring)
         docfile.close()
 
+#     def printWikiDoc(self, fileName):
+#         if not os.path.exists('doc/' + fileMame):
+#             print " directory \"doc\" doesn't exist: creating it"
+#             os.mkdir('doc/')
+#         docfilename = 'doc/' + fileName
+
+#         fileread = open(docfilename,'r')
+#         temp = fileread.read()
+#         fileread.close()
+#         docfile = open(docfilename,'w')
+#         docstring = self.wikiString()
+#         docfile.write(docstring)
+#         docfile.write(temp)
+#         docfile.close()
+#         cvsCommit(docfilename, self._gt)
+
+
     def addChange(self, change):
         if not change in self._change:
             self._change = self._change + '<br> - ' + change
@@ -776,7 +793,20 @@ class GTDocGenerator:
             self._scope = self._scope + str(date)
         self._scope = self._scope + ")%ENDCOLOR%[[[#NOTESnapValid][2]]]"
 
+    def addToBranchList(self, branch):
+        fileName = "GT_branches/GTDoc/Class.list"
+        cvsUpdate(fileName)
+        temp = ""
+        if  os.path.exists(fileName):
+            fileToRead = file(fileName, 'r')
+            temp = fileToRead.read()
+            fileToRead.close()
 
+        if not self._gt+"\n" in temp:
+            fileToWrite = file(fileName, 'a')
+            fileToWrite.write(self._gt + ": " + branch + "\n")
+            fileToWrite.close()
+            cvsCommit(fileName, self._gt)
 
 def confFileFromDB(gt, gtConfFileName, gtConnString, authpath):
     # check if the original conf file exists
