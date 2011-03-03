@@ -1,11 +1,10 @@
 CalibMuon/DTCalibration V01-09-01
 CalibMuon/Configuration V00-00-23
-#V00-09-07 RecoLocalCalo/HcalRecProducers
-#V00-08-05 RecoLocalCalo/HcalRecAlgos
-#V00-05-00 Calibration/HcalAlCaRecoProducers
-#V00-04-12 RecoLocalCalo/Configuration 
+V00-09-07 RecoLocalCalo/HcalRecProducers
+V00-08-05 RecoLocalCalo/HcalRecAlgos
+V00-05-00 Calibration/HcalAlCaRecoProducers
+V00-04-12 RecoLocalCalo/Configuration 
+V11-04-78 HLTrigger/Configuration
 Calibration/HcalAlCaRecoProducers V00-05-01
 DQMOffline/CalibCalo V00-01-24
 Calibration/HcalIsolatedTrackReco V01-07-13
-
-
