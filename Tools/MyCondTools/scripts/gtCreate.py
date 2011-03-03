@@ -67,7 +67,7 @@ if __name__     ==  "__main__":
     # --- read command line options
     # description
     usage = "usage: %prog [options] gt1 gt2 ..."
-    revision = '$Revision: 1.7 $'
+    revision = '$Revision: 1.8 $'
     vnum = revision.lstrip('$')
     vnum = vnum.lstrip('Revision: ')
     vnum = vnum.rstrip(' $')
@@ -218,5 +218,45 @@ if __name__     ==  "__main__":
         print ''
         logfile.close()
 
-
+        
     
+    # --- actually run the creation part
+    for gt in gtlist:
+        if options.online and options.remote: #FIXME
+            wikiFileName = "doc/" + gt + ".wiki"
+
+            # ----------------------------------------
+            wikiWebDir = "GT_branches/GTDoc/"
+            classListName = 'GT_branches/Class.list'
+            # ----------------------------------------
+            # FIXME: cvs-update the classlist
+            cvsUpdate(classListName)
+            classlist = ConfigParser()
+            classlist.optionxform = str
+            classlist.read([classListName])
+
+            if classlist.has_option("Class",gt):
+                className = classlist.get("Class",gt)
+                webFileName = wikiWebDir + className + ".wiki"
+                # FIXME: cvs-update the webFileName
+
+                tmp1 = "void"
+                if os.path.exists(webFileName):
+                    cvsUpdate(webFileName)
+                    webFileRead = file(webFileName, 'r')
+                    tmp1 = webFileRead.read()
+                    webFileRead.close()
+
+                print "adding doc from file: " + wikiFileName
+                wikiFile = file(wikiFileName, 'r')
+                tmp2 = wikiFile.read()
+                wikiFile.close()
+
+                webFileWrite = file(webFileName, 'w')
+                webFileWrite.write(tmp2)
+                if tmp1 != "void":
+                    webFileWrite.write(tmp1)
+                webFileWrite.close()
+
+                # FIXME: cvs-commit the webFileName
+                cvsCommit(webFileName, gt)
