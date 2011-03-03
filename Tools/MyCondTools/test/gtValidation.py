@@ -234,6 +234,7 @@ if __name__     ==  "__main__":
         env.write('    touch compilationError.log\n')
         env.write('endif\n')
         env.write('setenv PYTHONPATH ${PYTHONPATH}:${CMSSW_RELEASE_BASE}/bin/slc5_amd64_gcc434/\n')
+        env.write('edmPluginRefresh\n')
         env.write('rehash\n')
         env.close()
 
