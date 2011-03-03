@@ -1,10 +1,18 @@
+# new Dt calib tags
 CalibMuon/DTCalibration V01-09-01
 CalibMuon/Configuration V00-00-23
+# tags for new HCAL object
 V00-09-07 RecoLocalCalo/HcalRecProducers
 V00-08-05 RecoLocalCalo/HcalRecAlgos
 V00-05-00 Calibration/HcalAlCaRecoProducers
 V00-04-12 RecoLocalCalo/Configuration 
 V11-04-78 HLTrigger/Configuration
+# new HCAL calib tags
 Calibration/HcalAlCaRecoProducers V00-05-01
 DQMOffline/CalibCalo V00-01-24
 Calibration/HcalIsolatedTrackReco V01-07-13
+# new tags per PCL
+Calibration/TkAlCaRecoProducers  V00-03-16
+CondFormats/Common               V09-01-03
+Configuration/DataProcessing     V00-08-00      
+Configuration/StandardSequences  V01-18-68      
