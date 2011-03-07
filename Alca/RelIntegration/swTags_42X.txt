@@ -1,12 +1,14 @@
 # tags for new HCAL object
 V00-09-07 RecoLocalCalo/HcalRecProducers
 V00-04-12 RecoLocalCalo/Configuration 
+V00-08-05 RecoLocalCalo/HcalRecAlgos 
 # new tags per PCL
 CondFormats/Common               V09-01-03
 Configuration/DataProcessing     V00-08-00      
 Configuration/StandardSequences  V01-18-68      
 # new tags from Lorenzo
-#V00-03-17      Calibration/TkAlCaRecoProducers
-#V00-04-12      RecoVertex/BeamSpotProducer
-V00-08-05 RecoLocalCalo/HcalRecAlgos 
+V00-03-17      Calibration/TkAlCaRecoProducers
+V00-04-12      RecoVertex/BeamSpotProducer
+V00-04-12      DQM/BeamMonitor
+
 
