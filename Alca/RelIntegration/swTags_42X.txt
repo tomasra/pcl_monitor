@@ -6,5 +6,7 @@ CondFormats/Common               V09-01-03
 Configuration/DataProcessing     V00-08-00      
 Configuration/StandardSequences  V01-18-68      
 # new tags from Lorenzo
-V00-03-17      Calibration/TkAlCaRecoProducers
-V00-04-12      RecoVertex/BeamSpotProducer
+#V00-03-17      Calibration/TkAlCaRecoProducers
+#V00-04-12      RecoVertex/BeamSpotProducer
+
+
