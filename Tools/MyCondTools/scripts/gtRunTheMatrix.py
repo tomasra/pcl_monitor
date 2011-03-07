@@ -81,6 +81,8 @@ def runGTSelectionNew(gts, gtmap, isLocal, nThreads=4, original=False, show=Fals
         # print "about to duplicate: " + gt
         wfidtodup = gtmap[gt]
         # add the workflows for the test of the GT (local)
+        if wfidtodup == 40:
+            index = 40
         duplicateWorkflowForGTTest(mrd, wfidtodup, index, gt, isLocal) 
         if original:
             testList.append(wfidtodup)
