@@ -1,8 +1,9 @@
 <use   name="FWCore/Framework"/>
-<use   name="AnalysisDataFormats/CMGTools"/>
-
+<use   name="CommonTools/UtilAlgos"/>
 <use   name="boost"/>
 <use   name="rootgraphics"/>
+<use   name="rootcore"/>
+
 <export>
   <lib   name="1"/>
 </export>
