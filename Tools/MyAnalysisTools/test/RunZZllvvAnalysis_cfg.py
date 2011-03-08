@@ -71,7 +71,7 @@ process.p = cms.Path(process.analysisSequence)
 #     #storeDir = "rfio://" + inputDir
 #     for castorFileLine in castorDir_out[1].split("\n"):
 #         castorFile = castorFileLine.split()[8]
-#         if "root" in castorFile:
+#         if "root" in castorFile and not "histo" in castorFile:
 #             process.source.fileNames.append(storeDir + castorFile)
 
 # else :
