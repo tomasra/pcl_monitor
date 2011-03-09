@@ -17,11 +17,38 @@ from Tools.MyCondTools.color_tools import *
 from Tools.MyCondTools.gt_tools import *
 from Tools.MyCondTools.odict import *
 
+def dump2XML(pfn, tag, passwd, begin):
+    command = "cd /tmp/cerminar ; cmscond_2XML -c " + pfn + " -t " + tag + " -b " + str(begin) + " -P " + passwd 
 
+    outandstat = commands.getstatusoutput(command)
+    if outandstat[0] != 0:
+        print outandstat[1]
+    return "/tmp/cerminar/" + tag + ".xml"
+
+def diffXML(filename1, filename2):
+    command = "diff " + filename1 + " " + filename2
+    outandstat = commands.getstatusoutput(command)
+                  
+    difflines  = outandstat[1].split('\n')
+    nLines = len(difflines)
+    # print self._tagName
+    for line in difflines:
+        if "root setup=" in line:
+            continue
+        if "XmlKey name" in line:
+            continue
+        if "2,3c2,3" in line:
+            continue
+        if "---" in line:
+            continue
+        #print line
+        return False
+    return True
 
 def resetQueue(cfgName, cfgFile, newVersion):
     # print confirmation message
-    print warning("*** Warning, reset GT conf file: " + cfgName)
+    print fg
+    warning("*** Warning, reset GT conf file: " + cfgName)
     confirm = raw_input('Proceed? (y/N)')
     confirm = confirm.lower() #convert to lowercase
     if confirm != 'y':
@@ -122,6 +149,7 @@ if __name__     ==  "__main__":
     # --- set the command line options
     parser = OptionParser()
 
+    parser.add_option("--dump", action="store_true",dest="dump",default=False, help="dump the entry in the GT")
     
 #     parser.add_option("-s", "--scenario", dest="scenario",
 #                       help="GT scenario: ideal - mc - startup - data - craft09",
@@ -188,8 +216,8 @@ if __name__     ==  "__main__":
     globaltag1 = args[0]
     globaltag2 = args[1]
     
-    print "Compare "
-    print "      GT 1: " + globaltag1 + " with GT 2: " + globaltag2
+    #print "Compare "
+    #print "      GT 1: " + globaltag1 + " with GT 2: " + globaltag2
 
     filename1 = globaltag1 + '.conf'
     filename2 = globaltag2 + '.conf'
@@ -205,8 +233,8 @@ if __name__     ==  "__main__":
 
 
     # compare the # of records in the GT
-    print "    GT " + globaltag1 + " has " + str(tagCollection1.size()) + " entries"
-    print "    GT " + globaltag2 + " has " + str(tagCollection2.size()) + " entries"
+#     print "    GT " + globaltag1 + " has " + str(tagCollection1.size()) + " entries"
+#     print "    GT " + globaltag2 + " has " + str(tagCollection2.size()) + " entries"
 
     firstCollection = tagCollection1
     secondCollection = tagCollection2
@@ -214,31 +242,91 @@ if __name__     ==  "__main__":
     if tagCollection1.size() <  tagCollection2.size():
         firstCollection = tagCollection2
         secondCollection = tagCollection1
+        print "    GT 1: " + globaltag2 + " has " + str(tagCollection2.size()) + " entries"
+        print "    GT 2: " + globaltag1 + " has " + str(tagCollection1.size()) + " entries"
+    else:
+        print "    GT 1: " + globaltag1 + " has " + str(tagCollection1.size()) + " entries"
+        print "    GT 2: " + globaltag2 + " has " + str(tagCollection2.size()) + " entries"
+
+
+    nchanges = 0
 
     # loop over all records and compare the tag names and the # of payloads
     for index in range(0, len(firstCollection._tagOrder)):
         entry1 = firstCollection._tagList[firstCollection._tagOrder[index]]
-        entry2 = secondCollection.getByRcdID(entry1.rcdID())
 
         # FIXME: check that record is in the GT
+        if not secondCollection.hasRcdID(entry1.rcdID()):
+            print " Rcd: " + str(entry1.rcdID()) + " not in GT 2!!!"
+            continue
+        
+        entry2 = secondCollection.getByRcdID(entry1.rcdID())
+
+        runnumber = 155000
 
         if entry1.tagName() != entry2.tagName():
-            print entry1.rcdID()
-            print "     tag 1: " + entry1.tagName() + " -> 2: " + entry2.tagName()
-        else:
-            # check the # of IOVs
-            outputAndStatus1 = listIov(entry1.pfn(), entry1.tagName(), passwdfile)
-            outputAndStatus2 = listIov(entry2.pfn(), entry2.tagName(), passwdfile)
 
-            iovtable1 = IOVTable()
-            iovtable1.setFromListIOV(outputAndStatus1[1])
+            match = False
 
-            iovtable2 = IOVTable()
-            iovtable2.setFromListIOV(outputAndStatus2[1])
+            if options.dump:
+                outputAndStatus1 = listIov(entry1.getOraclePfn(False), entry1.tagName(), passwdfile)
+                outputAndStatus2 = listIov(entry2.getOraclePfn(False), entry2.tagName(), passwdfile)
 
-            if iovtable1.size() != iovtable2.size():
+                if outputAndStatus1[0] == 0 and outputAndStatus2[0] == 0: 
+                    iovtable1 = IOVTable()
+                    iovtable1.setFromListIOV(outputAndStatus1[1]) 
+                    lastiov1 = iovtable1.lastIOV()
+
+                    iovtable2 = IOVTable()
+                    iovtable2.setFromListIOV(outputAndStatus2[1]) 
+                    lastiov2 = iovtable2.lastIOV()
+
+
+                    # 1 - Check the tokens fo the last IOV
+                    if lastiov1.token() == lastiov2.token():
+                        match = True
+
+                    # 2 - Dump the last IOV in xml and compare
+                    else:                     
+                        if entry1.rcdID()[0] != "SiPixelGainCalibrationOfflineRcd":
+                            difffile1 = dump2XML(entry1.getOraclePfn(False), entry1.tagName(), passwdfile, lastiov1.since() + 1)
+                            difffile2 = dump2XML(entry2.getOraclePfn(False), entry2.tagName(), passwdfile, lastiov2.since() + 1)
+
+                            if diffXML(difffile1, difffile2):
+                                match = True
+                                os.remove(difffile1)
+                                os.remove(difffile2)
+
+                        
+
+
+
+
+            
+
+                    
+            if not match:
                 print entry1.rcdID()
-                print "     # IOVs 1: " + str(iovtable1.size()) + " -> 2: " + str(iovtable2.size()) + "   delta = " + str(iovtable2.size() - iovtable1.size())
+                print "     tag 1: " + entry1.tagName() + " -> 2: " + entry2.tagName()
+                nchanges += 1
+                
+             
+#         else:
+#             # check the # of IOVs
+#             outputAndStatus1 = listIov(entry1.pfn(), entry1.tagName(), passwdfile)
+#             outputAndStatus2 = listIov(entry2.pfn(), entry2.tagName(), passwdfile)
+
+#             iovtable1 = IOVTable()
+#             iovtable1.setFromListIOV(outputAndStatus1[1])
+
+#             iovtable2 = IOVTable()
+#             iovtable2.setFromListIOV(outputAndStatus2[1])
+
+#             if iovtable1.size() != iovtable2.size():
+#                 print entry1.rcdID()
+#                 print "     # IOVs 1: " + str(iovtable1.size()) + " -> 2: " + str(iovtable2.size()) + "   delta = " + str(iovtable2.size() - iovtable1.size())
+
+    print "# of changes: " + str(nchanges)
 
     sys.exit(1)
     
