@@ -4,8 +4,8 @@
 /** \class ZZllvvAnalyzer
  *  No description available.
  *
- *  $Date: 2011/03/04 18:10:33 $
- *  $Revision: 1.1 $
+ *  $Date: 2011/03/08 15:13:10 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - CERN
  */
 #include "FWCore/Framework/interface/EDAnalyzer.h"
@@ -23,6 +23,8 @@ public:
   /// Destructor
   virtual ~ZZllvvAnalyzer();
 
+protected:
+
   // Operations
   virtual void beginJob();
 
@@ -31,7 +33,7 @@ public:
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob();
 
-protected:
+
 
 private:
 
@@ -40,7 +42,7 @@ private:
 
   TFile *theFile;
   
-//   HistoLept *muonS1;
+  HistoLept *muonS1;
 
 };
 #endif

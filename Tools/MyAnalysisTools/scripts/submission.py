@@ -52,7 +52,7 @@ def createJobSetups(inputCfg, inputDir, outputDir, outputBaseName, JobName, nFil
     #storeDir = "rfio://" + inputDir
     for castorFileLine in castorDir_out[1].split("\n"):
         castorFile = castorFileLine.split()[8]
-        if "root" in castorFile:
+        if "root" in castorFile and not "histo" in castorFile:
 
             #print castorFile
             castorFileList.append(storeDir + castorFile)
@@ -85,7 +85,11 @@ def createJobSetups(inputCfg, inputDir, outputDir, outputBaseName, JobName, nFil
         if indexPart == nFilesPerJob or indexTot == toNFiles:
             print "Writing cfg file for job # " + str(indexJob) + "...."
             outputFileName = outputBaseName + "_" + str(indexJob) + ".root"
-            process.out.fileName = outputFileName
+            outputFileNameTmp =  outputBaseName + ".root"
+            try:
+                process.out.fileName = outputFileNameTmp
+            except AttributeError:
+                print "no output module \"out\" was found..."
             # write the previous cfg
             cfgfilename = "expanded_" + str(indexJob) + "_cfg.py"
             # dump it
@@ -105,7 +109,7 @@ def createJobSetups(inputCfg, inputDir, outputDir, outputBaseName, JobName, nFil
             scriptfile.write("cp " + cfgfilename + " $runningDir\n")
             scriptfile.write("cd $runningDir\n")
             scriptfile.write("cmsRun " + cfgfilename + "\n")
-            scriptfile.write("rfcp " + outputFileName + " " + outputDir + "\n")
+            scriptfile.write("rfcp " + outputFileNameTmp + " " + outputDir + outputFileName + "\n")
             scriptfile.write("rfcp histograms.root " + outputDir + "/histograms_" +  str(indexJob) + ".root\n")
             scriptfile.write("\n")
             scriptfile.close()
@@ -139,13 +143,83 @@ if __name__     ==  "__main__":
                       help="file basename", type="str", metavar="<file basename>")
 
     parser.add_option("--submit", action="store_true",dest="submit",default=False, help="submit the jobs")
+    parser.add_option("--copy", action="store_true",dest="copy",default=False, help="submit the jobs")
+
     parser.add_option("--file", dest="file",
                       help="submission config file", type="str", metavar="<file>")
 
 
     (options, args) = parser.parse_args()
 
+    if options.copy:
+        if options.file == None:
+            print "no cfg file specified!"
+            sys.exit(1)
 
+        
+        # read a global configuration file
+        cfgfile = ConfigParser()
+        cfgfile.optionxform = str
+
+        print 'Reading configuration file from ',options.file
+        cfgfile.read([options.file ])
+
+        # get the releases currently managed
+        listOfJobs = cfgfile.get('General','jobsToSubmit').split(',')
+        flag = cfgfile.get('General','selFlag')
+        configFile = cfgfile.get('General','configFile')
+        filesPerJob = int(cfgfile.get('General','filesPerJob'))
+        outputDirBase = cfgfile.get('General','outputDirBase')
+        fileBaseName = cfgfile.get('General','fileBaseName')
+        queue = cfgfile.get('General','queue')
+
+        for job in listOfJobs:
+            inputDir = cfgfile.get(job,'inputDir')
+            rfdir_cmd = "rfdir " + outputDirBase + "/" + flag + "/" + job + "/"
+            outCastorDir_out = commands.getstatusoutput(rfdir_cmd)
+            if outCastorDir_out[0] != 0:
+                print outCastorDir_out[1]
+                sys.exit(1)
+            
+            filesToCopy = []
+            castorFileList = []
+            castorLines = outCastorDir_out[1].split("\n")
+            if len(castorLines) != 0:
+                for castorFileLine in castorLines:
+                    if 'root' in castorFileLine:
+                        castorFile = castorFileLine.split()[8]
+                        if "root" in castorFile and fileBaseName in castorFile:
+                            filesToCopy.append(outputDirBase + "/" + flag + "/" + job + "/" + castorFile)
+                            
+            else:
+                print "dir empty..."
+
+            # do the actual copy
+            unique = False
+            if len(filesToCopy) == 1:
+                unique = True
+
+            for filename in filesToCopy:
+                cp_cmd = "xrdcp root://castorcms/" + filename + " " + args[0]
+                outputFile = ""
+                if unique:
+                    outputFile = fileBaseName + "_" + job + ".root"
+                else:
+                    outputFile = fileBaseName + "_" + job + filename.split(fileBaseName)[1]
+                cp_cmd += "/" + outputFile
+                
+                if os.path.exists(args[0] + "/" + outputFile):
+                      print "*** Warning, the file: " + args[0] + "/" + outputFile + " already exists!"
+                      confirm = raw_input('Overwrite? (y/N)')
+                      confirm = confirm.lower() #convert to lowercase
+                      if confirm != 'y':
+                          continue
+                #print cp_cmd
+                cp_out = commands.getstatusoutput(cp_cmd)
+                print cp_out[1]
+
+        sys.exit(0)
+            
     if options.submit:
         #
         pwd = os.environ["PWD"]
