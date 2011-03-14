@@ -1,0 +1,21 @@
+# Number of MC events, crossections and BR to be used to weight the MC
+#samples
+#
+#
+# The fields in the table are:
+#
+# finalState    sample  	# events	x-section(pb)	BR
+dimu            WW              1004080         28.0            1
+dimu            WZ              1               10.4		1
+dimu            ZZ		1256640		5.9		1
+dimu		ttbar		300000		157.7		1
+dimu		TTbarPU		27000		157.7		1
+dimu		ZJets		315000		3048		1
+dimu		ZJetsPU		2574097		3048		1
+dimu		WJets		570000		31314		1
+dimu		WJetsPU		5000000		31314		1
+dimu		QCDMu15PU	500000		296600000	0.0002855
+dimu		H400		66435		2.035		0.0118
+
+# scale factor = lumi * xsec * BR / # events
+

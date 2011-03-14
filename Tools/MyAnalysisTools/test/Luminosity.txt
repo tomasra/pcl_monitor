@@ -1,0 +1,13 @@
+# scale factor = lumi * xsec * BR / # events
+#
+# the luminosity (pb-1) for the data sample is
+#
+#
+#  final_state   epoch           dq       lumi
+#
+dimu		dataA		1	3.1
+dimu		dataB		1	33
+dimu		run2010A	1	3.1
+dimu		run2010B	1	33
+dimu		all2010     	1	36.1
+
