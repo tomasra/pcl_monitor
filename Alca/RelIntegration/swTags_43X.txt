@@ -1,3 +1,6 @@
 CalibTracker/SiStripDCS  V02-06-00
 Calibration/HcalisolatedTrackReco V01-07-14
 Calibration/TkAlCaRecoProducers V00-03-18
+CondFormats/SiStripObjects V18-00-07
+DPGAnalysis/SiStripTools V00-07-05
+DQM/SiStripMonitorClient V03-04-32
