@@ -736,7 +736,7 @@ class GTEntryCollection:
 
 class GTDocGenerator:
     def __init__(self, gtName, oldGT, scope, release, changelog):
-        self._listTagLink = 'http://condb.web.cern.ch/condb/gtlist/?GlobalTag=' + gtName
+        self._listTagLink = '%LINKTOGTLIST%/?GlobalTag=' + gtName
         self._gt = gtName
         self._oldGt = oldGT
         self._scope = scope
@@ -802,7 +802,7 @@ class GTDocGenerator:
             temp = fileToRead.read()
             fileToRead.close()
 
-        if not self._gt+"\n" in temp:
+        if not self._gt + ":" in temp:
             fileToWrite = file(fileName, 'a')
             fileToWrite.write(self._gt + ": " + branch + "\n")
             fileToWrite.close()
@@ -1018,6 +1018,8 @@ def getObjectsAndRecords(swScramArch, release):
                 for dataproxy in dataproxies:
                     preamble = dataproxy.split("DataProxy")
                     rcd = (dataproxy.lstrip(preamble[0] + "DataProxy").lstrip("<")).split()[0].rstrip(",")
+                    if rcd == "DTKeyedConfigListRcd" or rcd == "DTKeyedConfigContainerRcd":
+                        print dataproxy
                     objectName = dataproxy.split(rcd + ", ")[1].rstrip(">").rstrip(" ")
 
 #                     if objectName == "EcalCondObjectContainer<float":

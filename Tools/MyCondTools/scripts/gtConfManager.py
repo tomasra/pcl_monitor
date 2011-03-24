@@ -141,8 +141,8 @@ def createGTConfiguration(queueCfg, force, gtName):
         release = diffconfig.get('Comments','Release')
         changes = diffconfig.get('Comments','Changes')
         docGenerator = GTDocGenerator(NEWGT, OLDGT, scope, release, changes)
-        if diffconfig.has_option('Comments','Class'):
-            docGenerator.addToBranchList(diffconfig.get('Comments','Class'))
+        #if diffconfig.has_option('Comments','Class'):
+        #    docGenerator.addToBranchList(diffconfig.get('Comments','Class'))
         
         
     # read the new records from cfg

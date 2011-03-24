@@ -119,7 +119,7 @@ if __name__     ==  "__main__":
         isOnline = True
 
     isMc = False
-    if options.type == 'ideal' or options.type == 'startup' or options.type == 'mc':
+    if options.type == 'ideal' or options.type == 'startup' or options.type == 'mc' or options.type == 'hi' :
         print 'this is MC'
         isMc = True
     
@@ -150,6 +150,8 @@ if __name__     ==  "__main__":
             elif "GR_R" in gt or "CRFT" in gt or "CRAFT" in gt:
                 isOnline = False
                 isMc = False
+                
+
 
         # reaqd from sqlite file
         loadallcommand_local = "cmsRun loadall_from_gt_cfg.py globalTag=" + gt + " connect=sqlite_file:" + GTSQLITESTORE + "/" + gt + ".db"
@@ -249,6 +251,8 @@ if __name__     ==  "__main__":
         RELVALMAP['hlt'] = '4.1'
         RELVALMAP['data'] = '4.1'
         RELVALMAP['cosmics'] = '4.2'
+        RELVALMAP['hi'] = '40'
+
     else:
         RELVALMAP['mc'] = '11'
         RELVALMAP['design'] = '11'
@@ -257,6 +261,7 @@ if __name__     ==  "__main__":
         RELVALMAP['hlt'] = '4.6'
         RELVALMAP['data'] = '4.6'
         RELVALMAP['cosmics'] = '4.2'
+        RELVALMAP['hi'] = '40'
 
 
 
@@ -280,6 +285,8 @@ if __name__     ==  "__main__":
                 options.type = 'ideal'
             elif "MC" in gt:
                 options.type = 'mc'
+            elif "STARTHI" in gt:
+                options.type = 'hi'
             elif "START" in gt:
                 options.type = 'startup'
             elif "GR_R" in gt:

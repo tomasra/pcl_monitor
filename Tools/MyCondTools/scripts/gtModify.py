@@ -60,7 +60,9 @@ def resetQueue(cfgName, cfgFile, newVersion):
     newconfig.set("Comments","Release",cfgFile.get("Comments","Release"))
     newconfig.set("Comments","Scope",cfgFile.get("Comments","Scope"))
     newconfig.set("Comments","Changes",'')
-    
+    if cfgFile.has_option("Comments","Class"):
+        newconfig.set("Comments","Class",cfgFile.get("Comments","Class"))
+
     newconfig.add_section("Pending")
     if cfgFile.has_section("Pending"):
         for item in cfgFile.items("Pending"):
@@ -186,6 +188,8 @@ if __name__     ==  "__main__":
     known_releases         = cfgfile.get('Common','Releases').split(',')
     gtconnstring           = cfgfile.get('Common','GTConnectString')
     passwdfile             = cfgfile.get('Common','Passwd')
+    swBaseDir              = cfgfile.get('Common','cmsswBaseArea')
+    swScramArch            = cfgfile.get('Common','scramArch')
 
     # read the cfg file containing comments
     commentfile = ConfigParser(dict_type=OrderedDict)
@@ -208,9 +212,14 @@ if __name__     ==  "__main__":
     basedir = "GT_branches/"
     gtConfList = []
 
+    releasePerConfFile = {}
+    
     for conffile in args:
         gtConfList.append(conffile)
-    
+        if options.releases != None:
+            if len(options.releases) == 1:
+                releasePerConfFile[conffile] = options.releases[0]
+
 
     #print "------------------------"
     if options.scenario != None and options.releases != None:
@@ -234,9 +243,59 @@ if __name__     ==  "__main__":
                 if os.path.isfile(CONFIGFILE):
                     print '    configuration file: ',CONFIGFILE
                     gtConfList.append(CONFIGFILE)
+                    releasePerConfFile[CONFIGFILE] = release
                 else:
                     print "    cfg: " + CONFIGFILE + " doesn't exist!"
 
+    if options.releases != None:
+        for cycle in options.releases:
+            # find the record automatically
+            if options.newtag != "NONE" and options.oldtag == "NONE" and options.record == "NONE" and options.newaccount != "NONE" and options.newrecord == "NONE":
+                print "Try to detect the record automatically..."
+                releaseType = 'nightly'
+                # get the list of available release
+                releasesAndArea = getReleaseList(swScramArch, releaseType)
+                #print releases
+                #cycle = releasePerConfFile[cfg]
+                maxRel = getLastRelease(releasesAndArea, cycle)
+                #print maxRel    
+                # get list of plugin libraries
+                objectRecords = getObjectsAndRecords(swScramArch, maxRel)    
+                obj = ""    
+                listiovout = listIov("oracle://cms_orcoff_prod/" + options.newaccount, options.newtag, passwdfile)
+                if listiovout[0] != 0:
+                    listiovout = listIov("oracle://cms_orcoff_prep/" + options.newaccount, options.newtag, passwdfile)
+
+                if listiovout[0] == 0:
+                    iovtable = IOVTable()
+                    iovtable.setFromListIOV(listiovout[1])
+                    obj = iovtable.containerName()
+                else:
+                    print listiovout[1]
+                    sys.exit(1)
+
+
+                if obj in objectRecords:
+                    print "--- Release: " + cycle
+                    print "    Tag: " + options.newtag + " account: " + options.newaccount
+                    print "    Obj: " + obj
+                    for j in range(0, len(objectRecords[obj])):
+                        rcd = objectRecords[obj][j]
+                        print "            [" + str(j) + "] rcd: " + rcd
+
+                    print "Enter the selected Rcd: "
+                    index = raw_input("--> ")
+                    try:
+                        index = int(index)
+                    except ValueError:
+                        print "sorry that wasn't a number"
+                        sys.exit(1)
+
+                    options.record = objectRecords[obj][index]
+
+
+                else:
+                    print "   Obj: " + obj + " not found!"
 
 
     # loop on the configuration files and update them
@@ -274,6 +333,8 @@ if __name__     ==  "__main__":
         # --------------------------------------------------------------------------
         # fill the collection
         fillGTCollection(oldfilename, OLDGT, tagCollection)
+
+                
 
         # 1. Manipulate an existing entry
         if options.oldtag != "NONE" or options.record != "NONE":
