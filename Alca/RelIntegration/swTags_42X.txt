@@ -1,2 +1,0 @@
-Calibration/HcalIsolatedTrackReco V01-07-15
-HLTrigger/Configuration V11-05-00
