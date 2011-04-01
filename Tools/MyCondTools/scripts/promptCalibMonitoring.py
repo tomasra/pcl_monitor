@@ -4,13 +4,32 @@ import os,sys, DLFCN
 sys.setdlopenflags(DLFCN.RTLD_GLOBAL+DLFCN.RTLD_LAZY)
 
 from Tools.MyCondTools.gt_tools import *
-
 from Tools.MyCondTools.color_tools import *
+from Tools.MyCondTools.Tier0LastRun import *
+import shutil
+
 from pluginCondDBPyInterface import *
+
 a = FWIncantation()
+
+# --------------------------------------------------------------------------------
+# configuratio
+runinfoTag             = 'runinfo_31X_hlt'
+promptCalibDir         = '/afs/cern.ch/cms/CAF/CMSALCA/ALCA_PROMPT/'
+webArea                = '/afs/cern.ch/user/c/cerminar/www/PromptCalibMonitoring/'
+tagLumi                = "BeamSpotObject_ByLumi"
+tagRun                 = "BeamSpotObject_ByRun"
+tier0DasSrc            = "https://cmsweb.cern.ch/tier0/runs"
+passwd                 = "/afs/cern.ch/cms/DB/conddb"
+connectOracle          =  "oracle://cms_orcoff_prod/CMS_COND_31X_BEAMSPOT"
+tagRunOracle           = "BeamSpotObjects_PCL_byRun_v0_offline"
+tagLumiOracle          = "BeamSpotObjects_PCL_byLumi_v0_prompt"
+
+writeToWeb             = True
+nRunsToPlot            = 100
+
 #os.putenv("CORAL_AUTH_PATH","/afs/cern.ch/cms/DB/conddb")
 rdbms = RDBMS("/afs/cern.ch/cms/DB/conddb")
-
 dbName =  "oracle://cms_orcoff_prod/CMS_COND_31X_RUN_INFO"
 logName = "oracle://cms_orcoff_prod/CMS_COND_31X_POPCONLOG"
 
@@ -20,11 +39,8 @@ from CondCore.Utilities import iovInspector as inspect
 db = rdbms.getDB(dbName)
 tags = db.allTags()
 
-# for inspecting last run after run has started  
-#tag = 'runinfo_start_31X_hlt'
-tag = 'runinfo_31X_hlt'
-promptCalibDir = '/afs/cern.ch/cms/CAF/CMSALCA/ALCA_PROMPT/'
-webArea = '/afs/cern.ch/user/c/cerminar/www/PromptCalibMonitoring/'
+
+
 #webArea = './'
 # for inspecting last run after run has stopped  
 #tag = 'runsummary_test'
@@ -35,6 +51,11 @@ from array import array
 
 import datetime
 
+def getDate(string):
+    date = string.split()[0].split('-')
+    time = string.split()[1].split(':')
+    datet = datetime.datetime(int(date[0]),int(date[1]),int(date[2]),int(time[0]),int(time[1]),int(float(time[2])))
+    return datet
 
 class RunInfoContent:
     def __init__(self, summary):
@@ -69,6 +90,7 @@ def getRunList(minRun):
     runlist = []
     
     FULLADDRESS="http://pccmsdqm04.cern.ch/runregistry/xmlrpc"
+    #FULLADDRESS="http://pccmsdqm04.cern.ch/runregistry_api/"
     print "RunRegistry from: ",FULLADDRESS
     server = xmlrpclib.ServerProxy(FULLADDRESS)
     # you can use this for single run query
@@ -106,10 +128,18 @@ class RunReport:
         self._hasPayload = True
         self._hasUpload = True
         self._isOutOfOrder = False
-        self._runInfo = None
+        self._startTime = None
+        self._stopTime = None
+        #self._runInfo = None
         self._latencyFromEnd = -1.
         self._latencyFromBeginning = -1.
         return
+
+    def startTime(self):
+        return self._startTime
+
+    def stopTime(self):
+        return self._stopTime
 
     def setRunNumber(self, number):
         self._runnumber = number
@@ -127,11 +157,19 @@ class RunReport:
         self._isOutOfOrder = isOutofOrder
 
     def setRunInfoContent(self, runInfo):
-        self._runInfo = runInfo
+        self._startTime = runInfo.startTime()
+        self._stopTime = runInfo.stopTime()
+        #self._runInfo = runInfo
+
+    def setStartTime(self, start):
+        self._startTime = start
+
+    def setStopTime(self, stop):
+        self._stopTime = stop
 
     # hours
     def runLenght(self):
-        deltaTRun = self._runInfo.stopTime() - self._runInfo.startTime()
+        deltaTRun = self.stopTime() - self.startTime()
         return deltaTRun.seconds/(60.*60.)
 
     def setLatencyFromEnd(self, timeFromEnd):
@@ -142,9 +180,55 @@ class RunReport:
         
 
     def __str__(self):
-        return "--- run #: " + str(self._runnumber) + " start time: " + str(self._runInfo.startTime())
+        return "--- run #: " + str(self._runnumber) + " start time: " + str(self.startTime())
+
+    def getList(self):
+        theList = [str(self._runnumber), str(self.startTime()), str(self.stopTime()), self._pclRun,  self._hasPayload, self._hasUpload, self._isOutOfOrder, float(self._latencyFromBeginning), float(self._latencyFromEnd)]
+        return theList
+    
+
+import locale
+locale.setlocale(locale.LC_NUMERIC, "")
+
+def format_num(num):
+    """Format a number according to given places.
+    Adds commas, etc. Will truncate floats into ints!"""
+
+    return str(num)
+    try:
+        inum = float(num)
+        return locale.format("%.*f", (0, inum), True)
+
+    except (ValueError, TypeError):
+        return str(num)
 
 
+def get_max_width(table, index):
+    """Get the maximum width of the given column index"""
+
+    return max([len(format_num(row[index])) for row in table])
+
+
+def pprint_table(out, table):
+    """Prints out a table of data, padded for alignment
+    @param out: Output stream (file-like object)
+    @param table: The table to print. A list of lists.
+    Each row must have the same number of columns. """
+
+    col_paddings = []
+
+    for i in range(len(table[0])):
+        col_paddings.append(get_max_width(table, i))
+
+    for row in table:
+        # left col
+        print >> out, row[0].ljust(col_paddings[0] + 1),
+        # rest of the cols
+        for i in range(1, len(row)):
+            col = format_num(row[i]).rjust(col_paddings[i] + 2)
+            print >> out, col,
+        print >> out
+    
 if __name__ == "__main__":
 
 
@@ -156,22 +240,13 @@ if __name__ == "__main__":
 #    runList = getRunList(147116)
     # 2011 data taking
     #runList = getRunList(159159)
-    #runList = getRunList(161224)
-    runList = getRunList(1)
+
+#    runList = getRunList(1)
 #     runList.append(160898)
-#     runList.append(160907)
+#    runList.append(160907)
 
     # store the report for all collision runs
     runReports = []
-
-    
-
-    runForHisto    = array('d')
-    timeFromEnd    = array('d')
-    noFile         = array('d')
-    noPayload      = array('d')
-    timeFromBegin  = array('d')
-#    timeFromBeginNoFile = array('d')
 
     
     sumTimeFromEnd = 0.
@@ -179,27 +254,6 @@ if __name__ == "__main__":
 
     nSqliteFiles = 0
 
-    # --------------------------------------------------------------------------------
-    # list the IOVs in oracle
-    passwd     = "/afs/cern.ch/cms/DB/conddb"
-    connectOracle =  "oracle://cms_orcoff_prod/CMS_COND_31X_BEAMSPOT"
-
-    # runbased tag
-    tagRunOracle = "BeamSpotObjects_PCL_byRun_v0_offline"
-    listiov_run_oracle = listIov(connectOracle, tagRunOracle, passwd)
-    if listiov_run_oracle[0] == 0:
-        iovtableByRun_oracle = IOVTable()
-        iovtableByRun_oracle.setFromListIOV(listiov_run_oracle[1])
-        #iovtableByRun_oracle.printList()
-
-    # iovbased tag
-    tagLumiOracle = "BeamSpotObjects_PCL_byLumi_v0_prompt"
-    listiov_lumi_oracle = listIov(connectOracle, tagLumiOracle, passwd)
-    if listiov_lumi_oracle[0] == 0:
-        iovtableByLumi_oracle = IOVTable()
-        iovtableByLumi_oracle.setFromListIOV(listiov_lumi_oracle[1])
-
-    # --------------------------------------------------------------------------------
 
     # counters
     countTot = 0
@@ -213,20 +267,126 @@ if __name__ == "__main__":
     maxtimeBegin = 0
 
 
+    cachedRuns = []
+    cachedRuns.append(1)
+    #cachedRuns.append(161396) #FIXME
+
+
+    if os.path.exists("cache.txt"):
+        cache = file("cache.txt","r")
+        data = cache.readlines()
+        for line in data:
+            if line[0] != '#' and line != "":
+                items = line.split()
+                runCached = int(items[0])
+                cachedRuns.append(runCached)
+                startCached = getDate(items[1] + " " + items[2])
+                stopCached = getDate(items[3] + " " + items[4])
+                pclRunCached = False
+                if items[5] == "True":
+                    pclRunCached = True
+                payloadFoundCached = False
+                if items[6] == "True":
+                    payloadFoundCached = True
+                uploadCached = False
+                if items[7] == "True":
+                    uploadCached = True
+                oooCached = False
+                if items[8] == "True":
+                    oooCached = True
+                latencyStartCached = float(items[9])
+                latencyEndCached = float(items[10])
+                runReport = RunReport()
+                runReport.setRunNumber(runCached)
+                runReport.sqliteFound(pclRunCached)
+                if not pclRunCached:
+                    countPCLNoRun += 1
+                runReport.setStartTime(startCached)
+                runReport.setStopTime(stopCached)
+                runReport.payloadFound(payloadFoundCached)
+                if not payloadFoundCached:
+                    countNoPayload += 1
+                runReport.isUploaded(uploadCached)
+                if not uploadCached:
+                    countUploadFail += 1
+                runReport.isOutoforder(oooCached)
+                if oooCached:
+                    countInvertedOrder += 1
+                runReport.setLatencyFromEnd(latencyEndCached)
+                if latencyEndCached > maxtimeEnd:
+                    maxtimeEnd = latencyEndCached
+                runReport.setLatencyFromBeginning(latencyStartCached)
+                if latencyEndCached != -1:
+                    sumTimeFromEnd += latencyEndCached
+                if latencyStartCached > maxtimeBegin:
+                    maxtimeBegin = latencyStartCached
+                if latencyStartCached != -1:
+                    sumTimeFromBegin += latencyStartCached
+                runReports.append(runReport)
+                countTot += 1
+        cache.close()                
+    #print runReports
+
+
+    cachedRuns.sort()
+    lastCachedRun = cachedRuns[len(cachedRuns)-1]
+    print "last cached run #: " + str(lastCachedRun)
+
+
+
+
+    # get the run list from RR for the runs not already cached
+    runList = getRunList(lastCachedRun+1)    
+    #if(len(runList) != 0):
+    #    runList.sort()
+    
+    # --------------------------------------------------------------------------------
+    # last run for which prompt reco was released
+    jsonData = urllib.urlopen(tier0DasSrc).read().replace("'", "\"")
+    #src = "tier0.js"
+    #jsonData = open(src, 'r').read().replace("'", "\"")
+    data = json.loads(jsonData)
+    wrapper = Tier0LastRun(data)
+
+    lastPromptRecoRun = wrapper.performTest(wrapper) - 1
+    
+    
+
+    # --------------------------------------------------------------------------------
+    # list the IOVs in oracle
+    
+    # runbased tag
+    listiov_run_oracle = listIov(connectOracle, tagRunOracle, passwd)
+    if listiov_run_oracle[0] == 0:
+        iovtableByRun_oracle = IOVTable()
+        iovtableByRun_oracle.setFromListIOV(listiov_run_oracle[1])
+        #iovtableByRun_oracle.printList()
+
+    # iovbased tag
+    listiov_lumi_oracle = listIov(connectOracle, tagLumiOracle, passwd)
+    if listiov_lumi_oracle[0] == 0:
+        iovtableByLumi_oracle = IOVTable()
+        iovtableByLumi_oracle.setFromListIOV(listiov_lumi_oracle[1])
+
+    # --------------------------------------------------------------------------------
+
+
+    # --------------------------------------------------------------------------------
+    # run on runs not yet cached
     isFirst = True
     lastDate = datetime.datetime
     for run in runList:
 
         # get the information from runInfo
         try :
-            log = db.lastLogEntry(tag)
+            log = db.lastLogEntry(runinfoTag)
             # for printing all log info present into log db 
             #print log.getState()
 
             # for inspecting all payloads/runs
-            iov = inspect.Iov(db,tag, run,run)
+            iov = inspect.Iov(db,runinfoTag, run,run)
         except RuntimeError :
-            print error("*** Error:") + " no iov? in", tag
+            print error("*** Error:") + " no iov? in", runinfoTag
 
 
         # --- read the information for the run from runinfo
@@ -309,8 +469,6 @@ if __name__ == "__main__":
         rRep.sqliteFound(isFileFound)
         rRep.payloadFound(not emptyPayload)
         
-        # fill the arrays used for histogramming
-        runForHisto.append(float(runInfo.run()))
 
 
 
@@ -322,17 +480,11 @@ if __name__ == "__main__":
                 maxtimeEnd = deltaTFromEndH
 
             if not emptyPayload:
-                timeFromEnd.append(deltaTFromEndH)
-                timeFromBegin.append(deltaTFromBeginH)
                 rRep.setLatencyFromBeginning(deltaTFromBeginH)
                 rRep.setLatencyFromEnd(deltaTFromEndH)
-                noFile.append(0.)
-                noPayload.append(0.)
 
                 # list the iov in the tag
                 connect    = "sqlite_file:" + promptCalibDir + fileName
-                tagLumi    = "BeamSpotObject_ByLumi"
-                tagRun     = "BeamSpotObject_ByRun"
                 listiov_run_sqlite = listIov(connect, tagRun, passwd)
                 if listiov_run_sqlite[0] == 0:
                     iovtableByRun_sqlite = IOVTable()
@@ -375,10 +527,6 @@ if __name__ == "__main__":
                 print "   " + warning("***Warning") + ": no payload in sqlite file!"
                 rRep.payloadFound(False)
                 countNoPayload += 1
-                timeFromEnd.append(0.)
-                timeFromBegin.append(deltaTFromBeginH)
-                noFile.append(0.)
-                noPayload.append(deltaTFromEndH)
                 rRep.setLatencyFromBeginning(deltaTFromBeginH)
                 rRep.setLatencyFromEnd(deltaTFromEndH)
 
@@ -389,63 +537,60 @@ if __name__ == "__main__":
             countPCLNoRun += 1
             print "   " + warning("***Warning") + ": no sqlite file found!"
 
-            timeFromEnd.append(0.)
-            timeFromBegin.append(0.)
-            noFile.append(1000.)
-            noPayload.append(0.)
 
 
         runReports.append(rRep)
 
+
+
+    runReports.sort(key=lambda rr: rr._runnumber)
+
+
+    # -----------------------------------------------------------------
+    # ---- cache the results
+    table =[]
+    table.append(["# run", "start-time", "end-time", "PCL Run", "payload","upload","Tier0 OOO", "latency from start", "latency from end"])
+    print str(len(runReports))
+    for rep in runReports:
+        #print rep.getList()
+        table.append(rep.getList())
+    
+    #out = sys.stdout
+    cacheFile = file("cache.txt","w")
+    pprint_table(cacheFile, table)
+    cacheFile.close()
+
+
+
+
     # --- printout
     print "--------------------------------------------------"
 
-    print "# of runs: " + str(len(runReports))
+    nToFill = int(len(runReports))
+    print "# of runs: " + str(nToFill)
 
-    averageTimeFromEnd = sumTimeFromEnd/nSqliteFiles
-    averageTimeFromBegin = sumTimeFromBegin/nSqliteFiles
+    # --- compute average values
+    averageTimeFromEnd = sumTimeFromEnd/nToFill
+    averageTimeFromBegin = sumTimeFromBegin/nToFill
     print "Average time from the end-of-run: " + str(averageTimeFromEnd)
     print "Average time from the begining of run: " + str(averageTimeFromBegin)
-    
-    # build the plots:
-    print "Filling the histo:"
-    hTimeFromEnd = TH1F("hTimeFromEnd","time (h) from the end of the run",int(len(runForHisto)),0,int(len(runForHisto)))
-    hTimeFromEnd.SetFillColor(40)
-    fill1DHisto(hTimeFromEnd, runForHisto, timeFromEnd)
 
-    hTimeFromBegin = TH1F("hTimeFromBegin","time (h) from the beginning of the run",int(len(runForHisto)),0,int(len(runForHisto)))
-    hTimeFromBegin.SetFillColor(40)
-    fill1DHisto(hTimeFromBegin, runForHisto, timeFromBegin)
-    
-    hNoFile = TH1F("hNoFile","time (h) from the end of the run",int(len(runForHisto)),0,int(len(runForHisto)))
-    hNoFile.SetFillColor(45)
-    fill1DHisto(hNoFile, runForHisto, noFile, True)
-
-    hNoPayload = TH1F("hNoPayload","time (h) from the end of the run",int(len(runForHisto)),0,int(len(runForHisto)))
-    hNoPayload.SetFillColor(49)
-    fill1DHisto(hNoPayload, runForHisto, noPayload, True)
+    # --- further printout
+    print "--------------------------------------------------------------"
+    print "Tot. # of runs: " + str(countTot)
+    print "# runs for which PCL was not run: " + str(countPCLNoRun) + " = " + str(countPCLNoRun*100./countTot) + "%"
+    print "# runs for which no payload was produced: " + str(countNoPayload) + " = " + str(countNoPayload*100./countTot) + "%"
+    print "# runs for which upload was out-of-order: " + str(countInvertedOrder) + " = " + str(countInvertedOrder*100./countTot) + "%"
+    print "# runs for which drop box had problems: " + str(countUploadFail-countInvertedOrder) + " = " + str((countUploadFail-countInvertedOrder)*100./countTot) + "%"
+    print 'last run # in prompt reco: ' + str(lastPromptRecoRun)
 
 
 
-    # superimpose the average
-    lineAverageFromEnd = TLine(0, averageTimeFromEnd, int(len(runForHisto)), averageTimeFromEnd)
-    lineAverageFromEnd.SetLineColor(1)
-    lineAverageFromEnd.SetLineWidth(2)
-    lineAverageFromEnd.SetLineStyle(2)
-    
-    lineAverageFromBegin = TLine(0, averageTimeFromBegin, int(len(runForHisto)), averageTimeFromBegin)
-    lineAverageFromBegin.SetLineColor(1)
-    lineAverageFromBegin.SetLineWidth(2)
-    lineAverageFromBegin.SetLineStyle(2)
+    if nRunsToPlot != -1:
+        nToFill = nRunsToPlot
 
     
-
-    legend = TLegend(0.8,0.8,1,1)
-#    legend.AddEntry(hTimeFromEnd,"payload","F")
-    legend.AddEntry(hNoFile,"No file","F")
-    legend.AddEntry(hNoPayload,"No payload","F")
-    
-
+    # --- set the style 
     # draw the plots
     gStyle.SetOptStat(0) 
     gStyle.SetPadBorderMode(0) 
@@ -457,38 +602,9 @@ if __name__ == "__main__":
     gStyle.SetTitleXOffset(1.6)
     gStyle.SetTitleOffset(1.6,"X")
 
-    
-    c2 = TCanvas("cTimeFromEnd","cTimeFromEnd",1200,600)
-    hNoFile.Draw("")
-    hNoFile.GetXaxis().SetTitle("run #")
-    hNoFile.GetXaxis().SetTitleOffset(1.6)
-    hNoFile.GetYaxis().SetTitle("delay (hours)")
-    hNoFile.LabelsOption("v","X")
-    hTimeFromEnd.Draw("same")
-    hNoPayload.Draw("same")
-    hNoFile.GetYaxis().SetRangeUser(0,hTimeFromEnd.GetMaximum()*1.05)
-    lineAverageFromEnd.Draw("same")
-    legend.Draw("same")
-    c2.Print(webArea + 'cTimeFromEndOld.png')#FIXME
-#    c2.Print(webArea + 'cTimeFromEnd.root')
 
-    c3 = TCanvas("cTimeFromBegin","cTimeFromBegin",1200,600)
-    hNoFile.Draw("")
-    hNoFile.GetXaxis().SetTitle("run #")
-    hNoFile.GetXaxis().SetTitleOffset(1.6)
-    hNoFile.GetYaxis().SetTitle("delay (hours)")
-    hNoFile.LabelsOption("v","X")
-    hTimeFromBegin.Draw("same")
-    hNoFile.GetYaxis().SetRangeUser(0,hTimeFromBegin.GetMaximum()*1.05)
-    lineAverageFromBegin.Draw("same")
-    legend.Draw("same")
-    c3.Print(webArea + 'cTimeFromBeginOld.png')#FIXME
-
-
-
-    nToFill = int(len(runReports))
+    # --- book the histos
     newlegend = TLegend(0.8,0.8,1,1)
-
 
     hTimeFromEndNew = TH1F("hTimeFromEndNew","time (h) from the end of the run",nToFill,0,nToFill)
     hTimeFromEndNew.SetMarkerStyle(20)
@@ -549,17 +665,34 @@ if __name__ == "__main__":
     hNoPCLBegin.SetFillColor(422)
     hNoPCLBegin.SetLineColor(422)
 
+    # superimpose the average
+    lineAverageFromEnd = TLine(0, averageTimeFromEnd, nToFill, averageTimeFromEnd)
+    lineAverageFromEnd.SetLineColor(1)
+    lineAverageFromEnd.SetLineWidth(2)
+    lineAverageFromEnd.SetLineStyle(2)
+    newlegend.AddEntry(lineAverageFromEnd,"average", "L")
+        
+    lineAverageFromBegin = TLine(0, averageTimeFromBegin, nToFill, averageTimeFromBegin)
+    lineAverageFromBegin.SetLineColor(1)
+    lineAverageFromBegin.SetLineWidth(2)
+    lineAverageFromBegin.SetLineStyle(2)
 
+    # --- fill the histos
     index = 1
-
+    indexLastT0Run = 1
     maxtimeEnd = maxtimeEnd * 1.05
     maxtimeBegin = maxtimeBegin * 1.05
 
 
+    minId = 0
+    if nRunsToPlot != -1 and nRunsToPlot < len(runReports):
+        minId = len(runReports) - nRunsToPlot
 
 
-    
-    for report in reversed(runReports):
+    for id in range(minId, len(runReports)):
+        report = runReports[id]
+        if int(report._runnumber) < int(lastPromptRecoRun):
+            indexLastT0Run = index
         hTimeFromEndNew.SetBinContent(index, report._latencyFromEnd)
         hTimeFromBeginningNew.SetBinContent(index, report._latencyFromBeginning)
 
@@ -584,6 +717,21 @@ if __name__ == "__main__":
         index += 1
         
 
+
+    lineLastPromptRecoEnd = TLine(indexLastT0Run, 0, indexLastT0Run, maxtimeEnd)
+    lineLastPromptRecoEnd.SetLineColor(2)
+    lineLastPromptRecoEnd.SetLineWidth(3)
+    lineLastPromptRecoEnd.SetLineStyle(2)
+    newlegend.AddEntry(lineLastPromptRecoEnd, "Prompt-reco status", "L")
+
+
+    lineLastPromptRecoBegin = TLine(indexLastT0Run, 0, indexLastT0Run, maxtimeBegin)
+    lineLastPromptRecoBegin.SetLineColor(2)
+    lineLastPromptRecoBegin.SetLineWidth(3)
+    lineLastPromptRecoBegin.SetLineStyle(2)
+
+
+    # --- draw the histos
     c4 = TCanvas("cTimeFromEndN1","cTimeFromEndN1",1200,600)
     hSuccessEnd.GetYaxis().SetRangeUser(0,maxtimeEnd)
     hSuccessEnd.Draw("")
@@ -599,9 +747,12 @@ if __name__ == "__main__":
     #hTimeFromEndNew.Draw("P")
     #hSuccessEnd.Draw("same")
     lineAverageFromEnd.Draw("same")
+    lineLastPromptRecoEnd.Draw("same")
     hTimeFromEndNew.Draw("P,SAME")
     newlegend.Draw("same")
-    c4.Print(webArea + 'cTimeFromEnd.png')
+    if writeToWeb:
+        c4.Print(webArea + 'cTimeFromEnd.png')
+
 
     c5 = TCanvas("cTimeFromBeginN","cTimeFromBeginN",1200,600)
     hSuccessBegin.GetYaxis().SetRangeUser(0,maxtimeBegin)
@@ -618,22 +769,23 @@ if __name__ == "__main__":
     #hTimeFromBeginNew.Draw("P")
     #hSuccessBegin.Draw("same")
     lineAverageFromBegin.Draw("same")
+    lineLastPromptRecoBegin.Draw("same")
     hTimeFromBeginningNew.Draw("P,SAME")
     newlegend.Draw("same")
-    c5.Print(webArea + 'cTimeFromBegin.png')
+    hSuccessBegin.GetYaxis().Draw("same")
+    if writeToWeb:
+        c5.Print(webArea + 'cTimeFromBegin.png')
 
     
 
 
-    print "--------------------------------------------------------------"
-    print "Tot. # of runs: " + str(countTot)
-    print "# runs for which PCL was not run: " + str(countPCLNoRun) + " = " + str(countPCLNoRun*100./countTot) + "%"
-    print "# runs for which no payload was produced: " + str(countNoPayload) + " = " + str(countNoPayload*100./countTot) + "%"
-    print "# runs for which upload was out-of-order: " + str(countInvertedOrder) + " = " + str(countInvertedOrder*100./countTot) + "%"
-    print "# runs for whcih drop box had problems: " + str(countUploadFail-countInvertedOrder) + " = " + str((countUploadFail-countInvertedOrder)*100./countTot) + "%"
-
-#    raw_input ("Enter to quit")
-
+    if not writeToWeb:
+        raw_input ("Enter to quit")
+    else:
+        shutil.copy("cache.txt", webArea + "log.txt")
+        updateFile = file(webArea + "lastupdate.txt","w")
+        updateFile.write(str(datetime.datetime.today()))
+        updateFile.close()
 
 #    raw_input ("Enter to quit")
 

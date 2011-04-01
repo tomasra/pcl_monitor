@@ -327,6 +327,20 @@ class IOVEntry:
         self._payloadToken = ""
         self._timeType = timetype
 
+
+    def setSince(self, newSince):
+        self._since = newSince
+
+    def setTill(self, newTill):
+        self._till = newTill
+
+    def setToken(self, newToken):
+        self._payloadToken = newToken
+
+    def setTimeType(self, newTimeType):
+        self._timeType = newTimeType
+    
+
     def setFromListIOV(self, line, timetype = "runnumber"):
         listofentries = line.split('\t')
         index = 0
@@ -359,6 +373,10 @@ class IOVEntry:
     def token(self):
         return self._payloadToken
 
+    def timeType(self):
+        return self._timeType
+
+    
     def sinceRL(self):
         return self.unpackLumiid(self.since())
 
@@ -447,6 +465,26 @@ class IOVTable:
 
     def size(self):
         return len(self._iovList)
+
+    def search(self, since, iov):
+        hi = self.size()
+        lo = 0
+        while lo < hi:
+            mid = (lo+hi)//2
+            midval = self._iovList[mid]
+            if midval.since() < since:
+                lo = mid+1
+            elif midval.since() > since:
+                hi = mid
+            else:
+                #iov = midval
+                iov.setSince(midval.since())
+                iov.setTill(midval.till())
+                iov.setToken(midval.token())
+                iov.setTimeType(midval.timeType())
+                #print midval
+                return True
+        return False
 
 
 class GTEntryCollection:
