@@ -1,17 +1,23 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2011/04/05 19:08:06 $
- *  $Revision: 1.1 $
+ *  $Date: 2011/04/05 23:40:43 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - CERN
  */
 
 #include "Tools/MyAnalysisTools/src/ReducedMETComputer.h"
+#include "TVector2.h"
+#include "TLorentzVector.h"
 
-ReducedMETComputer::ReducedMETComputer(double kRecoil_long;
-				       double kRecoil_perp;
-				       double kSigmaPt_long;
-				       double kSigmaPt_perp;
+
+using namespace std;
+
+
+ReducedMETComputer::ReducedMETComputer(double kRecoil_long,
+				       double kRecoil_perp,
+				       double kSigmaPt_long,
+				       double kSigmaPt_perp,
 				       double kPerp) :   kRecoil_long(kRecoil_long),
 							 kRecoil_perp(kRecoil_perp),
 							 kSigmaPt_long(kSigmaPt_long),
@@ -28,10 +34,10 @@ ReducedMETComputer::~ReducedMETComputer(){}
 void ReducedMETComputer::compute(const TLorentzVector& theLepton1, double sigmaPt1,
 				 const TLorentzVector& theLepton2, double sigmaPt2,
 				 const std::vector<TLorentzVector>& theJets,
-				 const TLorentzVector& theMet) {
+				 const TLorentzVector& theMET) {
   
-  TVector2 lepton1(theLepton1.Px(), theLeptons1.Py());
-  TVector2 lepton2(theLepton2.Px(), theLeptons2.Py());;
+  TVector2 lepton1(theLepton1.Px(), theLepton1.Py());
+  TVector2 lepton2(theLepton2.Px(), theLepton2.Py());;
   
   TVector2 bisector = (lepton1.Unit()+lepton2.Unit()).Unit();
   TVector2 bisector_perp(bisector.Py(), -bisector.Px());
@@ -74,26 +80,26 @@ void ReducedMETComputer::compute(const TLorentzVector& theLepton1, double sigmaP
   // -- corrections for lepton Pt uncertainties
 
   // relative Pt uncert. (maximum 100%)
-  double relErrPt1 = min(sigmaPt1/muon1.Pt(), 1.);
-  double relErrPt2 = min(sigmaPt2/muon2.Pt(), 1.);
+  double relErrPt1 = min(sigmaPt1/lepton1.Mod(), 1.);
+  double relErrPt2 = min(sigmaPt2/lepton2.Mod(), 1.);
   
   // rescale for relative error
-  TVector2 muonCorr1 = muon1*(1.-relErrPt1);
-  TVector2 muonCorr2 = muon2*(1.-relErrPt2);
-  TVector2 dileptonCorr = muonCorr1 + muonCorr2;
+  TVector2 leptonCorr1 = lepton1*(1.-relErrPt1);
+  TVector2 leptonCorr2 = lepton2*(1.-relErrPt2);
+  TVector2 dileptonCorr = leptonCorr1 + leptonCorr2;
   
   // compute the delta of the projections (must be a negative number -> conservative)
   double dileptonProjCorr_long = dileptonCorr*bisector;
   double deltaLeptonProjCorr_long = dileptonProjCorr_long - dileptonProj_long;
   // we fluctuate independently the 2 leptons and sum the contribution to get the biggest possible negative fluctuation on the perp component
-  double deltaLeptonProjCorr_perp = (relErrPt2*muon2 - relErrPt1*muon1)*bisector_perp;
+  double deltaLeptonProjCorr_perp = (relErrPt2*lepton2 - relErrPt1*lepton1)*bisector_perp;
   
   // -- compute the 2 components of the reduced MET variable
-  reducedMET_long = max(dileptonProj_long + kRecoil_long*recoilProj_long + kSigmaPt_long*deltaLeptonProjCorr_long, 0);
-  reducedMET_perp = max(dileptonProj_perp + kRecoil_perp*recoilProj_perp + kSigmaPt_perp*deltaLeptonProjCorr_perp, 0);
+  reducedMET_long = max(dileptonProj_long + kRecoil_long*recoilProj_long + kSigmaPt_long*deltaLeptonProjCorr_long, 0.);
+  reducedMET_perp = max(dileptonProj_perp + kRecoil_perp*recoilProj_perp + kSigmaPt_perp*deltaLeptonProjCorr_perp, 0.);
   
   
-  reducedMET = sqrt(reducedMET_long*reducedMET_long + kPerp*reducedMET_perp*reducedMET_perp);
+  redMET = sqrt(reducedMET_long*reducedMET_long + kPerp*reducedMET_perp*reducedMET_perp);
 
 }
   

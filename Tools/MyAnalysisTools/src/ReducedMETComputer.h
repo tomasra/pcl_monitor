@@ -4,10 +4,16 @@
 /** \class ReducedMETComputer
  *  No description available.
  *
- *  $Date: 2011/04/05 19:08:06 $
- *  $Revision: 1.1 $
+ *  $Date: 2011/04/05 23:40:43 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - CERN
  */
+
+#include <utility>
+#include <vector>
+
+
+class TLorentzVector;
 
 class ReducedMETComputer {
 public:
@@ -28,27 +34,27 @@ public:
 
   
   double reducedMET() const {
-    return reducedMET;
+    return redMET;
   }
 
   std::pair<double, double> reducedMETComponents() const {
-    return make_pair(reducedMET_long, reducedMET_perp);
+    return std::make_pair(reducedMET_long, reducedMET_perp);
   }
     
   std::pair<double, double> recoilProjComponents() const {
-    return make_pair(recoilProj_long, recoilProj_perp);
+    return std::make_pair(recoilProj_long, recoilProj_perp);
   }
 
   std::pair<double, double> metProjComponents() const {
-    return make_pair(metProj_long, metProj_perp);
+    return std::make_pair(metProj_long, metProj_perp);
   }
 
   std::pair<double, double> sumJetProjComponents() const {
-    return make_pair(sumJetProj_long, sumJetProj_perp);
+    return std::make_pair(sumJetProj_long, sumJetProj_perp);
   }
 
   std::pair<double, double> dileptonProjComponents() const {
-    return make_pair(dileptonProj_long, dileptonProj_perp);
+    return std::make_pair(dileptonProj_long, dileptonProj_perp);
   }
   
 
@@ -72,7 +78,7 @@ private:
   double recoilProj_perp;
   double reducedMET_long;
   double reducedMET_perp;
-  double reducedMET;
+  double redMET;
   
 
 };
