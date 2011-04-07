@@ -4,8 +4,8 @@
 /** \class ZZllvvAnalyzer
  *  No description available.
  *
- *  $Date: 2011/03/08 15:13:10 $
- *  $Revision: 1.2 $
+ *  $Date: 2011/03/14 18:05:18 $
+ *  $Revision: 1.3 $
  *  \author G. Cerminara - CERN
  */
 #include "FWCore/Framework/interface/EDAnalyzer.h"
@@ -29,7 +29,10 @@ protected:
   virtual void beginJob();
 
   virtual void beginRun(const edm::Run& run, const edm::EventSetup& eSetup);
-  
+
+  virtual void beginLuminosityBlock(const edm::LuminosityBlock & iLumi, const edm::EventSetup & iSetup);
+  virtual void endLuminosityBlock(const edm::LuminosityBlock & iLumi, const edm::EventSetup & iSetup);
+
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob();
 
@@ -41,8 +44,10 @@ private:
   float weight;
 
   TFile *theFile;
-  
-  HistoLept *muonS1;
+  edm::InputTag source;
+  edm::InputTag zmmInput;
+  bool debug;
+  edm::ParameterSet vertexSelection;
 
 };
 #endif

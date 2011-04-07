@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2007/12/04 00:11:38 $
- *  $Revision: 1.2 $
+ *  $Date: 2011/03/14 18:05:53 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - NEU Boston & INFN Torino
  */
 
@@ -41,75 +41,75 @@ HistoStack::HistoStack(const LumiNormalization* lumiNorm, const TString& finalSt
 									     ntupleName("DiLeptNtuple"),
 									     weightBr(":weight") {
   // Fill the color map
-  colorMap["zz"] = 11;
-  colorMap["zz_llll"] = 12;
-  colorMap["zz_llvv"] = 11;
-  colorMap["wz"] = 10;
-  colorMap["ww"] = 9;
-  colorMap["tt"] = 6;
-  colorMap["ztt_130-250"] = 7;
-  colorMap["ztt_60-130"] = 7;
-  colorMap["ztt_15-60"] = 7;
-  colorMap["z_130-250"] = 3;
-  colorMap["z_60-130"] = 3;
-  colorMap["z_15-60"] = 3;
-  colorMap["wgamma_prod"] = 42;
-  colorMap["wgamma_rad"] = 42;
-  colorMap["wgamma"] = 42;
-  colorMap["wjets"] = 46;
-  colorMap["wjets_w0lp"] = 46;
-  colorMap["wjets_w1lp"] = 46;
-  colorMap["wjets_w2lp"] = 46;
-  colorMap["wjets_w3lp"] = 46;
-  colorMap["wjets_w4lp"] = 46;
-  colorMap["wjets_w5lp"] = 46;
-  colorMap["ww_wz"] = 11;
-  colorMap["z_ll"] = -1;
-  colorMap["signal"] = -1;
-  colorMap["others"] = 1;
-  colorMap["z_tt"] = 7;
-  colorMap["wjets_gp"] = 46;
-  colorMap["H400"] = 0;
-  colorMap["QCD"] = 400;
+//   colorMap["zz"] = 11;
+//   colorMap["zz_llll"] = 12;
+//   colorMap["zz_llvv"] = 11;
+//   colorMap["wz"] = 10;
+//   colorMap["ww"] = 9;
+//   colorMap["tt"] = 6;
+//   colorMap["ztt_130-250"] = 7;
+//   colorMap["ztt_60-130"] = 7;
+//   colorMap["ztt_15-60"] = 7;
+//   colorMap["z_130-250"] = 3;
+//   colorMap["z_60-130"] = 3;
+//   colorMap["z_15-60"] = 3;
+//   colorMap["wgamma_prod"] = 42;
+//   colorMap["wgamma_rad"] = 42;
+//   colorMap["wgamma"] = 42;
+//   colorMap["wjets"] = 46;
+//   colorMap["wjets_w0lp"] = 46;
+//   colorMap["wjets_w1lp"] = 46;
+//   colorMap["wjets_w2lp"] = 46;
+//   colorMap["wjets_w3lp"] = 46;
+//   colorMap["wjets_w4lp"] = 46;
+//   colorMap["wjets_w5lp"] = 46;
+//   colorMap["ww_wz"] = 11;
+//   colorMap["z_ll"] = -1;
+//   colorMap["signal"] = -1;
+//   colorMap["others"] = 1;
+//   colorMap["z_tt"] = 7;
+//   colorMap["wjets_gp"] = 46;
+//   colorMap["H400"] = 0;
+//   colorMap["QCD"] = 400;
 
-  fillStyleMap["z_ll"] = 3004;
-  fillStyleMap["others"] = 3005;
-  fillStyleMap["signal"] = 0;
+//   fillStyleMap["z_ll"] = 3004;
+//   fillStyleMap["others"] = 3005;
+//   fillStyleMap["signal"] = 0;
 
-  // Fill the color map
-  legLabel["zz_llll"] = "ZZ #rightarrow 4l";
-  legLabel["zz_llvv"] = "ZZ #rightarrow 2l 2#nu";
-  legLabel["wz"] = "WZ";
-  legLabel["ww"] = "WW";
-  legLabel["zz"] = "ZZ";
-  legLabel["ZZ"] = "ZZ";
+//   // Fill the color map
+//   legLabel["zz_llll"] = "ZZ #rightarrow 4l";
+//   legLabel["zz_llvv"] = "ZZ #rightarrow 2l 2#nu";
+//   legLabel["wz"] = "WZ";
+//   legLabel["ww"] = "WW";
+//   legLabel["zz"] = "ZZ";
+//   legLabel["ZZ"] = "ZZ";
 
-  legLabel["tt"] = "t#bar t";
-  legLabel["ztt_130-250"] = "Z #rightarrow #tau #tau";
-  legLabel["ztt_60-130"] = "Z #rightarrow #tau #tau";
-  legLabel["ztt_15-60"] = "Z #rightarrow #tau #tau";
-  legLabel["z_130-250"] = "Z #rightarrow ll";
-  legLabel["z_60-130"] = "Z #rightarrow ll";
-  legLabel["z_15-60"] = "Z #rightarrow ll";
-  legLabel["wgamma_prod"] = "W+#gamma";
-  legLabel["wgamma_rad"] = "W+#gamma";
-  legLabel["wgamma"] = "W+#gamma";
-  legLabel["wjets"] = "W+jets";
-  legLabel["wjets_w0lp"] = "W+jets";
-  legLabel["wjets_w1lp"] = "W+jets";
-  legLabel["wjets_w2lp"] = "W+jets";
-  legLabel["wjets_w3lp"] = "W+jets";
-  legLabel["wjets_w4lp"] = "W+jets";
-  legLabel["wjets_w5lp"] = "W+jets";
-  legLabel["data"] = "data";
-  legLabel["z_ll"] = "Z/#gamma*";
-  legLabel["others"] = "other bckg.";
-  legLabel["signal"] = "ZZ";
-  legLabel["ww_wz"] = "WW/WZ";
-  legLabel["z_tt"] = "Z #rightarrow #tau #tau";
-  legLabel["wjets_gp"] = "W+jets";
-  legLabel["H400"] = "H (400GeV)";
-  legLabel["QCD"] = "QCD (p_{T} > 15 GeV)";
+//   legLabel["tt"] = "t#bar t";
+//   legLabel["ztt_130-250"] = "Z #rightarrow #tau #tau";
+//   legLabel["ztt_60-130"] = "Z #rightarrow #tau #tau";
+//   legLabel["ztt_15-60"] = "Z #rightarrow #tau #tau";
+//   legLabel["z_130-250"] = "Z #rightarrow ll";
+//   legLabel["z_60-130"] = "Z #rightarrow ll";
+//   legLabel["z_15-60"] = "Z #rightarrow ll";
+//   legLabel["wgamma_prod"] = "W+#gamma";
+//   legLabel["wgamma_rad"] = "W+#gamma";
+//   legLabel["wgamma"] = "W+#gamma";
+//   legLabel["wjets"] = "W+jets";
+//   legLabel["wjets_w0lp"] = "W+jets";
+//   legLabel["wjets_w1lp"] = "W+jets";
+//   legLabel["wjets_w2lp"] = "W+jets";
+//   legLabel["wjets_w3lp"] = "W+jets";
+//   legLabel["wjets_w4lp"] = "W+jets";
+//   legLabel["wjets_w5lp"] = "W+jets";
+//   legLabel["data"] = "data";
+//   legLabel["z_ll"] = "Z/#gamma*";
+//   legLabel["others"] = "other bckg.";
+//   legLabel["signal"] = "ZZ";
+//   legLabel["ww_wz"] = "WW/WZ";
+//   legLabel["z_tt"] = "Z #rightarrow #tau #tau";
+//   legLabel["wjets_gp"] = "W+jets";
+//   legLabel["H400"] = "H (400GeV)";
+//   legLabel["QCD"] = "QCD (p_{T} > 15 GeV)";
 
 
   // Create the legend
@@ -131,6 +131,14 @@ HistoStack::HistoStack(const LumiNormalization* lumiNorm, const TString& finalSt
 
 }
 
+void HistoStack::defineGroup(const TString& name, const TString& legendLabel,
+			     bool isData, bool isSignal,
+			     Color_t fcolor, Style_t fstyle) {
+  colorMap[name] = fcolor;
+  if(fstyle != 1001) fillStyleMap[name] = fstyle;
+  legLabel[name] = legendLabel;
+  
+}
 
 
 

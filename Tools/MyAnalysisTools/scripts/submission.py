@@ -4,9 +4,10 @@ import os
 import sys
 import commands
 import shutil
+import time
 from optparse import OptionParser, Option, OptionValueError
 from ConfigParser import ConfigParser
-
+from Tools.MyAnalysisTools.color_tools import *
 import FWCore.ParameterSet.Config as cms
 
 
@@ -69,7 +70,7 @@ def createJobSetups(inputCfg, inputDir, outputDir, outputBaseName, JobName, nFil
 
     from input_cfg import process
     process.source.fileNames = cms.untracked.vstring()
-
+    process.maxEvents.input = -1
     # do the manipulatio on output and input files
     indexPart = 0
     indexTot  = 0
@@ -105,12 +106,13 @@ def createJobSetups(inputCfg, inputDir, outputDir, outputBaseName, JobName, nFil
             scriptfile.write("#BSUB -q " + queue + "\n")
             scriptfile.write("setenv runningDir $PWD\n")
             scriptfile.write("cd " +  submissionArea + "\n")
+            scriptfile.write("setenv SCRAM_ARCH slc5_amd64_gcc434 \n")
             scriptfile.write("eval `scram runtime -csh`\n")
             scriptfile.write("cp " + cfgfilename + " $runningDir\n")
             scriptfile.write("cd $runningDir\n")
             scriptfile.write("cmsRun " + cfgfilename + "\n")
             scriptfile.write("rfcp " + outputFileNameTmp + " " + outputDir + outputFileName + "\n")
-            scriptfile.write("rfcp histograms.root " + outputDir + "/histograms_" +  str(indexJob) + ".root\n")
+            scriptfile.write("#rfcp histograms.root " + outputDir + "/histograms_" +  str(indexJob) + ".root\n")
             scriptfile.write("\n")
             scriptfile.close()
             os.chmod(scriptname, 0777)
@@ -143,7 +145,8 @@ if __name__     ==  "__main__":
                       help="file basename", type="str", metavar="<file basename>")
 
     parser.add_option("--submit", action="store_true",dest="submit",default=False, help="submit the jobs")
-    parser.add_option("--copy", action="store_true",dest="copy",default=False, help="submit the jobs")
+    parser.add_option("--copy", action="store_true",dest="copy",default=False, help="copy the output of the jobs from castor to a local dir (argument)")
+    parser.add_option("--status", action="store_true",dest="status",default=False, help="check the status of the jobs")
 
     parser.add_option("--file", dest="file",
                       help="submission config file", type="str", metavar="<file>")
@@ -151,6 +154,74 @@ if __name__     ==  "__main__":
 
     (options, args) = parser.parse_args()
 
+    if options.status:
+
+        if options.file != None:
+            print 'Reading configuration file from ',options.file
+            # read a global configuration file
+            cfgfile = ConfigParser()
+            cfgfile.optionxform = str
+
+            cfgfile.read([options.file ])
+            
+            # get the releases currently managed
+            listOfJobs = cfgfile.get('General','jobsToSubmit').split(',')
+            flag = cfgfile.get('General','selFlag')
+            configFile = cfgfile.get('General','configFile')
+            filesPerJob = int(cfgfile.get('General','filesPerJob'))
+            outputDirBase = cfgfile.get('General','outputDirBase')
+            fileBaseName = cfgfile.get('General','fileBaseName')
+            queue = cfgfile.get('General','queue')
+
+            for job in listOfJobs:
+                print "--- Task name: " + blue(job) + "  (" + flag + "_" + job + ")"
+                status = ok("OK")
+                ls_cmd = "ls " + flag + "_" + job
+                ls_out = commands.getstatusoutput(ls_cmd)
+                nJobs = 0
+                if ls_out[0] == 0:
+                    lslines = ls_out[1].split("\n")
+                    for lsline in lslines:
+                        if "SubmissionJob" in lsline:
+                            nJobs += 1
+                else:
+                    print ls_out[1]
+                print "    # of jobs: " + str(nJobs)
+                outdir = outputDirBase + "/" + flag + "/" + job + "/"
+
+                bjobs_cmd = "bjobs -J " + flag + "_" + job
+                bjobs_out = commands.getstatusoutput(bjobs_cmd)
+                if bjobs_out[0] == 0:
+                    if not "not found" in bjobs_out[1]:
+                        print bjobs_out[1]
+                else:
+                    print bjobs_out[1]
+                pending = False
+                if len(bjobs_out[1].split("\n")) > 1:
+                    status = warning("PENDING")
+                    pending = True
+
+                print "    Output dir: " + outdir
+                rfdir_cmd = "rfdir " + outdir
+                nOutFile = 0
+                outCastorDir_out = commands.getstatusoutput(rfdir_cmd)
+                if outCastorDir_out[0] == 0:
+                    castorLines = outCastorDir_out[1].split("\n")
+                    if len(castorLines) != 0:
+                        for castorFileLine in castorLines:
+                            if 'cerminar' in castorFileLine and "root" in castorFileLine:
+                                print "        - " + castorFileLine.split()[8]
+                                nOutFile += 1
+                else:
+                    print outCastorDir_out[1]
+                print "    # of output files: " + str(nOutFile)
+                if nOutFile != nJobs and not pending:
+                    status = error("ERROR")
+                print "    Status: " + status
+
+                
+            sys.exit(0)
+                
     if options.copy:
         if options.file == None:
             print "no cfg file specified!"
@@ -228,6 +299,30 @@ if __name__     ==  "__main__":
             print "no queue specified!"
             sys.exit(1)
 
+        
+
+        
+        if len(args) == 0:
+            if options.file == None:
+                print "no workflow specified!"
+                sys.exit(1)
+            else:
+                
+                # read a global configuration file
+                cfgfile = ConfigParser()
+                cfgfile.optionxform = str
+
+                print 'Reading configuration file from ',options.file
+                cfgfile.read([options.file ])
+
+                # get the releases currently managed
+                listOfJobs = cfgfile.get('General','jobsToSubmit').split(',')
+                flag = cfgfile.get('General','selFlag')
+                for job in listOfJobs:
+                    args.append(flag + "_" + job)
+
+
+        counterSub = 0
         for job in args:
             if not os.path.exists(job):
                 print "Dir: " + job + " doesn't exist!"
@@ -237,9 +332,15 @@ if __name__     ==  "__main__":
                 for filename  in fileList:
                     if "SubmissionJob" in filename:
                         print "Submitting: " + filename + "..."
-                        submit_cmd = "bsub -o tmp.tmp -q " + options.queue + " -J " + job + " " + filename
+                        submit_cmd = "bsub -q " + options.queue + " -J " + job + " " + filename
                         submit_out = commands.getstatusoutput(submit_cmd)
                         print submit_out[1]
+                        time.sleep(10)
+                        counterSub += 1
+                        if counterSub == 10:
+                            print "will wait 500 sec....sorry!"
+                            time.sleep(500)
+                            counterSub = 0
                 os.chdir(pwd)
                 
     elif options.file != None:

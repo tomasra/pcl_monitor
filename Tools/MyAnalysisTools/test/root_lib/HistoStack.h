@@ -4,8 +4,8 @@
 /** \class HistoStack
  *  Code to create histogram stacks.
  *
- *  $Date: 2007/12/04 00:11:38 $
- *  $Revision: 1.2 $
+ *  $Date: 2011/03/14 18:05:53 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - NEU Boston & INFN Torino
  */
 
@@ -35,6 +35,11 @@ public:
 
   /// Destructor
   virtual ~HistoStack();
+
+  void defineGroup(const TString& name, const TString& legendLabel,
+		   bool isData, bool isSignal,
+		   Color_t fcolor, Style_t fstyle = 1001);
+
 
   // Operations
   // Add an histo to the stack.
