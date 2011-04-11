@@ -8,7 +8,7 @@ from threading import Thread
 
 
 from runTheMatrix import *
-
+from Configuration.PyReleaseValidation.WorkFlow import WorkFlow
 
 def modifyCommandForGT(command, gtName, isLocal):
     if command == None:
@@ -46,17 +46,22 @@ def modifyCommandForGT(command, gtName, isLocal):
 
 
 def duplicateWorkflowForGTTest(matrixreader, wfid, newwfid, gtName, isLocal=False):
-    
+    print "# of workflows in the matrix: " + str(len(matrixreader.workFlows))
 
-        for wf in matrixreader.workFlows:
-            if float(wfid) == float(wf.numId):
-                print "Duplicate workflow: " + wf.nameId + " for GT: " + gtName
-                if isLocal == False:
-                    newWfname = gtName + '_FRONTIER+' + wf.nameId
-                else:
-                    newWfname = gtName + '_LOCAL+' + wf.nameId
+    for wf in matrixreader.workFlows:
+        if float(wfid) == float(wf.numId):
+            print "Duplicate workflow: " + wf.nameId + " for GT: " + gtName
+            if isLocal == False:
+                newWfname = gtName + '_FRONTIER+' + wf.nameId
+            else:
+                newWfname = gtName + '_LOCAL+' + wf.nameId
+            if hasattr(wf, 'input'):
+                # this is the new version of the API (> 43X)
+                matrixreader.workFlows.append(WorkFlow(str(newwfid), newWfname, modifyCommandForGT(wf.cmdStep1,gtName, isLocal), modifyCommandForGT(wf.cmdStep2,gtName, isLocal), modifyCommandForGT(wf.cmdStep3,gtName, isLocal), modifyCommandForGT(wf.cmdStep4,gtName, isLocal), wf.input))
+            else:
+                # old versin of the API
                 matrixreader.workFlows.append(WorkFlow(str(newwfid), newWfname, modifyCommandForGT(wf.cmdStep1,gtName, isLocal), modifyCommandForGT(wf.cmdStep2,gtName, isLocal), modifyCommandForGT(wf.cmdStep3,gtName, isLocal), modifyCommandForGT(wf.cmdStep4,gtName, isLocal)))
-
+                                              
                                               
 
 
@@ -219,6 +224,7 @@ if __name__ == '__main__':
 
     np=4 # default: four threads
     releasearea = os.environ["CMSSW_BASE"]
+
     if 'CMSSW_3_6' in  releasearea or 'CMSSW_3_7' in  releasearea :
         ret = runGTSelection(gts, globaltagsandWfIds, options.local, np, options.original, options.show)
     else:
