@@ -4,11 +4,13 @@ import os, sys, re, time
 
 import random
 from threading import Thread
-
-
+try:
+    from Configuration.PyReleaseValidation.WorkFlow import WorkFlow
+except ImportError:
+    print "ops..old API!"
 
 from runTheMatrix import *
-from Configuration.PyReleaseValidation.WorkFlow import WorkFlow
+
 
 def modifyCommandForGT(command, gtName, isLocal):
     if command == None:
