@@ -2,4 +2,4 @@ Calibration/TkAlCaRecoProducers V00-03-19
 CondFormats/ESObjects 	V00-00-12
 CalibTracker/SiStripDCS 	V02-06-00
 Calibration/IsolatedParticles 	V01-03-06
-CalibCalorimetry/CastorCalib 	V01-00-09
+#CalibCalorimetry/CastorCalib 	V01-00-09
