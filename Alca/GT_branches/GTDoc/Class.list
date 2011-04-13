@@ -3,6 +3,14 @@
 GenerateDocFor: 42X_GR_R,42X_MC,2011_GR_P,2011_GR_E,2011_GR_H
 
 
+[43X_GR_R]
+
+GTList: GR_R_43_V0
+
+
+[43X_MC]
+
+GTList: DESIGN43_V0,START43_V0,MC_43_V0
 
 
 
