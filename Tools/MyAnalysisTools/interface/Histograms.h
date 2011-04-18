@@ -4,8 +4,8 @@
 /** \class Histograms
  *  No description available.
  *
- *  $Date: 2011/03/14 18:05:18 $
- *  $Revision: 1.2 $
+ *  $Date: 2011/04/07 15:21:48 $
+ *  $Revision: 1.3 $
  *  \author G. Cerminara - CERN
  */
 
@@ -25,6 +25,7 @@
 #include "CMGTools/HtoZZ2l2nu/interface/Utils.h"
 #include "DataFormats/PatCandidates/interface/Muon.h"
 #include "DataFormats/VertexReco/interface/Vertex.h"
+#include "CMGTools/HtoZZ2l2nu/interface/ReducedMETComputer.h"
 #endif
 
 using namespace std;
@@ -285,7 +286,7 @@ public:
 	 type,
 	 muonTrack->hitPattern().numberOfValidPixelHits(),
 	 muonTrack->hitPattern().numberOfValidTrackerHits(),
-	 muonTrack->hitPattern().numberOfValidMuonHits(),
+	 muon->globalTrack()->hitPattern().numberOfValidMuonHits(),
 	 muon->numberOfMatches(),
 	 weight);
 
@@ -358,12 +359,24 @@ public:
     hSumJetCompPerp = new TH1F(theName+ "_hSumJetCompPerp","title",150,-150,150);
     hDileptonCompLong = new TH1F(theName+ "_hDileptonCompLong","title",150,0,150);
     hDileptonCompPerp = new TH1F(theName+ "_hDileptonCompPerp","title",150,0,150);
+
+    hDileptSigmaPtCompLong  = new TH1F(theName+ "_hDileptSigmaPtCompLong","title",150,0,150);
+    hDileptSigmaPtCompPerp = new TH1F(theName+ "_hDileptSigmaPtCompPerp","title",150,0,150);
+
+    hDileptSigmaPtCompLong  = new TH1F(theName+ "_hDileptSigmaPtCompLong","title",100,-50,0);
+    hDileptSigmaPtCompPerp = new TH1F(theName+ "_hDileptSigmaPtCompPerp","title",100,-50,0.);
+
+    hDileptSigmaPtCompLongVsMET  = new TH2F(theName+ "_hDileptSigmaPtCompLongVsMET","title",100,0.,200.,50,-50.,0.);
+    hDileptSigmaPtCompPerpVsMET = new TH2F(theName+ "_hDileptSigmaPtCompPerpVsMET","title",100,0.,200.,50,-50,0.);
+    hDileptonVsRecoilCompLong = new TH2F(theName+ "_hDileptonVsRecoilCompLong","title",150,-150.,0.,150,0.,150.);
+    hDileptonVsRecoilCompPerp = new TH2F(theName+ "_hDileptonVsRecoilCompPerp","title",150,-150.,0.,150,0.,150.);
+
     hRecoilTypeLong = new TH1F(theName+ "_hRecoilTypeLong","Type",2,0,2);
-    hRecoilTypeLong->SetBinLabel(1,"Jet-Like");
-    hRecoilTypeLong->SetBinLabel(2,"MET-Like");
+    hRecoilTypeLong->GetXaxis()->SetBinLabel(1,"Jet-Like");
+    hRecoilTypeLong->GetXaxis()->SetBinLabel(2,"MET-Like");
     hRecoilTypePerp = new TH1F(theName+ "_hRecoilTypePerp","Type",2,0,2);
-    hRecoilTypePerp->SetBinLabel(1,"Jet-Like");
-    hRecoilTypePerp->SetBinLabel(2,"MET-Like");
+    hRecoilTypePerp->GetXaxis()->SetBinLabel(1,"Jet-Like");
+    hRecoilTypePerp->GetXaxis()->SetBinLabel(2,"MET-Like");
 
 
     hRedMET->Sumw2();
@@ -377,6 +390,13 @@ public:
     hSumJetCompPerp->Sumw2();
     hDileptonCompLong->Sumw2();
     hDileptonCompPerp->Sumw2();
+    hDileptSigmaPtCompLong->Sumw2();
+    hDileptSigmaPtCompPerp->Sumw2();
+    hDileptSigmaPtCompLongVsMET->Sumw2();
+    hDileptSigmaPtCompPerpVsMET->Sumw2();
+    hDileptonVsRecoilCompLong->Sumw2();
+    hDileptonVsRecoilCompPerp->Sumw2();
+
     hRecoilTypeLong->Sumw2();
     hRecoilTypePerp->Sumw2();
 
@@ -398,6 +418,13 @@ public:
     hRecoilTypeLong = 0;
     hRecoilTypePerp = 0;
 
+    hDileptSigmaPtCompLong = 0;
+    hDileptSigmaPtCompPerp = 0;
+    hDileptSigmaPtCompLongVsMET = 0;
+    hDileptSigmaPtCompPerpVsMET = 0;
+    hDileptonVsRecoilCompLong = 0;
+    hDileptonVsRecoilCompPerp = 0;
+
   }
 
 
@@ -416,6 +443,16 @@ public:
     hDileptonCompPerp = (TH1F *) file->Get(theName+"_hDileptonCompPerp");
     hRecoilTypeLong = (TH1F *) file->Get(theName+"_hRecoilTypeLong");
     hRecoilTypePerp = (TH1F *) file->Get(theName+"_hRecoilTypePerp");
+    hRecoilTypeLong->GetXaxis()->SetBinLabel(1,"Jet-Like");
+    hRecoilTypeLong->GetXaxis()->SetBinLabel(2,"MET-Like");
+    hRecoilTypePerp->GetXaxis()->SetBinLabel(1,"Jet-Like");
+    hRecoilTypePerp->GetXaxis()->SetBinLabel(2,"MET-Like");
+    hDileptSigmaPtCompLong = (TH1F *) file->Get(theName+"_hDileptSigmaPtCompLong");
+    hDileptSigmaPtCompPerp = (TH1F *) file->Get(theName+"_hDileptSigmaPtCompPerp");
+    hDileptSigmaPtCompLongVsMET = (TH2F *) file->Get(theName+"_hDileptSigmaPtCompLongVsMET");
+    hDileptSigmaPtCompPerpVsMET = (TH2F *) file->Get(theName+"_hDileptSigmaPtCompPerpVsMET");
+    hDileptonVsRecoilCompLong = (TH2F *) file->Get(theName+"_hDileptonVsRecoilCompLong");
+    hDileptonVsRecoilCompPerp = (TH2F *) file->Get(theName+"_hDileptonVsRecoilCompPerp");
 
   }
 
@@ -437,6 +474,13 @@ public:
     if(hDileptonCompPerp !=0) hDileptonCompPerp->Clone((ret->theName+"_hDileptonCompPerp").Data());
     if(hRecoilTypeLong !=0) hRecoilTypeLong->Clone((ret->theName+"_hRecoilTypeLong").Data());
     if(hRecoilTypePerp !=0) hRecoilTypePerp->Clone((ret->theName+"_hRecoilTypePerp").Data());
+
+    if(hDileptSigmaPtCompLong != 0) hDileptSigmaPtCompLong->Clone((ret->theName+"_hDileptSigmaPtCompLong").Data());
+    if(hDileptSigmaPtCompPerp != 0) hDileptSigmaPtCompPerp->Clone((ret->theName+"_hDileptSigmaPtCompPerp").Data());
+    if(hDileptSigmaPtCompLongVsMET != 0) hDileptSigmaPtCompLongVsMET->Clone((ret->theName+"_hDileptSigmaPtCompLongVsMET").Data());
+    if(hDileptSigmaPtCompPerpVsMET != 0) hDileptSigmaPtCompPerpVsMET->Clone((ret->theName+"_hDileptSigmaPtCompPerpVsMET").Data());
+    if(hDileptonVsRecoilCompLong != 0) hDileptonVsRecoilCompLong->Clone((ret->theName+"_hDileptonVsRecoilCompLong").Data());
+    if(hDileptonVsRecoilCompPerp != 0) hDileptonVsRecoilCompPerp->Clone((ret->theName+"_hDileptonVsRecoilCompPerp").Data());
     
     return ret;
   }
@@ -457,6 +501,12 @@ public:
     if(hDileptonCompPerp != 0) hDileptonCompPerp->Add(histSet->hDileptonCompPerp);
     if(hRecoilTypeLong != 0) hRecoilTypeLong->Add(histSet->hRecoilTypeLong);
     if(hRecoilTypePerp != 0) hRecoilTypePerp->Add(histSet->hRecoilTypePerp);
+    if(hDileptSigmaPtCompLong != 0) hDileptSigmaPtCompLong->Add(histSet->hDileptSigmaPtCompLong);
+    if(hDileptSigmaPtCompPerp != 0) hDileptSigmaPtCompPerp->Add(histSet->hDileptSigmaPtCompPerp);
+    if(hDileptSigmaPtCompLongVsMET != 0) hDileptSigmaPtCompLongVsMET->Add(histSet->hDileptSigmaPtCompLongVsMET);
+    if(hDileptSigmaPtCompPerpVsMET != 0) hDileptSigmaPtCompPerpVsMET->Add(histSet->hDileptSigmaPtCompPerpVsMET);
+    if(hDileptonVsRecoilCompLong != 0) hDileptonVsRecoilCompLong->Add(histSet->hDileptonVsRecoilCompLong);
+    if(hDileptonVsRecoilCompPerp != 0) hDileptonVsRecoilCompPerp->Add(histSet->hDileptonVsRecoilCompPerp);
 
   }
 
@@ -476,6 +526,12 @@ public:
     if(hDileptonCompPerp != 0) hDileptonCompPerp->Scale(scaleFact);
     if(hRecoilTypeLong != 0) hRecoilTypeLong->Scale(scaleFact);
     if(hRecoilTypePerp != 0) hRecoilTypePerp->Scale(scaleFact);
+    if(hDileptSigmaPtCompLong != 0) hDileptSigmaPtCompLong->Scale(scaleFact);
+    if(hDileptSigmaPtCompPerp != 0) hDileptSigmaPtCompPerp->Scale(scaleFact);
+    if(hDileptSigmaPtCompLongVsMET != 0) hDileptSigmaPtCompLongVsMET->Scale(scaleFact);
+    if(hDileptSigmaPtCompPerpVsMET != 0) hDileptSigmaPtCompPerpVsMET->Scale(scaleFact);
+    if(hDileptonVsRecoilCompLong != 0) hDileptonVsRecoilCompLong->Scale(scaleFact);
+    if(hDileptonVsRecoilCompPerp != 0) hDileptonVsRecoilCompPerp->Scale(scaleFact);
 
   }
 
@@ -494,16 +550,40 @@ public:
     if(hDileptonCompPerp != 0) hDileptonCompPerp->Write();
     if(hRecoilTypeLong != 0) hRecoilTypeLong->Write();
     if(hRecoilTypePerp != 0) hRecoilTypePerp->Write();
+    if(hDileptSigmaPtCompLong != 0) hDileptSigmaPtCompLong->Write();
+    if(hDileptSigmaPtCompPerp != 0) hDileptSigmaPtCompPerp->Write();
+    if(hDileptSigmaPtCompLongVsMET != 0) hDileptSigmaPtCompLongVsMET->Write();
+    if(hDileptSigmaPtCompPerpVsMET != 0) hDileptSigmaPtCompPerpVsMET->Write();
+    if(hDileptonVsRecoilCompLong != 0) hDileptonVsRecoilCompLong->Write();
+    if(hDileptonVsRecoilCompPerp != 0) hDileptonVsRecoilCompPerp->Write();
 
   }
+
+#ifndef ROOTANALYSIS
+  void Fill(const ReducedMETComputer* redMedComputer, double met, double weight) {
+    Fill(redMedComputer->reducedMET(),
+	 redMedComputer->reducedMETComponents().first, redMedComputer->reducedMETComponents().second, 
+	 redMedComputer->recoilProjComponents().first, redMedComputer->recoilProjComponents().second,
+	 redMedComputer->metProjComponents().first, redMedComputer->metProjComponents().second,
+	 redMedComputer->sumJetProjComponents().first, redMedComputer->sumJetProjComponents().second,
+	 redMedComputer->dileptonProjComponents().first, redMedComputer->dileptonProjComponents().second,
+	 redMedComputer->dileptonPtCorrComponents().first, redMedComputer->dileptonPtCorrComponents().second,
+	 redMedComputer->recoilType().first, redMedComputer->recoilType().second,
+	 met,
+	 weight);
+  }
   
+#endif
+
   void Fill(double redmet,
 	    double redmet_long, double redmet_perp,
 	    double recoil_long, double recoil_perp,
 	    double met_long, double met_perp,
 	    double sumjet_long, double sumjet_perp,
 	    double dilepton_long, double dilepton_perp,
+	    double dileptonSigma_long, double dileptonSigma_perp,
 	    double type_long, double type_perp,
+	    double met,
 	    double weight) {
     hRedMET->Fill(redmet, weight);
     hRedMETCompLong->Fill(redmet_long, weight);
@@ -518,6 +598,12 @@ public:
     hDileptonCompPerp->Fill(dilepton_perp, weight);
     hRecoilTypeLong->Fill(type_long, weight);
     hRecoilTypePerp->Fill(type_perp, weight);
+    hDileptSigmaPtCompLong->Fill(dileptonSigma_long, weight);
+    hDileptSigmaPtCompPerp->Fill(dileptonSigma_perp, weight);
+    hDileptSigmaPtCompLongVsMET->Fill(met, dileptonSigma_long, weight);
+    hDileptSigmaPtCompPerpVsMET->Fill(met, dileptonSigma_perp, weight);
+    hDileptonVsRecoilCompLong->Fill(recoil_long, dilepton_long, weight);
+    hDileptonVsRecoilCompPerp->Fill(recoil_perp, dilepton_perp, weight);
 
   }
 
@@ -538,6 +624,12 @@ public:
   TH1F *hSumJetCompPerp;
   TH1F *hDileptonCompLong;
   TH1F *hDileptonCompPerp;
+  TH1F *hDileptSigmaPtCompLong;
+  TH1F *hDileptSigmaPtCompPerp;
+  TH2F *hDileptSigmaPtCompLongVsMET;
+  TH2F *hDileptSigmaPtCompPerpVsMET;
+  TH2F *hDileptonVsRecoilCompLong;
+  TH2F *hDileptonVsRecoilCompPerp;
   TH1F *hRecoilTypeLong;
   TH1F *hRecoilTypePerp;
 
