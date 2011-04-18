@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2011/03/14 18:05:53 $
- *  $Revision: 1.1 $
+ *  $Date: 2011/04/07 15:21:48 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - NEU Boston & INFN Torino
  */
 
@@ -21,6 +21,7 @@
 #include "TPaveText.h"
 #include "TMath.h"
 #include "TROOT.h"
+#include "SampleGroup.h"
 
 #include <iostream>
 #include <iomanip>
@@ -40,49 +41,10 @@ HistoStack::HistoStack(const LumiNormalization* lumiNorm, const TString& finalSt
 									     theSelection(""),
 									     ntupleName("DiLeptNtuple"),
 									     weightBr(":weight") {
-  // Fill the color map
-//   colorMap["zz"] = 11;
-//   colorMap["zz_llll"] = 12;
-//   colorMap["zz_llvv"] = 11;
-//   colorMap["wz"] = 10;
-//   colorMap["ww"] = 9;
-//   colorMap["tt"] = 6;
-//   colorMap["ztt_130-250"] = 7;
-//   colorMap["ztt_60-130"] = 7;
-//   colorMap["ztt_15-60"] = 7;
-//   colorMap["z_130-250"] = 3;
-//   colorMap["z_60-130"] = 3;
-//   colorMap["z_15-60"] = 3;
-//   colorMap["wgamma_prod"] = 42;
-//   colorMap["wgamma_rad"] = 42;
-//   colorMap["wgamma"] = 42;
-//   colorMap["wjets"] = 46;
-//   colorMap["wjets_w0lp"] = 46;
-//   colorMap["wjets_w1lp"] = 46;
-//   colorMap["wjets_w2lp"] = 46;
-//   colorMap["wjets_w3lp"] = 46;
-//   colorMap["wjets_w4lp"] = 46;
-//   colorMap["wjets_w5lp"] = 46;
-//   colorMap["ww_wz"] = 11;
-//   colorMap["z_ll"] = -1;
-//   colorMap["signal"] = -1;
-//   colorMap["others"] = 1;
-//   colorMap["z_tt"] = 7;
-//   colorMap["wjets_gp"] = 46;
-//   colorMap["H400"] = 0;
-//   colorMap["QCD"] = 400;
-
-//   fillStyleMap["z_ll"] = 3004;
-//   fillStyleMap["others"] = 3005;
-//   fillStyleMap["signal"] = 0;
 
 //   // Fill the color map
 //   legLabel["zz_llll"] = "ZZ #rightarrow 4l";
 //   legLabel["zz_llvv"] = "ZZ #rightarrow 2l 2#nu";
-//   legLabel["wz"] = "WZ";
-//   legLabel["ww"] = "WW";
-//   legLabel["zz"] = "ZZ";
-//   legLabel["ZZ"] = "ZZ";
 
 //   legLabel["tt"] = "t#bar t";
 //   legLabel["ztt_130-250"] = "Z #rightarrow #tau #tau";
@@ -93,13 +55,6 @@ HistoStack::HistoStack(const LumiNormalization* lumiNorm, const TString& finalSt
 //   legLabel["z_15-60"] = "Z #rightarrow ll";
 //   legLabel["wgamma_prod"] = "W+#gamma";
 //   legLabel["wgamma_rad"] = "W+#gamma";
-//   legLabel["wgamma"] = "W+#gamma";
-//   legLabel["wjets"] = "W+jets";
-//   legLabel["wjets_w0lp"] = "W+jets";
-//   legLabel["wjets_w1lp"] = "W+jets";
-//   legLabel["wjets_w2lp"] = "W+jets";
-//   legLabel["wjets_w3lp"] = "W+jets";
-//   legLabel["wjets_w4lp"] = "W+jets";
 //   legLabel["wjets_w5lp"] = "W+jets";
 //   legLabel["data"] = "data";
 //   legLabel["z_ll"] = "Z/#gamma*";
@@ -133,11 +88,13 @@ HistoStack::HistoStack(const LumiNormalization* lumiNorm, const TString& finalSt
 
 void HistoStack::defineGroup(const TString& name, const TString& legendLabel,
 			     bool isData, bool isSignal,
-			     Color_t fcolor, Style_t fstyle) {
+			     Color_t fcolor, Style_t fstyle, bool superImpose) {
   colorMap[name] = fcolor;
   if(fstyle != 1001) fillStyleMap[name] = fstyle;
   legLabel[name] = legendLabel;
-  
+  dataMap[name] = isData;
+  signalMap[name] = isSignal;
+  superimpMap[name] = superImpose;
 }
 
 
@@ -192,8 +149,18 @@ Number HistoStack::add(const TString& sampleName, const TString& varName, TH1F* 
   }
 
 
+   // check if the sample is assigned to any group
+   TString groupName;
+   if(groupMap.find(sampleName) !=  groupMap.end()) {
+     groupName = groupMap[sampleName];
+   } else {
+     groupName = sampleName;
+   }
+
+
+
   // Add the MC histo to the histo sum used to display the stack error
-  if(!sampleName.Contains("data")) {
+   if(!dataMap[groupName] && !superimpMap[groupName]) {
      if(sumForErrMap.find(varName) == sumForErrMap.end()) {
        TString hSumName = varName+"_sum";
        TH1F *hSum = (TH1F *)histo->Clone(hSumName.Data());
@@ -203,29 +170,24 @@ Number HistoStack::add(const TString& sampleName, const TString& varName, TH1F* 
      }
    }
 
-   // check if the sample is assigned to any group
-   TString groupName;
-   if(groupMap.find(sampleName) !=  groupMap.end()) {
-     groupName = groupMap[sampleName];
-   } else {
-     groupName = sampleName;
-   }
    
   
   // Set the fill color for MC histos and marker style for data histos
-  if(groupName != "data") {
+   if(!dataMap[groupName]) { // this is MC
     int color = colorMap.find(groupName)->second;
-    if(color != -1) {
+    if(fillStyleMap.find(groupName) == fillStyleMap.end()) {
       histo->SetFillColor(color);
     } else {
       int fillStyle = fillStyleMap[groupName];
       if(fillStyle != -1) {
-	histo->SetFillColor(1);
+	histo->SetFillColor(color);
+	histo->SetLineColor(color);
+	histo->SetLineWidth(2);
 	histo->SetFillStyle(fillStyle);
       }
     }
     option = "hist";
-  } else {
+   } else { // this is data
     histo->SetMarkerStyle(theStyle->GetMarkerStyle());
     histo->SetMarkerSize(theStyle->GetMarkerSize());
     histo->SetLineWidth(2);
@@ -247,7 +209,7 @@ Number HistoStack::add(const TString& sampleName, const TString& varName, TH1F* 
 //   }
 
   // Store the data histo
-  if(groupName == "data") {
+  if(dataMap[groupName]) {
     dataHistMap[varName] = histo;
   }
 
@@ -448,7 +410,6 @@ THStack * HistoStack::draw(const TString& varName, const TString& option) {
   TH1F *hSumE = sumForErrMap.find(varName)->second;
   stack->SetMinimum(0.01);
   if(dataHistMap.find(varName) != dataHistMap.end()) {
-    cout << "D1" << endl;
     setStyle(dataHistMap.find(varName)->second);
     dataHistMap.find(varName)->second->SetMinimum(0.001);
 //     dataHistMap.find(varName)->second->Draw("E1");
@@ -484,6 +445,20 @@ THStack * HistoStack::draw(const TString& varName, const TString& option) {
     hSumE->SetFillColor(1);
     hSumE->Draw("same,E2");
     dataHistMap.find(varName)->second->Draw("same,E1");
+
+    // draw the histos to be superimposed
+    // Get the list of samples for this variable in the correct order
+    vector<TString> orderedSamples = theSamplesInOrderPerVar[varName];
+    // loop over the samples and add them to the stack
+    for(vector<TString>::const_iterator samp = orderedSamples.begin();
+	samp != orderedSamples.end(); ++samp) {
+      if(superimpMap[(*samp)]) {
+	histMapPerSample[*samp][varName]->Draw("same.hist");
+      }
+    }
+
+
+
 
     double axisXU, axisXL, axisYU, axisYL;
     TAxis *yAxis = stack->GetYaxis(); // Misterious need of root to set the axis range
@@ -540,12 +515,12 @@ THStack * HistoStack::draw(const TString& varName, const TString& option) {
     if(d0lumi) {
       TPaveText *pt_pre = new TPaveText(0.18,0.93,0.60, 0.96, "blNDC");
       if(!printChannel ) {
-	pt_pre->AddText("CMS 2.7 fb^{-1}");
+	pt_pre->AddText("CMS 36 pb^{-1}");
       } else {
 	if(theFinalState == "diem") {
-	  pt_pre->AddText("CMS 2.7 fb^{-1}:    e^{+}e^{-}");
+	  pt_pre->AddText("CMS 36 pb^{-1}:    e^{+}e^{-}");
 	} else if(theFinalState == "dimu") {
-	  pt_pre->AddText("CMS 2.7 fb^{-1}:    #mu^{+}#mu^{-}");
+	  pt_pre->AddText("CMS 36 pb^{-1}:    #mu^{+}#mu^{-}");
 	} else {
 	  cerr << "[HistoStack]***Error: final state not recognized for printing channel name: "
 	       << theFinalState << endl;
@@ -574,12 +549,12 @@ THStack * HistoStack::draw(const TString& varName, const TString& option) {
 //     t1->Draw("SAME");
       TPaveText *pt_pre = new TPaveText(0.15,0.957,0.58, 0.997, "blNDC");
       if(!printChannel ) {
-	pt_pre->AddText("CMS Preliminary 2.7 fb^{-1}");
+	pt_pre->AddText("CMS Preliminary 36 pb^{-1}");
       } else {
 	if(theFinalState == "diem") {
-	  pt_pre->AddText("CMS Preliminary 2.7 fb^{-1}:    e^{+}e^{-}");
+	  pt_pre->AddText("CMS Preliminary 36 pb^{-1}:    e^{+}e^{-}");
 	} else if(theFinalState == "dimu") {
-	  pt_pre->AddText("CMS Preliminary 2.7 fb^{-1}:    #mu^{+}#mu^{-}");
+	  pt_pre->AddText("CMS Preliminary 36 pb^{-1}:    #mu^{+}#mu^{-}");
 	} else {
 	  cerr << "[HistoStack]***Error: final state not recognized for printing channel name: "
 	       << theFinalState << endl;
@@ -742,15 +717,17 @@ THStack * HistoStack::createStack(const TString& varName) {
     // loop over the samples and add them to the stack
     for(vector<TString>::const_iterator samp = orderedSamples.begin();
 	samp != orderedSamples.end(); ++samp) {
-      if((*samp).Contains("data")) continue;
+      if(dataMap[*samp] || superimpMap[*samp]) continue;
+      //if((*samp).Contains("data")) continue;
+      
       hs->Add(histMapPerSample[*samp][varName],option.Data());
       if(varName == "alat_corr_reduced_t") {
 	TH1F *histo = histMapPerSample[*samp][varName];
 	double maxBB = 14;
 	if(theFinalState == "dimu") maxBB = 13;
 	
-	double integral = (histo->GetBinWidth(maxBB)/2.)*histo->GetBinContent(maxBB) + (histo->GetBinWidth(maxBB-1)/2.)*histo->GetBinContent(maxBB-1) + (histo->GetBinWidth(maxBB-2)/2.)*histo->GetBinContent(maxBB-2) + histo->GetBinContent(maxBB+1);
-	cout << "DBG: " <<  *samp << " integ: " << integral << endl;
+// 	double integral = (histo->GetBinWidth(maxBB)/2.)*histo->GetBinContent(maxBB) + (histo->GetBinWidth(maxBB-1)/2.)*histo->GetBinContent(maxBB-1) + (histo->GetBinWidth(maxBB-2)/2.)*histo->GetBinContent(maxBB-2) + histo->GetBinContent(maxBB+1);
+	//cout << "DBG: " <<  *samp << " integ: " << integral << endl;
 	
       }
 
@@ -840,3 +817,18 @@ void HistoStack::setLabel(const TString& varName, const TString& label) {
 void HistoStack::setFillColor(const TString& sampleName, int color) {
   colorMap[sampleName] = color;
 }
+
+
+void HistoStack::addGroup(const SampleGroup& group) {
+  defineGroup(group.name(), group.legendLabel(),
+	      group.isData(), group.isSignal(),
+	      group.color(), group.fillStyle(), group.superImpose());
+  
+  vector<TString> samples = group.samples();
+  for(vector<TString>::const_iterator sample = samples.begin();
+      sample != samples.end();
+      ++sample) {
+    assignToGroup(*sample, group.name());
+  }
+}
+

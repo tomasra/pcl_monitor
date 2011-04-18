@@ -24,6 +24,7 @@
 // #pragma link C++ class RndmGenerator;
 // #pragma link C++ class TreeSum;
 // #pragma link C++ class Utils;
+#pragma link C++ class SampleGroup;
 #pragma link C++ class XSecReader;
 // #pragma link C++ class LikelihoodDisc;
 // #pragma link C++ class SignifTableWriter;

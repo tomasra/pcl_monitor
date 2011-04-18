@@ -4,8 +4,8 @@
 /** \class HistoStack
  *  Code to create histogram stacks.
  *
- *  $Date: 2011/03/14 18:05:53 $
- *  $Revision: 1.1 $
+ *  $Date: 2011/04/07 15:21:48 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - NEU Boston & INFN Torino
  */
 
@@ -26,6 +26,7 @@ class TLegend;
 class TH1F;
 class TH1;
 class TStyle;
+class SampleGroup;
 
 class HistoStack {
 public:
@@ -36,9 +37,16 @@ public:
   /// Destructor
   virtual ~HistoStack();
 
+
+  void addGroup(const SampleGroup& group);
+
+
+  /// Define a group setting the style of the fill and the legend label
+  // if the group is different from the sample name samples need to be assigned 
+  // explicitly to the group via the assignToGroup method
   void defineGroup(const TString& name, const TString& legendLabel,
 		   bool isData, bool isSignal,
-		   Color_t fcolor, Style_t fstyle = 1001);
+		   Color_t fcolor, Style_t fstyle = 1001, bool superImpose = false);
 
 
   // Operations
@@ -162,6 +170,9 @@ private:
 
   std::map<TString, TString> labelMap;
 
+  std::map<TString, bool> dataMap;
+  std::map<TString, bool> signalMap;
+  std::map<TString, bool> superimpMap;
 
 
   TString theSelection;

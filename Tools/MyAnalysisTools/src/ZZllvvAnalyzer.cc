@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2011/03/14 18:05:18 $
- *  $Revision: 1.3 $
+ *  $Date: 2011/04/07 15:21:48 $
+ *  $Revision: 1.4 $
  *  \author G. Cerminara - CERN
  */
 #include "DataFormats/PatCandidates/interface/Muon.h"
@@ -57,13 +57,40 @@ HistoLept *hMuonSubLead_cut1;
 HistoKin *hDiLeptKin_cut1;
 HistoKin *hJetKin_cut1;
 HistoKin *hMETKin_cut1;
+HistoKin *hMETKin_J0_cut1;
+HistoKin *hMETKin_J1_cut1;
 
 
 HistoRedMET *hRedMetStd_cut1;
+HistoRedMET *hRedMetStd_J0_cut1;
+HistoRedMET *hRedMetStd_J1_cut1;
+                        
+HistoRedMET *hRedMetTuneA_cut1;
+HistoRedMET *hRedMetTuneA_J0_cut1;
+HistoRedMET *hRedMetTuneA_J1_cut1;
+                        
+HistoRedMET *hRedMetTuneB_cut1;
+HistoRedMET *hRedMetTuneB_J0_cut1;
+HistoRedMET *hRedMetTuneB_J1_cut1;
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 TH1F *hNVertexAll;
 
 ReducedMETComputer *redMETComputer_std;
+ReducedMETComputer *redMETComputer_tuneA;
+ReducedMETComputer *redMETComputer_tuneB;
 
 ZZllvvAnalyzer::ZZllvvAnalyzer(const ParameterSet& pSet) : totNEvents(0),
 							   weight(1) {
@@ -75,8 +102,11 @@ ZZllvvAnalyzer::ZZllvvAnalyzer(const ParameterSet& pSet) : totNEvents(0),
   nEventPreSkim = 0;
   nEventBaseFilter = 0;
   nEventSkim = 0;
-  redMETComputer_std = new ReducedMETComputer();
-  vertexSelection =  pSet.getUntrackedParameter<ParameterSet>("Vertices");
+  redMETComputer_std   = new ReducedMETComputer();
+  redMETComputer_tuneA = new ReducedMETComputer(1., 1. );
+  redMETComputer_tuneB = new ReducedMETComputer(1., 1., 0., 0.);
+
+  vertexSelection =  pSet.getParameter<ParameterSet>("Vertices");
 }
 
 ZZllvvAnalyzer::~ZZllvvAnalyzer(){
@@ -112,13 +142,30 @@ void ZZllvvAnalyzer::beginJob() {
   hMuonLead_cut1    = new HistoLept("MuonLead_cut1");
   hMuonSubLead_cut1 = new HistoLept("MuonSubLead_cut1");
   hDiLeptKin_cut1   = new HistoKin("DiLeptKin_cut1");
+
   hRedMetStd_cut0 = new HistoRedMET("RedMetStd_cut0");
+
+  // original NEU kFactors
   hRedMetStd_cut1 = new HistoRedMET("RedMetStd_cut1");
+  hRedMetStd_J0_cut1 = new HistoRedMET("RedMetStd_J0__cut1");
+  hRedMetStd_J1_cut1 = new HistoRedMET("RedMetStd_J1_cut1");
+
+  hRedMetTuneA_cut1 = new HistoRedMET("RedMetTuneA_cut1");
+  hRedMetTuneA_J0_cut1 = new HistoRedMET("RedMetTuneA_J0_cut1");
+  hRedMetTuneA_J1_cut1 = new HistoRedMET("RedMetTuneA_J1_cut1");
+
+  hRedMetTuneB_cut1 = new HistoRedMET("RedMetTuneB_cut1");
+  hRedMetTuneB_J0_cut1 = new HistoRedMET("RedMetTuneB_J0_cut1");
+  hRedMetTuneB_J1_cut1 = new HistoRedMET("RedMetTuneB_J1_cut1");
+
+
 
   hJetKin_cut0 = new HistoKin("JetKin_cut0");
   hMETKin_cut0 = new HistoKin("METKin_cut0");
   hJetKin_cut1 = new HistoKin("JetKin_cut1");
   hMETKin_cut1 = new HistoKin("METKin_cut1");
+  hMETKin_J0_cut1 = new HistoKin("METKin_J0_cut1");
+  hMETKin_J1_cut1 = new HistoKin("METKin_J1_cut1");
 
 
 }
@@ -174,7 +221,7 @@ void ZZllvvAnalyzer::analyze(const Event& event, const EventSetup& eSetup) {
   
 
   if(hyps->size()==0) return;
-  hEventCounter->Fill(5);
+  hEventCounter->Fill(4);
   
   const pat::EventHypothesis &h = (*hyps)[0];
 
@@ -209,7 +256,7 @@ void ZZllvvAnalyzer::analyze(const Event& event, const EventSetup& eSetup) {
   // =====================================================================
   // cut0: ask for the dilepton to exist
   
-  hEventCounter->Fill(6);
+  hEventCounter->Fill(5);
 
   CandidatePtr lep1 = h["leg1"];
   CandidatePtr lep2 = h["leg2"];
@@ -235,39 +282,55 @@ void ZZllvvAnalyzer::analyze(const Event& event, const EventSetup& eSetup) {
 
   
 
-
+  // compute the red met
   redMETComputer_std->compute(muonLead->p4(), muonLead->track()->ptError(),
 			      muonSubLead->p4(), muonSubLead->track()->ptError(),
 			      jetMomenta,
 			      met->p4());
-  
-  hRedMetStd_cut0->Fill(redMETComputer_std->reducedMET(),
-			redMETComputer_std->reducedMETComponents().first, redMETComputer_std->reducedMETComponents().second, 
-			redMETComputer_std->recoilProjComponents().first, redMETComputer_std->recoilProjComponents().second,
-			redMETComputer_std->metProjComponents().first, redMETComputer_std->metProjComponents().second,
-			redMETComputer_std->sumJetProjComponents().first, redMETComputer_std->sumJetProjComponents().second,
-			redMETComputer_std->dileptonProjComponents().first, redMETComputer_std->dileptonProjComponents().second,
-			redMETComputer_std->recoilType().first, redMETComputer_std->recoilType().second,
-			weight);
+  redMETComputer_tuneA->compute(muonLead->p4(), muonLead->track()->ptError(),
+				muonSubLead->p4(), muonSubLead->track()->ptError(),
+				jetMomenta,
+				met->p4());
+  redMETComputer_tuneB->compute(muonLead->p4(), muonLead->track()->ptError(),
+				muonSubLead->p4(), muonSubLead->track()->ptError(),
+				jetMomenta,
+				met->p4());
+
+  hRedMetStd_cut0->Fill(redMETComputer_std, met->pt(), weight);
 			
   if(fabs(diLeptonMom.mass()-91.)>15.) return;
   
   // =====================================================================
   // cut1: apply mass window on the Z mass
-  hEventCounter->Fill(7);
+  hEventCounter->Fill(6);
   
   hMuonLead_cut1->Fill(muonLead, vtx, weight);
   hMuonSubLead_cut1->Fill(muonSubLead, vtx, weight);
   hDiLeptKin_cut1->Fill(diLeptonMom.pt(), diLeptonMom.eta(), diLeptonMom.phi(), diLeptonMom.mass(), weight);
-  hRedMetStd_cut1->Fill(redMETComputer_std->reducedMET(),
-			redMETComputer_std->reducedMETComponents().first, redMETComputer_std->reducedMETComponents().second, 
-			redMETComputer_std->recoilProjComponents().first, redMETComputer_std->recoilProjComponents().second,
-			redMETComputer_std->metProjComponents().first, redMETComputer_std->metProjComponents().second,
-			redMETComputer_std->sumJetProjComponents().first, redMETComputer_std->sumJetProjComponents().second,
-			redMETComputer_std->dileptonProjComponents().first, redMETComputer_std->dileptonProjComponents().second,
-			redMETComputer_std->recoilType().first, redMETComputer_std->recoilType().second,
-			weight);
-  hMETKin_cut1->Fill(met->pt(), met->eta(), met->phi(), met->mass(), weight);
+  hRedMetStd_cut1->Fill(redMETComputer_std, met->pt(), weight);
+  hMETKin_cut1->Fill(met->pt(), met->eta(), met->phi(), met->mass(), weight);  
+
+//   HistoRedMET * hRedMetStd = 0;
+//   HistoRedMET * hRedMetTuneA = 0;
+//   HistoRedMET * hRedMetTuneB = 0;
+  
+  if(jetMomenta.size() == 0) { // 0 jet bin
+    hEventCounter->Fill(7);
+    hRedMetStd_J0_cut1->Fill(redMETComputer_std, met->pt(), weight);
+    hRedMetTuneA_J0_cut1->Fill(redMETComputer_tuneA, met->pt(), weight);
+    hRedMetTuneB_J0_cut1->Fill(redMETComputer_tuneB, met->pt(), weight);
+    hMETKin_J0_cut1->Fill(met->pt(), met->eta(), met->phi(), met->mass(), weight);  
+
+  } else if(jetMomenta.size() == 1) { // 1 jet bin
+    hEventCounter->Fill(8);
+    hRedMetStd_J1_cut1->Fill(redMETComputer_std, met->pt(), weight);
+    hRedMetTuneA_J1_cut1->Fill(redMETComputer_tuneA, met->pt(), weight);
+    hRedMetTuneB_J1_cut1->Fill(redMETComputer_tuneB, met->pt(), weight);
+    hMETKin_J1_cut1->Fill(met->pt(), met->eta(), met->phi(), met->mass(), weight);  
+  }
+
+
+
 
   for (pat::eventhypothesis::Looper<pat::Jet> jet = h.loopAs<pat::Jet>("jet"); jet; ++jet) {
     if(debug) cout << "\t jet: " << jet->pt() << ";" << jet->eta() << ";" << jet->phi() << std::endl;
@@ -320,6 +383,7 @@ void ZZllvvAnalyzer::analyze(const Event& event, const EventSetup& eSetup) {
 
 }
 
+
 void ZZllvvAnalyzer::endJob() {
   cout << "Tot. # of events pre skim: " << nEventPreSkim << endl;
   cout << "Tot. # of events after base filters: " << nEventBaseFilter << endl;
@@ -342,11 +406,27 @@ void ZZllvvAnalyzer::endJob() {
   hMuonSubLead_cut1->Write();
   hDiLeptKin_cut1->Write();
   hRedMetStd_cut0->Write();
+
   hRedMetStd_cut1->Write();
+  hRedMetStd_J0_cut1->Write();
+  hRedMetStd_J1_cut1->Write();
+
+  hRedMetTuneA_cut1->Write();
+  hRedMetTuneA_J0_cut1->Write();
+  hRedMetTuneA_J1_cut1->Write();
+
+  hRedMetTuneB_cut1->Write();
+  hRedMetTuneB_J0_cut1->Write();
+  hRedMetTuneB_J1_cut1->Write();
+
+
   hJetKin_cut0->Write();
   hMETKin_cut0->Write();
   hJetKin_cut1->Write();
   hMETKin_cut1->Write();
+  hMETKin_J0_cut1->Write();
+  hMETKin_J1_cut1->Write();
+
 
   theFile->Close();
 }

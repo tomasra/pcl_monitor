@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2008/03/13 17:42:59 $
- *  $Revision: 1.3 $
+ *  $Date: 2011/03/14 18:05:53 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - NEU Boston & INFN Torino
  */
 
@@ -15,6 +15,7 @@
 #include "TFile.h"
 #include "TSystem.h"
 #include "XSecReader.h"
+#include "SampleGroup.h"
 
 using namespace std;
 
@@ -112,8 +113,7 @@ double LumiNormalization::getNormalizationFactor() const {
 
 
 double LumiNormalization::getScaleFactor(const TString& sampleName) const {
-  if(sampleName.Contains("data"))
-    return 1.;
+  if(dataSamples.find(sampleName) != dataSamples.end()) return 1.;
   double zPeakNorm = getNormalizationFactor();
 //   zPeakNorm = 1;
 //   cout << "[LumiNormalization]***WARNING: overall normaliz. factor set to 1!!!" << endl; // FIXME
@@ -150,3 +150,13 @@ void  LumiNormalization::addMC(const vector<TString>& sampleNames) {
 double LumiNormalization::getLuminosity() const {
   return xsecRead->getLuminosity(theEpoch, theFinalState, isDqApplied);
 }
+
+
+void LumiNormalization::addDataGroup(const SampleGroup& group) {
+  vector<TString> samples = group.samples();
+  for(vector<TString>::const_iterator sample = samples.begin();
+      sample != samples.end(); ++sample) {
+    dataSamples.insert(*sample);
+  }
+}
+

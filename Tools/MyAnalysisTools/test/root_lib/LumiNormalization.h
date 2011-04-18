@@ -8,16 +8,18 @@
  *  The samples used in this luminosity normalization must be added explicitly throught the add method.
  *  Look to the XSection.txt and Luminosity.txt files for naming conventions.
  *
- *  $Date: 2008/03/13 17:41:58 $
- *  $Revision: 1.3 $
+ *  $Date: 2011/03/14 18:05:53 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - NEU Boston & INFN Torino
  */
 
 #include "TString.h"
 #include "Number.h"
 #include <vector>
+#include <set>
 
 class XSecReader;
+class SampleGroup;
 
 class LumiNormalization {
 public:
@@ -91,6 +93,7 @@ public:
   
   double getLuminosity() const;
   
+  void addDataGroup(const SampleGroup& group);
 
 protected:
 
@@ -107,6 +110,8 @@ private:
   bool normalizeToZ;
 
   XSecReader *xsecRead;
+  
+  std::set<TString> dataSamples;
 
 };
 #endif
