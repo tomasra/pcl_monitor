@@ -79,9 +79,9 @@ if __name__     ==  "__main__":
     gtsByRelease = dict()
 
     if  'all' in options.scenario:
-        options.scenario = ['DESIGN','MC','START','GR_R']
+        options.scenario = ['DESIGN','MC','START','GR_R','START_HI']
     elif 'mc' in options.scenario:
-        options.scenario = ['DESIGN','MC','START']
+        options.scenario = ['DESIGN','MC','START','START_HI']
         
     cvsstatus = []
     gtchanges = []
