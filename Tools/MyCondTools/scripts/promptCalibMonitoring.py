@@ -5,7 +5,9 @@ sys.setdlopenflags(DLFCN.RTLD_GLOBAL+DLFCN.RTLD_LAZY)
 
 from Tools.MyCondTools.gt_tools import *
 from Tools.MyCondTools.color_tools import *
-from Tools.MyCondTools.Tier0LastRun import *
+#from Tools.MyCondTools.Tier0LastRun import *
+from Tools.MyCondTools.RunValues import *
+
 import shutil
 
 from pluginCondDBPyInterface import *
@@ -342,14 +344,15 @@ if __name__ == "__main__":
     
     # --------------------------------------------------------------------------------
     # last run for which prompt reco was released
-    jsonData = urllib.urlopen(tier0DasSrc).read().replace("'", "\"")
+    #jsonData = urllib.urlopen(tier0DasSrc).read().replace("'", "\"")
     #src = "tier0.js"
     #jsonData = open(src, 'r').read().replace("'", "\"")
-    data = json.loads(jsonData)
-    wrapper = Tier0LastRun(data)
+    #data = json.loads(jsonData)
+    #wrapper = Tier0LastRun(data)
 
-    lastPromptRecoRun = wrapper.performTest(wrapper) - 1
-    
+    #lastPromptRecoRun = wrapper.performTest(wrapper) - 1
+    rv = RunValues()
+    lastPromptRecoRun = rv.getLargestReleasedForPrompt("https://cmsweb.cern.ch/tier0/runs")
     
 
     # --------------------------------------------------------------------------------
@@ -547,19 +550,33 @@ if __name__ == "__main__":
 
 
     # -----------------------------------------------------------------
-    # ---- cache the results
-    table =[]
-    table.append(["# run", "start-time", "end-time", "PCL Run", "payload","upload","Tier0 OOO", "latency from start", "latency from end"])
+    # ---- cache the results for runs older than 48h
+    last2days = datetime.timedelta(days=2)
+    tableForCache =[]
+    tableForCache.append(["# run", "start-time", "end-time", "PCL Run", "payload","upload","Tier0 OOO", "latency from start", "latency from end"])
+
+    tableForLog =[]
+    tableForLog.append(["# run", "start-time", "end-time", "PCL Run", "payload","upload","Tier0 OOO", "latency from start", "latency from end"])
+
     print str(len(runReports))
     for rep in runReports:
-        #print rep.getList()
-        table.append(rep.getList())
-    
+
+        twdaysago = datetime.datetime.today() - last2days
+        if rep.startTime() < twdaysago:
+            #print "start: " + str(rep.startTime()) + " older than " + str(twdaysago)
+            tableForCache.append(rep.getList())            
+        tableForLog.append(rep.getList()) 
+
+        
     #out = sys.stdout
     cacheFile = file("cache.txt","w")
-    pprint_table(cacheFile, table)
+    pprint_table(cacheFile, tableForCache)
     cacheFile.close()
 
+    #out = sys.stdout
+    logFile = file(webArea + "log.txt","w")
+    pprint_table(logFile, tableForLog)
+    logFile.close()
 
 
 
@@ -782,7 +799,7 @@ if __name__ == "__main__":
     if not writeToWeb:
         raw_input ("Enter to quit")
     else:
-        shutil.copy("cache.txt", webArea + "log.txt")
+        #shutil.copy("log.txt", webArea + "log.txt")
         updateFile = file(webArea + "lastupdate.txt","w")
         updateFile.write(str(datetime.datetime.today()))
         updateFile.close()
