@@ -8,6 +8,11 @@ from optparse import OptionParser, Option, OptionValueError
 from operator import itemgetter
 #import datetime
 from datetime import datetime
+try:
+    from CondCore.Utilities.timeUnitHelper import *
+except ImportError:
+    print "CondCore.Utilities.timeUnitHelper not found"
+
 
 # tools for color printout
 from color_tools import *
@@ -158,6 +163,9 @@ class GTEntry:
         # Update type: -1 unknown, 0 manual, 1 O2O
         self._updateType = -1
         return
+
+    def account(self):
+        return self._account
 
     def setUpdateType(self, typeCode):
         if typeCode == "o2o":
@@ -362,7 +370,13 @@ class IOVEntry:
         elif self._timeType == "lumiid":
             return str(self.sinceRL()[0]) + ":" + str(self.sinceRL()[1]) + '\t' + str(self.tillRL()[0]) + ":" + str(self.tillRL()[1]) + '\t' + self._payloadToken
         elif self._timeType == "timestamp":
-            return str(self._since) + '\t' + str(self._till) + '\t' + self._payloadToken
+            #print timeStamptoUTC(self._since)
+            #print timeStamptoDate(self._since)
+            if self._till != 18446744073709551615:
+                till = timeStamptoDate(self._till)
+            else:
+                till = 'inf'
+            return str(timeStamptoDate(self._since)) + '\t' + str(till) + '\t' + self._payloadToken
             
     def since(self):
         return self._since
