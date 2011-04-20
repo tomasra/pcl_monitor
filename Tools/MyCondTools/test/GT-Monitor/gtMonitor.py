@@ -9,6 +9,7 @@ from ConfigParser import ConfigParser
 from datetime import datetime
 import shutil
 
+#from gt_tools import GTEntryCollection
 from gt_tools import *
 from popcon_monitoring_last_updates import *
 
@@ -164,30 +165,30 @@ if __name__     ==  "__main__":
         p.write(lines)
     
 
-        p.write('\n')
-        p.write('\n')
-        p.write('\n')
-        p.write('\n')
-        p.write('\n')
-        p.write('------------------------------------------------------------------\n')
-        p.write('--- List of updates follow:\n\n\n')
-        for idx in range(0, len(gtList)):
-            gt = gtList[idx]
-            p.write('--------------------------------------------\n')
-            p.write('Updates for GT: ' + gt + '\n\n')
-            listofchanges = totalListOfChanges[idx]
-            for line in listofchanges:
-                p.write(line +'\n')
-            listofchangesO2O = totalListOfChangesO2O[idx]
-            if len(listofchangesO2O):
-                p.write('O2O:\n')
-            for line in listofchangesO2O:
-                p.write(line +'\n')
-        
-            p.write('\n\n')
+    p.write('\n')
+    p.write('\n')
+    p.write('\n')
+    p.write('\n')
+    p.write('\n')
+    p.write('------------------------------------------------------------------\n')
+    p.write('--- List of updates follow:\n\n\n')
+    for idx in range(0, len(gtList)):
+        gt = gtList[idx]
+        p.write('--------------------------------------------\n')
+        p.write('Updates for GT: ' + gt + '\n\n')
+        listofchanges = totalListOfChanges[idx]
+        for line in listofchanges:
+            p.write(line +'\n')
+        listofchangesO2O = totalListOfChangesO2O[idx]
+        if len(listofchangesO2O):
+            p.write('O2O:\n')
+        for line in listofchangesO2O:
+            p.write(line +'\n')
+
+        p.write('\n\n')
 
 
 
-        sts = p.close()
-        if sts != 0:
-            print "Sendmail exit status", sts
+    sts = p.close()
+    if sts != 0:
+        print "Sendmail exit status", sts
