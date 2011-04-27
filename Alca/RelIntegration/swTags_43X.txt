@@ -1,0 +1,7 @@
+Calibration/HcalCalibAlgos V00-13-11
+CondFormats/L1TObjects	   V01-31-02
+DataFormats/L1GlobalTrigger		V11-09-10
+EventFilter/L1GlobalTriggerRawToDigi	V03-06-07
+L1Trigger/GlobalTriggerAnalyzer		V01-08-02
+L1TriggerConfig/L1GtConfigProducers	V03-00-05
+
