@@ -1,2 +1,6 @@
-Calibration/HcalCalibAlgos V00-13-12
+Calibration/HcalAlCaRecoProducers 	V00-05-02
+V02-03-00      CalibTracker/Configuration                       
+V03-01-00      CalibTracker/Records                             
+V03-09-01      CalibTracker/SiStripESProducers  
+
 
