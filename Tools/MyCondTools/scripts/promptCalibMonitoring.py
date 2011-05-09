@@ -97,7 +97,9 @@ def getRunList(minRun):
     server = xmlrpclib.ServerProxy(FULLADDRESS)
     # you can use this for single run query
 #    sel_runtable="{runNumber} = "+run+" and {datasetName} LIKE '%Express%'"
-    sel_runtable="{groupName} ='Collisions11' and {runNumber} >= " + str(minRun) + " and {datasetName} LIKE '%Express%'"
+    #sel_runtable="{groupName} ='Collisions11' and {runNumber} >= " + str(minRun) + " and {datasetName} LIKE '%Express%'"
+    sel_runtable="{groupName} ='Collisions11' and {runNumber} >= " + str(minRun) + " and {datasetName} LIKE '%Online%'"
+
     #sel_runtable="{groupName} ='Commissioning11' and {runNumber} >= " + str(minRun)# + " and {datasetName} LIKE '%Express%'"
 
     run_data = server.DataExporter.export('RUN', 'GLOBAL', 'csv_runs', sel_runtable)
@@ -675,7 +677,7 @@ if __name__ == "__main__":
     hNoPCLEnd = TH1F("hNoPCLEnd","success",nToFill,0,nToFill)
     hNoPCLEnd.SetFillColor(422)
     hNoPCLEnd.SetLineColor(422)
-    newlegend.AddEntry(hNoPCLEnd, "No sqlite","F")
+    newlegend.AddEntry(hNoPCLEnd, "PCL not run","F")
 
 
     hNoPCLBegin = TH1F("hNoPCLBegin","success",nToFill,0,nToFill)
