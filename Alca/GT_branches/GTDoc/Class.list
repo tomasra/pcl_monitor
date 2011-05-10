@@ -1,6 +1,8 @@
 [Class]
 
 GenerateDocFor: 42X_GR_R,42X_MC,2011_GR_P,2011_GR_E,2011_GR_H,43X_GR_R,43X_MC
+LastByRelease: 42X
+
 
 
 [43X_GR_R]
@@ -25,13 +27,22 @@ GTList: DESIGN42_V0,START42_V0,MC_42_V0,DESIGN42_V1,START42_V1,MC_42_V1,DESIGN42
 
 [2011_GR_P]
 
-GTList: GR_P_V13,GR_P_V14,GR_P_V16,GR_P_V17
+GTList: GR_P_V13,GR_P_V14,GR_P_V16,GR_P_V17,GR_P_V18,GR_P_V19
 
 
 [2011_GR_E]
 
-GTList: GR_E_V13,GR_E_V14,GR_E_V16
+GTList: GR_E_V13,GR_E_V14,GR_E_V16,GR_E_V17,GR_E_V18
 
 [2011_GR_H]
 
 GTList: GR_H_V13,GR_H_V14,GR_H_V15,GR_H_V16,GR_H_V17,GR_H_V18
+
+
+[42X]
+label = 42X
+comment = Modified object for CSC timing.
+mcCategory = 42X_MC
+grCategory = 42X_GR_R
+pFirstGT = GR_P_V18
+mcAnchor = MC42X
