@@ -1,7 +1,7 @@
 [Class]
 
 GenerateDocFor: 42X_GR_R,42X_MC,2011_GR_P,2011_GR_E,2011_GR_H,43X_GR_R,43X_MC
-LastByRelease: 42X
+LastByRelease: 42X,43X
 
 
 
@@ -46,3 +46,11 @@ mcCategory = 42X_MC
 grCategory = 42X_GR_R
 pFirstGT = GR_P_V18
 mcAnchor = MC42X
+
+[43X]
+label = 43X
+comment = Test
+mcCategory = 43X_MC
+grCategory = 43X_GR_R
+pFirstGT = None
+mcAnchor = MC43X
