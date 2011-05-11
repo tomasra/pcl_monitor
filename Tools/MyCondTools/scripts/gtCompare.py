@@ -18,12 +18,13 @@ from Tools.MyCondTools.gt_tools import *
 from Tools.MyCondTools.odict import *
 
 def dump2XML(pfn, tag, passwd, begin):
-    command = "cd /tmp/cerminar ; cmscond_2XML -c " + pfn + " -t " + tag + " -b " + str(begin) + " -P " + passwd 
+    scratch = os.environ["SCRATCH"]
+    command = "cd " + scratch + " ; cmscond_2XML -c " + pfn + " -t " + tag + " -b " + str(begin) + " -P " + passwd 
 
     outandstat = commands.getstatusoutput(command)
     if outandstat[0] != 0:
         print outandstat[1]
-    return "/tmp/cerminar/" + tag + ".xml"
+    return scratch + " " + tag + ".xml"
 
 def diffXML(filename1, filename2):
     command = "diff " + filename1 + " " + filename2
@@ -262,7 +263,7 @@ if __name__     ==  "__main__":
         
         entry2 = secondCollection.getByRcdID(entry1.rcdID())
 
-        runnumber = 155000
+        runnumber = 300000
 
         if entry1.tagName() != entry2.tagName():
 
@@ -288,7 +289,7 @@ if __name__     ==  "__main__":
 
                     # 2 - Dump the last IOV in xml and compare
                     else:                     
-                        if entry1.rcdID()[0] != "SiPixelGainCalibrationOfflineRcd":
+                        if entry1.rcdID()[0] != "SiPixelGainCalibrationOfflineRcd" and entry1.rcdID()[0] != "DQMReferenceHistogramRootFileRcd":
                             difffile1 = dump2XML(entry1.getOraclePfn(False), entry1.tagName(), passwdfile, lastiov1.since() + 1)
                             difffile2 = dump2XML(entry2.getOraclePfn(False), entry2.tagName(), passwdfile, lastiov2.since() + 1)
 
