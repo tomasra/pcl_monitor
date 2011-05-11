@@ -2,3 +2,4 @@
 V00-02-00      RecoLocalTracker/Records                         
 V05-03-00      RecoLocalTracker/SiStripRecHitConverter  
 V02-08-04 RecoPixelVertexing/PixelLowPtUtilities 
+CalibTracker/SiStripESProducers V03-09-02
