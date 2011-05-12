@@ -19,12 +19,13 @@ from Tools.MyCondTools.odict import *
 
 def dump2XML(pfn, tag, passwd, begin):
     scratch = os.environ["SCRATCH"]
+    print scratch 
     command = "cd " + scratch + " ; cmscond_2XML -c " + pfn + " -t " + tag + " -b " + str(begin) + " -P " + passwd 
 
     outandstat = commands.getstatusoutput(command)
     if outandstat[0] != 0:
         print outandstat[1]
-    return scratch + " " + tag + ".xml"
+    return scratch + "/" + tag + ".xml"
 
 def diffXML(filename1, filename2):
     command = "diff " + filename1 + " " + filename2
