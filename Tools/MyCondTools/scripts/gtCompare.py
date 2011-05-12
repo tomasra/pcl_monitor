@@ -19,7 +19,6 @@ from Tools.MyCondTools.odict import *
 
 def dump2XML(pfn, tag, passwd, begin):
     scratch = os.environ["SCRATCH"]
-    print scratch 
     command = "cd " + scratch + " ; cmscond_2XML -c " + pfn + " -t " + tag + " -b " + str(begin) + " -P " + passwd 
 
     outandstat = commands.getstatusoutput(command)
