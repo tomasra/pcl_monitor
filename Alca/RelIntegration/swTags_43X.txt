@@ -3,4 +3,4 @@
 #V05-03-00      RecoLocalTracker/SiStripRecHitConverter  
 #V02-08-04 RecoPixelVertexing/PixelLowPtUtilities 
 #CalibTracker/SiStripESProducers V03-09-02
-
+CondFormats/EcalObjects V01-02-05
