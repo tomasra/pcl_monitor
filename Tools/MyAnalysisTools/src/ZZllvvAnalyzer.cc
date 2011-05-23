@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2011/04/07 15:21:48 $
- *  $Revision: 1.4 $
+ *  $Date: 2011/04/18 17:39:18 $
+ *  $Revision: 1.5 $
  *  \author G. Cerminara - CERN
  */
 #include "DataFormats/PatCandidates/interface/Muon.h"
@@ -308,6 +308,9 @@ void ZZllvvAnalyzer::analyze(const Event& event, const EventSetup& eSetup) {
   hMuonSubLead_cut1->Fill(muonSubLead, vtx, weight);
   hDiLeptKin_cut1->Fill(diLeptonMom.pt(), diLeptonMom.eta(), diLeptonMom.phi(), diLeptonMom.mass(), weight);
   hRedMetStd_cut1->Fill(redMETComputer_std, met->pt(), weight);
+  hRedMetTuneA_cut1->Fill(redMETComputer_tuneA, met->pt(), weight);
+  hRedMetTuneB_cut1->Fill(redMETComputer_tuneB, met->pt(), weight);
+
   hMETKin_cut1->Fill(met->pt(), met->eta(), met->phi(), met->mass(), weight);  
 
 //   HistoRedMET * hRedMetStd = 0;
