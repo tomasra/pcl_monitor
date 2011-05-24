@@ -1,15 +1,10 @@
 # these are Reco tags:
-CondFormats/EcalObjects 	        V01-02-06
-CalibTracker/SiPixelESProducers 	V00-05-16
-CondCore/RPCPlugins 	                V01-06-01
-CondFormats/RPCObjects 	                V06-07-01
-CondFormats/DataRecord                  V06-18-00
-CalibCalorimetry/CastorCalib            V01-01-00
-CondCore/CastorPlugins                 V01-00-00
+#CalibCalorimetry/CastorCalib            V01-01-00
+#CondCore/CastorPlugins                 V01-00-00
 CondFormats/CastorObjects V01-00-07
 CondFormats/DataRecord V06-18-00
-CondTools/Hcal V02-06-00 
-V00-13-13 RecoLocalCalo/EcalRecAlgos
+#CondTools/Hcal V02-06-00 
+#V00-13-13 RecoLocalCalo/EcalRecAlgos
 
 
 
