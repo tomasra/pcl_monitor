@@ -1,5 +1,5 @@
 # these are Reco tags:
-#CalibCalorimetry/CastorCalib            V01-01-00
+CalibCalorimetry/CastorCalib            V01-01-00
 #CondCore/CastorPlugins                 V01-00-00
 CondFormats/CastorObjects V01-00-07
 CondFormats/DataRecord V06-18-00
