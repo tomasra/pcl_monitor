@@ -1,10 +1,9 @@
 # these are Reco tags:
-CalibCalorimetry/CastorCalib            V01-01-00
-CondCore/CastorPlugins                 V01-00-00
-CondFormats/CastorObjects V01-00-07
-CondFormats/DataRecord V06-18-00
-#CondTools/Hcal V02-06-00 
 #V00-13-13 RecoLocalCalo/EcalRecAlgos
+Calibration/IsolatedParticles	V01-04-06
+alibration/TkAlCaRecoProducers	V00-03-20
+CommonTools/ConditionDBWriter	V00-00-07
+CalibFormats/CastorObjects	V01-00-05
 
 
 
