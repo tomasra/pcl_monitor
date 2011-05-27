@@ -1,6 +1,5 @@
 # these are Reco tags:
 #V00-13-13 RecoLocalCalo/EcalRecAlgos
-Calibration/IsolatedParticles	V01-04-06
 alibration/TkAlCaRecoProducers	V00-03-20
 CommonTools/ConditionDBWriter	V00-00-07
 CalibFormats/CastorObjects	V01-00-05
