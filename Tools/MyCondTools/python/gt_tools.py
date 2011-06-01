@@ -134,6 +134,20 @@ def duplicateIov(connect, tag, run, passwd):
 
     return duplicateiovStatusAndOutput
           
+def truncateIov(connect, tag, passwd):
+    truncateiovCommand = "cmscond_truncate_iov -c " + connect + '  -t ' + tag 
+    if passwd != 'None':
+        truncateiovCommand = truncateiovCommand + ' -P ' + passwd
+
+    truncateiovStatusAndOutput =  commands.getstatusoutput(truncateiovCommand)
+    if truncateiovStatusAndOutput[0] != 0:
+          print warning("Warning") + " truncate iov for tag: " + tag + " failed!\n\n"
+          print truncateiovStatusAndOutput[1]
+
+    return truncateiovStatusAndOutput
+          
+
+
 
 def tagtreeList(globaltag, gtconnect, authpath):
     command = "cmscond_tagtree_list -c " + gtconnect + " -T " + globaltag
