@@ -14,7 +14,7 @@ import shutil
 from Tools.MyCondTools.color_tools import *
 from Tools.MyCondTools.gt_tools import *
 
-from Tools.MyCondTools.popcon_monitoring_last_updates import *
+
 
 
 if __name__     ==  "__main__":
