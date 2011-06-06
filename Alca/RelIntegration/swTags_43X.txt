@@ -1,8 +1,7 @@
 # these are Reco tags:
 #V00-13-13 RecoLocalCalo/EcalRecAlgos
-CalibFormats/CastorObjects	V01-00-05
-CondFormats/L1TObjects	V01-32-01
 DataFormats/EcalDetId V04-06-03
+CalibMuon/DTCalibration V01-10-00
 
 
 
