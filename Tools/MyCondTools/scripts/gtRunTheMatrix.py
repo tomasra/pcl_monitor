@@ -29,6 +29,8 @@ def modifyCommandForGT(command, gtName, isLocal):
         command = command.replace('auto:craft08',gtName+"::All")
         command = command.replace('auto:craft09',gtName+"::All")
         command = command.replace('auto:com10',gtName+"::All")
+        command = command.replace('auto:starthi',gtName+"::All")
+
         if isLocal and "cmsDriver" in command:
             command = command + " --customise  Configuration/StandardSequences/customGT_" + gtName + ".py"
 
@@ -41,6 +43,7 @@ def modifyCommandForGT(command, gtName, isLocal):
         command = command.replace('auto:craft08',conditionOpt)
         command = command.replace('auto:craft09',conditionOpt)
         command = command.replace('auto:com10',conditionOpt)
+        command = command.replace('auto:starthi',conditionOpt)
         
 
     return command
@@ -59,7 +62,12 @@ def duplicateWorkflowForGTTest(matrixreader, wfid, newwfid, gtName, isLocal=Fals
                 newWfname = gtName + '_LOCAL+' + wf.nameId
             if hasattr(wf, 'input'):
                 # this is the new version of the API (> 43X)
-                matrixreader.workFlows.append(WorkFlow(str(newwfid), newWfname, modifyCommandForGT(wf.cmdStep1,gtName, isLocal), modifyCommandForGT(wf.cmdStep2,gtName, isLocal), modifyCommandForGT(wf.cmdStep3,gtName, isLocal), modifyCommandForGT(wf.cmdStep4,gtName, isLocal), wf.input))
+                step2addition = ""
+                if wfid == '40':
+                    # don't genererate a sample in the acse of the HI workflow
+                    step2addition = " --himix  --process HIMIX --filein   /store/relval/CMSSW_3_9_7/RelValPyquen_ZeemumuJets_pt10_2760GeV/GEN-SIM-DIGI-RAW-HLTDEBUG/START39_V7HI-v1/0054/102FF831-9B0F-E011-A3E9-003048678BC6.root"
+                    
+                matrixreader.workFlows.append(WorkFlow(str(newwfid), newWfname, modifyCommandForGT(wf.cmdStep1,gtName, isLocal), modifyCommandForGT(wf.cmdStep2,gtName, isLocal) + step2addition, modifyCommandForGT(wf.cmdStep3,gtName, isLocal), modifyCommandForGT(wf.cmdStep4,gtName, isLocal), wf.input))
             else:
                 # old versin of the API
                 matrixreader.workFlows.append(WorkFlow(str(newwfid), newWfname, modifyCommandForGT(wf.cmdStep1,gtName, isLocal), modifyCommandForGT(wf.cmdStep2,gtName, isLocal), modifyCommandForGT(wf.cmdStep3,gtName, isLocal), modifyCommandForGT(wf.cmdStep4,gtName, isLocal)))
