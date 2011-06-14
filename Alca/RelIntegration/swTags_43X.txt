@@ -1,7 +1,6 @@
 # these are Reco tags:
-#V00-13-13 RecoLocalCalo/EcalRecAlgos
-DataFormats/EcalDetId V04-06-03
-CalibMuon/DTCalibration V01-10-00
+Calibration/TkAlCaRecoProducers		V00-03-20
+CommonTools/ConditionDBWriter		V00-00-07
 
 
 
