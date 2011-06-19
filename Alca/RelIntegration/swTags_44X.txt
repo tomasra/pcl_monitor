@@ -1,6 +1,5 @@
 Calibration/TkAlCaRecoProducers		V00-03-20
 CommonTools/ConditionDBWriter		V00-00-07
-CalibTracker/SiPixelTools		V00-06-09
 CondFormats/GeometryObjects		V00-09-00
 CondTools/Geometry			V00-04-00
 DataFormats/HcalDetId			V01-12-00
