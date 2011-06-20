@@ -1,6 +1,4 @@
 # these are Reco tags:
-Calibration/TkAlCaRecoProducers		V00-03-20
-CommonTools/ConditionDBWriter		V00-00-07
 
 
 
