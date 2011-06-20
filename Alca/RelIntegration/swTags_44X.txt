@@ -4,7 +4,8 @@ CondFormats/GeometryObjects		V00-09-00
 CondTools/Geometry			V00-04-00
 DataFormats/HcalDetId			V01-12-00
 Geometry/CaloEventSetup			V03-11-01
-CalibFormats/CaloObjects		V00-01-05
-SimCalorimetry/CaloSimAlgos		V00-08-15
-SimCalorimetry/HcalSimAlgos		V03-02-07
-SimCalorimetry/HcalSimProducers		V02-02-04
+#CalibFormats/CaloObjects		V00-01-05
+#SimCalorimetry/CaloSimAlgos		V00-08-15
+#SimCalorimetry/HcalSimAlgos		V03-02-07
+#SimCalorimetry/HcalSimProducers		V02-02-04
+#CalibTracker/SiPixelTools 	V00-06-09
