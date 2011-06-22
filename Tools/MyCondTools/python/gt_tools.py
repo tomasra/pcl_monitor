@@ -178,6 +178,9 @@ class GTEntry:
         self._updateType = -1
         return
 
+    def record(self):
+        return self._record
+
     def account(self):
         return self._account
 
@@ -391,7 +394,13 @@ class IOVEntry:
             else:
                 till = 'inf'
             return str(timeStamptoDate(self._since)) + '\t' + str(till) + '\t' + self._payloadToken
-            
+
+    def sinceDate(self):
+        return datetime.strptime(timeStamptoDate(self._since),"%a %b %d %H:%M:%S  %Y")
+
+    def tillDate(self):
+        return datetime.strptime(timeStamptoDate(self._till),"%a %b %d %H:%M:%S  %Y")
+
     def since(self):
         return self._since
 
@@ -969,10 +978,11 @@ def cvsCommit(filename, comment):
 def getReleaseDigits(cycle):
     #print release
     firstDigi = cycle[0]
-    secondDigi = cycle.lstrip(cycle[0]).rstrip('X')
+    secondDigi = cycle[1:].rstrip('X')
     digits = []
     digits.append(firstDigi)
     digits.append(secondDigi)
+    #print digits
     return digits
 
 # get the list of releases (and correspondig AFS directory) installed through scram list
