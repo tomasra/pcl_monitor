@@ -34,7 +34,7 @@ if __name__     ==  "__main__":
                       type="str", metavar="<passwdfile>",default="/afs/cern.ch/cms/DB/conddb")
 
     parser.add_option("-b", "--begin", dest="begin",
-                      help="since of the first IOV that should",
+                      help="since of the first IOV that should be removed",
                       type="int", metavar="<since>")
 
     parser.add_option("-d", "--duplicated-tag", dest="duplicate",
