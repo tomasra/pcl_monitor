@@ -439,6 +439,19 @@ class IOVEntry:
         lumi = lumiid & kLowMask
         return (run, lumi)
 
+
+#      ===========================================================
+#      Tag: XMLFILE_Geometry_44YV1_Ideal_mc
+#              ===========================================================
+#              TimeType: runnumber
+#                      Since         Till          Payload token  Payload Class
+#                              ------------  ------------  -------------  ----------------
+#                                                 1    4294967295  0007-0000000A          FileBlob
+
+#                                                         Total # of payload objects: 1
+                                                        
+
+
 class IOVTable:
     def __init__(self):
         self._iovList = []
@@ -454,14 +467,26 @@ class IOVTable:
         # print "Add IOV : " + str(entry)
         self._iovList.append(entry)
 
+
+    
+
     def setFromListIOV(self, listiovOutput):
         listiovlines  = listiovOutput.split('\n')
         nLines = len(listiovlines)
-        self._tagName = listiovlines[0].split(" ")[1]
-        self._timeType = listiovlines[1].split(" ")[1]
-        self._containerName = listiovlines[2].split(" ")[1]
+        for line in listiovlines:
+            if "=========" in line or "------------" in line:
+                continue
+            linewords = line.split()
+            if len(linewords) != 0:
+                if 'Tag' in linewords[0]:
+                    self._tagName = linewords[1]
+                elif 'TimeType' in linewords[0]:
+                    self._timeType = linewords[1]
+                elif 'PayloadContainerName' in linewords[0]:
+                    self._containerName = linewords[1]
+                    
         # print self._tagName
-        for line in range(4, nLines-1):
+        for line in range(6, nLines-2):
             ioventry = IOVEntry(self._timeType)
             ioventry.setFromListIOV(listiovlines[line])
             self.addIOVEntry(ioventry)
