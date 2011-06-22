@@ -7,6 +7,9 @@ from Tools.MyCondTools.gt_tools import *
 from Tools.MyCondTools.color_tools import *
 #from Tools.MyCondTools.Tier0LastRun import *
 from Tools.MyCondTools.RunValues import *
+from Tools.MyCondTools.tableWriter import *
+from Tools.MyCondTools.RunRegistryTools import *
+from Tools.MyCondTools.RunInfo import *
 
 import shutil
 
@@ -21,7 +24,8 @@ promptCalibDir         = '/afs/cern.ch/cms/CAF/CMSALCA/ALCA_PROMPT/'
 webArea                = '/afs/cern.ch/user/c/cerminar/www/PromptCalibMonitoring/'
 tagLumi                = "BeamSpotObject_ByLumi"
 tagRun                 = "BeamSpotObject_ByRun"
-tier0DasSrc            = "https://cmsweb.cern.ch/tier0/runs"
+#tier0DasSrc            = "https://cmsweb.cern.ch/tier0/runs"
+tier0DasSrc            = "http://gowdy-wttest.cern.ch:8304/tier0/runs"
 passwd                 = "/afs/cern.ch/cms/DB/conddb"
 connectOracle          =  "oracle://cms_orcoff_prod/CMS_COND_31X_BEAMSPOT"
 tagRunOracle           = "BeamSpotObjects_PCL_byRun_v0_offline"
@@ -53,64 +57,8 @@ from array import array
 
 import datetime
 
-def getDate(string):
-    date = string.split()[0].split('-')
-    time = string.split()[1].split(':')
-    datet = datetime.datetime(int(date[0]),int(date[1]),int(date[2]),int(time[0]),int(time[1]),int(float(time[2])))
-    return datet
-
-class RunInfoContent:
-    def __init__(self, summary):
-        listofEntries = summary.split(',')
-        self._run = listofEntries[0].lstrip('RUN:').lstrip()
-        self._startTime = listofEntries[1].lstrip('START TIME:').lstrip()
-        self._stopTime = listofEntries[2].lstrip('STOP TIME:').lstrip()
-        self._fromUTCToLocal = datetime.timedelta(hours=2)
-        return
-
-    def startTime(self):
-        return self.getDate(self._startTime)+self._fromUTCToLocal
-
-    def stopTime(self):
-        return self.getDate(self._stopTime)+self._fromUTCToLocal
-
-    def run(self):
-        return self._run
-
-    def getDate(self, string):
-        date = string.split('T')[0].split('-')
-        time = string.split('T')[1].split(':')
-        datet = datetime.datetime(int(date[0]),int(date[1]),int(date[2]),int(time[0]),int(time[1]),int(float(time[2])))
-        return datet
 
 
-import os,string,sys,commands,time
-import xmlrpclib
-
-
-def getRunList(minRun):
-    runlist = []
-    
-    FULLADDRESS="http://pccmsdqm04.cern.ch/runregistry/xmlrpc"
-    #FULLADDRESS="http://pccmsdqm04.cern.ch/runregistry_api/"
-    print "RunRegistry from: ",FULLADDRESS
-    server = xmlrpclib.ServerProxy(FULLADDRESS)
-    # you can use this for single run query
-#    sel_runtable="{runNumber} = "+run+" and {datasetName} LIKE '%Express%'"
-    #sel_runtable="{groupName} ='Collisions11' and {runNumber} >= " + str(minRun) + " and {datasetName} LIKE '%Express%'"
-    sel_runtable="{groupName} ='Collisions11' and {runNumber} >= " + str(minRun) + " and {datasetName} LIKE '%Online%'"
-
-    #sel_runtable="{groupName} ='Commissioning11' and {runNumber} >= " + str(minRun)# + " and {datasetName} LIKE '%Express%'"
-
-    run_data = server.DataExporter.export('RUN', 'GLOBAL', 'csv_runs', sel_runtable)
-    for line in run_data.split("\n"):
-        #print line
-        run=line.split(',')[0]
-        if "RUN_NUMBER" in run or run == "":
-            continue
-        #print "RUN: " + run
-        runlist.append(int(run))
-    return runlist
 
 def fill1DHisto(histo, xarray, yarray, labels = False):
     lastBin= int(len(xarray))
@@ -174,7 +122,7 @@ class RunReport:
     # hours
     def runLenght(self):
         deltaTRun = self.stopTime() - self.startTime()
-        return deltaTRun.seconds/(60.*60.)
+        return deltaTRun.days*24. + deltaTRun.seconds/(60.*60.)
 
     def setLatencyFromEnd(self, timeFromEnd):
         self._latencyFromEnd = timeFromEnd
@@ -191,47 +139,6 @@ class RunReport:
         return theList
     
 
-import locale
-locale.setlocale(locale.LC_NUMERIC, "")
-
-def format_num(num):
-    """Format a number according to given places.
-    Adds commas, etc. Will truncate floats into ints!"""
-
-    return str(num)
-    try:
-        inum = float(num)
-        return locale.format("%.*f", (0, inum), True)
-
-    except (ValueError, TypeError):
-        return str(num)
-
-
-def get_max_width(table, index):
-    """Get the maximum width of the given column index"""
-
-    return max([len(format_num(row[index])) for row in table])
-
-
-def pprint_table(out, table):
-    """Prints out a table of data, padded for alignment
-    @param out: Output stream (file-like object)
-    @param table: The table to print. A list of lists.
-    Each row must have the same number of columns. """
-
-    col_paddings = []
-
-    for i in range(len(table[0])):
-        col_paddings.append(get_max_width(table, i))
-
-    for row in table:
-        # left col
-        print >> out, row[0].ljust(col_paddings[0] + 1),
-        # rest of the cols
-        for i in range(1, len(row)):
-            col = format_num(row[i]).rjust(col_paddings[i] + 2)
-            print >> out, col,
-        print >> out
     
 if __name__ == "__main__":
 
@@ -337,8 +244,6 @@ if __name__ == "__main__":
     print "last cached run #: " + str(lastCachedRun)
 
 
-
-
     # get the run list from RR for the runs not already cached
     runList = getRunList(lastCachedRun+1)    
     #if(len(runList) != 0):
@@ -354,7 +259,7 @@ if __name__ == "__main__":
 
     #lastPromptRecoRun = wrapper.performTest(wrapper) - 1
     rv = RunValues()
-    lastPromptRecoRun = rv.getLargestReleasedForPrompt("https://cmsweb.cern.ch/tier0/runs")
+    lastPromptRecoRun = rv.getLargestReleasedForPrompt(tier0DasSrc)
     
 
     # --------------------------------------------------------------------------------
@@ -381,7 +286,7 @@ if __name__ == "__main__":
     isFirst = True
     lastDate = datetime.datetime
     for run in runList:
-
+        #print run
         # get the information from runInfo
         try :
             log = db.lastLogEntry(runinfoTag)
@@ -398,10 +303,10 @@ if __name__ == "__main__":
         for x in  iov.summaries():
             #print x
             runInfo = RunInfoContent(x[3])
-
+            #print x[3]
             # run lenght
             deltaTRun = runInfo.stopTime() - runInfo.startTime()
-            deltaTRunH = deltaTRun.seconds/(60.*60.)
+            deltaTRunH = deltaTRun.days*24. + deltaTRun.seconds/(60.*60.)
             
             #print runInfo.run()
             #print runInfo.startTime()
@@ -456,13 +361,13 @@ if __name__ == "__main__":
 
                 # delta-time from begin of run
                 deltaTFromBegin = modifDate - runInfo.startTime()
-                deltaTFromBeginH = deltaTFromBegin.seconds/(60.*60.)
+                deltaTFromBeginH = deltaTFromBegin.days*24. + deltaTFromBegin.seconds/(60.*60.)
 
                 # delta-time from end of run
                 deltaTFromEndH = 0.01
                 if(modifDate > runInfo.stopTime()): 
                     deltaTFromEnd = modifDate - runInfo.stopTime()
-                    deltaTFromEndH = deltaTFromEnd.seconds/(60.*60.)
+                    deltaTFromEndH = deltaTFromEnd.days*24. + deltaTFromEnd.seconds/(60.*60.)
                     
                 # check the file size
                 fileSize = os.path.getsize(promptCalibDir + dbFile)
