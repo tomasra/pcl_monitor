@@ -20,7 +20,7 @@ def main():
                       help="tag name",
                       type="str", metavar="<tag>")
     
-    parser.add_option("-p", "--passwdfile", dest="passwdfile",
+    parser.add_option("-P", "--passwdfile", dest="passwdfile",
                       help="password file",
                       type="str", metavar="<passwdfile>",default="/afs/cern.ch/cms/DB/conddb")
 
