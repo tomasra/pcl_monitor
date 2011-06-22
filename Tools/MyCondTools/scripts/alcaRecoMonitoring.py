@@ -17,17 +17,8 @@ a = FWIncantation()
 
 # --------------------------------------------------------------------------------
 # configuratio
-runinfoTag             = 'runinfo_31X_hlt'
-tagLumi                = "BeamSpotObject_ByLumi"
-tagRun                 = "BeamSpotObject_ByRun"
-tier0DasSrc            = "https://cmsweb.cern.ch/tier0/runs"
-passwd                 = "/afs/cern.ch/cms/DB/conddb"
-connectOracle          =  "oracle://cms_orcoff_prod/CMS_COND_31X_BEAMSPOT"
-tagRunOracle           = "BeamSpotObjects_PCL_byRun_v0_offline"
-tagLumiOracle          = "BeamSpotObjects_PCL_byLumi_v0_prompt"
-cacheFileName          = "cache_monitoring.txt"
-writeToWeb             = False
-nRunsToPlot            = 100
+#cacheFileName          = "cache_monitoring.txt"
+
 
 #os.putenv("CORAL_AUTH_PATH","/afs/cern.ch/cms/DB/conddb")
 rdbms = RDBMS("/afs/cern.ch/cms/DB/conddb")
@@ -82,10 +73,14 @@ class WebPageIndex:
     def scan(self, dir):
         dirlist = os.listdir(dir)
         for fname in dirlist:
-            if ".html" in fname and fname != 'index.html':
+            if ".html" in fname and fname != 'index.html' and not '~' in fname:
                 self._filenames.append(fname)
-                self._epochs.append(fname.split('-')[0])
-                self._versions.append(fname.split('-')[1].split('.')[0])
+                namesplit = fname.split('.')[0].split('-')
+                self._epochs.append(namesplit[0])
+                if len(namesplit) == 3:
+                    self._versions.append(namesplit[1] + "-" + namesplit[2])
+                else:
+                    self._versions.append(namesplit[1])
 
     def buildPage(self):
         htmlpage = file('index.html',"w")
@@ -134,6 +129,7 @@ class WebPageWriter:
         htmlpage.write('</head>\n')
         htmlpage.write('<body>\n')
         htmlpage.write('<center><h1>' + self._title + '</h1></center>\n<hr>\n')
+        htmlpage.write('<center>[<a href=./index.html>index</a>]</center><br>\n')
         htmlpage.write('<p>\n')
         for pd in self._pds:
             htmlpage.write('<b>' + pd + '</b>:\n')
@@ -143,8 +139,8 @@ class WebPageWriter:
                 htmlpage.write(' <a href=' + anchor + '>' + alcareco.name() + '</a> \n')
             htmlpage.write('<br>\n')
         htmlpage.write('</p>\n')
-        htmlpage.write('<p>The monitoring is based on DBS and is limited to runs defined as <i>Collision11</i> in Run Registry.</p>\n')
-
+        htmlpage.write('<p>The monitoring is based on DBS and is limited to runs defined as <i>Collision</i> in Run Registry.</p>\n')
+        htmlpage.write('<p>Last update: ' + str(datetime.datetime.today()) + '</p>\n')
         for pd in self._pds: 
             htmlpage.write('<h3>' + pd + '</h3>\n')
             htmlpage.write('<table width="100%">\n')
@@ -159,15 +155,18 @@ class WebPageWriter:
                 htmlpage.write('<td><h4>Selection efficiency per run</h4></td></tr>\n')
                 htmlpage.write('<tr><td><a href=./' + neventspng + '><img src="./' + neventspng + '" width="590"></a></td>\n')
                 htmlpage.write('<td><a href=./' + effpng + '><img src="./' + effpng + '" width="590"></a></td></tr>\n')
+                datafilename = pd + '-' + self._epoch + '-' + alcareco.name() + '-' + self._version + ".cache"
+                htmlpage.write('<tr><td>Link to <a href=./' + datafilename + '>data</a> file used to build the plot.</td><td></td></tr>\n')
             htmlpage.write('</table>\n')
             htmlpage.write('<hr>\n')
-
+            htmlpage.write('<center>[<a href=./' + self._fineName + '>back to the top</a>]</center>\n')
+            
         htmlpage.write('<address>Gianluca Cerminara</address>\n')
         htmlpage.write('</body>\n')
         htmlpage.write('</html>\n')
         htmlpage.close()
                             
-def getRunList(minRun):
+def getRunList(minRun, rrSet):
     runlist = []
     
     FULLADDRESS="http://pccmsdqm04.cern.ch/runregistry/xmlrpc"
@@ -176,7 +175,8 @@ def getRunList(minRun):
     server = xmlrpclib.ServerProxy(FULLADDRESS)
     # you can use this for single run query
 #    sel_runtable="{runNumber} = "+run+" and {datasetName} LIKE '%Express%'"
-    sel_runtable="{groupName} ='Collisions11' and {runNumber} >= " + str(minRun) + " and {datasetName} LIKE '%Express%'"
+    sel_runtable="{groupName} ='" + rrSet + "' and {runNumber} >= " + str(minRun) + " and {datasetName} LIKE '%Express%'"
+    #print sel_runtable
     #sel_runtable="{groupName} ='Commissioning11' and {runNumber} >= " + str(minRun)# + " and {datasetName} LIKE '%Express%'"
 
     run_data = server.DataExporter.export('RUN', 'GLOBAL', 'csv_runs', sel_runtable)
@@ -189,12 +189,26 @@ def getRunList(minRun):
         runlist.append(int(run))
     return runlist
 
+def dbsQueryRunList(dataset, minRun = 1, maxRun = -1):
+    dbs_cmd = 'dbs search --noheader --query="find run where dataset=' + dataset
+    if minRun > 1:
+        dbs_cmd += ' and run > ' + str(minRun)
+    if maxRun != -1:
+        dbs_cmd += ' and run < ' + str(maxRun)
+        
+    dbs_cmd += '"'
+    #print dbs_cmd
+    dbs_out = commands.getstatusoutput(dbs_cmd)
+    return dbs_out
 
 
-def dbsQuery(dataset, minRun = 1):
+def dbsQuery(dataset, minRun = 1, maxRun = -1):
     dbs_cmd = 'dbs search --noheader --query="find run,sum(file.numevents) where dataset=' + dataset
     if minRun > 1:
         dbs_cmd += ' and run > ' + str(minRun)
+    if maxRun != -1:
+        dbs_cmd += ' and run < ' + str(maxRun)
+        
     dbs_cmd += '"'
     #print dbs_cmd
     dbs_out = commands.getstatusoutput(dbs_cmd)
@@ -309,6 +323,7 @@ class DBSAlCaRecoResults():
     def addParentQuery(self, query):
         for line in query.split("\n"):
             if line != "":
+                print line
                 run = int(line.split()[0])
                 nevents = float(line.split()[1])
                 index = self.search(run)
@@ -317,11 +332,21 @@ class DBSAlCaRecoResults():
 
 
     def purgeList(self, runs):
+        #print runs
+        print "Prune run list:"
+        #print "   - # collision runs: " + str(len(runs))
+        print "   - # runs in the list (before): " + str(len(self._infoPerRun))
+        runtoremove = []
         for rrep in self._infoPerRun:
+            #print rrep.run()
             if not rrep.run() in runs:
                 #print "run: " + str(rrep.run()) + " is not a Collision run: remove!"
-                self._infoPerRun.remove(rrep)
-    
+                runtoremove.append(rrep)
+        for run in runtoremove:
+            self._infoPerRun.remove(run)
+
+        print "   - # runs to be removed: " + str(len(runtoremove))
+        print "   - # runs in the list (after): " + str(len(self._infoPerRun))
 
     def writeCache(self):
         cacheFileName = self._cachefilename + ".cache"
@@ -360,6 +385,7 @@ class DBSAlCaRecoResults():
             hNEvents.SetBinContent(binN, rrep.nEvents())
             hNEvents.GetXaxis().SetBinLabel(binN, str(rrep.run()))
             binN += 1
+        print "plot events, # of bins: " + str(binN)
         hNEvents.GetXaxis().SetTitle("run #")
         hNEvents.GetXaxis().SetTitleOffset(1.6)
         hNEvents.GetYaxis().SetTitle("# events")
@@ -388,7 +414,21 @@ def getDatasets(pd, epoch, version, tier):
     print dbs_cmd
     dbs_out = commands.getstatusoutput(dbs_cmd)
     listofgroups = dbs_out[1].split("\n")
-    return listofgroups
+    listforret = []
+    for dataset in listofgroups:
+        if dataset == "":
+            continue
+        #print dataset
+        versionpart = dataset.split("/")[2]
+        components = versionpart.split("-")
+        if len(components) <= 3:
+            listforret.append(dataset)
+        else:
+            theepoch = components[0]
+            theversion = components[len(components)-2] + "-" +  components[len(components)-1]
+            if theversion == version:
+                listforret.append(dataset)
+    return listforret
 
     
 if __name__ == "__main__":
@@ -400,22 +440,23 @@ if __name__ == "__main__":
     configfile.read('GT_branches/AlCaRecoMonitoring.cfg')
     webArea = configfile.get('Common','webArea')
     groups = configfile.get('Common','groups').split(",")
-
+    refreshCache = bool(configfile.get('Common','refreshCache'))
     alcarecoDatasets = []
         
 
 
-    # get the list of interesting runs from RR
-    runList = []
-    runList = getRunList(1)    
     #print runList
 
     os.chdir(webArea)
 
+
+    # 1 find all the alcarecos and theyr parets for each "group"
     for group in groups:
         if group == "":
             continue
-        print group
+        print "--------------------------------------------"
+        print "--------------------------------------------"
+        print "==== Group: " + group
         epoch = configfile.get(group, 'epoch')
         version = configfile.get(group, 'version')
         rawversion = configfile.get(group, 'rawversion')
@@ -433,16 +474,22 @@ if __name__ == "__main__":
                 pd = 'ExpressPhysics'
                 parenttier = "FEVT"
             parent = getDatasets(pd,epoch, version, parenttier)
-            if parent[0] == '':
+            if len(parent) == 0 or parent[0] == '':
                 parent = getDatasets(pd,epoch, rawversion,"RAW")
             print "--------------------------------------------"
-            print dataset
-            print pd
-            print parent
+            print "dataset: " + dataset
+            print "parent: " + parent[0]
             alcarecoDatasets.append(DBSAlCaRecoResults(dataset, parent[0]))
-            
         htmlwriter.buildPage()
-    
+
+
+    indexBuilder = WebPageIndex()
+    indexBuilder.scan(webArea)
+    indexBuilder.buildPage()
+
+
+
+
     #alcarecoDatasets.append(DBSAlCaRecoResults("/StreamExpress/Run2011A-TkAlMinBias-v2/ALCARECO", "/ExpressPhysics/Run2011A-Express-v2/FEVT"))
 
     # --- set the style 
@@ -458,19 +505,41 @@ if __name__ == "__main__":
     gStyle.SetPadGridY(True)
 
 
+    #2 get the statistics and draw the results
+    cachedlisttype = "DUMMY"
+    cachedlist = []
     
+
     for dataset in alcarecoDatasets:
         print dataset.name()
-        lastCached = dataset.readCache()
-        query = dbsQuery(dataset.name(), lastCached)
-        dataset.appendQuery(query[1])
-        queryParent = dbsQuery(dataset.parent(), lastCached)
-        dataset.addParentQuery(queryParent[1])
-        dataset.purgeList(runList)
-        dataset.printAll()
-        dataset.writeCache()
+        lastCached = dataset.readCache() #FIXME
+        #lastCached = 160404
+        if refreshCache:
+            query = dbsQuery(dataset.name(), lastCached)
+            dataset.appendQuery(query[1])
+            queryParent = dbsQuery(dataset.parent(), lastCached)
+            dataset.addParentQuery(queryParent[1])
 
-        label1 = TLatex(0.015, 0.93007, dataset.name())
+            rrSet = ""
+            if "2010" in  dataset.name():
+                rrSet = "Collisions10"
+            elif "2011" in dataset.name():
+                rrSet = "Collisions11"
+
+
+            # cache the list from RR
+            if rrSet != cachedlisttype:
+                cachedlisttype = rrSet
+                cachedlist = getRunList(1, rrSet)    
+            runList = cachedlist            
+            print "RR: " + rrSet + " # runs: " + str(len(runList))
+            
+
+            dataset.purgeList(runList)
+            #dataset.printAll()
+            dataset.writeCache()
+
+        label1 = TLatex(0.012, 0.94007, dataset.name())
         label1.SetNDC(True)
         hNEvents = dataset.buildHistoNEvents()
         c1 = TCanvas(hNEvents.GetName(),"hNEvents",1200,600)
@@ -485,9 +554,6 @@ if __name__ == "__main__":
         c2.Print(".png")
 
 
-    indexBuilder = WebPageIndex()
-    indexBuilder.scan(webArea)
-    indexBuilder.buildPage()
 
     #raw_input ("Enter to quit")
     sys.exit(0)

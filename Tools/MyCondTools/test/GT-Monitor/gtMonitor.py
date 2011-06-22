@@ -15,12 +15,16 @@ from popcon_monitoring_last_updates import *
 
 
 
-def computeModified(GTCREATIONAREA, gtName, nDays, listofchanges, listofchangesO2O):
+def computeModified(GTCREATIONAREA, gtName, nDays, listofchanges, listofchangesO2O, gtconnstring, passwdfile):
     # create the collection of tags
     tagCollection = GTEntryCollection()
     gtConf =  GTCREATIONAREA + "/" + gtName + ".conf"    
     gtCategories =  GTCREATIONAREA + "/GT_branches/Categories.cfg"
     # --------------------------------------------------------------------------
+    if not confFileFromDB(gtName, gtConf, gtconnstring, passwdfile):
+        print error("*** Error" + " GT conf file: " + gtConf + " doesn't exist!")
+        return 5
+
     fillGTCollection([gtConf,gtCategories], gtName, tagCollection)
 
     nSec = nDays*24*60*60
@@ -93,6 +97,12 @@ if __name__     ==  "__main__":
     mailaddresses = configfile.get('Common','MailAddresses')
 
 
+    gtconnstring = configfile.get('Common','GTConnectString')
+
+    passwdfile = 'None'
+    if configfile.has_option('Common','Passwd'):
+        passwdfile = configfile.get('Common','Passwd')
+
     gtListOfResults = []
     
     totalListOfmodifiedRecords =[]
@@ -105,7 +115,7 @@ if __name__     ==  "__main__":
         print "Updates for GT: " +  gt
         listChange = []
         listChangeO2O = []
-        mapUpdates = computeModified(GTCREATIONAREA, gt,1,listChange, listChangeO2O)
+        mapUpdates = computeModified(GTCREATIONAREA, gt,1,listChange, listChangeO2O, gtconnstring, passwdfile)
         gtListOfResults.append(mapUpdates)
         totalListOfChanges.append(listChange)
         totalListOfChangesO2O.append(listChangeO2O)
