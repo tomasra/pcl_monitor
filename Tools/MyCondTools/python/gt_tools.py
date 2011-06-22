@@ -367,9 +367,13 @@ class IOVEntry:
     
 
     def setFromListIOV(self, line, timetype = "runnumber"):
-        listofentries = line.split('\t')
+        listofentries = line.split()
+        print listofentries
         index = 0
         for entry in listofentries:
+            if entry == '':
+                continue
+            
             if entry != '':
                 if index == 0:
                     self._since = int(entry.rstrip())
@@ -490,6 +494,9 @@ class IOVTable:
             if "Since" in listiovlines[line] or "------------" in listiovlines[line] or listiovlines[line] == "":
                 continue
             ioventry = IOVEntry(self._timeType)
+            if self._containerName == "":
+                items = listiovlines[line].split()
+                self._containerName = items[len(items)-1]
             ioventry.setFromListIOV(listiovlines[line])
             self.addIOVEntry(ioventry)
 
