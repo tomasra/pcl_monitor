@@ -44,7 +44,7 @@ if __name__     ==  "__main__":
 
     CONFIGFILE = "GT_branches/Common.cfg"
     print 'Reading configuration file from ',CONFIGFILE
-    cfgfile.read([ CONFIGFILE ])
+    cfgfile.read([ CONFIGFILE, "GT_branches/Records.cfg" ])
 
     # get the releases currently managed
     swBaseDir           = cfgfile.get('Common','cmsswBaseArea')
@@ -69,6 +69,16 @@ if __name__     ==  "__main__":
         objectRecords = getObjectsAndRecords(swScramArch, maxRel)    
 
 
+        otherrecords = cfgfile.items('Records')
+        for objandrcd in otherrecords:
+            obj = objandrcd[0]
+            #print obj
+            rcds =  cfgfile.get('Records', obj).split(',')
+            for rcd in rcds:
+                objectRecords[obj].append(rcd)
+                #print rcd
+
+            
         for obj in objects:
             if obj in objectRecords:
                 print "--- Release: " + cycle
