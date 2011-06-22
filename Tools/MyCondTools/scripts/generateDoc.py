@@ -30,6 +30,18 @@ logFile.close()
 #cvsUpdate(queueCfg)
 
 
+
+#print "build table of GT by release..."
+
+#lastReleases = config.get("Class","LastByRelease").split(",")
+#print lastReleases
+#lastReleases.reverse()
+#for rel in lastReleases:
+#    print rel
+
+#sys.exit(1)
+
+
 listOfClasses = config.get("Class","GenerateDocFor").split(",")
 webFileList = []
 
@@ -59,3 +71,7 @@ for fileWiki in webFileList:
     cvsCommit(fileWiki, "update doc")
 
 cvsCommit("Class.list", "update doc")
+
+
+
+    
