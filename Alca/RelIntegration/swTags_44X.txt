@@ -10,4 +10,4 @@ Geometry/HcalTowerAlgo   V01-07-02
 RecoEcal/EgammaCoreTools         V05-08-01
 SimDataFormats/EcalTestBeam      V00-04-00
 Geometry/EcalCommonData  V05-03-11
-CalibTracker/SiPixelTools       V00-06-09
+#CalibTracker/SiPixelTools       V00-06-09
