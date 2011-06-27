@@ -1,3 +1,4 @@
+# tags per la nuova geometria
 #CondFormats/GeometryObjects      V00-09-00
 #CondTools/Geometry               V00-04-00
 #DataFormats/HcalDetId            V01-12-00
@@ -10,4 +11,11 @@
 #RecoEcal/EgammaCoreTools         V05-08-01
 #SimDataFormats/EcalTestBeam      V00-04-00
 #Geometry/EcalCommonData  V05-03-11
-CalibTracker/SiPixelTools       V00-06-09
+
+# Giulio's tag: non compila
+#CalibTracker/SiPixelTools       V00-06-09
+
+CalibFormats/CaloObjects 	V00-01-05
+SimCalorimetry/CaloSimAlgos 	V00-08-15
+SimCalorimetry/HcalSimAlgos 	V03-02-07
+SimCalorimetry/HcalSimProducers 	V02-02-04
