@@ -15,10 +15,9 @@
 # Giulio's tag: non compila
 #CalibTracker/SiPixelTools       V00-06-09
 
-CalibFormats/CaloObjects 	V00-01-05
-SimCalorimetry/CaloSimAlgos 	V00-08-15
-SimCalorimetry/HcalSimAlgos 	V03-02-07
-SimCalorimetry/HcalSimProducers 	V02-02-04
-
-Calibration/Tools 	V00-03-36
+#tagset 44202 + 44562
 SimCalorimetry/HcalSimAlgos 	V03-02-08
+CalibCalorimetry/HcalAlgos	V02-19-03
+# tagset 45582
+Calibration/EcalCalibAlgos	V01-00-05
+
