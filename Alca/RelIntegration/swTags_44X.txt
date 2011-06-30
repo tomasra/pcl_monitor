@@ -1,37 +1,21 @@
-# tags per la nuova geometria
-#CondFormats/GeometryObjects      V00-09-00
-#CondTools/Geometry               V00-04-00
-#DataFormats/HcalDetId            V01-12-00
-#Geometry/CaloEventSetup  V03-11-01
-#Geometry/CaloGeometry            V03-13-04
-#Geometry/EcalAlgo                V00-06-04
-#Geometry/EcalTestBeam            V00-09-03
-#Geometry/ForwardGeometry         V01-05-03
-#Geometry/HcalTowerAlgo   V01-07-02
-#RecoEcal/EgammaCoreTools         V05-08-01
-#SimDataFormats/EcalTestBeam      V00-04-00
-#Geometry/EcalCommonData  V05-03-11
-
-# 45922
-CalibTracker/SiPixelTools       V00-06-10
-
 #tagset 44202 + 44562 - non compila
 #SimCalorimetry/HcalSimAlgos 	V03-02-08
 #CalibCalorimetry/HcalAlgos	V02-19-03
-# tagset 45582
-Calibration/EcalCalibAlgos	V01-00-05
 
-V00-09-00 CondFormats/GeometryObjects
-V00-04-01 CondTools/Geometry
-V01-12-00 DataFormats/HcalDetId
-V03-11-03 Geometry/CaloEventSetup
-V03-13-06 Geometry/CaloGeometry
-V00-06-04 Geometry/EcalAlgo
-V00-09-03 Geometry/EcalTestBeam
-V01-05-04 Geometry/ForwardGeometry
-V01-07-04 Geometry/HcalTowerAlgo
-V05-08-01 RecoEcal/EgammaCoreTools
-V00-04-00 SimDataFormats/EcalTestBeam
+# tagset 46163
+#V00-09-00 CondFormats/GeometryObjects
+#V00-04-01 CondTools/Geometry
+#V01-12-00 DataFormats/HcalDetId
+#V03-11-03 Geometry/CaloEventSetup
+#V03-13-06 Geometry/CaloGeometry
+#V00-06-04 Geometry/EcalAlgo
+#V00-09-03 Geometry/EcalTestBeam
+#V01-05-04 Geometry/ForwardGeometry
+#V01-07-04 Geometry/HcalTowerAlgo
+#V05-08-01 RecoEcal/EgammaCoreTools
+#V00-04-00 SimDataFormats/EcalTestBeam
+
+
 
 
 
