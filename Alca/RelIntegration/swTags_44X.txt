@@ -1,6 +1,6 @@
 #tagset 44202 + 44562 - non compila
-#SimCalorimetry/HcalSimAlgos 	V03-02-08
-#CalibCalorimetry/HcalAlgos	V02-19-03
+#SimCalorimetry/HcalSimAlgos    V03-02-08
+#CalibCalorimetry/HcalAlgos     V02-19-03
 
 # tagset 46163
 #V00-09-00 CondFormats/GeometryObjects
@@ -18,21 +18,9 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#tagset 45522
+CalibTracker/SiPixelESProducers         V01-00-00
+CondCore/SiPixelPlugins                 V02-00-00
+CondFormats/DataRecord                  V06-19-00
+CondFormats/SiPixelObjects              V02-00-00
+CondTools/SiPixel                       V01-00-00
