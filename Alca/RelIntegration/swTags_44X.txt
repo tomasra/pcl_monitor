@@ -3,17 +3,17 @@
 #CalibCalorimetry/HcalAlgos     V02-19-03
 
 # tagset 46163
-#V00-09-00 CondFormats/GeometryObjects
-#V00-04-01 CondTools/Geometry
-#V01-12-00 DataFormats/HcalDetId
-#V03-11-03 Geometry/CaloEventSetup
-#V03-13-06 Geometry/CaloGeometry
-#V00-06-04 Geometry/EcalAlgo
-#V00-09-03 Geometry/EcalTestBeam
-#V01-05-04 Geometry/ForwardGeometry
-#V01-07-04 Geometry/HcalTowerAlgo
-#V05-08-01 RecoEcal/EgammaCoreTools
-#V00-04-00 SimDataFormats/EcalTestBeam
+V00-09-00 CondFormats/GeometryObjects
+V00-04-01 CondTools/Geometry
+V01-12-00 DataFormats/HcalDetId
+V03-11-03 Geometry/CaloEventSetup
+V03-13-06 Geometry/CaloGeometry
+V00-06-04 Geometry/EcalAlgo
+V00-09-03 Geometry/EcalTestBeam
+V01-05-04 Geometry/ForwardGeometry
+V01-07-04 Geometry/HcalTowerAlgo
+V05-08-01 RecoEcal/EgammaCoreTools
+V00-04-00 SimDataFormats/EcalTestBeam
 
 
 
@@ -24,3 +24,5 @@ CondCore/SiPixelPlugins                 V02-00-00
 CondFormats/DataRecord                  V06-19-00
 CondFormats/SiPixelObjects              V02-00-00
 CondTools/SiPixel                       V01-00-00
+#tagset 65552
+CalibTracker/Configuration              V02-04-00
