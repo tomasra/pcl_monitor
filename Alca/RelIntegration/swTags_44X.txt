@@ -1,3 +1,5 @@
-#tagset 44202 + 44562 - non compila
-SimCalorimetry/HcalSimAlgos    V03-02-08
-CalibCalorimetry/HcalAlgos     V02-19-03
+#tagset 51642
+CalibFormats/CaloObjects 	V00-01-06
+SimCalorimetry/EcalSimAlgos 	V02-04-02
+SimCalorimetry/EcalSimProducers 	V03-08-01
+SimCalorimetry/EcalTestBeam 	V00-12-05
