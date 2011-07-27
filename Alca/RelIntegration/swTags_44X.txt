@@ -1,5 +1,9 @@
-#tagset 51642
-CalibFormats/CaloObjects 	V00-01-06
-SimCalorimetry/EcalSimAlgos 	V02-04-02
-SimCalorimetry/EcalSimProducers 	V03-08-01
-SimCalorimetry/EcalTestBeam 	V00-12-05
+#HCAL new stuffs
+CondFormats/DataRecord V06-20-00
+CalibCalorimetry/HcalAlgos V02-19-06  
+CalibCalorimetry/HcalPlugins V02-13-01  
+CondCore/HcalPlugins V03-04-03  
+CondTools/Hcal V02-06-02  
+CondFormats/HcalObjects V03-07-03  
+RecoLocalCalo/HcalRecAlgos V01-00-10  
+RecoLocalCalo/HcalRecProducers V00-09-18  
