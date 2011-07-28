@@ -11,7 +11,7 @@ def get_map():
     server = xmlrpclib.ServerProxy(FULLADDRESS)
     # you can use this for single run query
 #    sel_runtable="{runNumber} = "+run+" and {datasetName} LIKE '%Express%'"
-    sel_runtable="{groupName} ='Collisions10' and {runNumber} >= 132440 and {datasetName} LIKE '%Express%'"
+    sel_runtable="{groupName} ='Collisions11' and {runNumber} >= 132440 and {datasetName} LIKE '%Online%'"
 
     run_data = server.DataExporter.export('RUN', 'GLOBAL', 'csv_runs', sel_runtable)
     for line in run_data.split("\n"):
@@ -22,9 +22,8 @@ def get_map():
 
             # we need to do something to avoid parsing commas in comment column
             group=line.split(',')[8]
-            print "GROUP: " + group
             #energy=group.split(',')[0]
-            fill=group.split(',')[1]
+            fill=line.split(',')[13]
             runfillmap[run]=fill
 
     items = runfillmap.items()
