@@ -7,3 +7,5 @@ CondTools/Hcal V02-06-02
 CondFormats/HcalObjects V03-07-03  
 RecoLocalCalo/HcalRecAlgos V01-00-10  
 RecoLocalCalo/HcalRecProducers V00-09-18  
+V04-10-11       FastSimulation/Configuration
+V11-09-68       HLTrigger/Configuration
