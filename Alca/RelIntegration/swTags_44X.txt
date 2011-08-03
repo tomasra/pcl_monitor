@@ -1,11 +1,4 @@
-#HCAL new stuffs
-CondFormats/DataRecord V06-20-00
-CalibCalorimetry/HcalAlgos V02-19-06  
-CalibCalorimetry/HcalPlugins V02-13-01  
-CondCore/HcalPlugins V03-04-03  
-CondTools/Hcal V02-06-02  
-CondFormats/HcalObjects V03-07-03  
-RecoLocalCalo/HcalRecAlgos V01-00-10  
-RecoLocalCalo/HcalRecProducers V00-09-18  
-V04-10-11       FastSimulation/Configuration
-V11-09-68       HLTrigger/Configuration
+# tagset 56542
+Calibration/IsolatedParticles V01-04-07
+
+
