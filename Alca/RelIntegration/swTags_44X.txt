@@ -4,3 +4,6 @@
 
 V11-10-11      HLTrigger/Configuration                          
 V00-02-26      HLTrigger/JetMET
+
+# tagset 59382
+V01-00-07-04 CondFormats/CastorObjects
