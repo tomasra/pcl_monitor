@@ -127,9 +127,9 @@ int cond::ListIOVUtilities::execute(){
       RunNumber_t theRun = 0;
       TFile file("pippo.root","recreate");
       file.cd();
-      TProfile2D *ebMean = new TProfile2D("ebMean","Corrections EB", 360, 0, 360, 170,-85,85);
-      TProfile2D *eepMean = new TProfile2D("eepMean","Corrections EE+", 100, 0, 100, 100,0,100);
-      TProfile2D *eemMean = new TProfile2D("eemMean","Corrections EE-", 100, 0, 100, 100,0,100);
+      TProfile2D *ebMean = new TProfile2D("ebMean","Corrections EB", 360, 0, 360, 170,-85,85,"S");
+      TProfile2D *eepMean = new TProfile2D("eepMean","Corrections EE+", 100, 0, 100, 100,0,100,"S");
+      TProfile2D *eemMean = new TProfile2D("eemMean","Corrections EE-", 100, 0, 100, 100,0,100,"S");
 
       TProfile2D *ebRMS = new TProfile2D("ebRMS","Corrections EB", 360, 0, 360, 170,-85,85);
       TProfile2D *eepRMS = new TProfile2D("eepRMS","Corrections EE+", 100, 0, 100, 100,0,100);
