@@ -1,9 +1,2 @@
-# tagset 56542
-#Calibration/IsolatedParticles V01-04-07
-
-
-V11-10-11      HLTrigger/Configuration                          
-V00-02-26      HLTrigger/JetMET
-
-# tagset 59382
-V01-00-07-04 CondFormats/CastorObjects
+# tagset 59543
+V02-00-02 CalibCalorimetry/EcalCorrelatedNoiseAnalysisAlgos	
