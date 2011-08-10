@@ -1,8 +1,8 @@
 import FWCore.ParameterSet.Config as cms
 
 runProcess = cms.PSet(
-    input = cms.string("/data/Analysis/42x/"),
-    outdir = cms.string("./MyAnalysis.root"),
+    input = cms.string("/data/Analysis/42x/DYJetsToLL.root"),
+    outdir = cms.string("./"),
     useFitter=cms.bool(False),
     isMC = cms.bool(True),
     evStart = cms.int32(0),
