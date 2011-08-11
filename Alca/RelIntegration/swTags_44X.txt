@@ -1,2 +1,3 @@
-# tagset 59543
-V02-00-02 CalibCalorimetry/EcalCorrelatedNoiseAnalysisAlgos	
+
+Calibration/IsolatedParticles V01-04-08
+CalibCalorimetry/EcalLaserCorrection V00-02-04     
