@@ -1,3 +1,2 @@
 
-Calibration/IsolatedParticles V01-04-08
 CalibCalorimetry/EcalLaserCorrection V00-02-04     
