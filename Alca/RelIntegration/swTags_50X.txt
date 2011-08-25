@@ -1,4 +1,4 @@
 
 Calibration/EcalCalibAlgos	     V01-00-07
-CondCore/DBCommon		     V10-04-02
-Alignment/ReferenceTrajectories	     V01-02-06
+#CondCore/DBCommon		     V10-04-02
+#Alignment/ReferenceTrajectories	     V01-02-06
