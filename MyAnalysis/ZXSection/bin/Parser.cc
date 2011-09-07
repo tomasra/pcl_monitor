@@ -1,29 +1,3 @@
-#define MaxParsers 2000
-Int_t ParserNo = 0;
-
-struct FGParser
-{
-  Double_t UBound;
-  Double_t LBound;
-  Double_t RecordedLumi;
-  Double_t DeliveredLumi;
-
-  Int_t EventCount;
-  Int_t LumiSecCount;
-  Int_t StackId;
-  Int_t Family;
-  Int_t Dataset;
-
-  Bool_t isAlive;
-  Double_t X, Y;
-  Double_t ErrX, ErrY;
-  Double_t Sumw2;
-};
-
-FGParser Parsers[MaxParsers];
-TString *FamilyNames[40];
-TString *FamilyTitles[40];
-
 TString FGItoa(Int_t Valore)
 {
   char Buffer[10];
@@ -52,7 +26,7 @@ void LoadFamilyNames()
   while (!feof(hFile))
   {
     fgets(Buffer, 512, hFile);
-    cout << Buffer << "\n";
+    //cout << Buffer << "\n";
     if (Buffer[0] != '#')
     {
       for (Int_t i = 0; i < 3; i++) Fields[i] = new TString("");
@@ -77,65 +51,10 @@ void LoadFamilyNames()
 	FamilyId = Fields[0] -> Atoi();
 	FamilyNames[FamilyId] = Fields[1];
 	FamilyTitles[FamilyId] = Fields[2];
+	cout << FamilyId << " " << *FamilyNames[FamilyId] << " - " << *FamilyTitles[FamilyId] << "\n";
       }
     } 
   }
-  fclose(hFile);
-}
-
-void SetupParsers();
-
-void LoadParsers()
-{
-  FILE *hFile = fopen("test/Parsers.txt", "r");
-  char Buffer[512];
-  TString *Fields[6];
-  Int_t CurField, CurChar;
-  
-  SetupParsers();
-  LoadFamilyNames();
-  if (feof(hFile)) cout << "Errore: apertura file parser.\n";
-  ParserNo = -1;
-  while (!feof(hFile))
-  {
-    fgets(Buffer, 512, hFile);
-    cout << Buffer << "\n";
-    if (Buffer[0] != '#')
-    {
-      for (Int_t i = 0; i < 6; i++) Fields[i] = new TString("");
-      CurField = 0;
-      CurChar = 0;
-    
-      while (Buffer[CurChar] > 31)
-      {
-	if (Buffer[CurChar] == ' ')
-          {if (CurField < 5) CurField++;}
-	else Fields[CurField] -> Append(Buffer[CurChar]); 
-	CurChar++;
-      }
-      
-      cout << *Fields[0] << "\n";
-      cout << *Fields[1] << "\n";
-      cout << *Fields[2] << "\n";
-      cout << *Fields[3] << "\n";
-      cout << *Fields[4] << "\n\n";
-      if (Fields[0] -> IsDigit() && Fields[1] -> IsDigit() && Fields[2] -> IsFloat() &&
-          Fields[3] -> IsFloat() && Fields[4] -> IsDigit())
-      {
-	ParserNo++;
-	Parsers[ParserNo].Family = Fields[0] -> Atoi();
-	Parsers[ParserNo].StackId = Fields[1] -> Atoi();
-	Parsers[ParserNo].LBound = Fields[2] -> Atof();
-	Parsers[ParserNo].UBound = Fields[3] -> Atof();
-	Parsers[ParserNo].Dataset = Fields[4] -> Atoi();
-	cout << Parsers[ParserNo].Family << " "<< Parsers[ParserNo].StackId << " "
-             << Parsers[ParserNo].LBound << " "<< Parsers[ParserNo].UBound << " "<< Parsers[ParserNo].Dataset << "\n";
-      }
-    } 
-  }
-
-  ParserNo++;
-  cout << "Numero parser:" << ParserNo << "\n";
   fclose(hFile);
 }
 
@@ -153,27 +72,62 @@ void SetupParsers()
   }
 }
 
-void ParsersLumiAdd(Int_t StackId, Int_t Run, Int_t Lumi, Double_t Delivered, Double_t Recorded)
+Bool_t ParsersLumiAdd(Int_t StackID, Int_t Run, FGLumiEntry *Lumi, FGBunch *Bunch)
 {
+  //Riscrivere
+  
+  //if (Run > 162712) return kTRUE;
+  //if (Run == 163334 && Lumi->Lumi == 1)
+      //cout << "Parserlumiadd: " << Run << " " << Lumi -> Lumi << " " << Bunch -> Id << " " << Bunch -> Lumi << "\n";
   for (Int_t i = 0; i < ParserNo; i++)
-  {
-    if (Parsers[i].LBound < Delivered && Parsers[i].UBound > Delivered && Parsers[i].StackId == StackId)
+    if (
+	(Parsers[i].StackId == StackID) &&
+
+	((!Parsers[i].CutOnBXLumi) || 
+	 (Parsers[i].LowBXLumi < Bunch -> Lumi && Parsers[i].HiBXLumi > Bunch -> Lumi)) &&
+
+	((!Parsers[i].CutOnRunLumi) || 
+	 (Parsers[i].LowRun <= Run && Run <= Parsers[i].HiRun)) &&
+
+	((!Parsers[i].LocomotiveOnly) || Bunch -> isLocomotive)
+	)
     {
-      Parsers[i].DeliveredLumi += Delivered;
-      Parsers[i].RecordedLumi += Recorded;
-      Parsers[i].Sumw2 += Delivered * Delivered;
-      Parsers[i].LumiSecCount++;
-    }
-  }
+      //cout << "Aggiunta luminosità [" << i << "]: " << Bunch -> Lumi << "\n";
+
+      //cout << Parsers[i].DeliveredLumi<< "\n";
+      if (Lumi -> Delivered > 0)
+      {
+	Parsers[i].DeliveredLumi += Bunch -> Lumi;
+	//cout << Parsers[i].DeliveredLumi<< "\n";
+
+	Parsers[i].RecordedLumi += (Lumi -> Recorded) / (Lumi -> Delivered) * Bunch -> Lumi;
+	Parsers[i].Sumw2 += Bunch -> Lumi * Bunch -> Lumi;
+	Parsers[i].LumiSecCount++;
+      }
+    };
+
+  return kTRUE;
 }
 
-void ParserEventAdd(PhysicsEvent_t *Evento, FGJob *Job) //Int_t Run, Int_t Lumi, Float_t Delivered[2], Float_t Recorded[2])
+void ParserEventAdd(PhysicsEvent_t *Evento, FGJob *Job, Double_t Weight) //Int_t Run, Int_t Lumi, Float_t Delivered[2], Float_t Recorded[2])
 {
+  // Riscrivere
+
+  //if (Evento -> Run > 162712) return;
   for (Int_t i = 0; i < ParserNo; i++)
-    if (Parsers[i].LBound < Evento -> Delivered[Parsers[i].StackId] &&
-	Parsers[i].UBound > Evento -> Delivered[Parsers[i].StackId] &&
-	Job -> Dataset == Parsers[i].Dataset)
-      Parsers[i].EventCount++;
+  {
+    if (
+	((!Parsers[i].CutOnBXLumi) || 
+	 (Parsers[i].LowBXLumi < Evento -> BXDelivered[Parsers[i].StackId] &&
+	   Parsers[i].HiBXLumi > Evento -> BXDelivered[Parsers[i].StackId])) &&
+
+	 ((!Parsers[i].CutOnRunLumi) || 
+	  (Parsers[i].LowRun <= Evento -> Run && Evento -> Run <= Parsers[i].HiRun)) &&
+
+	((!Parsers[i].LocomotiveOnly) || Evento -> isLocomotive[Parsers[i].StackId])
+	)
+      if (PartOfIntList(Parsers[i].Dataset, Job -> Dataset)) Parsers[i].EventCount += Weight;
+  }
 }
 
 void ComputeParserCoords()
@@ -183,15 +137,16 @@ void ComputeParserCoords()
     Parsers[i].isAlive = Parsers[i].LumiSecCount != 0;
     if (Parsers[i].isAlive)
     {
-      Parsers[i].X = Parsers[i].DeliveredLumi / Parsers[i].LumiSecCount / 23;
+      Parsers[i].X = Parsers[i].DeliveredLumi / Parsers[i].LumiSecCount;
       Parsers[i].ErrX = Parsers[i].Sumw2 + Parsers[i].DeliveredLumi * Parsers[i].DeliveredLumi - 2 * Parsers[i].DeliveredLumi * Parsers[i].Sumw2;
-      Parsers[i].ErrX = TMath::Sqrt(Parsers[i].ErrX / Parsers[i].LumiSecCount) / 23;
-      Parsers[i].Y = Parsers[i].EventCount / Parsers[i].RecordedLumi;
-      Parsers[i].ErrY = TMath::Sqrt(Parsers[i].EventCount) / Parsers[i].DeliveredLumi + 0.025 * Parsers[i].Y;
+      Parsers[i].ErrX = 0; //TMath::Sqrt(Parsers[i].ErrX / Parsers[i].LumiSecCount);
+      Parsers[i].Y = Parsers[i].EventCount / Parsers[i].RecordedLumi / 23;
+      Parsers[i].ErrY = TMath::Sqrt(Parsers[i].EventCount) / Parsers[i].DeliveredLumi / 23 + 0.025 * Parsers[i].Y;
     }
   }
 }
 
+/*
 void ParserPrint()
 {
   cout << "\n";
@@ -202,7 +157,7 @@ void ParserPrint()
     cout << Parsers[i].LBound << " " << Parsers[i].UBound << "\n ";
     cout << Parsers[i].EventCount << " " << Parsers[i].DeliveredLumi << " " << Parsers[i].RecordedLumi << "\n";
   }
-}
+  }*/
 
 Int_t FindNextFamily(Int_t FamilyId)
 {
@@ -217,7 +172,7 @@ Int_t FindNextFamily(Int_t FamilyId)
       if (Parsers[i].Family > FamilyId && (BestResult == -1 || BestResult > Parsers[i].Family))
 	BestResult = Parsers[i].Family;
     }
-  }
+}
 
   cout << BestResult << "\n";
   return BestResult;
@@ -236,13 +191,15 @@ Int_t CountParserFamily(Int_t FamilyId)
 void ExportParsers()
 {
   hOutputFile -> cd(OutputPath + ":/");
+  TGraphErrors *TempGraphs[40];
 
   Int_t CurFamily = FindNextFamily(-1);
   //cout << "PrimaFamigliaTrovata: " << CurFamily << "\n";
   while (CurFamily > -1)
   {
+    cout << "Esportazione famiglia #" << CurFamily << "\n";
     Int_t PointCount = CountParserFamily(CurFamily);
-    TGraphErrors *TempGraph = new TGraphErrors(PointCount);
+    TempGraphs[CurFamily] = new TGraphErrors(PointCount);
     TCanvas *TempCanv = new TCanvas(FamilyNames[CurFamily] -> Data(), FamilyTitles[CurFamily] -> Data(), 550, 400);
 
     Int_t PointId = 0;
@@ -250,20 +207,109 @@ void ExportParsers()
     {
       if (Parsers[i].isAlive && Parsers[i].Family == CurFamily)
       {
-	TempGraph -> SetPoint(PointId, Parsers[i].X, Parsers[i].Y);
-	TempGraph -> SetPointError(PointId, Parsers[i].ErrX, Parsers[i].ErrY); 
+	TempGraphs[CurFamily] -> SetPoint(PointId, Parsers[i].X, Parsers[i].Y);
+	TempGraphs[CurFamily] -> SetPointError(PointId, Parsers[i].ErrX, Parsers[i].ErrY); 
 	cout << "Point set: " << PointId << " " << Parsers[i].X << " " << Parsers[i].Y << " " << Parsers[i].ErrX << " " << Parsers[i].ErrY << "\n";
 	PointId++;
       }
     }
 
-    TempGraph -> GetXaxis() -> SetTitle("Instant lumi (Hz / #mu b)");
-    TempGraph -> GetYaxis() -> SetTitle("#sigma (1 / #mu b)");
+    TempGraphs[CurFamily] -> SetMarkerColor(FGColor(CurFamily));
+    TempGraphs[CurFamily] -> GetXaxis() -> SetTitle("Instant lumi (Hz / #mu b)");
+    TempGraphs[CurFamily] -> GetYaxis() -> SetTitle("#sigma (#mu b)");
     // TempGraph -> GetYaxis() -> SetLimits(0, .0005);
 
-    TempGraph -> Draw("A*E1");
-    TempGraph -> Fit("pol1");
+    TempGraphs[CurFamily] -> Draw("A*E1");
+    TempGraphs[CurFamily] -> Fit("pol1");
     TempCanv -> Write();
+
+    /*
+    /////////////////////////////////
+    // Esportiamo anche il conteggio
+
+    TempGraphs[CurFamily] = new TGraphErrors(PointCount);
+    TempCanv = new TCanvas(FamilyNames[CurFamily] -> Data() + TString("Event count"), 
+			   FamilyTitles[CurFamily] -> Data() + TString("Event count"), 550, 400);
+
+    PointId = 0;
+    for (Int_t i = 0; i < ParserNo; i++)
+    {
+      if (Parsers[i].isAlive && Parsers[i].Family == CurFamily)
+      {
+	TempGraphs[CurFamily] -> SetPoint(PointId, i, Parsers[i].EventCount);
+	TempGraphs[CurFamily] -> SetPointError(PointId, Parsers[i].ErrX, Parsers[i].ErrY); 
+	cout << "Point set: " << PointId << " " << Parsers[i].X << " " << Parsers[i].Y << " " << Parsers[i].ErrX << " " << Parsers[i].ErrY << "\n";
+	PointId++;
+      }
+    }
+
+    TempGraphs[CurFamily] -> SetMarkerColor(FGColor(CurFamily));
+    TempGraphs[CurFamily] -> GetXaxis() -> SetTitle("Instant lumi (Hz / #mu b)");
+    TempGraphs[CurFamily] -> GetYaxis() -> SetTitle("Numero di eventi");
+    // TempGraph -> GetYaxis() -> SetLimits(0, .0005);
+
+    TempGraphs[CurFamily] -> Draw("A*E1");
+    TempGraphs[CurFamily] -> Fit("pol1");
+    TempCanv -> Write();
+
+    /////////////////////////////////
+    // Esportiamo la lumi recorded
+
+    TempGraphs[CurFamily] = new TGraphErrors(PointCount);
+    TempCanv = new TCanvas(FamilyNames[CurFamily] -> Data() + TString("Recorded Lumi"),
+			   FamilyTitles[CurFamily] -> Data() + TString("Recorded Lumi"), 550, 400);
+
+    PointId = 0;
+    for (Int_t i = 0; i < ParserNo; i++)
+    {
+      if (Parsers[i].isAlive && Parsers[i].Family == CurFamily)
+      {
+	TempGraphs[CurFamily] -> SetPoint(PointId, i, Parsers[i].RecordedLumi);
+	TempGraphs[CurFamily] -> SetPointError(PointId, Parsers[i].ErrX, Parsers[i].ErrY); 
+	cout << "Point set: " << PointId << " " << Parsers[i].X << " " << Parsers[i].Y << " " << Parsers[i].ErrX << " " << Parsers[i].ErrY << "\n";
+	PointId++;
+      }
+    }
+
+    TempGraphs[CurFamily] -> SetMarkerColor(FGColor(CurFamily));
+    TempGraphs[CurFamily] -> GetXaxis() -> SetTitle("Instant lumi (Hz / #mu b)");
+    TempGraphs[CurFamily] -> GetYaxis() -> SetTitle("Numero di eventi");
+    // TempGraph -> GetYaxis() -> SetLimits(0, .0005);
+
+    TempGraphs[CurFamily] -> Draw("A*E1");
+    TempGraphs[CurFamily] -> Fit("pol1");
+    TempCanv -> Write();*/
+
     CurFamily = FindNextFamily(CurFamily);
   }
+
+  /*
+  //Temporaneo, sistemare.
+  TCanvas *TempCanv = new TCanvas("Compare Lumi1", "Lumi 1 data comparison", 550, 400);
+  TempGraphs[3] -> Draw("A*E1");
+  TempGraphs[5] -> Draw("SAME*E1");
+  TempGraphs[7] -> Draw("SAME*E1");
+  TempGraphs[9] -> Draw("SAME*E1");
+  TempGraphs[11] -> Draw("SAME*E1");
+  TempGraphs[13] -> Draw("SAME*E1");
+  TempGraphs[15] -> Draw("SAME*E1");
+  TempGraphs[17] -> Draw("SAME*E1");
+  TempCanv -> Write();
+
+  TempCanv = new TCanvas("Compare Lumi2", "Lumi 2 data comparison", 550, 400);
+  TempGraphs[4] -> Draw("A*E1");
+  TempGraphs[6] -> Draw("SAME*E1");
+  TempGraphs[8] -> Draw("SAME*E1");
+  TempGraphs[10] -> Draw("SAME*E1");
+  TempGraphs[12] -> Draw("SAME*E1");
+  TempGraphs[14] -> Draw("SAME*E1");
+  TempGraphs[16] -> Draw("SAME*E1");
+  TempGraphs[18] -> Draw("SAME*E1");
+  TempCanv -> Write();
+
+  TempCanv = new TCanvas("Compare Lumis", "Lumi 1 and 2 data comparison", 550, 400);
+  TempGraphs[1] -> Draw("A*E1");
+  TempGraphs[2] -> Draw("SAME*E1");
+  TempCanv -> Write();*/
+
 }

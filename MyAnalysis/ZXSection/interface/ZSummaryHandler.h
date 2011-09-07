@@ -21,7 +21,7 @@ struct ZZ2l2nuSummary_t
   enum LeptonInfo { PtError, NeutralHadronIso, ChargedHadronIso, PhotonIso };
   enum JetInfo { TCHE, TCHP, SSVHE, SSVHP };
 
-  Int_t run,lumi,event;
+  Int_t run,lumi,BXId,event;
   Int_t cat;
   Bool_t hasTrigger;
 
@@ -85,7 +85,12 @@ class ZSummaryHandler{
 
   //read mode
   bool attachToTree(TTree *t);
-  void getEntry(int ientry) { if(t_) t_->GetEntry(ientry); }
+  Int_t getEntry(int ientry)
+  {
+    if(t_) return t_ -> GetEntry(ientry); 
+    else return -2;
+  }
+
   int getEntries() { return (t_ ? t_->GetEntriesFast() : 0); }
 
   //getter

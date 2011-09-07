@@ -54,6 +54,10 @@ typedef std::vector<PhysicsObject_Gamma>  PhysicsObjectGammaCollection;
 //
 struct PhysicsEvent_t
 {
+  Int_t Run, LumiSection, BXId, Event, VertexCount;
+  Float_t Delivered[2], Recorded[2], BXDelivered[2];
+  Bool_t isLocomotive[2];
+
   LorentzVector met[7];
   LorentzVector vtx;
   LorentzVector gamma;
@@ -61,6 +65,7 @@ struct PhysicsEvent_t
   PhysicsObjectLeptonCollection leptons;
 
   PhysicsObjectCollection genjets, genleptons, genmet, genhiggs, gengammas;
+  Int_t Tag;
 };
 
 //
@@ -117,6 +122,14 @@ PhysicsEvent_t getPhysicsEventFrom(ZZ2l2nuSummary_t &ev)
 	}
     }
   phys.genmet.push_back( PhysicsObject(genmet,0) );
+
+  //Aggiunte di altre cose che mi servono:
+  phys.Tag = ev.cat;
+  phys.Run = ev.run;
+  phys.LumiSection = ev.lumi;
+  phys.BXId = ev.BXId;
+  phys.Event = ev.event;
+  phys.VertexCount = ev.nvtx;
 
   return phys;
 }

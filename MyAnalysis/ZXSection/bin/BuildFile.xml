@@ -4,7 +4,6 @@
 <use name="rootgraphics"/>
 <use name="boost_program_options"/>
 <use name="FWCore/ParameterSet"/>
-<use name="FWCore/PythonParameterSet"/>
 <use name="FWCore/FWLite"/>
 <use name="PhysicsTools/FWLite"/>
 <use name="CondFormats/PhysicsToolsObjects"/>

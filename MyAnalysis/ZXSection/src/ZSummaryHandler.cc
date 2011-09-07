@@ -162,6 +162,7 @@ bool ZSummaryHandler::attachToTree(TTree *t)
   t_->GetBranch("lumi")->SetAddress(&evSummary_.lumi);
   t_->GetBranch("event")->SetAddress(&evSummary_.event);
   t_->GetBranch("cat")->SetAddress(&evSummary_.cat);
+  t_->GetBranch("bx")->SetAddress(&evSummary_.BXId);
   
   //trigger bit
   if(t_->GetBranch("hasTrigger")) t_->GetBranch("hasTrigger")->SetAddress(&evSummary_.hasTrigger);

@@ -86,6 +86,8 @@ Bool_t LoadConfiguration()
 
   InputPath = *SeekConfiguration(TString("InputDir"));
   OutputDir = *SeekConfiguration(TString("OutputFile"));
+  OutputDir.Append(FGItoa(WebVersion) + TString(".root"));
+
   RootFileDirName = *SeekConfiguration(TString("RootDir"));
   JobFilePath = *SeekConfiguration(TString("JobFile"));
   OutputLumi = SeekConfiguration(TString("OutputLumi")) -> Atof();

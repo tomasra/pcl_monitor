@@ -261,9 +261,7 @@ TString ExportWebObjectHTMLTree(FGTreeObject *Oggetto, TString *DiskDestination,
 }
 
 Bool_t ExportWebStructure(FGTreeObject *Hook, TString *DiskDestination, TString *WebUrl)
-{
-  if (Hook == WebFileStructure) gSystem -> Exec("rm " + *DiskDestination + "*");
-  
+{  
   {
     Int_t d = WebObjectDepth(Hook);
     for (Int_t i = 0; i < d; i++) cout << "  ";
@@ -337,14 +335,14 @@ Bool_t ExportWebStructure(FGTreeObject *Hook, TString *DiskDestination, TString 
 
     TempPad -> SetLogy(0);
     Hook -> Elemento -> Draw(DrawOptions -> Data()); 
-    TempCanv -> SaveAs(*DiskDestination + WebStructureCFullPath(*Hook) +  "_Lin.png");
+    TempCanv -> SaveAs(*DiskDestination + WebStructureCFullPath(*Hook) +  "_Lin.jpg");
 
     if (!LowQuality)
     {
       TempPad -> SetLogy(1);
     
       Hook -> Elemento -> Draw(DrawOptions -> Data());
-      if (!DebugMode)TempCanv -> SaveAs(*DiskDestination + WebStructureCFullPath(*Hook) +  "_Log.png");
+      if (!DebugMode)TempCanv -> SaveAs(*DiskDestination + WebStructureCFullPath(*Hook) +  "_Log.jpg");
 
       TempCanv -> SetCanvasSize(1024, 768);
 
@@ -353,17 +351,17 @@ Bool_t ExportWebStructure(FGTreeObject *Hook, TString *DiskDestination, TString 
     
       TempPad -> SetLogy(0);
       Hook -> Elemento -> Draw(DrawOptions -> Data());
-      if (!DebugMode) TempCanv -> SaveAs(*DiskDestination + WebStructureCFullPath(*Hook) +  "_LinHQ.png");
+      if (!DebugMode) TempCanv -> SaveAs(*DiskDestination + WebStructureCFullPath(*Hook) +  "_LinHQ.jpg");
 
       TempPad -> SetLogy(1);
       Hook -> Elemento -> Draw(DrawOptions -> Data());
-      if (!DebugMode) TempCanv -> SaveAs(*DiskDestination + WebStructureCFullPath(*Hook) +  "_LogHQ.png");
+      if (!DebugMode) TempCanv -> SaveAs(*DiskDestination + WebStructureCFullPath(*Hook) +  "_LogHQ.jpg");
     }
     ContentStack = ReadWholeFile("html/GraphicTemplate.html");
-    ContentStack -> ReplaceAll("$ImageLin$", *WebUrl + WebStructureCFullPath(*Hook) +  "_Lin.png");
-    ContentStack -> ReplaceAll("$ImageLog$", *WebUrl + WebStructureCFullPath(*Hook) +  "_Log.png");
-    ContentStack -> ReplaceAll("$ImageLinHQ$", *WebUrl + WebStructureCFullPath(*Hook) +  "_LinHQ.png");
-    ContentStack -> ReplaceAll("$ImageLogHQ$", *WebUrl + WebStructureCFullPath(*Hook) +  "_LogHQ.png"); 
+    ContentStack -> ReplaceAll("$ImageLin$", *WebUrl + WebStructureCFullPath(*Hook) +  "_Lin.jpg");
+    ContentStack -> ReplaceAll("$ImageLog$", *WebUrl + WebStructureCFullPath(*Hook) +  "_Log.jpg");
+    ContentStack -> ReplaceAll("$ImageLinHQ$", *WebUrl + WebStructureCFullPath(*Hook) +  "_LinHQ.jpg");
+    ContentStack -> ReplaceAll("$ImageLogHQ$", *WebUrl + WebStructureCFullPath(*Hook) +  "_LogHQ.jpg"); 
 
     if (Hook -> Elemento != TempCanv) delete TempCanv;
   }
@@ -385,6 +383,33 @@ void FullWebExport(TString FilePath)
 
   cout << "\n\nEsportazione struttura:\n\n";
   //PlotWebStructure(WebFileStructure);
-  ExportWebStructure(WebFileStructure, new TString("/afs/cern.ch/user/f/fguatier/www/"), new TString(""));
+  TString *DiskDestination = new TString(TString("/afs/cern.ch/user/f/fguatier/www/Version_") + FGItoa(WebVersion)  + TString("/"));
+
+  gSystem -> Exec("mkdir " + *DiskDestination);
+  gSystem -> Exec("mkdir " + *DiskDestination + "/Images");
+  gSystem -> Exec("mkdir " + *DiskDestination + "/About");
+
+  gSystem -> Exec("rm " + *DiskDestination + "*");
+  gSystem -> Exec("cp /afs/cern.ch/user/f/fguatier/www/Images/* " + *DiskDestination + "/Images/");
+  gSystem -> Exec("cp /afs/cern.ch/user/f/fguatier/www/About/* " + *DiskDestination + "/About/");
+
+  gSystem -> Exec("fs sa " + *DiskDestination + " webserver:afs read");
+  gSystem -> Exec("fs sa " + *DiskDestination + "/Images webserver:afs read");
+  gSystem -> Exec("fs sa " + *DiskDestination + "/About webserver:afs read");
+
+
+  ExportWebStructure(WebFileStructure, DiskDestination, new TString(""));
+
+  ofstream hFile;
+
+  hFile.open("/afs/cern.ch/user/f/fguatier/www/index.html", ios::out);
+  for (Int_t i = 0; i <= WebVersion; i++)
+  {
+    hFile << "<a href=\"http://fguatier.web.cern.ch/fguatier/Version_" << i << "/index.html\"> Versione " << i << "</a> - ";
+    hFile << "<a href=\"http://fguatier.web.cern.ch/fguatier/Version_" << i << ".root\"> Root file </a><br />\n";
+  }
+  hFile.close();
+
+  gSystem -> Exec("cp " + FilePath + " /afs/cern.ch/user/f/fguatier/www/Version_" + FGItoa(WebVersion) + ".root");
   //ExportWebStructure(WebFileStructure, new TString("/afs/cern.ch/user/f/fguatier/www/"), new TString("http://fguatier.web.cern.ch/fguatier/"));
 }

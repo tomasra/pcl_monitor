@@ -1,3 +1,5 @@
+#define WebVersion 2
+
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
@@ -61,16 +63,26 @@ Bool_t DebugMode = kFALSE;
 Bool_t LowQuality = kFALSE;
 Bool_t SkipMC = kFALSE;
 Bool_t LimitedLumi = kFALSE;
+Bool_t SetupOnly = kFALSE;
+
+ifstream LumiBinFile[2];
+ofstream MissingLumiFile[2];
+ofstream Locomotives[2];
 
 float rescaleFactor;
 int evStart, evEnd;
 
-#include "MyAnalysis/ZXSection/bin/Jobs.h"
 
+#include "MyAnalysis/ZXSection/bin/Lists.cc"
+#include "MyAnalysis/ZXSection/bin/Parser.h"
+#include "MyAnalysis/ZXSection/bin/Jobs.h"
+#include "MyAnalysis/ZXSection/bin/Luminosity.h"
+
+#include "MyAnalysis/ZXSection/bin/Colors.cc"
+#include "MyAnalysis/ZXSection/bin/ParserLoader.cc"
 #include "MyAnalysis/ZXSection/bin/Parser.cc"
 #include "MyAnalysis/ZXSection/bin/Luminosity.cc"
 #include "MyAnalysis/ZXSection/bin/Web.cc"
-#include "MyAnalysis/ZXSection/bin/Colors.cc"
 #include "MyAnalysis/ZXSection/bin/Jobs.cc"
 #include "MyAnalysis/ZXSection/bin/Physics.cc"
 #include "MyAnalysis/ZXSection/bin/Config.cc"
@@ -149,7 +161,7 @@ Bool_t AnalyzeFile(TString fPath, FGJob *Job)
   cout << "Analisi file: " << fPath << " [0.000000%]";
   for(int i = evStart; i < evEnd; i++)
   {
-    if (i % 5000 == 0)
+    if (i % 100 == 0)
     {
       sprintf(Progress, "%f", ((float)i - evStart) / (evEnd - evStart) * 100);
       for (int j = 0; j < 10; j++) cout << "\b";
@@ -157,6 +169,7 @@ Bool_t AnalyzeFile(TString fPath, FGJob *Job)
       cout << "%]";
       cout.flush();
     }
+
     Codice = LeavesCutter.getEntry(i);
     if (Codice < 1)
     {
@@ -170,7 +183,6 @@ Bool_t AnalyzeFile(TString fPath, FGJob *Job)
     {
       ZZ2l2nuSummary_t &Event = LeavesCutter.getEvent();
       PhysicsEvent_t Physics = getPhysicsEventFrom(Event);
-
       float Weight = Event.weight;
 
       if (!(Job -> isMC))
@@ -178,20 +190,37 @@ Bool_t AnalyzeFile(TString fPath, FGJob *Job)
         Weight = 1;
 
 	FGLumiEntry *TempLumi = GetLuminosity(0, Physics.Run, Physics.LumiSection);
-	if (TempLumi == 0 || TempLumi -> Delivered < 0.1 or TempLumi -> Recorded < 0.1) MissingLumi[0]++;
+
+	if (TempLumi == 0 || TempLumi -> Delivered < 0.1 or TempLumi -> Recorded < 0.1)
+	{
+	  MissingLumi[0]++;
+	  MissingLumiFile[0] << Physics.Run << " " << Physics.LumiSection << " " << Physics.BXId << "\n";
+	  Physics.isLocomotive[0] = kFALSE;
+	}
 	else
 	{
 	  Physics.Delivered[0] = TempLumi -> Delivered;
 	  Physics.Recorded[0] = TempLumi -> Recorded;
+	  Physics.isLocomotive[0] = PartOfIntList(TempLumi -> Locomotive, Physics.BXId);
 	}
+	Physics.BXDelivered[0] = GetBXLuminosity2(0, Physics.Run, Physics.LumiSection, Physics.BXId);
+
+	//if (Physics.BXDelivered[0] == -1) cout << "Lumi mancante: " << Physics.Run << " " << Physics.LumiSection << " " << Physics.BXId << "\n";
 
         TempLumi = GetLuminosity(1, Physics.Run, Physics.LumiSection);
-	if (TempLumi == 0 || TempLumi -> Delivered < 0.1 or TempLumi -> Recorded < 0.1) MissingLumi[1]++;
+	if (TempLumi == 0 || TempLumi -> Delivered < 0.1 or TempLumi -> Recorded < 0.1)
+	{
+	  MissingLumi[1]++;
+	  MissingLumiFile[1] << Physics.Run << " " << Physics.LumiSection << " " << Physics.BXId << "\n";
+	  Physics.isLocomotive[1] = kFALSE;
+	}
 	else
 	{
 	  Physics.Delivered[1] = TempLumi -> Delivered;
 	  Physics.Recorded[1] = TempLumi -> Recorded;
+	  Physics.isLocomotive[1] = PartOfIntList(TempLumi -> Locomotive, Physics.BXId);
 	}
+	Physics.BXDelivered[1] = GetBXLuminosity2(1, Physics.Run, Physics.LumiSection, Physics.BXId);
 	
 	//.Run, Physics.LumiSection, Physics.Delivered, Physics.Recorded);
       }
@@ -402,6 +431,7 @@ int main(int argc, char* argv[])
     if (strcmp(*(argv + i), "lq") == 0) LowQuality = kTRUE;
     if (strcmp(*(argv + i), "nomc") == 0) SkipMC = kTRUE;
     if (strcmp(*(argv + i), "limitlumi") == 0) LimitedLumi = kTRUE;
+    if (strcmp(*(argv + i), "suonly") == 0) SetupOnly = kTRUE;    
   } 
 
   gStyle -> SetOptFit(111);
@@ -409,10 +439,23 @@ int main(int argc, char* argv[])
 
   cout << "Caricamento configurazione... \n";
   LoadConfiguration();
+  LoadFamilyNames();
   LoadParsers();
- 
+  //PrintParsers();
+
+  if (SetupOnly) return 0;
+
   cout << "Caricamento database luminosità... \n";
+  //LumiBinFile.open ("/afs/cern.ch/user/f/fguatier/LumiDB/LumiBXRed.bin", ios::in | ios::binary);
+  LumiBinFile[0].open ("/data/fguatier/LumiBX.bin", ios::in | ios::binary);
+  LumiBinFile[1].open ("/data/fguatier/LumiBX2.bin", ios::in | ios::binary);
+  MissingLumiFile[0].open ("MissingLumi1.txt", ios::out);
+  MissingLumiFile[1].open ("MissingLumi2.txt", ios::out);  
+  Locomotives[0].open ("Locomotives1.txt", ios::out);
+  Locomotives[1].open ("Locomotives2.txt", ios::out);  
+
   LoadFullLuminosityDB();
+  PrintParsers();
 
   cout << "Caricamento Job Queue...\n\n";
   LoadJobQueue(JobFilePath);
@@ -436,13 +479,22 @@ int main(int argc, char* argv[])
   }
 
   ComputeParserCoords();
-  ParserPrint();
+  PrintParsers();
 
   //CreateHistogramUnionEx();
   //DrawEventCountReport();
+  //PrintParsers();
   ExportParsers();
 
   CloseOutputFile();
+  LumiBinFile[0].close();
+  LumiBinFile[1].close();
+
+  MissingLumiFile[0].close();
+  MissingLumiFile[1].close();
+
+  Locomotives[0].close();
+  Locomotives[1].close();
 
   cout << "\nInizio esportazione web\n";
   FullWebExport(TString(OutputPath));
