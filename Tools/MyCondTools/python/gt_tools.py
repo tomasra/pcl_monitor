@@ -397,7 +397,7 @@ class IOVEntry:
                 till = timeStamptoDate(self._till)
             else:
                 till = 'inf'
-            return str(timeStamptoDate(self._since)) + '\t' + str(till) + '\t' + self._payloadToken
+            return str(timeStamptoDate(self._since)) + '(' + str(self._since) + ')' + '\t' + str(till) + '\t' + self._payloadToken
 
     def sinceDate(self):
         return datetime.strptime(timeStamptoDate(self._since),"%a %b %d %H:%M:%S  %Y")
@@ -1067,7 +1067,7 @@ def getLastRelease(releases, cycle):
             
     for relAndArea in releases:
         onerel = relAndArea[0]
-        if match in onerel:
+        if match in onerel and not "ONLINE" in onerel:
             # nigtly builds
             if "_X_" in onerel:
                 #print 'Nightly: ' + onerel

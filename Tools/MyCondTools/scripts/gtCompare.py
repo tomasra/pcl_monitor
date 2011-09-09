@@ -17,14 +17,14 @@ from Tools.MyCondTools.color_tools import *
 from Tools.MyCondTools.gt_tools import *
 from Tools.MyCondTools.odict import *
 
-def dump2XML(pfn, tag, passwd, begin):
+def dump2XML(gt, pfn, tag, passwd, begin):
     scratch = os.environ["SCRATCH"]
-    command = "cd " + scratch + " ; cmscond_2XML -c " + pfn + " -t " + tag + " -b " + str(begin) + " -P " + passwd 
+    command = "cd " + scratch + " ; cmscond_2XML -c " + pfn + " -t " + tag + " -b " + str(begin) + " -P " + passwd + "; mv " + tag + ".xml " + tag + "_" + gt + ".xml"
 
     outandstat = commands.getstatusoutput(command)
     if outandstat[0] != 0:
         print outandstat[1]
-    return scratch + "/" + tag + ".xml"
+    return scratch + "/" + tag + "_" + gt + ".xml"
 
 def diffXML(filename1, filename2):
     command = "diff " + filename1 + " " + filename2
@@ -265,7 +265,7 @@ if __name__     ==  "__main__":
 
         runnumber = 300000
 
-        if entry1.tagName() != entry2.tagName():
+        if entry1.tagName() != entry2.tagName() or entry1.account() != entry2.account():
 
             match = False
 
@@ -290,8 +290,8 @@ if __name__     ==  "__main__":
                     # 2 - Dump the last IOV in xml and compare
                     else:                     
                         if entry1.rcdID()[0] != "SiPixelGainCalibrationOfflineRcd" and entry1.rcdID()[0] != "DQMReferenceHistogramRootFileRcd":
-                            difffile1 = dump2XML(entry1.getOraclePfn(False), entry1.tagName(), passwdfile, lastiov1.since() + 1)
-                            difffile2 = dump2XML(entry2.getOraclePfn(False), entry2.tagName(), passwdfile, lastiov2.since() + 1)
+                            difffile1 = dump2XML(globaltag1, entry1.getOraclePfn(False), entry1.tagName(), passwdfile, lastiov1.since() + 1)
+                            difffile2 = dump2XML(globaltag2, entry2.getOraclePfn(False), entry2.tagName(), passwdfile, lastiov2.since() + 1)
 
                             if diffXML(difffile1, difffile2):
                                 match = True
@@ -307,8 +307,9 @@ if __name__     ==  "__main__":
 
                     
             if not match:
-                print entry1.rcdID()
+                print blue(str(entry1.rcdID()))
                 print "     tag 1: " + entry1.tagName() + " -> 2: " + entry2.tagName()
+                
                 nchanges += 1
                 
              
