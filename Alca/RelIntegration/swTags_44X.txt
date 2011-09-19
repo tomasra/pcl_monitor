@@ -1,0 +1,5 @@
+CondCore/DBOutputService	V10-02-03
+CondCore/IOVService		V10-03-00
+CondCore/ORA			V10-05-03
+CondCore/Utilities		V10-03-01
+CondFormats/Common		V10-02-00
