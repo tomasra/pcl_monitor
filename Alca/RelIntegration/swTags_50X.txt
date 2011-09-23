@@ -1,3 +1,8 @@
-
+CalibCalorimetry/EcalSRTools	V00-01-05
+CalibCalorimetry/HcalPlugins	V02-13-02
+CalibCalorimetry/HcalTPGEventSetup	V00-01-08
+CalibCalorimetry/HcalTPGIO		V00-00-06
+Alignment/CocoaApplication		V00-02-14
+CalibMuon/DTCalibration			V01-10-01
 
 
