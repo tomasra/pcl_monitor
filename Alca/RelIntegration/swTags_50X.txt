@@ -4,5 +4,4 @@ CalibCalorimetry/HcalTPGEventSetup	V00-01-08
 CalibCalorimetry/HcalTPGIO		V00-00-06
 Alignment/CocoaApplication		V00-02-14
 CalibMuon/DTCalibration			V01-10-01
-
-
+Configuration/Alca			V00-00-12
