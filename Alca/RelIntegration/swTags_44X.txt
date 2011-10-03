@@ -1,3 +1,9 @@
 CondCore/HIPlugins		     V00-00-05
 CondFormats/DataRecord		     V06-21-03
 CondFormats/HIObjects		     V00-00-07
+
+FastSimulation/Configuration         V04-13-06
+HLTrigger/Configuration              V12-02-34
+HLTrigger/Egamma                     V00-10-01
+HLTrigger/JetMET                     V00-05-01
+
