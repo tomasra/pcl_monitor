@@ -1,3 +1,6 @@
-CondCore/HIPlugins		     V00-00-05
-CondFormats/DataRecord		     V06-21-03
-CondFormats/HIObjects		     V00-00-07
+CalibFormats/SiStripObjects	     V16-01-00
+DPGAnalysis/SiStripTools	     V00-10-00
+DQM/SiStripMonitorHardware	     V01-01-02
+DQM/SiStripMonitorPedestals	     V03-00-08
+CondCore/DBCommon		     V10-04-04
+
