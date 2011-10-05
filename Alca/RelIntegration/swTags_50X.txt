@@ -1,3 +1,4 @@
+Geometry/EcalCommonData		V05-04-06
 CalibFormats/SiStripObjects	     V16-01-00
 DPGAnalysis/SiStripTools	     V00-10-00
 DQM/SiStripMonitorHardware	     V01-01-02
