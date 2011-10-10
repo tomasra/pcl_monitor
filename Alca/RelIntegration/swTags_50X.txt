@@ -1,5 +1,9 @@
-# already approved
-Geometry/EcalCommonData		V05-04-06
+CaloOnlineTools/EcalTools	V00-03-23
+CalibCalorimetry/EcalCorrelatedNoiseAnalysisAlgos	V02-00-03
+CondFormats/CastorObjects				V01-00-07-05
+CondFormats/HcalObjects					V03-07-05
+
+
 
 
 
