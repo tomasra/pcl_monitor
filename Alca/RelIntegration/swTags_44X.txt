@@ -1,2 +1,6 @@
-
+Calibration/TkAlCaRecoProducers     V00-03-21
+Configuration/DataProcessing             V00-11-06
+Configuration/EventContent             V04-01-15
+Configuration/StandardSequences     V01-18-91-02    
+CalibMuon/DTCalibration             V01-10-02 
 
