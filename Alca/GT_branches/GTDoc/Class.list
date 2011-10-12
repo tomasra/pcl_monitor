@@ -1,6 +1,6 @@
 [Class]
 
-GenerateDocFor: 42X_GR_R,42X_MC,2011_GR_P,2011_GR_E,2011_GR_H,44X_GR_R,44X_MC,42X_MC_Special
+GenerateDocFor: 42X_GR_R,42X_MC,2011_GR_P,2011_GR_E,2011_GR_H,44X_GR_R,44X_MC,42X_MC_Special,50X_MC,50X_GR_R
 LastByRelease: 42X,43X,44X
 
 [42X_MC_Special]
