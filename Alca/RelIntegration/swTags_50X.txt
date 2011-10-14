@@ -1,8 +1,9 @@
-CalibMuon/DTCalibration						V01-10-02
-Calibration/TkAlCaRecoProducers					V00-03-21
-Configuration/DataProcessing					V00-11-07
-Configuration/EventContent					V04-01-15
-Configuration/StandardSequences					V01-18-93
+V01-11-02-01      Alignment/CommonAlignmentProducer
+V01-10-02      CalibMuon/DTCalibration
+V00-03-22      Calibration/TkAlCaRecoProducers
+V00-11-07      Configuration/DataProcessing
+V04-01-15      Configuration/EventContent
+V01-18-93      Configuration/StandardSequences
 V07-01-07 HLTriggerOffline/Tau
 CalibCalorimetry/HcalAlgos                     V02-19-07
 RecoLocalCalo/HcalRecAlgos	V01-00-13
