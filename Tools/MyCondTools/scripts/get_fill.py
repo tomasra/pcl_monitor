@@ -23,9 +23,9 @@ def get_map():
             # we need to do something to avoid parsing commas in comment column
             group=line.split(',')[8]
             #energy=group.split(',')[0]
-            fill=line.split(',')[13]
+            fill=line.split(',')[line.count(",") - 7]
             runfillmap[run]=fill
-
+            print fill
     items = runfillmap.items()
     #print items
     items.sort()
