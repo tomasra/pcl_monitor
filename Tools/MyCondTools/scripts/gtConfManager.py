@@ -57,6 +57,11 @@ def createGTConfiguration(queueCfg, force, gtName):
 
     # check that the new GT is not already in oracle
     if gtExists(NEWGT, gtconnstring, passwdfile):
+        newfilename = NEWGT + ".conf"
+        if(not os.path.exists(newfilename)):
+            # get the file from oracle
+            print "conf file: " + newfilename + " not found, getting it from oracle!"
+            confFileFromDB(NEWGT, newfilename, gtconnstring, passwdfile)
         print error("***Error: GT: " + NEWGT + " is already in oracle: cannot be modified!!!")
         return 2
 
