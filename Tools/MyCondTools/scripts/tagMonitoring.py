@@ -38,6 +38,9 @@ dbName                 =  "oracle://cms_orcoff_prod/CMS_COND_31X_RUN_INFO"
 logName                = "oracle://cms_orcoff_prod/CMS_COND_31X_POPCONLOG"
 runinfoTag             = 'runinfo_31X_hlt'
 tier0DasSrc            = "http://gowdy-wttest.cern.ch:8304/tier0/runs"
+#tier0DasSrc            = "https://cmsweb.cern.ch/tier0/runs"
+tier0SafeCond          = "https://cmsweb.cern.ch/tier0/firstconditionsaferun"
+tier0Mon               = "https://cmsweb.cern.ch/T0Mon/static/pages/index.html"
 cacheFile              = ".tagMonitoring.cache"
 webArea                = '/afs/cern.ch/user/c/cerminar/www/O2OMonitoring/'
 
@@ -111,10 +114,10 @@ class RecordReport:
         self._accountName = None
         self._lastWrite = None
         self._lastWriteAge = None
-        self._lastWriteStatus = "OK"
+        self._lastWriteStatus = "ERROR"
         self._lastSince = None
         self._lastSinceAge = None
-        self._lastSinceStatus = "OK"
+        self._lastSinceStatus = "ERROR"
 
         
     def setLastO2OWrite(self, dateandtime, age, status):
@@ -206,6 +209,11 @@ class WebPageWriter:
         htmlpage.write('<li><a href=http://cms-conddb.cern.ch/popcon/PopConRecentActivityRecorded.html>Pop-Con Logger</a></li>\n')
         htmlpage.write('<li><a href=http://cms-conddb.cern.ch/popcon/PopConCronjobTailFetcher.html>Pop-Con Tail Fetcher</a></li>\n')
         htmlpage.write('<li><a href=http://cms-conddb.cern.ch/gtlist/>GT list </a></li>\n')
+
+        htmlpage.write('<li><a href=' + tier0DasSrc + '>DAS Run List </a></li>\n')
+        htmlpage.write('<li><a href=' + tier0SafeCond + '>First run safe for condition update </a></li>\n')
+        htmlpage.write('<li><a href=' + tier0Mon + '>Tier0Mon </a></li>\n')
+
         htmlpage.write('</ul>\n')
 
         htmlpage.write('<p>\n')
@@ -222,16 +230,16 @@ if __name__     ==  "__main__":
     tagsTomonitor = []
     
     laserTag = GTEntry()
-    laserTag.setEntry('EcalLaserAPDPNRatios_v6_noVPT_online',
+    laserTag.setEntry('EcalLaserAPDPNRatios_prompt',
                       "Calibration",
                       "oracle://cms_orcoff_prod/",
-                      "CMS_COND_311X_ECAL_LAS",
+                      "CMS_COND_42X_ECAL_LAS",
                       "EcalLaserAPDPNRatios",
                       "EcalLaserAPDPNRatiosRcd",
                       "EcalLaserAPDPNRatios", "")
 
     sistripdcsTag =  GTEntry()
-    sistripdcsTag.setEntry('SiStripDetVOff_v2_prompt',
+    sistripdcsTag.setEntry('SiStripDetVOff_v4_prompt',
                            "Calibration",
                            "oracle://cms_orcoff_prod/",
                            'CMS_COND_31X_STRIP',
@@ -337,7 +345,7 @@ if __name__     ==  "__main__":
             rcdRep.setLastO2OWrite(datelastupdate, updateage, statusForRpt)
         else:
             print "Error: No O2O updates to tag: " + tagName + " in account: " + accountName
-
+            #rcdRep.setLastO2OWrite(datelastupdate, updateage, "ERROR")
             
             
         # 2. check the status of the tag
@@ -358,6 +366,8 @@ if __name__     ==  "__main__":
         pageWriter.addRecordReport(recordName, rcdRep)
 
     for run in runList:
+        if run == 167551:continue
+
         #print run
         # get the information from runInfo
         try :
