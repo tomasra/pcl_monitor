@@ -31,6 +31,7 @@ def converttagdata(value):
     mytagdata['tagname']=value[0:startbrack]
     metadatalist=metadatastr.split(',')
     for pair in metadatalist:
+        #print pair
         mydata=pair.split('=',1)
         mytagdata[mydata[0]]=mydata[1]
     return mytagdata
@@ -368,7 +369,7 @@ class IOVEntry:
 
     def setFromListIOV(self, line, timetype = "runnumber"):
         listofentries = line.split()
-        print listofentries
+        #print listofentries
         index = 0
         for entry in listofentries:
             if entry == '':
