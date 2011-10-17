@@ -57,10 +57,13 @@ for className in listOfClasses:
     for gtName in reversed(listOfGTs):
         print "   adding doc for GT: " + gtName
         wikiFileName = wikiFilesDir + gtName + ".wiki"
-        wikiFile = file(wikiFileName, 'r')
-        tmp = wikiFile.read()
-        wikiFile.close()
-        webFile.write(tmp)
+        if os.path.exists(wikiFileName):
+            wikiFile = file(wikiFileName, 'r')
+            tmp = wikiFile.read()
+            wikiFile.close()
+            webFile.write(tmp)
+        else:
+            print "Warning: file " + wikiFileName + " not found!"
     webFile.close()
 
 os.chdir(wikiWebDirFinal)
