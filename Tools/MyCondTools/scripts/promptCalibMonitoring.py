@@ -20,6 +20,7 @@ a = FWIncantation()
 # --------------------------------------------------------------------------------
 # configuratio
 runinfoTag             = 'runinfo_31X_hlt'
+#runinfoTag             = 'runinfo_start_31X_hlt'
 promptCalibDir         = '/afs/cern.ch/cms/CAF/CMSALCA/ALCA_PROMPT/'
 webArea                = '/afs/cern.ch/user/c/cerminar/www/PromptCalibMonitoring/'
 tagLumi                = "BeamSpotObject_ByLumi"
@@ -287,6 +288,7 @@ if __name__ == "__main__":
     lastDate = datetime.datetime
     for run in runList:
         #print run
+        if run == 167551:continue #FIXME: implement a workaround to the fact that the run-info paload is not there
         # get the information from runInfo
         try :
             log = db.lastLogEntry(runinfoTag)
@@ -327,74 +329,82 @@ if __name__ == "__main__":
 
         # --- look for the file on AFS
         isFileFound = False
-        emptyPayload = False
+        emptyPayload = True
+        isOutOfOrder = False
+        allLumiIOVFound = False
         # find the file in the afs area
         fileList = os.listdir(promptCalibDir)
 
         fileName = ""
 
+        fileForRun = []
+
+        # find the files associated to this run:
         for dbFile in fileList:
             if str(run) in dbFile:
-                print "   file: " + dbFile
-                if isFileFound:
-                    # more than one file for this run
-                    print "   " + warning("***Warning") + ": more than one file for this run!"
-                isFileFound = True
+                fileForRun.append(dbFile)
+
+        if len(fileForRun) == 0:
+            print "   " + warning("***Warning") + ": no sqlite file found!"
+            isFileFound = False
+            
+        elif len(fileForRun) > 1:
+            print "   " + warning("***Warning") + ": more than one file for this run!"
+            for dbFile in fileForRun:
                 modifDate = datetime.datetime.fromtimestamp(os.path.getmtime(promptCalibDir + dbFile))
-                if isFirst:
-                    lastDate = modifDate
-                    isFirst = False
-                else:
-                    if modifDate < lastDate:
-                        #print "last date: " + str(lastDate)
-                        lastDate = modifDate
-                    else:
-                        print "   " + warning("Warning: ") + " this comes after the following run!!!"
-                        countInvertedOrder += 1
-                        rRep.isOutoforder(True)
-                #                 print modifDate
-                #                 print datetime.datetime.fromtimestamp(os.path.getmtime(promptCalibDir + dbFile))
-                #                 # last access time
-                #                 print  datetime.datetime.fromtimestamp(os.path.getatime(promptCalibDir + dbFile))
-                #                 # creation time
-                #                 print  datetime.datetime.fromtimestamp(os.path.getctime(promptCalibDir + dbFile))
+                print '       ',dbFile,'time-stamp:',modifDate
+                
 
-                # delta-time from begin of run
-                deltaTFromBegin = modifDate - runInfo.startTime()
-                deltaTFromBeginH = deltaTFromBegin.days*24. + deltaTFromBegin.seconds/(60.*60.)
 
-                # delta-time from end of run
-                deltaTFromEndH = 0.01
-                if(modifDate > runInfo.stopTime()): 
-                    deltaTFromEnd = modifDate - runInfo.stopTime()
-                    deltaTFromEndH = deltaTFromEnd.days*24. + deltaTFromEnd.seconds/(60.*60.)
-                    
-                # check the file size
-                fileSize = os.path.getsize(promptCalibDir + dbFile)
-                if fileSize == 1:
-                    emptyPayload = True
-                else:
-                    fileName = dbFile
-
-        rRep.sqliteFound(isFileFound)
-        rRep.payloadFound(not emptyPayload)
         
+        for dbFile in fileForRun:
+            isFileFound = True
+            if isFileFound and not emptyPayload and isFileFound:
+                # in this case the file was already identified
+                continue
+            print "   file: " + dbFile
+            modifDate = datetime.datetime.fromtimestamp(os.path.getmtime(promptCalibDir + dbFile))
 
+            # check this is not older than the one for the following run
+            if isFirst or modifDate < lastDate:
+                lastDate = modifDate
+                isFirst = False
+                isOutOfOrder = False
 
+            else:
+                print "   " + warning("Warning: ") + " this comes after the following run!!!"
+                isOutOfOrder = True
+                    
 
-        if isFileFound:
+            # delta-time from begin of run
+            deltaTFromBegin = modifDate - runInfo.startTime()
+            deltaTFromBeginH = deltaTFromBegin.days*24. + deltaTFromBegin.seconds/(60.*60.)
+
+            # delta-time from end of run
+            deltaTFromEndH = 0.01
+            if(modifDate > runInfo.stopTime()): 
+                deltaTFromEnd = modifDate - runInfo.stopTime()
+                deltaTFromEndH = deltaTFromEnd.days*24. + deltaTFromEnd.seconds/(60.*60.)
+
             print "   file time: " + str(modifDate) + " Delta_T begin (h): " + str(deltaTFromBeginH) + " Delta_T end (h): " + str(deltaTFromEndH)
             if(deltaTFromBeginH > maxtimeBegin):
                 maxtimeBegin = deltaTFromBeginH
             if(deltaTFromEndH > maxtimeEnd):
-                maxtimeEnd = deltaTFromEndH
+                maxtimeEnd = deltaTFromEndH     
 
-            if not emptyPayload:
-                rRep.setLatencyFromBeginning(deltaTFromBeginH)
-                rRep.setLatencyFromEnd(deltaTFromEndH)
+            rRep.setLatencyFromBeginning(deltaTFromBeginH)
+            rRep.setLatencyFromEnd(deltaTFromEndH)
+
+            # check the file size
+            fileSize = os.path.getsize(promptCalibDir + dbFile)
+            if fileSize == 1:
+                emptyPayload = True
+                print "   " + warning("***Warning") + ": no payload in sqlite file!"
+            else:
+                emptyPayload = False
 
                 # list the iov in the tag
-                connect    = "sqlite_file:" + promptCalibDir + fileName
+                connect    = "sqlite_file:" + promptCalibDir + dbFile
                 listiov_run_sqlite = listIov(connect, tagRun, passwd)
                 if listiov_run_sqlite[0] == 0:
                     iovtableByRun_sqlite = IOVTable()
@@ -408,7 +418,7 @@ if __name__ == "__main__":
                         else:
                             print "    " + warning("Warning:") + " runbased IOV not found in Oracle"
 
-                allLumiIOVFound = True
+                missingIOV = False
                 listiov_lumi_sqlite = listIov(connect, tagLumi, passwd)
                 if listiov_lumi_sqlite[0] == 0:
                     iovtableByLumi_sqlite = IOVTable()
@@ -422,30 +432,155 @@ if __name__ == "__main__":
                             #print iovOracle
                             counterbla += 1
                             print "    " + warning("Warning:") + " lumibased IOV not found in Oracle for since: " + str(iov.since())
-                            allLumiIOVFound = False
-                if allLumiIOVFound:
+                            missingIOV = True
+
+                if not missingIOV:
+                    allLumiIOVFound = True
                     print "    All lumibased IOVs found in oracle!"
                 else:
+                    allLumiIOVFound = False
                     print "    " + warning("Warning:") + " not all lumibased IOVs found in Oracle!!!"
-                    rRep.isUploaded(False)
-                    if counterbla != len(iovtableByLumi_sqlite._iovList):
-                        myCounter += 1
-                    
-                    countUploadFail += 1
 
-            else:
-                print "   " + warning("***Warning") + ": no payload in sqlite file!"
-                rRep.payloadFound(False)
-                countNoPayload += 1
-                rRep.setLatencyFromBeginning(deltaTFromBeginH)
-                rRep.setLatencyFromEnd(deltaTFromEndH)
+        
 
+
+
+        if not isFileFound:
+            rRep.sqliteFound(False)
+            countPCLNoRun += 1
+        else:
+            rRep.sqliteFound(True)
             sumTimeFromEnd += deltaTFromEndH
             sumTimeFromBegin += deltaTFromBeginH
             nSqliteFiles += 1
-        else:
-            countPCLNoRun += 1
-            print "   " + warning("***Warning") + ": no sqlite file found!"
+
+            if isOutOfOrder:
+                rRep.isOutoforder(True)
+                countInvertedOrder += 1
+            else:
+                rRep.isOutoforder(False)
+
+            if emptyPayload:
+                rRep.payloadFound(False)
+                countNoPayload += 1
+            else:
+                rRep.payloadFound(True)
+
+            if not allLumiIOVFound:
+                rRep.isUploaded(False)
+                countUploadFail += 1
+            else:
+                rRep.isUploaded(True)
+
+#             if str(run) in dbFile:
+#                 print "   file: " + dbFile
+#                 if isFileFound:
+#                     # more than one file for this run
+#                     print "   " + warning("***Warning") + ": more than one file for this run!"
+#                 isFileFound = True
+#                 modifDate = datetime.datetime.fromtimestamp(os.path.getmtime(promptCalibDir + dbFile))
+#                 if isFirst:
+#                     lastDate = modifDate
+#                     isFirst = False
+#                 else:
+#                     if modifDate < lastDate:
+#                         #print "last date: " + str(lastDate)
+#                         lastDate = modifDate
+#                     else:
+#                         print "   " + warning("Warning: ") + " this comes after the following run!!!"
+#                         countInvertedOrder += 1
+#                         rRep.isOutoforder(True)
+#                 #                 print modifDate
+#                 #                 print datetime.datetime.fromtimestamp(os.path.getmtime(promptCalibDir + dbFile))
+#                 #                 # last access time
+#                 #                 print  datetime.datetime.fromtimestamp(os.path.getatime(promptCalibDir + dbFile))
+#                 #                 # creation time
+#                 #                 print  datetime.datetime.fromtimestamp(os.path.getctime(promptCalibDir + dbFile))
+
+#                 # delta-time from begin of run
+#                 deltaTFromBegin = modifDate - runInfo.startTime()
+#                 deltaTFromBeginH = deltaTFromBegin.days*24. + deltaTFromBegin.seconds/(60.*60.)
+
+#                 # delta-time from end of run
+#                 deltaTFromEndH = 0.01
+#                 if(modifDate > runInfo.stopTime()): 
+#                     deltaTFromEnd = modifDate - runInfo.stopTime()
+#                     deltaTFromEndH = deltaTFromEnd.days*24. + deltaTFromEnd.seconds/(60.*60.)
+                    
+#                 # check the file size
+#                 fileSize = os.path.getsize(promptCalibDir + dbFile)
+#                 if fileSize == 1:
+#                     emptyPayload = True
+#                 else:
+#                     fileName = dbFile
+
+#         rRep.sqliteFound(isFileFound)
+#         rRep.payloadFound(not emptyPayload)
+        
+
+
+
+#         if isFileFound:
+#             print "   file time: " + str(modifDate) + " Delta_T begin (h): " + str(deltaTFromBeginH) + " Delta_T end (h): " + str(deltaTFromEndH)
+#             if(deltaTFromBeginH > maxtimeBegin):
+#                 maxtimeBegin = deltaTFromBeginH
+#             if(deltaTFromEndH > maxtimeEnd):
+#                 maxtimeEnd = deltaTFromEndH
+
+#             if not emptyPayload:
+#                 rRep.setLatencyFromBeginning(deltaTFromBeginH)
+#                 rRep.setLatencyFromEnd(deltaTFromEndH)
+
+#                 # list the iov in the tag
+#                 connect    = "sqlite_file:" + promptCalibDir + fileName
+#                 listiov_run_sqlite = listIov(connect, tagRun, passwd)
+#                 if listiov_run_sqlite[0] == 0:
+#                     iovtableByRun_sqlite = IOVTable()
+#                     iovtableByRun_sqlite.setFromListIOV(listiov_run_sqlite[1])
+#                     #iovtableByRun_sqlite.printList()
+#                     for iov in iovtableByRun_sqlite._iovList:
+#                         iovOracle = IOVEntry()
+#                         if iovtableByRun_oracle.search(iov.since(), iovOracle):
+#                             print "    runbased IOV found in Oracle!"
+#                             #print iovOracle
+#                         else:
+#                             print "    " + warning("Warning:") + " runbased IOV not found in Oracle"
+
+#                 allLumiIOVFound = True
+#                 listiov_lumi_sqlite = listIov(connect, tagLumi, passwd)
+#                 if listiov_lumi_sqlite[0] == 0:
+#                     iovtableByLumi_sqlite = IOVTable()
+#                     iovtableByLumi_sqlite.setFromListIOV(listiov_lumi_sqlite[1])
+#                     #iovtableByLumi_sqlite.printList()
+#                     counterbla = 0
+#                     for iov in iovtableByLumi_sqlite._iovList:
+#                         iovOracle = IOVEntry()
+#                         if not iovtableByLumi_oracle.search(iov.since(), iovOracle):
+#                             #print "    Lumi based IOV found in Oracle:"
+#                             #print iovOracle
+#                             counterbla += 1
+#                             print "    " + warning("Warning:") + " lumibased IOV not found in Oracle for since: " + str(iov.since())
+#                             allLumiIOVFound = False
+#                 if allLumiIOVFound:
+#                     print "    All lumibased IOVs found in oracle!"
+#                 else:
+#                     print "    " + warning("Warning:") + " not all lumibased IOVs found in Oracle!!!"
+#                     rRep.isUploaded(False)
+#                     if counterbla != len(iovtableByLumi_sqlite._iovList):
+#                         myCounter += 1
+                    
+#                     countUploadFail += 1
+
+#             else:
+#                 print "   " + warning("***Warning") + ": no payload in sqlite file!"
+#                 rRep.payloadFound(False)
+#                 countNoPayload += 1
+#                 rRep.setLatencyFromBeginning(deltaTFromBeginH)
+#                 rRep.setLatencyFromEnd(deltaTFromEndH)
+
+#             sumTimeFromEnd += deltaTFromEndH
+#             sumTimeFromBegin += deltaTFromBeginH
+#             nSqliteFiles += 1
 
 
 
