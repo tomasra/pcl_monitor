@@ -25,7 +25,12 @@ class RunInfoContent:
         return self._run
 
     def getDate(self, string):
-        date = string.split('T')[0].split('-')
-        time = string.split('T')[1].split(':')
-        datet = datetime.datetime(int(date[0]),int(date[1]),int(date[2]),int(time[0]),int(time[1]),int(float(time[2])))
-        return datet
+        #print string
+        if string != 'null':
+            date = string.split('T')[0].split('-')
+            time = string.split('T')[1].split(':')
+            datet = datetime.datetime(int(date[0]),int(date[1]),int(date[2]),int(time[0]),int(time[1]),int(float(time[2])))
+            return datet
+        else :
+            print "string for date is:",string
+            return None 
