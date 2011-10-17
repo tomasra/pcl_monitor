@@ -67,7 +67,7 @@ if __name__     ==  "__main__":
     # --- read command line options
     # description
     usage = "usage: %prog [options] gt1 gt2 ..."
-    revision = '$Revision: 1.8 $'
+    revision = '$Revision: 1.9 $'
     vnum = revision.lstrip('$')
     vnum = vnum.lstrip('Revision: ')
     vnum = vnum.rstrip(' $')
@@ -134,11 +134,19 @@ if __name__     ==  "__main__":
             
         # check that the new GT is not already in oracle
         if gtExists(gt, gtconnstring, passwdfile):
-            print error("***Error: GT: " + gt + " is already in oracle: cannot be modified!!!")
-        elif not os.path.exists(gt+".conf"):
+            if options.online:
+                print error("***Error: GT: " + gt + " is already in oracle: cannot be modified!!!")
+            else:
+                # 1. get the conf file from the DB
+                print warning("***Warning: GT: " + gt + " is already in oracle: get the conf file from there!") 
+                confFileFromDB(gt, gt+".conf", gtconnstring, passwdfile)
+                # 2. append the GT to the list of GTs to be produced in sqlite format
+                gtlist.append(gt)
+        if not os.path.exists(gt+".conf"):
             print error("***Error: GT: " + gt + " doesn't have a conf file!!!")
         else:
-            gtlist.append(gt)
+            if not gt in gtlist:
+                gtlist.append(gt)
 
 
     # ---------------------------------------------------------
