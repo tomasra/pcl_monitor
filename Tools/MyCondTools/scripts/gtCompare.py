@@ -212,6 +212,7 @@ if __name__     ==  "__main__":
     print 'Reading configuration file from ',CONFIGFILE
     cfgfile.read([ CONFIGFILE ])
     passwdfile             = cfgfile.get('Common','Passwd')
+    gtconnstring           = cfgfile.get('Common','GTConnectString')
 
 
     globaltag1 = args[0]
@@ -229,6 +230,14 @@ if __name__     ==  "__main__":
 
     # --------------------------------------------------------------------------
     # fill the collection
+    if not confFileFromDB(globaltag1, filename1, gtconnstring, passwdfile):
+        print error("*** Error" + " original GT conf file: " + filename1 + " doesn't exist!")
+        sys.exit(5)
+
+    if not confFileFromDB(globaltag2, filename2, gtconnstring, passwdfile):
+        print error("*** Error" + " original GT conf file: " + filename2 + " doesn't exist!")
+        sys.exit(5)
+
     fillGTCollection(filename1, globaltag1, tagCollection1)
     fillGTCollection(filename2, globaltag2, tagCollection2)
 
