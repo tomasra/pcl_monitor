@@ -4,9 +4,11 @@ import xmlrpclib
 
 def getRunList(minRun):
     runlist = []
-    
-    FULLADDRESS="http://pccmsdqm04.cern.ch/runregistry/xmlrpc"
-    #FULLADDRESS="http://pccmsdqm04.cern.ch/runregistry_api/"
+
+    #FULLADDRESS="http://pccmsdqm04.cern.ch/runregistry_api/"    
+    #FULLADDRESS="http://pccmsdqm04.cern.ch/runregistry/xmlrpc"
+    FULLADDRESS="http://cms-service-runregistry-api.web.cern.ch/cms-service-runregistry-api/xmlrpc"
+
     print "RunRegistry from: ",FULLADDRESS
     server = xmlrpclib.ServerProxy(FULLADDRESS)
     # you can use this for single run query
