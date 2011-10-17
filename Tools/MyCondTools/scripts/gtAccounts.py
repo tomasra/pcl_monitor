@@ -27,8 +27,8 @@ if __name__     ==  "__main__":
 
     
     
-    #    parser.add_option("-t", "--globaltag", dest="gt",
-    #                      help="Global-Tag", type="str", metavar="<globaltag>")
+    parser.add_option("-c", "--compare-to-list", dest="list",
+                      help="list to compare with", type="str", metavar="<list-file>")
     #parser.add_option("--local", action="store_true",dest="local",default=False)
 
     (options, args) = parser.parse_args()
@@ -80,7 +80,22 @@ if __name__     ==  "__main__":
     for account in accountlist:
         print account
 
-    
+    if options.list != None:
+        print "Compare list with file:", options.list
+
+        targetlist = []
+        
+        listfile = file(options.list, "r")
+        data = listfile.readlines()
+        for line in data:
+            if "CMS_COND" in line:
+                targetlist.append(line.split()[0])
+                #print line.split()[0]
+                
+        for account in accountlist:
+            if not account in targetlist:
+                print "Account:", account, "not found in the file!"
+
     sys.exit(0)
 
 
