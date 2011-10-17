@@ -168,14 +168,16 @@ class WebPageWriter:
                             
 def getRunList(minRun, rrSet):
     runlist = []
-    
-    FULLADDRESS="http://pccmsdqm04.cern.ch/runregistry/xmlrpc"
+
     #FULLADDRESS="http://pccmsdqm04.cern.ch/runregistry_api/"
+    #FULLADDRESS="http://pccmsdqm04.cern.ch/runregistry/xmlrpc"
+    FULLADDRESS="http://cms-service-runregistry-api.web.cern.ch/cms-service-runregistry-api/xmlrpc"
+
     print "RunRegistry from: ",FULLADDRESS
     server = xmlrpclib.ServerProxy(FULLADDRESS)
     # you can use this for single run query
 #    sel_runtable="{runNumber} = "+run+" and {datasetName} LIKE '%Express%'"
-    sel_runtable="{groupName} ='" + rrSet + "' and {runNumber} >= " + str(minRun) + " and {datasetName} LIKE '%Express%'"
+    sel_runtable="{groupName} ='" + rrSet + "' and {runNumber} >= " + str(minRun) + " and {datasetName} LIKE '%Online%'"
     #print sel_runtable
     #sel_runtable="{groupName} ='Commissioning11' and {runNumber} >= " + str(minRun)# + " and {datasetName} LIKE '%Express%'"
 
@@ -465,6 +467,9 @@ if __name__ == "__main__":
         for dataset in datasets:
             pd = dataset.split("/")[1]
             parenttier = "RECO"
+            # exception
+            if group == "Run2011A-v4":
+                parenttier = "RAW"
             pdforhtml = pd
             details = AlcaRecoDetails(dataset, pdforhtml, epoch, version)
             if pd == 'StreamExpressCosmics':
@@ -533,7 +538,7 @@ if __name__ == "__main__":
                 cachedlist = getRunList(1, rrSet)    
             runList = cachedlist            
             print "RR: " + rrSet + " # runs: " + str(len(runList))
-            
+            #print runList
 
             dataset.purgeList(runList)
             #dataset.printAll()
