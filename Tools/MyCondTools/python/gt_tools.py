@@ -77,7 +77,7 @@ def convertnodecollection(value):
 
 def listIov(connect, tag, passwd):
     listiovCommand = 'cmscond_list_iov -c ' + connect + '  -t ' + tag
-    if passwd != 'None':
+    if passwd != 'None' and passwd != '':
         listiovCommand = listiovCommand + ' -P ' + passwd
     statusAndOutput = commands.getstatusoutput(listiovCommand)
     if statusAndOutput[0] != 0:
