@@ -1,3 +1,4 @@
+| [[%LINKTOGTLIST%/?GlobalTag=GR_H_V23][GR_H_V23]] | %GREEN%42X%ENDCOLOR% | To be used for data taking with release >=42X. | As !GR_H_V22 with the following updates:<br> - add trigger selection for JetMET DQM. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_H_V22][GR_H_V22]] | %GREEN%42X%ENDCOLOR% | To be used for data taking with release >=42X. | As !GR_H_V21 with the following updates:<br> - update ECAL TPG tags. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_H_V21][GR_H_V21]] | %GREEN%42X%ENDCOLOR% | To be used for data taking with release >=42X. | As !GR_H_V20 with the following updates:<br> - Solving O2O problems<br> - Update tags to have run based IOV instead of time based. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_H_V20][GR_H_V20]] | %GREEN%42X%ENDCOLOR% | To be used for data taking with release >=42X. | As !GR_H_V19 with the following updates:<br> - for 42X release<br> - Fix O2O issues. |
