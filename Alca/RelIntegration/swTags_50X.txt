@@ -1,1 +1,3 @@
-CalibCalorimetry/EcalCorrelatedNoiseAnalysisAlgos	V02-00-04
+CalibMuon/CSCCalibration	V02-04-00
+CondFormats/CSCObjects		V03-06-00
+
