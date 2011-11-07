@@ -5,4 +5,12 @@ DataFormats/MuonDetId V01-02-00
 DataFormats/CSCRecHit V02-05-05
 #RecoLocalMuon/CSCRecHitD V02-07-00
 CalibMuon/CSCCalibration V02-04-00
-
+# tagset 87423		  
+Calibration/IsolatedParticles	                V01-04-11
+HLTrigger/HLTcore		                V02-17-00
+L1Trigger/GlobalTriggerAnalyzer			V02-00-01
+# tagset 87662	-	
+CalibCalorimetry/EcalTrivialCondModules		V00-12-28
+CondCore/EcalPlugins	                        V01-05-04
+CondFormats/DataRecord	                        V06-21-04
+CondFormats/EcalObjects			        V01-02-08
