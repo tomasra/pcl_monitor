@@ -12,3 +12,5 @@ CalibMuon/CSCCalibration V02-04-00
 #CondCore/EcalPlugins	                        V01-05-04
 #CondFormats/DataRecord	                        V06-21-04
 #CondFormats/EcalObjects			        V01-02-08
+# tagset 89902
+DQMOffline/Muon						V00-08-02
