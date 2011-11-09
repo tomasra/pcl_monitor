@@ -1,6 +1,7 @@
 CalibMuon/CSCCalibration	V02-04-00
 CondFormats/CSCObjects		V03-06-00
 CondCore/CSCPlugins V00-04-00
+CondFormats/DataRecord    V06-21-06
 DataFormats/MuonDetId V01-03-00
 #DataFormats/CSCRecHit V02-05-05
 #RecoLocalMuon/CSCRecHitD V02-07-00
