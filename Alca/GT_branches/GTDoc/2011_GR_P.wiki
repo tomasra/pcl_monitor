@@ -1,3 +1,4 @@
+| [[%LINKTOGTLIST%/?GlobalTag=GR_P_V27][GR_P_V27]] | %GREEN%44X%ENDCOLOR% | To be used for prompt data processing @ Tier0. | As !GR_P_V26 with the following updates:. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_P_V26][GR_P_V26]] | %GREEN%44X%ENDCOLOR% | To be used for prompt data processing @ Tier0. | As !GR_P_V25 with the following updates:<br> - add trigger selection for JetMET DQM. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_P_V25][GR_P_V25]] | %GREEN%44X%ENDCOLOR% | To be used for prompt data processing @ Tier0. | As !GR_P_V24 with the following updates:<br> - new SiStrips DCS tag. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_P_V24][GR_P_V24]] | %GREEN%44X%ENDCOLOR% | To be used for prompt data processing @ Tier0 with 44X. | As !GR_P_V23 with the following updates:<br> - Update Castor conditions to match what has been used in 44X relvals<br> - add ECAL global time offset. |
