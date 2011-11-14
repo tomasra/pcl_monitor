@@ -1,4 +1,4 @@
-CalibMuon/CSCCalibration	V02-04-00
+#CalibMuon/CSCCalibration	V02-04-00
 CondFormats/CSCObjects		V03-06-00
 CondCore/CSCPlugins V00-04-00
 CondFormats/DataRecord    V06-21-06
