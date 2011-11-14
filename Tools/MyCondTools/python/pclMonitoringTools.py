@@ -280,6 +280,7 @@ def getRunReport(runinfoTag, run, promptCalibDir, fileList, iovtableByRun_oracle
                         #print iovOracle
                     else:
                         print "    " + colorTools.warning("Warning:") + " runbased IOV not found in Oracle"
+                
 
             missingIOV = False
             listiov_lumi_sqlite = gtTools.listIov(connect, tagLumi, '')
@@ -296,7 +297,10 @@ def getRunReport(runinfoTag, run, promptCalibDir, fileList, iovtableByRun_oracle
                         counterbla += 1
                         print "    " + colorTools.warning("Warning:") + " lumibased IOV not found in Oracle for since: " + str(iov.since())
                         missingIOV = True
-
+            else:
+                raise Exception("Error can not list IOV for file",connect)
+                
+                
             if not missingIOV:
                 allLumiIOVFound = True
                 print "    All lumibased IOVs found in oracle!"
