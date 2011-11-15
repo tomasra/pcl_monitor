@@ -491,7 +491,7 @@ class IOVTable:
                     self._containerName = linewords[1]
                     
         # print self._tagName
-        for line in range(4, nLines-1):
+        for line in range(6, nLines-1):
             if "Since" in listiovlines[line] or "------------" in listiovlines[line] or listiovlines[line] == "":
                 continue
             ioventry = IOVEntry(self._timeType)
