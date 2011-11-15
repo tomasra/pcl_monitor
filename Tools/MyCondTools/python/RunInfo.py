@@ -3,20 +3,21 @@ import datetime
 import os,sys, DLFCN
 sys.setdlopenflags(DLFCN.RTLD_GLOBAL+DLFCN.RTLD_LAZY)
 
-from pluginCondDBPyInterface import *
+#from pluginCondDBPyInterface import *
+import pluginCondDBPyInterface as condDB
 
-a = FWIncantation()
-
-
-rdbms = RDBMS("/afs/cern.ch/cms/DB/conddb")
 dbName =  "oracle://cms_orcoff_prod/CMS_COND_31X_RUN_INFO"
 logName = "oracle://cms_orcoff_prod/CMS_COND_31X_POPCONLOG"
 
+fwkInc = condDB.FWIncantation()
+rdbms = condDB.RDBMS("/afs/cern.ch/cms/DB/conddb")
 rdbms.setLogger(logName)
+
 from CondCore.Utilities import iovInspector as inspect
 
 db = rdbms.getDB(dbName)
-tags = db.allTags()
+
+#tags = db.allTags()
 
 
 def getDate(string):
@@ -61,12 +62,14 @@ class RunInfoContent:
 
 def getRunInfoStartAndStopTime(runinfoTag, runinfoaccount, run):
     try :
+        db.startTransaction()
         log = db.lastLogEntry(runinfoTag)
         # for printing all log info present into log db 
         #print log.getState()
 
         # for inspecting all payloads/runs
         iov = inspect.Iov(db,runinfoTag, run,run)
+        db.commitTransaction()
     except RuntimeError as error :
         print error("*** Error") + " no iov? in RunInfo tag ", runinfoTag
         raise RuntimeError('No IOV for run: ' + str(run) + ' in RunInfo tag: ' + runinfoTag)
