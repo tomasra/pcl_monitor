@@ -16,3 +16,5 @@ V03-03-05     CondTools/Ecal
 V00-05-04     Calibration/HcalAlCaRecoProducers
 CondFormats/ESObjects	V00-00-13
 CondFormats/DataRecord	V06-21-07
+CalibTracker/SiStripCommon	V02-02-15
+
