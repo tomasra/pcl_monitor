@@ -14,3 +14,5 @@ V01-02-08     CondFormats/EcalObjects
 V03-03-05     CondTools/Ecal
 # tagset 90962
 V00-05-04     Calibration/HcalAlCaRecoProducers
+CondFormats/ESObjects	V00-00-13
+CondFormats/DataRecord	V06-21-07
