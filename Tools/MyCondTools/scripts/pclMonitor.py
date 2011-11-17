@@ -150,7 +150,7 @@ def runBackEnd():
                                                    iovtableByRun_oracle, iovtableByLumi_oracle)
         except Exception as error:
             unknownRun = True
-            unknownRunMsg = "Error: can not get report for run: " + str(167551) + ", reason: " + str(error)
+            unknownRunMsg = "Error: can not get report for run: " + str(run) + ", reason: " + str(error)
             print unknownRunMsg
         else:
             
