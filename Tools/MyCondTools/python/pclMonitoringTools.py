@@ -260,7 +260,7 @@ def getRunReport(runinfoTag, run, promptCalibDir, fileList, iovtableByRun_oracle
 
         # check the file size
         fileSize = os.path.getsize(promptCalibDir + dbFile)
-        if fileSize == 1:
+        if fileSize == 1 or fileSize == 32768:
             emptyPayload = True
             print "   " + colorTools.warning("***Warning") + ": no payload in sqlite file!"
         else:
