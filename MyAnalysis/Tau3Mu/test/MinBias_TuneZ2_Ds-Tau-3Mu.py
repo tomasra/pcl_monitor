@@ -34,7 +34,7 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.303.2.7 $'),
+    version = cms.untracked.string('$Revision: 1.1 $'),
     annotation = cms.untracked.string('MinBias_TuneZ2_7TeV_pythia6_cff.py nevts:1'),
     name = cms.untracked.string('PyReleaseValidation')
 )
@@ -95,58 +95,14 @@ process.generator = cms.EDFilter("Pythia6GeneratorFilter",
             'MSTP(81)=21    ! multiple parton interactions 1 is Pythia default', 
             'MSTP(82)=4     ! Defines the multi-parton model'),
         processParameters = cms.vstring('MSEL=1         ! User defined processes', # or put 0 and use next lines for indiv processes 
-         #   'MSUB(11)=1     ! Min bias process', 
-         #   'MSUB(12)=1     ! Min bias process', 
-         #   'MSUB(13)=1     ! Min bias process', 
-         #   'MSUB(28)=1     ! Min bias process', 
-         #   'MSUB(53)=1     ! Min bias process', 
-         #   'MSUB(68)=1     ! Min bias process', 
-         #   'MSUB(92)=1     ! Min bias process, single diffractive', 
-         #   'MSUB(93)=1     ! Min bias process, single diffractive', 
-         #   'MSUB(94)=1     ! Min bias process, double diffractive', 
-         #   'MSUB(95)=1     ! Min bias process'
-	 #,# D_s decays
-       'MDME(818,1)=1    ! D_s+ -> tau nutau',
-       'MDME(819,1)=0    ! ',
-       'MDME(820,1)=0    ! ',
-       'MDME(821,1)=0    ! D_s+ -> phi e nu',
-       'MDME(822,1)=0    ! ',
-       'MDME(823,1)=0    ! ',
-       'MDME(824,1)=0    ! ',
-       'MDME(825,1)=0    ! ',
-       'MDME(826,1)=0    ! D_s+ -> phi mu nu',
-       'MDME(827,1)=0    ! ',
-       'MDME(828,1)=0    ! ',
-       'MDME(829,1)=0    ! ',
-       'MDME(830,1)=0    ! ',
-       'MDME(831,1)=0    ! D_s+ -> phi pi',
-       'MDME(832,1)=0    ! ',
-       'MDME(833,1)=0    ! ',
-       'MDME(834,1)=0    ! D_s+ -> phi ro',
-       'MDME(835,1)=0    ! ',
-       'MDME(836,1)=0    ! ',
-       'MDME(837,1)=0    ! ',
-       'MDME(838,1)=0    ! ',
-       'MDME(839,1)=0    ! ',
-       'MDME(840,1)=0    ! ',
-       'MDME(841,1)=0    ! ',
-       'MDME(842,1)=0    ! ',
-       'MDME(843,1)=0    ! ',
-       'MDME(844,1)=0    ! ',
-       'MDME(845,1)=0    ! ',
-       'MDME(846,1)=0    ! ',
-       'MDME(847,1)=0    ! D_s+ ->phi K',
-       'MDME(848,1)=0    ! ',
-       'MDME(849,1)=0    ! ',
-       'MDME(850,1)=0    ! '
-					),
+      				),
         parameterSets = cms.vstring('pythiaUESettings', 
             'processParameters')
     ),
 				 
 				     ExternalDecays = cms.PSet(
 	EvtGen = cms.untracked.PSet(
-	  operates_on_particles = cms.vint32(431,15), # 15=only tau
+	  operates_on_particles = cms.vint32(0), # 0=all
 	  use_default_decay = cms.untracked.bool(False),
 	  decay_table = cms.FileInPath('GeneratorInterface/ExternalDecays/data/DECAY_NOLONGLIFE.DEC'),
 	  particle_property_file = cms.FileInPath('GeneratorInterface/ExternalDecays/data/evt.pdl'),
@@ -166,26 +122,8 @@ process.Dfilter = cms.EDFilter("PythiaFilter",
        MinPt = cms.untracked.double(5),
        ParticleID = cms.untracked.int32(431)  #D_s 
    )
-#optionally, insert next filter to check all events have tau from Ds
-process.taufromDfilter = cms.EDFilter("PythiaFilter",
-       Status = cms.untracked.int32(2),
-       MaxEta = cms.untracked.double(1000),
-       MinEta = cms.untracked.double(-1000),
-       MinPt = cms.untracked.double(0),
-       ParticleID = cms.untracked.int32(15),  #tau  
-       MotherID = cms.untracked.int32(431)    #D_s
-   )
-# mu from tau: filter used but basically no acceptance cut (one muon only required)
-process.mufromtaufilter = cms.EDFilter("PythiaFilter",
-       Status = cms.untracked.int32(1),
-       MaxEta = cms.untracked.double(2.5),
-       MinEta = cms.untracked.double(-2.5),
-       MinPt = cms.untracked.double(1.0),
-       ParticleID = cms.untracked.int32(13),  #mu  
-       MotherID = cms.untracked.int32(15)    #tau
-   )
 
-# ask 3 muons in the acceptance
+# ask 3 muons in the acceptance: filter needed!!!!!!!!!!!!
 
 process.options = cms.untracked.PSet(
     wantSummary = cms.untracked.bool(True)
@@ -195,7 +133,7 @@ process.options = cms.untracked.PSet(
 process.ProductionFilterSequence = cms.Sequence(process.generator)
 
 # Path and EndPath definitions
-process.generation_step = cms.Path(process.pgen*process.Dfilter)#*process.mufromtaufilter)
+process.generation_step = cms.Path(process.pgen*process.Dfilter)  # put filter for muon acceptance here!
 process.genfiltersummary_step = cms.EndPath(process.genFilterSummary)
 process.endjob_step = cms.EndPath(process.endOfProcess)
 process.RAWSIMoutput_step = cms.EndPath(process.RAWSIMoutput)
