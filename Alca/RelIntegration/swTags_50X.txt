@@ -17,6 +17,6 @@ V00-05-04     Calibration/HcalAlCaRecoProducers
 CondFormats/ESObjects	V00-00-13
 CondFormats/DataRecord	V06-21-07
 CalibTracker/SiStripCommon	V02-02-15
-#cmstc tagset 92922
-V10-02-00     CondCore/MetaDataService
-V10-05-00     CondCore/Utilities
+CondFormats/GeometryObjects V00-09-01
+V00-00-12 CondCore/ESPlugin
+
