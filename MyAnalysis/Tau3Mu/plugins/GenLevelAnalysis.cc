@@ -170,9 +170,9 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
     if(abs(mother1->pdg_id()) == 15 || abs(mother2->pdg_id()) == 15) {
 	if(abs((*part)->pdg_id()) == 13) {
 	  cout << "Muon from tau, pt: " << (*part)->momentum().perp() << " eta: " << (*part)->momentum().pseudoRapidity() << endl;
-// 	  if(fabs((*part)->momentum().pseudoRapidity()) < 2.4 && (*part)->momentum().perp() > 1) {
+ 	  if(fabs((*part)->momentum().pseudoRapidity()) < 2.4 && (*part)->momentum().perp() > 1) {
 	    muonsFromTau.push_back(*part);
-// 	  }
+ 	  }
 	}
       }
 
