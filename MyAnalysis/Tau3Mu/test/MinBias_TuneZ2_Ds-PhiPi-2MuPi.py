@@ -34,7 +34,7 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.303.2.7 $'),
+    version = cms.untracked.string('$Revision: 1.1 $'),
     annotation = cms.untracked.string('MinBias_TuneZ2_7TeV_pythia6_cff.py nevts:1'),
     name = cms.untracked.string('PyReleaseValidation')
 )
@@ -45,7 +45,7 @@ process.RAWSIMoutput = cms.OutputModule("PoolOutputModule",
     splitLevel = cms.untracked.int32(0),
     eventAutoFlushCompressedSize = cms.untracked.int32(5242880),
     outputCommands = process.RAWSIMEventContent.outputCommands,
-    fileName = cms.untracked.string('MinBias_TuneZ2_Ds-PhiX-2MuX.root'),
+    fileName = cms.untracked.string('MinBias_TuneZ2_Ds-PhiPi-2MuPi.root'),
     dataset = cms.untracked.PSet(
         filterName = cms.untracked.string(''),
         dataTier = cms.untracked.string('GEN-SIM-RAW')
@@ -94,67 +94,22 @@ process.generator = cms.EDFilter("Pythia6GeneratorFilter",
             'PARP(93)=10.0  ! primordial kT-max', 
             'MSTP(81)=21    ! multiple parton interactions 1 is Pythia default', 
             'MSTP(82)=4     ! Defines the multi-parton model'),
-        processParameters = cms.vstring('MSEL=1        ! User defined processes', # or put 0 and use next lines for indiv processes 
-         #   'MSUB(11)=1     ! Min bias process', 
-         #   'MSUB(12)=1     ! Min bias process', 
-         #   'MSUB(13)=1     ! Min bias process', 
-         #   'MSUB(28)=1     ! Min bias process', 
-         #   'MSUB(53)=1     ! Min bias process', 
-         #   'MSUB(68)=1     ! Min bias process', 
-         #   'MSUB(92)=1     ! Min bias process, single diffractive', 
-         #   'MSUB(93)=1     ! Min bias process, single diffractive', 
-         #   'MSUB(94)=1     ! Min bias process, double diffractive', 
-         #   'MSUB(95)=1     ! Min bias process'
-			#		,
-                        # D_s decays
-       'MDME(818,1)=0    ! D_s+ -> tau nutau',
-       'MDME(819,1)=0    ! ',
-       'MDME(820,1)=0    ! ',
-       'MDME(821,1)=0    !  D_s+ -> phi e nu',
-       'MDME(822,1)=0    ! ',
-       'MDME(823,1)=0    ! ',
-       'MDME(824,1)=0    ! ',
-       'MDME(825,1)=0    ! ',
-       'MDME(826,1)=0    ! D_s+ -> phi mu nu',
-       'MDME(827,1)=0    ! ',
-       'MDME(828,1)=0    ! ',
-       'MDME(829,1)=0    ! ',
-       'MDME(830,1)=0    ! ',
-       'MDME(831,1)=1    !   D_s+ -> phi pi',
-       'MDME(832,1)=0    ! ',
-       'MDME(833,1)=0    ! ',
-       'MDME(834,1)=0    !  D_s+ -> phi ro',
-       'MDME(835,1)=0    ! ',
-       'MDME(836,1)=0    ! ',
-       'MDME(837,1)=0    ! ',
-       'MDME(838,1)=0    ! ',
-       'MDME(839,1)=0    ! ',
-       'MDME(840,1)=0    ! ',
-       'MDME(841,1)=0    ! ',
-       'MDME(842,1)=0    ! ',
-       'MDME(843,1)=0    ! ',
-       'MDME(844,1)=0    ! ',
-       'MDME(845,1)=0    ! ',
-       'MDME(846,1)=0    ! ',
-       'MDME(847,1)=0    !  D_s+ ->phi K',
-       'MDME(848,1)=0    ! ',
-       'MDME(849,1)=0    ! ',
-       'MDME(850,1)=0    ! ',
-       'MDME(656,1)=0    !  phi -> K+ K-',
-       'MDME(657,1)=0    !  phi -> K_L0 K_S0',
-       'MDME(658,1)=0    !  phi -> rho- pi+',
-       'MDME(659,1)=0    !  phi -> rho0 pi0',
-       'MDME(660,1)=0    !  phi -> rho+ pi-',
-       'MDME(661,1)=0    !  phi -> pi+ pi- pi0',
-       'MDME(662,1)=0    !  phi -> gamma eta',
-       'MDME(663,1)=0    !  phi -> pi0 gamma',
-       'MDME(664,1)=0    !  phi -> e- e+',
-       'MDME(665,1)=1    !  phi -> mu- mu+',
-       'MDME(666,1)=0    !  phi -> pi+ pi-'
-					),
+        processParameters = cms.vstring('MSEL=1'
+	),
         parameterSets = cms.vstring('pythiaUESettings', 
             'processParameters')
-    )
+    ),
+	 ExternalDecays = cms.PSet(
+        EvtGen = cms.untracked.PSet(
+          operates_on_particles = cms.vint32(0), # 0=all
+          use_default_decay = cms.untracked.bool(False),
+          decay_table = cms.FileInPath('GeneratorInterface/ExternalDecays/data/DECAY_NOLONGLIFE.DEC'),
+          particle_property_file = cms.FileInPath('GeneratorInterface/ExternalDecays/data/evt.pdl'),
+          user_decay_file = cms.FileInPath('GeneratorInterface/ExternalDecays/data/Ds_phipi_mumupi.dec'),
+          list_forced_decays = cms.vstring('MyD_s+','MyD_s-','MyPhi')
+          ),
+        parameterSets = cms.vstring('EvtGen')
+        )			 
 			      
 )
 
@@ -170,18 +125,18 @@ process.Dfilter = cms.EDFilter("PythiaFilter",
 #optionally, insert next filter to check all events have phi from Ds
 process.phifromDfilter = cms.EDFilter("PythiaFilter",
        Status = cms.untracked.int32(2),
-       MaxEta = cms.untracked.double(1000),
-       MinEta = cms.untracked.double(-1000),
-       MinPt = cms.untracked.double(0),
+       MaxEta = cms.untracked.double(1000.0),
+       MinEta = cms.untracked.double(-1000.0),
+       MinPt = cms.untracked.double(0.0),
        ParticleID = cms.untracked.int32(333),  #phi  
        MotherID = cms.untracked.int32(431)    #D_s
    )
 # mu from phi: filter used but basically no acceptance cuts
 process.mufromphifilter = cms.EDFilter("PythiaFilter",
        Status = cms.untracked.int32(1),
-       MaxEta = cms.untracked.double(2.5),
-       MinEta = cms.untracked.double(-2.5),
-       MinPt = cms.untracked.double(1.0),
+       MaxEta = cms.untracked.double(1000),
+       MinEta = cms.untracked.double(-1000),
+       MinPt = cms.untracked.double(0.0),
        ParticleID = cms.untracked.int32(13),  #mu  
        MotherID = cms.untracked.int32(333)    #phi
    )
@@ -194,7 +149,7 @@ process.options = cms.untracked.PSet(
 process.ProductionFilterSequence = cms.Sequence(process.generator)
 
 # Path and EndPath definitions
-process.generation_step = cms.Path(process.pgen*process.Dfilter*process.mufromphifilter)
+process.generation_step = cms.Path(process.pgen*process.Dfilter*process.phifromDfilter*process.mufromphifilter)
 process.genfiltersummary_step = cms.EndPath(process.genFilterSummary)
 process.endjob_step = cms.EndPath(process.endOfProcess)
 process.RAWSIMoutput_step = cms.EndPath(process.RAWSIMoutput)
