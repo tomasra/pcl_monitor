@@ -18,5 +18,5 @@ CondFormats/ESObjects	V00-00-13
 CondFormats/DataRecord	V06-21-07
 CalibTracker/SiStripCommon	V02-02-15
 CondFormats/GeometryObjects V00-09-01
-V00-00-12 CondCore/ESPlugin
+V00-00-12 CondCore/ESPlugins
 
