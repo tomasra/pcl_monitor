@@ -1,0 +1,4 @@
+V00-02-04 CondFormats/EgammaObjects
+V06-21-08 CondFormats/DataRecord
+V00-02-03 CondCore/EgammaPlugins 
+
