@@ -90,9 +90,9 @@ threeMuonFilter = cms.EDFilter("CandViewCountFilter",
 
 # Production Info
 configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.303.2.7 $'),
+    version = cms.untracked.string('$Revision: 1.1 $'),
     annotation = cms.untracked.string('MinBias_TuneZ2_7TeV_pythia6_cff.py nevts:1'),
     name = cms.untracked.string('PyReleaseValidation')
 )
 
-ProductionFilterSequence = cms.Sequence(generator * genParticlesForFilter * DsFilter * muonParticlesInAcc * threeMuonFilter)
+ProductionFilterSequence = cms.Sequence(generator * DsFilter * genParticlesForFilter * muonParticlesInAcc * threeMuonFilter)
