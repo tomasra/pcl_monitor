@@ -43,7 +43,8 @@ generator = cms.EDFilter("Pythia6GeneratorFilter",
           use_default_decay = cms.untracked.bool(False),
           decay_table = cms.FileInPath('GeneratorInterface/ExternalDecays/data/DECAY_NOLONGLIFE.DEC'),
           particle_property_file = cms.FileInPath('GeneratorInterface/ExternalDecays/data/evt.pdl'),
-          user_decay_file = cms.FileInPath('GeneratorInterface/ExternalDecays/data/Ds_phipi_mumupi.dec'),
+          #user_decay_file = cms.FileInPath('GeneratorInterface/ExternalDecays/data/Ds_phipi_mumupi.dec'),
+          user_decay_file = cms.FileInPath('MyAnalysis/Tau3Mu/data/Ds_phipi_mumupi.dec'),
           list_forced_decays = cms.vstring('MyD_s+','MyD_s-','MyPhi')
           ),
         parameterSets = cms.vstring('EvtGen')
