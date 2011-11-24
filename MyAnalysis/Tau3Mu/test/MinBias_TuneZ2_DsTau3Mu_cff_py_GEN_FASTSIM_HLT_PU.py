@@ -2,7 +2,7 @@
 # using: 
 # Revision: 1.341 
 # Source: /cvs/CMSSW/CMSSW/Configuration/PyReleaseValidation/python/ConfigBuilder.py,v 
-# with command line options: MyAnalysis/Tau3Mu/MinBias_TuneZ2_DsTau3Mu_cff.py -s GEN,FASTSIM,HLT:GRun --geometry DB --datatier GEN-SIM-DIGI-RECO --conditions START44_V7::All -n 10000 --eventcontent RECOSIM --pileup=HighLumiPileUp --no_exec
+# with command line options: MyAnalysis/Tau3Mu/MinBias_TuneZ2_DsTau3Mu_cff.py -s GEN,FASTSIM,HLT:GRun --geometry DB --datatier GEN-SIM-DIGI-RECO --conditions START44_V7::All -n 10000 --eventcontent AODSIM --pileup=HighLumiPileUp --no_exec
 import FWCore.ParameterSet.Config as cms
 
 process = cms.Process('HLT')
@@ -35,17 +35,16 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.1 $'),
+    version = cms.untracked.string('$Revision: 1.2 $'),
     name = cms.untracked.string('PyReleaseValidation'),
     annotation = cms.untracked.string('MinBias_TuneZ2_7TeV_pythia6_cff.py nevts:1')
 )
 
 # Output definition
 
-process.RECOSIMoutput = cms.OutputModule("PoolOutputModule",
-    splitLevel = cms.untracked.int32(0),
-    eventAutoFlushCompressedSize = cms.untracked.int32(5242880),
-    outputCommands = process.RECOSIMEventContent.outputCommands,
+process.AODSIMoutput = cms.OutputModule("PoolOutputModule",
+    eventAutoFlushCompressedSize = cms.untracked.int32(15728640),
+    outputCommands = process.AODSIMEventContent.outputCommands,
     fileName = cms.untracked.string('MinBias_TuneZ2_DsTau3Mu_cff_py_GEN_FASTSIM_HLT_PU.root'),
     dataset = cms.untracked.PSet(
         filterName = cms.untracked.string(''),
@@ -148,18 +147,18 @@ process.genParticlesForFilter = cms.EDProducer("GenParticleProducer",
 )
 
 
-process.ProductionFilterSequence = cms.Sequence(process.generator+process.genParticlesForFilter+process.DsFilter+process.muonParticlesInAcc+process.threeMuonFilter)
+process.ProductionFilterSequence = cms.Sequence(process.generator+process.DsFilter+process.genParticlesForFilter+process.muonParticlesInAcc+process.threeMuonFilter)
 
 # Path and EndPath definitions
 process.generation_step = cms.Path(process.pgen_genonly)
 process.reconstruction = cms.Path(process.reconstructionWithFamos)
 process.genfiltersummary_step = cms.EndPath(process.genFilterSummary)
-process.RECOSIMoutput_step = cms.EndPath(process.RECOSIMoutput)
+process.AODSIMoutput_step = cms.EndPath(process.AODSIMoutput)
 
 # Schedule definition
 process.schedule = cms.Schedule(process.generation_step,process.genfiltersummary_step)
 process.schedule.extend(process.HLTSchedule)
-process.schedule.extend([process.reconstruction,process.RECOSIMoutput_step])
+process.schedule.extend([process.reconstruction,process.AODSIMoutput_step])
 # filter all path with the production filter sequence
 for path in process.paths:
 	getattr(process,path)._seq = process.ProductionFilterSequence * getattr(process,path)._seq 
