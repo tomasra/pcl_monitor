@@ -21,14 +21,18 @@
 #include "DataFormats/Candidate/interface/Particle.h"
 
 #include "MyAnalysis/Tau3Mu/src/Histograms.h"
-
-
+#include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"
+#include "DataFormats/HepMCCandidate/interface/GenParticle.h" 
+#include "DataFormats/MuonReco/interface/Muon.h"
+#include "DataFormats/MuonReco/interface/MuonFwd.h"
+//#include "DataFormats/MuonReco/interface/MuonEnergy.h" 
 #include "TFile.h"
 #include "TH1.h"
 #include "TH2.h"
 #include "TLorentzVector.h"
 #include <TMath.h>
 #include <iostream>
+#include <map>
 
 using namespace std;
 
@@ -40,6 +44,56 @@ using namespace std;
 
 // pdg particle numbering : higgs->25, Z0->23
 // http://pdg.lbl.gov/mc_particle_id_contents.html
+
+
+class MyGenEvent {
+public:
+  TLorentzVector theDs;
+  int theDsCharge;
+  TLorentzVector theTau;
+  int theTauCharge;
+  TLorentzVector theMu[3];
+  int theMuCharge[3];  
+//   TLorentzVector theMu2;
+//   int theMu2Charge;  
+//   TLorentzVector theMu3;
+//   int theMu3Charge;  
+  
+
+  pair<int, int> minDPhiPair;
+
+  pair<int, int> minDRPair;
+
+  void closestPair() {
+    int minDPhi = 999999;
+    int minDR = 999999;
+
+    for(int index1 = 0; index1 != 3; ++index1) {
+      for(int index2 = index1+1; index2 != 3; ++index2) {
+
+	if(theMu[index1].DeltaPhi(theMu[index2]) < minDPhi) {
+	  minDPhiPair = make_pair(index1, index2);
+	  minDPhi = theMu[index1].DeltaPhi(theMu[index2]);
+	}
+
+	if(theMu[index1].DeltaR(theMu[index2]) < minDR) {
+	  minDRPair = make_pair(index1, index2);
+	  minDR = theMu[index1].DeltaR(theMu[index2]);
+	}
+
+      }
+    }
+  }
+
+
+private:
+};
+
+
+bool sortByPt(const HepMC::GenParticle *part1, const HepMC::GenParticle *part2) {
+
+  return part1->momentum().perp() > part2->momentum().perp();
+}
 
 
 
@@ -56,8 +110,21 @@ private:
 
   
   HistoKin *hKinDs;
+  HistoKin *hKinRecoDs;
+
+  HistoKin *hKinDs3RecoMatched;
+  HistoKin *hKinDs2RecoMatched;
   HistoKin *hKinTau;
   HistoKin *hKinMu;
+  HistoKin *hKinMuLead;
+  HistoKin *hKinMuTrail;
+  HistoKinPair *hKinDsVsMuLead;
+  HistoKinPair *hKinClosestMuPhi;
+
+  TH1F *hNRecoMuAll;
+  TH1F *hNRecoMuMatched;
+  TH1F *hNRecoTkMuMatched;
+
   
   int counter;
   int countInAccept;
@@ -101,6 +168,9 @@ GenLevelAnalysis::~GenLevelAnalysis() {}
 
 // ------------ method called to for each event  ------------
 void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup) {
+  bool debug = false;
+
+  double weight = 1.;
 
   using namespace edm;
   using namespace reco;
@@ -111,9 +181,25 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
   ev.getByLabel("generator",hepProd) ;
   const HepMC::GenEvent * myGenEvent = hepProd->GetEvent();
 
-//   HepMC::GenParticle* theZ=0;
-//   HepMC::GenParticle* theGamma=0;
+
+  string mcTruthCollection = "genParticles";
+
+//   edm::Handle< reco::GenParticleCollection > genParticleHandle;
+//   try { ev.getByLabel(mcTruthCollection, genParticleHandle); }
+//   catch ( cms::Exception& ex ) { edm::LogWarning("HWWTreeDumper") << "Can't get MC Truth Collection: " << mcTruthCollection; }
+//   const reco::GenParticleCollection *genParticleCollection = genParticleHandle.product();
+
   
+//   reco::GenParticleCollection::const_iterator genPart;
+//   for(genPart=genParticleCollection->begin(); genPart!=genParticleCollection->end(); genPart++) {
+//     const reco::Candidate & cand = *genPart;                                                   
+//     if(abs(cand.pdgId()) == 15) {
+//       cout << "TAU, mother: " << cand.mother()->pdgId() << endl;
+//       cout << "    # of mothers: " << cand.numberOfMothers() << endl;
+
+//     }
+//   }
+
   // TODO:
   // 1. plot the mother of all Ds
   // 2. plot the kinematics of all Ds
@@ -128,6 +214,7 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
   vector<HepMC::GenParticle *> particlesDs;
   vector<HepMC::GenParticle *> particlesTau;
 
+  MyGenEvent genEvt;
 
   cout << "--- new event ---" << endl;
   // loop over MC-truth particles
@@ -147,15 +234,18 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
       histo = hKinMu;
     } else continue;
     
-    std::cout << "initial  particle with pdg is: " << (*part)->pdg_id() << " with status: " << (*part)->status() << std::endl;
+    if(debug) std::cout << "- particle with pdg is: " << (*part)->pdg_id() << " with status: " << (*part)->status() << std::endl;
 
     HepMC::GenParticle* mother1  = 0;
     HepMC::GenParticle* mother2  = 0;
 
-    
-    
     // get the other mothers from the vertex
     if((*part)->production_vertex()) {
+//       for(HepMC::GenVertex::particles_in_const_iterator mom = (*part)->production_vertex()->particles_begin(HepMC::parents);
+// 	  mom != (*part)->production_vertex()->particles_end(HepMC::parents); ++mom) {
+// 	cout << **mom << endl;
+//       }
+      
       if((*part)->production_vertex()->particles_begin(HepMC::parents) !=  (*part)->production_vertex()->particles_end(HepMC::parents))
 	mother1 = *((*part)->production_vertex()->particles_begin(HepMC::parents));
     }
@@ -164,59 +254,76 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
       mother2 = *( mother1->production_vertex()->particles_begin(HepMC::parents));
     }
 
-    cout << " mother1: " << mother1->pdg_id()
-	 << " mother2: " << mother2->pdg_id() << endl;
+    if(debug) cout << "   mother1: " << mother1->pdg_id()
+		   << " mother2: " << mother2->pdg_id() << endl;
 
+    
+    // put the tau and the ds in the event
+    if(abs((*part)->pdg_id()) == 15 && (abs(mother1->pdg_id()) == 431 || abs(mother2->pdg_id()) == 431)) {
+      genEvt.theTau = TLorentzVector((*part)->momentum().px(), (*part)->momentum().py(), (*part)->momentum().pz(), (*part)->momentum().e());
+      genEvt.theTauCharge = (*part)->pdg_id();
+	 
+      HepMC::GenParticle* ds = 0;
+      if(abs(mother1->pdg_id()) == 431) ds = mother1;
+      else if(abs(mother2->pdg_id()) == 431) ds = mother2;
+      genEvt.theDs = TLorentzVector(ds->momentum().px(), ds->momentum().py(), ds->momentum().pz(), ds->momentum().e());
+      genEvt.theDsCharge = ds->pdg_id();
+    }
+
+
+
+       
+    // these are the muons from the tau
     if(abs(mother1->pdg_id()) == 15 || abs(mother2->pdg_id()) == 15) {
-	if(abs((*part)->pdg_id()) == 13) {
-	  cout << "Muon from tau, pt: " << (*part)->momentum().perp() << " eta: " << (*part)->momentum().pseudoRapidity() << endl;
- 	  if(fabs((*part)->momentum().pseudoRapidity()) < 2.4 && (*part)->momentum().perp() > 1) {
-	    muonsFromTau.push_back(*part);
- 	  }
-	}
+      if(abs((*part)->pdg_id()) == 13) {
+	if(debug) cout << "   Muon from tau, pt: " << (*part)->momentum().perp() << " eta: " << (*part)->momentum().pseudoRapidity() << endl;
+// 	if(fabs((*part)->momentum().pseudoRapidity()) < 2.4 && (*part)->momentum().perp() > 1) {
+	  muonsFromTau.push_back(*part);
+// 	}
       }
-
-
-    histo->Fill((*part)->momentum().perp(), (*part)->momentum().pseudoRapidity(), (*part)->momentum().phi(), (*part)->momentum().m(), 1);
-
-
-
-//     // require that higgs is the mother
-//     if (!    	(mother == 0 || (mother2!=0 && mother2->pdg_id()==25) ) 	) continue;
-
-//     std::cout << "found a particle with higgs as a mother. Its pdg is: " << (*part)->pdg_id() << std::endl; 
-
-//     if      ( (*part)->pdg_id()==22 ) theGamma = (*part);
-//     else if ( (*part)->pdg_id()==23 ) theZ     = (*part);
+    }
 
   }// loop over all MC-truth particles  - keep only electrons or photons 
-  
-//  math::XYZTLorentzVector momentumGamma(theGamma->momentum().px(),
-//					theGamma->momentum().py(),
-//					theGamma->momentum().pz(),
-//					theGamma->momentum().e() );
-//  math::XYZTLorentzVector momentumZ(theZ->momentum().px(),
-//				    theZ->momentum().py(),
-//				    theZ->momentum().pz(),
-//				    theZ->momentum().e() );
-  
-  
-//   TLorentzVector momentumGamma(theGamma->momentum().px(),
-// 			       theGamma->momentum().py(),
-// 			       theGamma->momentum().pz(),
-// 			       theGamma->momentum().e() );
-//   TLorentzVector momentumZ(theZ->momentum().px(),
-// 			   theZ->momentum().py(),
-// 			   theZ->momentum().pz(),
-// 			   theZ->momentum().e() );
-  
-//   h_ZGammaMass -> Fill( (momentumGamma + momentumZ).Mag()  );
-  
-//   TVector3 Zp3     = momentumZ.Vect();
-//   TVector3 Gammap3 = momentumGamma.Vect();
-  
-//   float    cosTheta = (Zp3 * Gammap3) / Zp3.Mag() / Gammap3.Mag();
-//   h_CosTheta -> Fill(cosTheta);
+
+  // sort them by pt
+  sort(muonsFromTau.begin(), muonsFromTau.end(), sortByPt);
+
+
+  if(muonsFromTau.size() == 3) {
+    for(unsigned int index = 0; index != muonsFromTau.size(); ++index) {
+
+      genEvt.theMu[index] = TLorentzVector(muonsFromTau[index]->momentum().px(),
+					   muonsFromTau[index]->momentum().py(),
+					   muonsFromTau[index]->momentum().pz(),
+					   muonsFromTau[index]->momentum().e());
+      genEvt.theMuCharge[index] = muonsFromTau[index]->pdg_id();
+    }
+  } else {
+    cout << "Warning: could not find at leat 3 muons from tau within acceptance: " << muonsFromTau.size() << endl;
+    return;
+  }
+
+  if(abs(genEvt.theDsCharge) != 431 ||  abs(genEvt.theTauCharge) != 15 ) {
+    cout << "Warning: something fishy in this event, skipping" << endl;
+    return;
+  }
+
+  // now fill the plots
+  hKinDs->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
+  hKinTau->Fill(genEvt.theTau.Pt(), genEvt.theTau.Eta(), genEvt.theTau.Phi(), genEvt.theTau.M(), weight);
+  hKinMu->Fill(genEvt.theMu[0].Pt(), genEvt.theMu[0].Eta(), genEvt.theMu[0].Phi(), genEvt.theMu[0].M(), weight);
+  hKinMu->Fill(genEvt.theMu[1].Pt(), genEvt.theMu[1].Eta(), genEvt.theMu[1].Phi(), genEvt.theMu[1].M(), weight);
+  hKinMu->Fill(genEvt.theMu[2].Pt(), genEvt.theMu[2].Eta(), genEvt.theMu[2].Phi(), genEvt.theMu[2].M(), weight);
+  hKinMuLead->Fill(genEvt.theMu[0].Pt(), genEvt.theMu[0].Eta(), genEvt.theMu[0].Phi(), genEvt.theMu[0].M(), weight);
+  hKinMuTrail->Fill(genEvt.theMu[2].Pt(), genEvt.theMu[2].Eta(), genEvt.theMu[2].Phi(), genEvt.theMu[2].M(), weight);
+  hKinDsVsMuLead->Fill(genEvt.theDs.Pt(), genEvt.theMu[0].Pt(), -1, -1, -1, -1, weight);
+
+
+  genEvt.closestPair();
+  double minDeltaPhi = fabs(genEvt.theMu[genEvt.minDPhiPair.first].DeltaPhi(genEvt.theMu[genEvt.minDPhiPair.second]));
+  double deltaR1 = genEvt.theMu[genEvt.minDPhiPair.first].DeltaR(genEvt.theMu[genEvt.minDPhiPair.second]);
+  double deltaEta1 = fabs(genEvt.theMu[genEvt.minDPhiPair.first].Eta() - genEvt.theMu[genEvt.minDPhiPair.second].Eta());
+  hKinClosestMuPhi->Fill(genEvt.theMu[genEvt.minDPhiPair.first].Pt(), genEvt.theMu[genEvt.minDPhiPair.second].Pt(), minDeltaPhi, deltaEta1, deltaR1, -1., weight);
 
   counter++;
   if(muonsFromTau.size() > 2) {
@@ -229,21 +336,92 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
   if(particlesTau.size() > 1) counterTaus++;
   if(particlesDs.size() > 1) counterMoreThanOneds++;
     
-    
+
+  // ------------------------------------------------------------------------------------------------
+  // RECO level analysis
+  string theMuonLabel = "muons";
+  // Take the muon container
+  edm::Handle<MuonCollection> muons;
+  ev.getByLabel(theMuonLabel,muons);
+  
+  int nTotal = 0;
+  int nMatched = 0;
+
+  TLorentzVector recoTau;
+  
+  // check the validity of the collection
+  if(muons.isValid()){
+    for (MuonCollection::const_iterator recoMu = muons->begin();
+         recoMu!=muons->end(); ++recoMu){ // loop over all muons
+      double eta = (*recoMu).eta();
+      double phi = (*recoMu).phi();
+      double pt = (*recoMu).pt();
+
+      string muonType = "";
+      if(recoMu->isGlobalMuon()) muonType = " Glb";
+      if(recoMu->isStandAloneMuon()) muonType = muonType + " STA";
+      if(recoMu->isTrackerMuon()) muonType = muonType + " Trk";
+
+      cout << "[MuonAnalysis] New Muon found:" << muonType << endl;
+      cout << "-- eta: " << eta << " phi: " << phi << " pt: " << pt << endl;       
+
+      TLorentzVector recoMuonMom(recoMu->px(), recoMu->py(), recoMu->pz(), recoMu->energy());
+
+      nTotal++;
+      for(int index = 0; index != 3; ++index) {
+	double deltar = recoMuonMom.DeltaR(genEvt.theMu[index]);
+	cout << "   MC: " << index << " eta: " << genEvt.theMu[index].Eta() << " phi: " << genEvt.theMu[index].Phi()
+	     << " pt: " << genEvt.theMu[index].Pt() << " DR: " << recoMuonMom.DeltaR(genEvt.theMu[index]) << endl;
+	if(deltar < 0.05) {
+	  cout << " matched!" << endl;
+	  nMatched++;
+	  recoTau+= recoMuonMom;
+	}
+      }
+	
+      
+    }
+
+  }
+
+  hNRecoMuAll->Fill(nTotal, weight);
+  hNRecoMuMatched->Fill(nMatched, weight);
+  
+  if(nMatched >= 3) {
+    hKinDs3RecoMatched->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
+    hKinRecoDs->Fill(recoTau.Pt(), recoTau.Eta(), recoTau.Phi(), recoTau.M(), weight);
+  } 
+  if(nMatched >= 2) {
+    hKinDs2RecoMatched->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
+  }
 }
 
 // ------------ method called once each job just before starting event loop  ------------
 void GenLevelAnalysis::beginJob() {
+  cout << "begin job" << endl;
   edm::Service<TFileService> fs;
 
   hKinDs  = new HistoKin("Ds",*fs);
+  hKinRecoDs  = new HistoKin("RecoDs",*fs);
+
+  hKinDs3RecoMatched  = new HistoKin("Ds3RecoMatched",*fs);
+  hKinDs2RecoMatched  = new HistoKin("Ds2RecoMatched",*fs);
+
   hKinTau = new HistoKin("Tau",*fs);
   hKinMu  = new HistoKin("Mu",*fs);
-  
+  hKinMuLead  = new HistoKin("MuLead",*fs);
+  hKinMuTrail  = new HistoKin("MuTrail",*fs);
+  hKinDsVsMuLead = new HistoKinPair("DsVsMuLead", 0,10,*fs);
+  hKinClosestMuPhi =  new HistoKinPair("ClosestMuPhi", 0,10,*fs);
+
+  hNRecoMuAll       = fs->make<TH1F>("hNRecoMuAll","Total # reco muons; # of reco muons; #events",10,0,10);
+  hNRecoMuMatched   = fs->make<TH1F>("hNRecoMuMatched","Total # reco muons; # of reco muons; #events",10,0,10);
+  hNRecoTkMuMatched = fs->make<TH1F>("hNRecoTkMuMatched","Total # reco muons; # of reco muons; #events",10,0,10);
+
 }
 
 
-// ------------ method called once each job just after ending the event loop  ------------
+// ------------ method called nce each job just after ending the event loop  ------------
 void 
 GenLevelAnalysis::endJob() {
   cout << "Total # events: " << counter << endl;
