@@ -8,7 +8,7 @@
 
 #include "TH1F.h"
 #include "TH2F.h"
-
+#include "TGraphAsymmErrors.h"
 
 #include <iostream>
 using namespace std; 
@@ -18,10 +18,11 @@ public:
 
 #ifndef ROOTANALYSIS
   HistoKin(std::string name, TFileService& fs) : theName(name) {
-    hPt     = fs.make<TH1F>(theName+"_hPt","Transv. Momentum; P_{T} (GeV); # events",100,0,50);
+    hPt     = fs.make<TH1F>(theName+"_hPt","Transv. Momentum; P_{T} (GeV/c^{2}); # events",100,0,50);
     hEta    = fs.make<TH1F>(theName+"_hEta","Pseudo rapidity; #eta; # events",50,-5,5);
     hPhi    = fs.make<TH1F>(theName+"_hPhi","Phi; #phi (rad); # events",100,0,6.28);
-    hMass   = fs.make<TH1F>(theName+"_hMass","Mass; Mass (GeV); # events",100,0,10);
+    hMass   = fs.make<TH1F>(theName+"_hMass","Mass; Mass (GeV/c^{2}); # events",100,0,10);
+    hPtEta  = fs.make<TH2F>(theName+"_hPtEta","Pt vs Eta; #eta; p_{T} (GeV/c^{2})",50,-5,5,100,0,50);  
     hNObj   = fs.make<TH1F>(theName+"_hNObj","# objects", 50,0,50);
     hPt->Sumw2();
     hEta->Sumw2();
@@ -37,6 +38,7 @@ public:
     hEta = new TH1F(theName+"_hEta","Eta",50,-5,5);
     hPhi = new TH1F(theName+"_hPhi","Phi (rad)",100,0,6.28);
     hMass = new TH1F(theName+"_hMass","Mass (GeV)",200,0,500);
+    hPtEta  = new TH2F(theName+"_hPtEta","Pt vs Eta",50,-5,5,100,0,50);  
     hNObj = new TH1F(theName+"_hNObj","# objects", 50,0,50);
     hPt->Sumw2();
     hEta->Sumw2();
@@ -54,6 +56,7 @@ public:
     hEta = 0;
     hPhi = 0;
     hMass = 0;
+    hPtEta = 0;
     hNObj = 0;
   }
 
@@ -64,11 +67,12 @@ public:
       dir = dir + "/";
     }
 
-    hPt = (TH1F *) file->Get(dir + theName+"_hPt");
-    hEta = (TH1F *) file->Get(dir + theName+"_hEta");
-    hPhi = (TH1F *) file->Get(dir + theName+"_hPhi");
-    hMass = (TH1F *) file->Get(dir + theName+"_hMass");
-    hNObj = (TH1F *) file->Get(dir + theName+"_hNObj");
+    hPt = (TH1F *) file->Get(TString(dir) + theName+"_hPt");
+    hEta = (TH1F *) file->Get(TString(dir) + theName+"_hEta");
+    hPhi = (TH1F *) file->Get(TString(dir) + theName+"_hPhi");
+    hPtEta = (TH2F *) file->Get(TString(dir) + theName+"_hPtEta");
+    hMass = (TH1F *) file->Get(TString(dir) + theName+"_hMass");
+    hNObj = (TH1F *) file->Get(TString(dir) + theName+"_hNObj");
 
   }
 
@@ -80,6 +84,7 @@ public:
     if(hPt != 0) hPt->Clone((ret->theName+"_hPt").Data());
     if(hEta != 0) hEta->Clone((ret->theName+"_hEta").Data());
     if(hPhi != 0) hPhi->Clone((ret->theName+"_hPhi").Data());
+    if(hPtEta != 0) hPtEta->Clone((ret->theName+"_hPtEta").Data());
     if(hMass != 0) hPhi->Clone((ret->theName+"_hMass").Data());
     if(hNObj != 0) hNObj->Clone((ret->theName+"_hNObj").Data());
 
@@ -92,6 +97,7 @@ public:
     if(hPt != 0) hPt->Add(histSet->hPt);
     if(hEta != 0) hEta->Add(histSet->hEta);
     if(hPhi != 0) hPhi->Add(histSet->hPhi);
+    if(hPtEta != 0) hPtEta->Add(histSet->hPtEta);
     if(hMass != 0) hPhi->Add(histSet->hMass);
     if(hNObj != 0) hPhi->Add(histSet->hNObj);
 
@@ -103,6 +109,7 @@ public:
     if(hPt != 0) hPt->Scale(scaleFact);
     if(hEta != 0) hEta->Scale(scaleFact);
     if(hPhi != 0) hPhi->Scale(scaleFact);
+    if(hPtEta != 0) hPtEta->Scale(scaleFact);
     if(hMass != 0) hMass->Scale(scaleFact);
     if(hNObj != 0) hNObj->Scale(scaleFact);
 
@@ -113,6 +120,7 @@ public:
     if(hPt != 0) hPt->Write();
     if(hEta != 0) hEta->Write();
     if(hPhi != 0) hPhi->Write();
+    if(hPtEta != 0) hPtEta->Write();
     if(hMass != 0) hMass->Write();
     if(hNObj != 0) hNObj->Write();
 
@@ -122,6 +130,7 @@ public:
     hPt->Fill(pt, weight);
     hEta->Fill(eta, weight);
     hPhi->Fill(phi, weight);
+    hPtEta->Fill(eta,pt,weight);
     hMass->Fill(mass, weight);
   }
 
@@ -137,6 +146,7 @@ public:
   TH1F *hPt;
   TH1F *hEta;
   TH1F *hPhi;
+  TH2F *hPtEta;
   TH1F *hMass;
   TH1F *hNObj;
 };
