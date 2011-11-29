@@ -26,6 +26,14 @@
 #include "DataFormats/MuonReco/interface/Muon.h"
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
 //#include "DataFormats/MuonReco/interface/MuonEnergy.h" 
+
+
+#include "DataFormats/L1Trigger/interface/L1MuonParticleFwd.h"
+#include "DataFormats/L1Trigger/interface/L1MuonParticle.h"
+#include "DataFormats/L1GlobalTrigger/interface/L1GlobalTriggerReadoutRecord.h"
+#include "DataFormats/Common/interface/TriggerResults.h"
+#include "FWCore/Common/interface/TriggerNames.h"
+
 #include "TFile.h"
 #include "TH1.h"
 #include "TH2.h"
@@ -59,7 +67,7 @@ public:
 //   TLorentzVector theMu3;
 //   int theMu3Charge;  
   
-
+ 
   pair<int, int> minDPhiPair;
 
   pair<int, int> minDRPair;
@@ -125,7 +133,12 @@ private:
   TH1F *hNRecoMuMatched;
   TH1F *hNRecoTkMuMatched;
 
-  
+  HistoKin *hKinDs3RecoMatched3L1Matched;
+  HistoKin *hKinDs3RecoMatched2L1Matched;
+  HistoKin *hKinDs3RecoMatched2L13p5Matched;
+  HistoKin *hKinDs3RecoMatched2L15Matched;
+  HistoKin *hKinDs3RecoMatchedHLTTau3Mu;
+
   int counter;
   int countInAccept;
   int counterMoreThan3Muons;
@@ -168,6 +181,9 @@ GenLevelAnalysis::~GenLevelAnalysis() {}
 
 // ------------ method called to for each event  ------------
 void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup) {
+
+
+
   bool debug = false;
 
   double weight = 1.;
@@ -269,10 +285,7 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
       genEvt.theDs = TLorentzVector(ds->momentum().px(), ds->momentum().py(), ds->momentum().pz(), ds->momentum().e());
       genEvt.theDsCharge = ds->pdg_id();
     }
-
-
-
-       
+  
     // these are the muons from the tau
     if(abs(mother1->pdg_id()) == 15 || abs(mother2->pdg_id()) == 15) {
       if(abs((*part)->pdg_id()) == 13) {
@@ -394,6 +407,73 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
   if(nMatched >= 2) {
     hKinDs2RecoMatched->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
   }
+
+
+
+  // ------------------------------------------------------------------------------------------------
+  // trigger analysis
+
+  // some counters/flags from trigger info
+  int nL1Muons=0;
+  int nL1MuonsPt3p5=0;
+  int nL1MuonsPt5=0;
+  bool tau3MuTrig = false;
+
+  // count number of L1 Muons at correct BX
+  // no matching to reco by now. it will require some attention for multiples match, and the phi at MS2
+  edm::Handle<l1extra::L1MuonParticleCollection> l1Muon; 
+  ev.getByLabel(edm::InputTag("l1extraParticles",""), l1Muon);
+  for(l1extra::L1MuonParticleCollection::const_iterator it=l1Muon->begin(); it!=l1Muon->end(); it++){
+    if (it->bx()==0){             
+      double l1pt=it->et();
+      double eta=it->eta();
+      double phi=it->phi();
+      double charge=it->charge();
+      nL1Muons++;
+      if (l1pt>=3.5) nL1MuonsPt3p5++;
+      if (l1pt>=5.0) nL1MuonsPt5++;
+    }
+  }
+  cout<<"Found "<<nL1Muons<<" L1 Muons"<<endl;
+
+  // check fired HLT paths
+  edm::Handle<edm::TriggerResults> hltresults;
+  ev.getByLabel("TriggerResults", hltresults);
+  if (hltresults.isValid()) {
+    const edm::TriggerNames TrigNames_ = ev.triggerNames(*hltresults);
+    const int ntrigs = hltresults->size();
+    for (int itr=0; itr<ntrigs; itr++){
+      if (!hltresults->accept(itr)) continue;
+      TString trigName=TrigNames_.triggerName(itr);
+      //cout<<"Found HLT path "<< trigName<<endl;
+      if (trigName=="HLT_TripleMu0_TauTo3Mu_v1") tau3MuTrig=true;
+    }
+  }
+  else
+    { 
+      cout<<"Trigger results not found"<<endl;
+    }
+  
+  
+  
+  if (nL1Muons>=3 && nMatched>=3){
+    hKinDs3RecoMatched3L1Matched->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
+  }
+  if (nL1Muons>=2 && nMatched>=3){
+    hKinDs3RecoMatched2L1Matched->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
+  }
+  if (nL1MuonsPt3p5>=2 && nMatched>=3){
+    hKinDs3RecoMatched2L13p5Matched->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
+  }
+  if (nL1MuonsPt5>=2 && nMatched>=3){
+    hKinDs3RecoMatched2L15Matched->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
+  }
+  if (nMatched>=3 && tau3MuTrig){
+    hKinDs3RecoMatchedHLTTau3Mu->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
+  }
+
+
+
 }
 
 // ------------ method called once each job just before starting event loop  ------------
@@ -406,6 +486,13 @@ void GenLevelAnalysis::beginJob() {
 
   hKinDs3RecoMatched  = new HistoKin("Ds3RecoMatched",*fs);
   hKinDs2RecoMatched  = new HistoKin("Ds2RecoMatched",*fs);
+
+  hKinDs3RecoMatched3L1Matched  = new HistoKin("Ds3RecoMatched3L1Matched",*fs);
+  hKinDs3RecoMatched2L1Matched  = new HistoKin("Ds3RecoMatched2L1Matched",*fs);
+  hKinDs3RecoMatched2L13p5Matched  = new HistoKin("Ds3RecoMatched2L13p5Matched",*fs);
+  hKinDs3RecoMatched2L15Matched  = new HistoKin("Ds3RecoMatched2L15Matched",*fs);
+  hKinDs3RecoMatchedHLTTau3Mu = new HistoKin("Ds3RecoMatchedHLTTau3Mu",*fs);
+  
 
   hKinTau = new HistoKin("Tau",*fs);
   hKinMu  = new HistoKin("Mu",*fs);
