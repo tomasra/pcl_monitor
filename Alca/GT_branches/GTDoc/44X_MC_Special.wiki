@@ -1,0 +1,1 @@
+| [[%LINKTOGTLIST%/?GlobalTag=START44_V5F1][START44_V5F1]] | %GREEN%44X%ENDCOLOR% | As the 'MC' GT (including bad channels), but with realistic startup alignment and calibration constants. The mis-alignment and mis-calibration scenarios are described [[AlCaScenarios][here]] | As !START44_V5 with the following updates: strip failure scenario. |
