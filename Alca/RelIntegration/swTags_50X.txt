@@ -22,4 +22,6 @@ V02-14-00     CalibCalorimetry/HcalPlugins
 V03-05-00     CondCore/HcalPlugins
 # 94986
 V02-07-00     CondTools/Hcal
-
+# HLT tags for HCAL
+FastSimulation/Configuration V04-13-27
+HLTrigger/Configuration V13-00-47
