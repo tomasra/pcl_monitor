@@ -45,14 +45,12 @@
 using namespace std;
 
 
-// #include "CLHEP/Units/GlobalPhysicalConstants.h"
-
-// #include "Hgg/ClusteringWithPU/interface/SCwithPUhistos.h"
-// #include "Hgg/ClusteringWithPU/interface/Utils.h"
-
-// pdg particle numbering : higgs->25, Z0->23
+// USEFUL DOCUMENTS:
+// https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookGenParticleCandidate#GenPCand
 // http://pdg.lbl.gov/mc_particle_id_contents.html
 
+
+//-----------------------------------------------------------------
 
 class MyGenEvent {
 public:
@@ -97,14 +95,15 @@ public:
 private:
 };
 
+//-----------------------------------------------------------------
 
-bool sortByPt(const HepMC::GenParticle *part1, const HepMC::GenParticle *part2) {
+bool sortByPt(const reco::Candidate *part1, const reco::Candidate *part2) {
 
-  return part1->momentum().perp() > part2->momentum().perp();
+  return part1->pt() > part2->pt();
 }
 
 
-
+//-----------------------------------------------------------------
 class GenLevelAnalysis : public edm::EDAnalyzer {
 public:
   explicit GenLevelAnalysis(const edm::ParameterSet&);
@@ -183,6 +182,7 @@ GenLevelAnalysis::~GenLevelAnalysis() {}
 void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup) {
 
 
+  cout << "--- new event ---" << endl;
 
   bool debug = false;
 
@@ -192,124 +192,76 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
   using namespace reco;
   using namespace std;
   
-  // get the gen level particles
-  Handle<HepMCProduct> hepProd ;
-  ev.getByLabel("generator",hepProd) ;
-  const HepMC::GenEvent * myGenEvent = hepProd->GetEvent();
+//   // get the gen level particles
+//   Handle<HepMCProduct> hepProd ;
+//   ev.getByLabel("generator",hepProd) ;
+//   const HepMC::GenEvent * myGenEvent = hepProd->GetEvent();
 
 
   string mcTruthCollection = "genParticles";
-
-//   edm::Handle< reco::GenParticleCollection > genParticleHandle;
-//   try { ev.getByLabel(mcTruthCollection, genParticleHandle); }
-//   catch ( cms::Exception& ex ) { edm::LogWarning("HWWTreeDumper") << "Can't get MC Truth Collection: " << mcTruthCollection; }
-//   const reco::GenParticleCollection *genParticleCollection = genParticleHandle.product();
-
-  
-//   reco::GenParticleCollection::const_iterator genPart;
-//   for(genPart=genParticleCollection->begin(); genPart!=genParticleCollection->end(); genPart++) {
-//     const reco::Candidate & cand = *genPart;                                                   
-//     if(abs(cand.pdgId()) == 15) {
-//       cout << "TAU, mother: " << cand.mother()->pdgId() << endl;
-//       cout << "    # of mothers: " << cand.numberOfMothers() << endl;
-
-//     }
-//   }
-
-  // TODO:
-  // 1. plot the mother of all Ds
-  // 2. plot the kinematics of all Ds
-  // 3. plot the kinematics of all Taus
-  
-  // DOCUMENTS:
-  // https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookGenParticleCandidate#GenPCand
-  // http://pdg.lbl.gov/mc_particle_id_contents.html
-
-
-  vector<HepMC::GenParticle *> muonsFromTau;
-  vector<HepMC::GenParticle *> particlesDs;
-  vector<HepMC::GenParticle *> particlesTau;
+  edm::Handle< reco::GenParticleCollection > genParticleHandle;
+  ev.getByLabel(mcTruthCollection,genParticleHandle) ;
+  const reco::GenParticleCollection *genParticleCollection = genParticleHandle.product();
 
   MyGenEvent genEvt;
+  vector<const reco::Candidate *> muonsFromTau;
+  vector<const reco::Candidate *> particlesDs;
+  vector<const reco::Candidate *> particlesTau;
 
-  cout << "--- new event ---" << endl;
-  // loop over MC-truth particles
-  for ( HepMC::GenEvent::particle_const_iterator part = myGenEvent->particles_begin();
-	part != myGenEvent->particles_end(); ++part ) {
 
-    HistoKin *histo = 0;
+  
+  reco::GenParticleCollection::const_iterator genPart;
+  for(genPart=genParticleCollection->begin(); genPart!=genParticleCollection->end(); genPart++) {
+    const reco::Candidate & cand = *genPart;                                                   
 
-    if(abs((*part)->pdg_id()) == 431) { //D_s
+    if(abs(cand.pdgId()) == 431) { //D_s
       if(particlesDs.size() != 0) cout << "More than one Ds in this event" << endl;
-      particlesDs.push_back(*part);
-      histo = hKinDs;
-    } else if(abs((*part)->pdg_id()) == 15) {//tau
-      particlesTau.push_back(*part);
-      histo = hKinTau;
-    } else if(abs((*part)->pdg_id()) == 13) {//muon
-      histo = hKinMu;
+      particlesDs.push_back(&cand);
+    } else if(abs(cand.pdgId()) == 15) {//tau
+      particlesTau.push_back(&cand);
+    } else if(abs(cand.pdgId()) == 13) {//muon
     } else continue;
-    
-    if(debug) std::cout << "- particle with pdg is: " << (*part)->pdg_id() << " with status: " << (*part)->status() << std::endl;
 
-    HepMC::GenParticle* mother1  = 0;
-    HepMC::GenParticle* mother2  = 0;
-
-    // get the other mothers from the vertex
-    if((*part)->production_vertex()) {
-//       for(HepMC::GenVertex::particles_in_const_iterator mom = (*part)->production_vertex()->particles_begin(HepMC::parents);
-// 	  mom != (*part)->production_vertex()->particles_end(HepMC::parents); ++mom) {
-// 	cout << **mom << endl;
-//       }
-      
-      if((*part)->production_vertex()->particles_begin(HepMC::parents) !=  (*part)->production_vertex()->particles_end(HepMC::parents))
-	mother1 = *((*part)->production_vertex()->particles_begin(HepMC::parents));
-    }
-
-    if(mother1 !=0 && mother1->production_vertex()) {
-      mother2 = *( mother1->production_vertex()->particles_begin(HepMC::parents));
-    }
-
-    if(debug) cout << "   mother1: " << mother1->pdg_id()
-		   << " mother2: " << mother2->pdg_id() << endl;
+    const reco::Candidate * mother1 = cand.mother();
+    const reco::Candidate * mother2 = cand.mother();
 
     
     // put the tau and the ds in the event
-    if(abs((*part)->pdg_id()) == 15 && (abs(mother1->pdg_id()) == 431 || abs(mother2->pdg_id()) == 431)) {
-      genEvt.theTau = TLorentzVector((*part)->momentum().px(), (*part)->momentum().py(), (*part)->momentum().pz(), (*part)->momentum().e());
-      genEvt.theTauCharge = (*part)->pdg_id();
-	 
-      HepMC::GenParticle* ds = 0;
-      if(abs(mother1->pdg_id()) == 431) ds = mother1;
-      else if(abs(mother2->pdg_id()) == 431) ds = mother2;
-      genEvt.theDs = TLorentzVector(ds->momentum().px(), ds->momentum().py(), ds->momentum().pz(), ds->momentum().e());
-      genEvt.theDsCharge = ds->pdg_id();
+    if(abs(cand.pdgId()) == 15 && (abs(mother1->pdgId()) == 431 || abs(mother2->pdgId()) == 431)) { // this is a tau from Ds
+      genEvt.theTau = TLorentzVector(cand.px(), cand.py(), cand.pz(), cand.energy());
+      genEvt.theTauCharge = cand.pdgId();
+	  
+      const reco::Candidate* ds = 0;
+      if(abs(mother1->pdgId()) == 431) ds = mother1;
+      else if(abs(mother2->pdgId()) == 431) ds = mother2;
+      genEvt.theDs = TLorentzVector(ds->px(), ds->py(), ds->pz(), ds->energy());
+      genEvt.theDsCharge = ds->pdgId();
+
     }
   
     // these are the muons from the tau
-    if(abs(mother1->pdg_id()) == 15 || abs(mother2->pdg_id()) == 15) {
-      if(abs((*part)->pdg_id()) == 13) {
-	if(debug) cout << "   Muon from tau, pt: " << (*part)->momentum().perp() << " eta: " << (*part)->momentum().pseudoRapidity() << endl;
-// 	if(fabs((*part)->momentum().pseudoRapidity()) < 2.4 && (*part)->momentum().perp() > 1) {
-	  muonsFromTau.push_back(*part);
+    if(abs(mother1->pdgId()) == 15 || abs(mother2->pdgId()) == 15) {
+      if(abs(cand.pdgId()) == 13) {
+	if(debug) cout << "   Muon from tau, pt: " << cand.pt() << " eta: " << cand.eta() << endl;
+// 	if(fabs(cand.pseudoRapidity()) < 2.4 && cand.perp() > 1) {
+	  muonsFromTau.push_back(&cand);
 // 	}
       }
     }
 
-  }// loop over all MC-truth particles  - keep only electrons or photons 
-
-  // sort them by pt
+  }
+  // sort the mu by pt
   sort(muonsFromTau.begin(), muonsFromTau.end(), sortByPt);
 
 
   if(muonsFromTau.size() == 3) {
     for(unsigned int index = 0; index != muonsFromTau.size(); ++index) {
 
-      genEvt.theMu[index] = TLorentzVector(muonsFromTau[index]->momentum().px(),
-					   muonsFromTau[index]->momentum().py(),
-					   muonsFromTau[index]->momentum().pz(),
-					   muonsFromTau[index]->momentum().e());
-      genEvt.theMuCharge[index] = muonsFromTau[index]->pdg_id();
+      genEvt.theMu[index] = TLorentzVector(muonsFromTau[index]->px(),
+					   muonsFromTau[index]->py(),
+					   muonsFromTau[index]->pz(),
+					   muonsFromTau[index]->energy());
+      genEvt.theMuCharge[index] = muonsFromTau[index]->pdgId();
     }
   } else {
     cout << "Warning: could not find at leat 3 muons from tau within acceptance: " << muonsFromTau.size() << endl;
@@ -320,6 +272,7 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
     cout << "Warning: something fishy in this event, skipping" << endl;
     return;
   }
+
 
   // now fill the plots
   hKinDs->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
@@ -352,6 +305,7 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
 
   // ------------------------------------------------------------------------------------------------
   // RECO level analysis
+
   string theMuonLabel = "muons";
   // Take the muon container
   edm::Handle<MuonCollection> muons;
@@ -407,6 +361,7 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
   if(nMatched >= 2) {
     hKinDs2RecoMatched->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
   }
+
 
 
 
