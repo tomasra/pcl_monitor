@@ -1,11 +1,3 @@
-# tagset 96422
-V01-02-09     CondFormats/EcalObjects
-# 94985
-#V02-14-00     CalibCalorimetry/HcalPlugins
-# 94984
-#V02-20-00     CalibCalorimetry/HcalAlgos
-# 94982
-#V03-08-00     CondFormats/HcalObjects
 # 94602
 V00-02-03     CondCore/EgammaPlugins
 V06-21-08     CondFormats/DataRecord
@@ -13,3 +5,17 @@ V00-02-04     CondFormats/EgammaObjects
 V08-11-13     RecoEgamma/EgammaTools
 # 95442
 V14-08-06     RecoParticleFlow/PFProducer
+# 97422
+V04-04-00     RecoEgamma/EgammaPhotonAlgos
+V10-03-02     RecoEgamma/EgammaPhotonProducers
+V08-11-16     RecoEgamma/EgammaTools
+# 97002
+#V02-20-01     CalibCalorimetry/HcalAlgos
+#V03-08-01     CondFormats/HcalObjects
+#V01-00-16     RecoLocalCalo/HcalRecAlgos
+#V00-09-22     RecoLocalCalo/HcalRecProducers
+#V03-02-13     SimCalorimetry/HcalSimAlgos
+#V02-02-10     SimCalorimetry/HcalSimProducers
+# 94985
+#V02-14-00     CalibCalorimetry/HcalPlugins
+
