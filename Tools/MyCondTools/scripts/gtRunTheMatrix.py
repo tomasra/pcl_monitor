@@ -75,7 +75,7 @@ def duplicateWorkflowForGTTest(matrixreader, wfid, newwfid, gtName, isLocal=Fals
                                               
 
 
-def runGTSelectionNew(gts, gtmap, isLocal, nThreads=4, original=False, show=False) :
+def runGTSelectionNew(gts, gtmap, isLocal, nThreads=4, original=False, show=False, useInput=None) :
 
     stdList = ['5.2', # SingleMu10 FastSim
                '7',   # Cosmics+RECOCOS+ALCACOS
@@ -88,7 +88,7 @@ def runGTSelectionNew(gts, gtmap, isLocal, nThreads=4, original=False, show=Fals
                    ]
 
     mrd = MatrixReader()
-    mrd.prepare()
+    mrd.prepare(useInput)
 
     testList = []
     index = 10000
@@ -192,6 +192,9 @@ if __name__ == '__main__':
     parser.add_option("--query", action="store_true",dest="show")
     parser.add_option("--local", action="store_true",dest="local",default=False)
     parser.add_option("--original", action="store_true",dest="original")
+
+    parser.add_option("-i","--useInput", dest="useInputStr",
+                     help="recycle input", type="str", metavar="<workflows>")
     
     #parser.add_option("-r", "--release", dest="release",
     #                 help="CMSSW release", type="str", metavar="<release>")
@@ -201,6 +204,9 @@ if __name__ == '__main__':
     #print "OPTIONS: ", options
     #print "ARGS: ", args
     
+    #print options.useInputStr
+    useInput = options.useInputStr.split(',')
+    #print useInput
     
     CONFIGFILE = 'gtValid.cfg'
 
@@ -238,5 +244,5 @@ if __name__ == '__main__':
     if 'CMSSW_3_6' in  releasearea or 'CMSSW_3_7' in  releasearea :
         ret = runGTSelection(gts, globaltagsandWfIds, options.local, np, options.original, options.show)
     else:
-        ret = runGTSelectionNew(gts, globaltagsandWfIds, options.local, np, options.original, options.show)
+        ret = runGTSelectionNew(gts, globaltagsandWfIds, options.local, np, options.original, options.show, useInput)
     #sys.exit(ret)
