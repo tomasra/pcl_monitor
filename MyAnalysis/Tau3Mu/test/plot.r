@@ -229,14 +229,21 @@ void plot() {
     hNRecoMuMatched->Draw();
 
     HistoKin * hKinDs3RecoMatched = new HistoKin("Ds3RecoMatched","genLevelAnalysis", file);
+    HistoKin * hKinDs3RecoGoodMatched = new HistoKin("Ds3RecoGoodMatched","genLevelAnalysis", file);
     cEff3RecoVsPtDs->cd();
     //TH1F *hEff3RecoVsPtDs = (TH1F *) hKinDs3RecoMatched->hPt->Clone("hEff3RecoVsPtDs");
     TGraphAsymmErrors *tgEff3RecoVsPtDs = new TGraphAsymmErrors;
     tgEff3RecoVsPtDs->SetTitle("Eff 3 Reco Muons vs Ds Pt");
     tgEff3RecoVsPtDs->SetName("tgEff3RecoVsPtDs");
     tgEff3RecoVsPtDs->Divide(hKinDs3RecoMatched->hPt,hKinDs->hPt);
+    TGraphAsymmErrors *tgEff3RecoGoodVsPtDs = new TGraphAsymmErrors;
+    tgEff3RecoGoodVsPtDs->SetTitle("Eff 3 Reco Good Muons vs Ds Pt");
+    tgEff3RecoGoodVsPtDs->SetName("tgEff3RecoGoodVsPtDs");
+    tgEff3RecoGoodVsPtDs->Divide(hKinDs3RecoGoodMatched->hPt,hKinDs->hPt);
+    tgEff3RecoGoodVsPtDs->SetMarkerColor(2);
     //hEff3RecoVsPtDs->Divide(hKinDs->hPt);
     tgEff3RecoVsPtDs->Draw("AP");
+    tgEff3RecoGoodVsPtDs->Draw("P");
 
     cEff3RecoVsEtaDs->cd();
     //TH1F *hEff3RecoVsEtaDs = (TH1F *) hKinDs3RecoMatched->hEta->Clone("hEff3RecoVsEtaDs");
