@@ -282,4 +282,108 @@ public:
 
 
 
+
+
+class HistoImpactParam {
+public:
+
+#ifndef ROOTANALYSIS
+  HistoImpactParam(std::string name, TFileService& fs) : theName(name) {
+    hD0 = fs.make<TH1F>(theName+"_hD0","D0;d0 (cm);#events", 100, 0, 0.1);
+    hD0Err = fs.make<TH1F>(theName+"_hD0Err","D0;d0 (cm);#events", 100, 0, 0.1);
+    hD0Sig = fs.make<TH1F>(theName+"_hD0Sig","D0;d0 (cm);#events", 100, 0, 10);
+  }
+
 #endif
+  
+  
+
+
+  HistoImpactParam() : theName("") {
+    hD0 = 0;
+    hD0Err = 0;
+    hD0Sig = 0;
+  }
+
+
+
+  HistoImpactParam(std::string name, std::string dir, TFile *file) : theName(name) {
+    if(dir != "") {
+      dir = dir + "/";
+    }
+
+    hD0          = (TH1F *) file->Get(dir + theName+"_hD0");
+    hD0Err       = (TH1F *) file->Get(dir + theName+"_hD0Err");
+    hD0Sig       = (TH1F *) file->Get(dir + theName+"_hD0Sig");
+  }
+
+
+//   HistoImpactParam * Clone(std::string name) {
+//     HistoImpactParam *ret = new HistoImpactParam();
+//     ret->theName = name;
+
+//     if(hPt != 0) hPt->Clone((ret->theName+"_hPt").Data());
+//     if(hEta != 0) hEta->Clone((ret->theName+"_hEta").Data());
+//     if(hPhi != 0) hPhi->Clone((ret->theName+"_hPhi").Data());
+//     if(hMass != 0) hPhi->Clone((ret->theName+"_hMass").Data());
+//     if(hNObj != 0) hNObj->Clone((ret->theName+"_hNObj").Data());
+
+//     return ret;
+//   }
+
+
+
+//   void Add(const HistoImpactParam* histSet) {
+//     if(hPt != 0) hPt->Add(histSet->hPt);
+//     if(hEta != 0) hEta->Add(histSet->hEta);
+//     if(hPhi != 0) hPhi->Add(histSet->hPhi);
+//     if(hMass != 0) hPhi->Add(histSet->hMass);
+//     if(hNObj != 0) hPhi->Add(histSet->hNObj);
+
+//   }
+
+
+
+//   void Scale(double scaleFact) {
+//     if(hPt != 0) hPt->Scale(scaleFact);
+//     if(hEta != 0) hEta->Scale(scaleFact);
+//     if(hPhi != 0) hPhi->Scale(scaleFact);
+//     if(hMass != 0) hMass->Scale(scaleFact);
+//     if(hNObj != 0) hNObj->Scale(scaleFact);
+
+//   }
+
+
+//   void Write() {
+//     if(hPt != 0) hPt->Write();
+//     if(hEta != 0) hEta->Write();
+//     if(hPhi != 0) hPhi->Write();
+//     if(hMass != 0) hMass->Write();
+//     if(hNObj != 0) hNObj->Write();
+
+//   }
+  
+  void Fill(double d0, double d0Err, double weight) {
+    hD0->Fill(d0, weight);
+    hD0Err->Fill(d0Err, weight);
+    hD0Sig->Fill(d0/d0Err, weight);
+  }
+
+  /// Destructor
+  virtual ~HistoImpactParam() {}
+
+  // Operations
+  TString theName;
+
+  TH1F *hD0;
+  TH1F *hD0Err;
+  TH1F *hD0Sig;
+
+};
+
+
+
+
+#endif
+
+
