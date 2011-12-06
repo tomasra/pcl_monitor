@@ -25,6 +25,7 @@
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h" 
 #include "DataFormats/MuonReco/interface/Muon.h"
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
+#include "DataFormats/MuonReco/interface/MuonSelectors.h"
 //#include "DataFormats/MuonReco/interface/MuonEnergy.h" 
 
 
@@ -32,6 +33,12 @@
 #include "DataFormats/L1Trigger/interface/L1MuonParticle.h"
 #include "DataFormats/L1GlobalTrigger/interface/L1GlobalTriggerReadoutRecord.h"
 #include "DataFormats/Common/interface/TriggerResults.h"
+
+#include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
+#include "TrackingTools/Records/interface/TransientTrackRecord.h"
+#include "TrackingTools/TransientTrack/interface/TransientTrack.h"
+#include "TrackingTools/IPTools/interface/IPTools.h"
+
 #include "FWCore/Common/interface/TriggerNames.h"
 
 #include "TFile.h"
@@ -118,9 +125,18 @@ private:
   
   HistoKin *hKinDs;
   HistoKin *hKinRecoDs;
+  HistoKin *hKinRecoTau;
 
   HistoKin *hKinDs3RecoMatched;
   HistoKin *hKinDs2RecoMatched;
+
+  HistoKin *hKinDs3RecoGoodMatched;
+  HistoKin *hKinDs2RecoGoodMatched;
+
+  HistoImpactParam *hd0MuonGood;
+  HistoImpactParam *hd0MuonGoodMatched;
+
+
   HistoKin *hKinTau;
   HistoKin *hKinMu;
   HistoKin *hKinMuLead;
@@ -130,6 +146,9 @@ private:
 
   TH1F *hNRecoMuAll;
   TH1F *hNRecoMuMatched;
+  TH1F *hNRecoMuGoodAll;
+  TH1F *hNRecoMuGoodMatched;
+
   TH1F *hNRecoTkMuMatched;
 
   HistoKin *hKinDs3RecoMatched3L1Matched;
@@ -307,12 +326,31 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
   // RECO level analysis
 
   string theMuonLabel = "muons";
-  // Take the muon container
+  string theVertexLabel = "offlinePrimaryVerticesWithBS";
+
+  // get the muon container
   edm::Handle<MuonCollection> muons;
   ev.getByLabel(theMuonLabel,muons);
   
+  // get the vertex collection
+  edm::Handle< std::vector<reco::Vertex> > pvHandle;
+  ev.getByLabel(theMuonLabel, pvHandle );
+
+
+  // get the PV
+  reco::Vertex primaryVertex;
+  if(pvHandle.isValid()) {
+    primaryVertex = pvHandle->at(0); 
+  }
+
+  // this is needed by the IPTools methods from the tracking group
+  edm::ESHandle<TransientTrackBuilder> trackBuilder;
+  iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", trackBuilder); 
+
   int nTotal = 0;
+  int nGood = 0;
   int nMatched = 0;
+  int nMatchedGood = 0;
 
   TLorentzVector recoTau;
   
@@ -334,6 +372,28 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
 
       TLorentzVector recoMuonMom(recoMu->px(), recoMu->py(), recoMu->pz(), recoMu->energy());
 
+      bool isGoodMu = muon::isGoodMuon(*recoMu, muon::TMOneStationTight);
+      double d0_corr = 0;
+      double d0_err = 0;
+      if(isGoodMu) {
+	nGood++;
+	cout << "Good" << endl;
+	// compute the impact parameter significance
+	reco::TrackRef innerTrack = (*recoMu).innerTrack(); 
+	if ( innerTrack.isNonnull() && innerTrack.isAvailable() ) {
+	  reco::TransientTrack tt = trackBuilder->build(innerTrack);
+// 	  std::pair<bool,Measurement1D> result = IPTools::absoluteTransverseImpactParameter(tt, primaryVertex);
+	  std::pair<bool,Measurement1D> result = IPTools::absoluteImpactParameter3D(tt, primaryVertex);
+
+	  d0_corr = result.second.value();
+	  d0_err = result.second.error();
+	  cout << "d0: " << d0_corr << " d0 err: " <<  d0_err << endl;
+	  hd0MuonGood->Fill(d0_corr, d0_err, weight);
+	}
+
+      }
+
+
       nTotal++;
       for(int index = 0; index != 3; ++index) {
 	double deltar = recoMuonMom.DeltaR(genEvt.theMu[index]);
@@ -343,23 +403,35 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
 	  cout << " matched!" << endl;
 	  nMatched++;
 	  recoTau+= recoMuonMom;
+	  if(isGoodMu) {
+	    nMatchedGood++;
+	    hd0MuonGoodMatched->Fill(d0_corr, d0_err, weight);
+	  }
+
 	}
       }
 	
       
     }
-
   }
 
   hNRecoMuAll->Fill(nTotal, weight);
   hNRecoMuMatched->Fill(nMatched, weight);
-  
+  hNRecoMuGoodAll->Fill(nGood, weight);
+
+  hNRecoMuGoodMatched->Fill(nMatchedGood, weight);
   if(nMatched >= 3) {
     hKinDs3RecoMatched->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
-    hKinRecoDs->Fill(recoTau.Pt(), recoTau.Eta(), recoTau.Phi(), recoTau.M(), weight);
+    hKinRecoTau->Fill(recoTau.Pt(), recoTau.Eta(), recoTau.Phi(), recoTau.M(), weight);
   } 
   if(nMatched >= 2) {
     hKinDs2RecoMatched->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
+  }
+  if(nMatchedGood >= 3) {
+    hKinDs3RecoGoodMatched->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
+  }
+  if(nMatchedGood >= 2) {
+    hKinDs2RecoGoodMatched->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
   }
 
 
@@ -438,9 +510,16 @@ void GenLevelAnalysis::beginJob() {
 
   hKinDs  = new HistoKin("Ds",*fs);
   hKinRecoDs  = new HistoKin("RecoDs",*fs);
+  hKinRecoTau  = new HistoKin("RecoTau",*fs);
 
   hKinDs3RecoMatched  = new HistoKin("Ds3RecoMatched",*fs);
   hKinDs2RecoMatched  = new HistoKin("Ds2RecoMatched",*fs);
+  hKinDs3RecoGoodMatched  = new HistoKin("Ds3RecoGoodMatched",*fs);
+  hKinDs2RecoGoodMatched  = new HistoKin("Ds2RecoGoodMatched",*fs);
+
+  hd0MuonGood = new HistoImpactParam("d0MuonGood", *fs);
+  hd0MuonGoodMatched = new HistoImpactParam("d0MuonGoodMatched", *fs);
+
 
   hKinDs3RecoMatched3L1Matched  = new HistoKin("Ds3RecoMatched3L1Matched",*fs);
   hKinDs3RecoMatched2L1Matched  = new HistoKin("Ds3RecoMatched2L1Matched",*fs);
@@ -457,7 +536,10 @@ void GenLevelAnalysis::beginJob() {
   hKinClosestMuPhi =  new HistoKinPair("ClosestMuPhi", 0,10,*fs);
 
   hNRecoMuAll       = fs->make<TH1F>("hNRecoMuAll","Total # reco muons; # of reco muons; #events",10,0,10);
-  hNRecoMuMatched   = fs->make<TH1F>("hNRecoMuMatched","Total # reco muons; # of reco muons; #events",10,0,10);
+  hNRecoMuMatched       = fs->make<TH1F>("hNRecoMuMatched","Total # reco muons; # of reco muons; #events",10,0,10);
+
+  hNRecoMuGoodAll       = fs->make<TH1F>("hNRecoMuGoodAll","Total # reco muons; # of reco muons; #events",10,0,10);
+  hNRecoMuGoodMatched   = fs->make<TH1F>("hNRecoMuGoodMatched","Total # reco muons; # of reco muons; #events",10,0,10);
   hNRecoTkMuMatched = fs->make<TH1F>("hNRecoTkMuMatched","Total # reco muons; # of reco muons; #events",10,0,10);
 
 }
