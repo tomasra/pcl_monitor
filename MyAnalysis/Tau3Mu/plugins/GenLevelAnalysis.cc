@@ -157,6 +157,13 @@ private:
   HistoKin *hKinDs3RecoMatched2L15Matched;
   HistoKin *hKinDs3RecoMatchedHLTTau3Mu;
 
+  HistoKin *hKinDs3L1Matched;
+  HistoKin *hKinDs2L1Matched;
+  HistoKin *hKinDs2L13p5Matched;
+  HistoKin *hKinDs2L15Matched;
+  HistoKin *hKinDsHLTTau3Mu;
+
+
   int counter;
   int countInAccept;
   int counterMoreThan3Muons;
@@ -453,9 +460,9 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
   for(l1extra::L1MuonParticleCollection::const_iterator it=l1Muon->begin(); it!=l1Muon->end(); it++){
     if (it->bx()==0){             
       double l1pt=it->et();
-      double eta=it->eta();
-      double phi=it->phi();
-      double charge=it->charge();
+      //double eta=it->eta();
+      //double phi=it->phi();
+      //double charge=it->charge();
       nL1Muons++;
       if (l1pt>=3.5) nL1MuonsPt3p5++;
       if (l1pt>=5.0) nL1MuonsPt5++;
@@ -483,20 +490,36 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
   
   
   
-  if (nL1Muons>=3 && nMatched>=3){
+  if (nL1Muons>=3 && nMatchedGood>=3){
     hKinDs3RecoMatched3L1Matched->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
   }
-  if (nL1Muons>=2 && nMatched>=3){
+  if (nL1Muons>=2 && nMatchedGood>=3){
     hKinDs3RecoMatched2L1Matched->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
   }
-  if (nL1MuonsPt3p5>=2 && nMatched>=3){
+  if (nL1MuonsPt3p5>=2 && nMatchedGood>=3){
     hKinDs3RecoMatched2L13p5Matched->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
   }
-  if (nL1MuonsPt5>=2 && nMatched>=3){
+  if (nL1MuonsPt5>=2 && nMatchedGood>=3){
     hKinDs3RecoMatched2L15Matched->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
   }
-  if (nMatched>=3 && tau3MuTrig){
+if (tau3MuTrig && nMatchedGood>=3){
     hKinDs3RecoMatchedHLTTau3Mu->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
+  }
+
+if (nL1Muons>=3){
+  hKinDs3L1Matched->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
+  }
+if (nL1Muons>=2){
+  hKinDs2L1Matched->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
+ }
+if (nL1MuonsPt3p5>=2){
+  hKinDs2L13p5Matched->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
+ }
+if (nL1MuonsPt5>=2){
+    hKinDs2L15Matched->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
+  }
+if (tau3MuTrig){
+  hKinDsHLTTau3Mu->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
   }
 
 
@@ -521,11 +544,17 @@ void GenLevelAnalysis::beginJob() {
   hd0MuonGoodMatched = new HistoImpactParam("d0MuonGoodMatched", *fs);
 
 
-  hKinDs3RecoMatched3L1Matched  = new HistoKin("Ds3RecoMatched3L1Matched",*fs);
-  hKinDs3RecoMatched2L1Matched  = new HistoKin("Ds3RecoMatched2L1Matched",*fs);
-  hKinDs3RecoMatched2L13p5Matched  = new HistoKin("Ds3RecoMatched2L13p5Matched",*fs);
-  hKinDs3RecoMatched2L15Matched  = new HistoKin("Ds3RecoMatched2L15Matched",*fs);
-  hKinDs3RecoMatchedHLTTau3Mu = new HistoKin("Ds3RecoMatchedHLTTau3Mu",*fs);
+  hKinDs3RecoMatched3L1Matched  = new HistoKin("Ds3RecoGoodMatched3L1Matched",*fs);
+  hKinDs3RecoMatched2L1Matched  = new HistoKin("Ds3RecoGoodMatched2L1Matched",*fs);
+  hKinDs3RecoMatched2L13p5Matched  = new HistoKin("Ds3RecoGoodMatched2L13p5Matched",*fs);
+  hKinDs3RecoMatched2L15Matched  = new HistoKin("Ds3RecoGoodMatched2L15Matched",*fs);
+  hKinDs3RecoMatchedHLTTau3Mu = new HistoKin("Ds3RecoGoodMatchedHLTTau3Mu",*fs);
+
+  hKinDs3L1Matched  =    new HistoKin("Ds3L1Matched",*fs);
+  hKinDs2L1Matched  =    new HistoKin("Ds2L1Matched",*fs);
+  hKinDs2L13p5Matched  = new HistoKin("Ds2L13p5Matched",*fs);
+  hKinDs2L15Matched  =   new HistoKin("Ds2L15Matched",*fs);
+  hKinDsHLTTau3Mu =      new HistoKin("DsHLTTau3Mu",*fs);
   
 
   hKinTau = new HistoKin("Tau",*fs);
