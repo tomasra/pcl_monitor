@@ -142,8 +142,8 @@ if __name__     ==  "__main__":
 
 
         # get the tag file
-        tagfile = GTVALIDATIONAREA + "/SwTags/swTags_" + release + ".txt"
-        cvstag_cmd = 'ssh lxbuild149 "cd ' + GTVALIDATIONAREA + '/SwTags/; cvs update -A swTags_' + release + '.txt"'
+        tagfile = GTVALIDATIONAREA + "/RelIntegration/swTags_" + release + ".txt"
+        cvstag_cmd = 'ssh lxbuild170 "cd ' + GTVALIDATIONAREA + '/RelIntegration/; cvs update -A swTags_' + release + '.txt"'
         cvstag_out = executeCommad(cvstag_cmd)
         
         today = date.today()
@@ -151,7 +151,7 @@ if __name__     ==  "__main__":
         runDir = GTVALIDATIONAREA + '/' + topdirname + '/' + releaseVal1 + '/src/'
         relDir = GTVALIDATIONAREA + '/' + topdirname + '/' + releaseVal1 +'/'
         
-        gtvalidation_cmd = 'ssh lxbuild149 "cd ' + GTVALIDATIONAREA + '; gtValidation.py -f ' + tagfile + ' -r ' + releaseVal1 + ' --auto ' + gtlistnames + '"'
+        gtvalidation_cmd = 'ssh lxbuild170 "cd ' + GTVALIDATIONAREA + '; gtValidation.py -f ' + tagfile + ' -r ' + releaseVal1 + ' --auto ' + gtlistnames + '"'
 
         print gtvalidation_cmd
         gtvalidation_out = executeCommad(gtvalidation_cmd)
@@ -160,7 +160,7 @@ if __name__     ==  "__main__":
 #             print gtvalidation_out[1]
 
         # 3a - compile and report about the compilatin status
-        compile_cmd = 'ssh lxbuild149 "cd ' + runDir + '; source env.csh |& tee compilation.out"'
+        compile_cmd = 'ssh lxbuild170 "cd ' + runDir + '; source env.csh |& tee compilation.out"'
         compile_out = executeCommad(compile_cmd)
 
         # check that the compilation was succesfull using the file 'compilationError.log'
@@ -170,18 +170,18 @@ if __name__     ==  "__main__":
             print compile_out[1]
             compilationResults = "*** Compilation ERROR: details in:\n " +  runDir + 'compilation.out\n'
             
-        showtags_cmd = 'ssh lxbuild149 "cd ' + runDir + '; source env.csh; showtags -r "'
+        showtags_cmd = 'ssh lxbuild170 "cd ' + runDir + '; source env.csh; showtags -r "'
         print showtags_cmd 
         showtags_out = executeCommad(showtags_cmd)
         
         # 4 - run_all test
         #os.chdir(runDir)
-        runAll_cmd = 'ssh lxbuild149 "cd ' + runDir + '; source env.csh; rehash; gtLoadAll.py --local all"'
+        runAll_cmd = 'ssh lxbuild170 "cd ' + runDir + '; source env.csh; rehash; gtLoadAll.py --local all"'
         print runAll_cmd
         runAll_out = executeCommad(runAll_cmd)
 
         # 5 - run the matrix in screen
-        runTheMatrix_cmd = 'ssh lxbuild149 "cd ' + runDir + '; source env.csh; rehash; gtRunTheMatrix.py  --local all "'
+        runTheMatrix_cmd = 'ssh lxbuild170 "cd ' + runDir + '; source env.csh; rehash; gtRunTheMatrix.py  --local all "'
         print runTheMatrix_cmd
         runTheMatrix_out = executeCommad(runTheMatrix_cmd)
         
@@ -202,8 +202,7 @@ if __name__     ==  "__main__":
         SENDMAIL = "/usr/sbin/sendmail" # sendmail location
     
         p = os.popen("%s -t" % SENDMAIL, "w")
-        p.write("To: gianluca.cerminara@cern.ch,cms-alca-globaltag@cern.ch\n")
-        #p.write("To: gianluca.cerminara@cern.ch\n")
+        p.write("To: cms-alca-globaltag@cern.ch\n")
         p.write("Subject: [GT-Nightly] " + releaseVal1 + " GTs: " + gtlistnames + "\n")
 
         
