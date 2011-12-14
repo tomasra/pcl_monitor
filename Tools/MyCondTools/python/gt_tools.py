@@ -472,7 +472,8 @@ class IOVTable:
         # print "Add IOV : " + str(entry)
         self._iovList.append(entry)
 
-
+    def timeType(self):
+        return self._timeType
     
 
     def setFromListIOV(self, listiovOutput):
