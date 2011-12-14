@@ -478,6 +478,9 @@ if __name__ == "__main__":
             if pd == 'StreamExpress':
                 pd = 'ExpressPhysics'
                 parenttier = "FEVT"
+            if pd == 'StreamHIExpress':
+                pd = 'HIExpressPhysics'
+                parenttier = "FEVT"
             parent = getDatasets(pd,epoch, version, parenttier)
             if len(parent) == 0 or parent[0] == '':
                 parent = getDatasets(pd,epoch, rawversion,"RAW")
