@@ -2,6 +2,5 @@
 #V04-04-00     RecoEgamma/EgammaPhotonAlgos
 #V10-03-02     RecoEgamma/EgammaPhotonProducers
 #V08-11-16     RecoEgamma/EgammaTools
-# 98722
-RecoVertex/BeamSpotProducer	V00-04-17-02
-
+# 100162
+CondFormats/EcalObjects		V01-02-12
