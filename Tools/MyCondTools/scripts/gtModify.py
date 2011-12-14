@@ -110,7 +110,7 @@ def checkIOV(newentry, gttype, isOnline, passwd):
         print "         account: " + newentry._account
         print outputAndStatus[1]
         print ''
-        sys.exit(1)
+        #sys.exit(1)
     else:
         iovtable = IOVTable()
         iovtable.setFromListIOV(outputAndStatus[1])
@@ -260,6 +260,7 @@ if __name__     ==  "__main__":
                 maxRel = getLastRelease(releasesAndArea, cycle)
                 #print maxRel    
                 # get list of plugin libraries
+
                 objectRecords = getObjectsAndRecords(swScramArch, maxRel)    
                 obj = ""    
                 listiovout = listIov("oracle://cms_orcoff_prod/" + options.newaccount, options.newtag, passwdfile)
@@ -272,7 +273,7 @@ if __name__     ==  "__main__":
                     obj = iovtable.containerName()
                 else:
                     print listiovout[1]
-                    sys.exit(1)
+                    #sys.exit(1)
 
 
                 if obj in objectRecords:
@@ -464,7 +465,7 @@ if __name__     ==  "__main__":
                 print error("***Error:") + " list IOV failed for tag: " + str(newentry)
                 print outputAndStatus[1]
                 print ''
-                sys.exit(1)
+                #sys.exit(1)
             else:
                 iovtable = IOVTable()
                 iovtable.setFromListIOV(outputAndStatus[1])
