@@ -2,6 +2,7 @@
 
 if($#argv == 0) then
     echo "Error: missing username"
+    exit
 endif
 
 source /afs/cern.ch/user/a/alcaprod/scripts/gtEnv.csh $1
