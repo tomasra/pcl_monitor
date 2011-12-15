@@ -29,7 +29,7 @@ for directory in dirsToClean:
     for filename in fileList:
         completepath = directory + filename
         if os.path.isdir(completepath):
-            if filename != "SwTags":
+            if filename != "RelIntegration":
 
                 # creation time
                 createtime = datetime.datetime.fromtimestamp(os.path.getctime(completepath))
