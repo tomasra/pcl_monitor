@@ -1,6 +1,7 @@
-# 97422
-#V04-04-00     RecoEgamma/EgammaPhotonAlgos
-#V10-03-02     RecoEgamma/EgammaPhotonProducers
-#V08-11-16     RecoEgamma/EgammaTools
-# 100162
-CondFormats/EcalObjects		V01-02-12
+V00-02-04     CondCore/EgammaPlugins
+V00-03-04     CondFormats/EgammaObjects
+V04-04-02     RecoEgamma/EgammaPhotonAlgos
+V10-03-03     RecoEgamma/EgammaPhotonProducers
+V08-11-22     RecoEgamma/EgammaTools
+V14-09-08     RecoParticleFlow/PFProducer
+
