@@ -10,5 +10,7 @@ source /afs/cern.ch/user/a/alcaprod/scripts/gtEnv.csh $1
 set GPNDIR=${GT_DIR}/${GT_CMSSW_VERSION}/src
 set CMSDIR=${GT_P5_DIR}/${GT_P5_CMSSW_VERSION}/src
 
+echo "rsync -uv ${GPNDIR}/*.conf $1@cmsusrslc50:${CMSDIR}/"
+
 rsync -uv ${GPNDIR}/*.conf $1@cmsusrslc50:${CMSDIR}/
 
