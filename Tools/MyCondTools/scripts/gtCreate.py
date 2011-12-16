@@ -67,7 +67,7 @@ if __name__     ==  "__main__":
     # --- read command line options
     # description
     usage = "usage: %prog [options] gt1 gt2 ..."
-    revision = '$Revision: 1.9 $'
+    revision = '$Revision: 1.10 $'
     vnum = revision.lstrip('$')
     vnum = vnum.lstrip('Revision: ')
     vnum = vnum.rstrip(' $')
@@ -82,6 +82,7 @@ if __name__     ==  "__main__":
     parser.add_option("-o", "--online", action="store_true",dest="online",help="write to oracle")
     parser.add_option("-r", "--remote", action="store_true",dest="remote",help="run the command in the CMS network")
     parser.add_option("-c", "--check-sum", dest="checksum",help="check the conf file check-sum against the externally provided one (mainly for remote management)")
+    parser.add_option("-u", "--user", dest="username",help="username for the online network")
 
     # read options and arguments
     (options, args) = parser.parse_args()
@@ -152,7 +153,10 @@ if __name__     ==  "__main__":
     # ---------------------------------------------------------
     # --- if exectution is remote just send the command over ssh
     if options.remote:
-        remote_cmd = "ssh " + remotemachine + ' "cd ' + remotedir + remoteversion + '/src/; source env.sh; gtCreate.py'
+        if options.username == None:
+            print "Error: remote connection requires username"
+            sys.exit(1)
+        remote_cmd = "ssh " + options.username + "@" + remotemachine + ' "cd ' + "/nfshome0/" + options.username + remotedir + remoteversion + '/src/; source env.sh; gtCreate.py'
         if options.online:
             remote_cmd += " --online"
         checksum_cmd = " -c "

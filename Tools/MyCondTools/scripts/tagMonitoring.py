@@ -37,18 +37,17 @@ rdbms                  = RDBMS("/afs/cern.ch/cms/DB/conddb")
 dbName                 =  "oracle://cms_orcoff_prod/CMS_COND_31X_RUN_INFO"
 logName                = "oracle://cms_orcoff_prod/CMS_COND_31X_POPCONLOG"
 runinfoTag             = 'runinfo_31X_hlt'
-tier0DasSrc            = "http://gowdy-wttest.cern.ch:8304/tier0/runs"
-#tier0DasSrc            = "https://cmsweb.cern.ch/tier0/runs"
+tier0DasSrc            = "https://cmsweb.cern.ch/tier0/runs"
 tier0SafeCond          = "https://cmsweb.cern.ch/tier0/firstconditionsaferun"
 tier0Mon               = "https://cmsweb.cern.ch/T0Mon/static/pages/index.html"
 cacheFile              = ".tagMonitoring.cache"
-webArea                = '/afs/cern.ch/user/c/cerminar/www/O2OMonitoring/'
+webArea                = '/afs/cern.ch/user/a/alcaprod/www/Monitoring/PCLO2O/'
 
 rdbms.setLogger(logName)
 from CondCore.Utilities import iovInspector as inspect
 
 db = rdbms.getDB(dbName)
-tags = db.allTags()
+# tags = db.allTags()
 
 class RunReportTagCheck:
     def __init__(self):
@@ -239,7 +238,7 @@ if __name__     ==  "__main__":
                       "EcalLaserAPDPNRatios", "")
 
     sistripdcsTag =  GTEntry()
-    sistripdcsTag.setEntry('SiStripDetVOff_v4_prompt',
+    sistripdcsTag.setEntry('SiStripDetVOff_v6_prompt',
                            "Calibration",
                            "oracle://cms_orcoff_prod/",
                            'CMS_COND_31X_STRIP',
@@ -371,12 +370,14 @@ if __name__     ==  "__main__":
         #print run
         # get the information from runInfo
         try :
+            db.startTransaction()
             log = db.lastLogEntry(runinfoTag)
             # for printing all log info present into log db 
             #print log.getState()
 
             # for inspecting all payloads/runs
             iov = inspect.Iov(db,runinfoTag, run,run)
+            db.commitTransaction()
         except RuntimeError :
             print error("*** Error:") + " no iov? in", runinfoTag
 

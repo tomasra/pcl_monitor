@@ -8,7 +8,7 @@ from Tools.MyCondTools.gt_tools import *
 # --- read the configuration file
 
 wikiFilesDir = "doc/"
-wikiWebDir = "/tmp/cerminar/"
+wikiWebDir = "/tmp/alcaprod/"
 wikiWebDirFinal = "GT_branches/GTDoc/"
 
 

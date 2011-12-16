@@ -18,11 +18,11 @@ import shutil
 
 
 # --------------------------------------------------------------------------------
-# configuratio
+# configuration
 runinfoTag             = 'runinfo_31X_hlt'
 #runinfoTag             = 'runinfo_start_31X_hlt'
 promptCalibDir         = '/afs/cern.ch/cms/CAF/CMSALCA/ALCA_PROMPT/'
-webArea                = '/afs/cern.ch/user/c/cerminar/www/PCLMonitor/'
+webArea                = '/afs/cern.ch/user/a/alcaprod/www/Monitoring/PCLTier0Workflow/'
 tagLumi                = "BeamSpotObject_ByLumi"
 tagRun                 = "BeamSpotObject_ByRun"
 tier0DasSrc            = "https://cmsweb.cern.ch/tier0/"
@@ -32,7 +32,7 @@ connectOracle          =  "oracle://cms_orcoff_prod/CMS_COND_31X_BEAMSPOT"
 tagRunOracle           = "BeamSpotObjects_PCL_byRun_v0_offline"
 tagLumiOracle          = "BeamSpotObjects_PCL_byLumi_v0_prompt"
 cacheFileName          = "PCLMonitorCache.txt"
-weburl                 = "http://cerminar.web.cern.ch/cerminar/PCLMonitor/"
+weburl                 = "http://cms-alcadb.web.cern.ch/cms-alcadb/Monitoring/PCLTier0Workflow/"
 
 writeToWeb             = True
 nRunsToPlot            = 100
@@ -197,7 +197,6 @@ import Tools.MyCondTools.monitorStatus as monitorStatus
 if __name__ == "__main__":
 
     # TODO:
-    # 1. separa script che genera lo stato da script che fa il plot
     # 5. aggiuni check sulla latency
     # 6. come fai a catchare problemi nel frontend?
 

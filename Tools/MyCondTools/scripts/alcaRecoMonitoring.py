@@ -28,8 +28,8 @@ logName = "oracle://cms_orcoff_prod/CMS_COND_31X_POPCONLOG"
 rdbms.setLogger(logName)
 from CondCore.Utilities import iovInspector as inspect
 
-db = rdbms.getDB(dbName)
-tags = db.allTags()
+# db = rdbms.getDB(dbName)
+# tags = db.allTags()
 
 
 

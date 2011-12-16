@@ -81,7 +81,7 @@ class WebPageWriter:
 
 
 tier0DasSrc            = "https://cmsweb.cern.ch/tier0/"
-webArea                = '/afs/cern.ch/user/c/cerminar/www/PCLMonitor/'
+webArea                = '/afs/cern.ch/user/a/alcaprod/www/Monitoring/PCLTier0Workflow/'
 writeToWeb             = True
 
 
