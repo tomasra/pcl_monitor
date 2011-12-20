@@ -59,7 +59,7 @@ DsFilter = cms.EDFilter("PythiaFilter",
        Status = cms.untracked.int32(2),
        MaxEta = cms.untracked.double(3),
        MinEta = cms.untracked.double(-3),
-       MinPt = cms.untracked.double(5),
+       MinPt = cms.untracked.double(7),
        ParticleID = cms.untracked.int32(431)  #D_s 
    )
 
@@ -90,7 +90,7 @@ threeMuonFilter = cms.EDFilter("CandViewCountFilter",
 
 # Production Info
 configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.1 $'),
+    version = cms.untracked.string('$Revision: 1.2 $'),
     annotation = cms.untracked.string('MinBias_TuneZ2_7TeV_pythia6_cff.py nevts:1'),
     name = cms.untracked.string('PyReleaseValidation')
 )
