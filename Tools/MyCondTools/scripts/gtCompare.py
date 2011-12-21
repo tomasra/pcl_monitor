@@ -45,7 +45,9 @@ def diffXML(filename1, filename2):
             continue
         if "2,3c2,3" in line:
             continue
-        if "---" in line:
+        if "2c2" in line:
+            continue
+            if "---" in line:
             continue
         #print line
         return False
