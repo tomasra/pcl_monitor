@@ -157,6 +157,7 @@ if __name__     ==  "__main__":
 
     parser.add_option("--dump", action="store_true",dest="dump",default=False, help="dump the entry in the GT")
     parser.add_option("--account", action="store_true",dest="checkaccount",default=False, help="check also the account name")
+    parser.add_option("--frontier", action="store_true",dest="frontier",default=False, help="use frontier instead of oracle")
     
     parser.add_option("-r", "--run-number", dest="runnumber",
                       help="run #: determines which IOV to dump. If not specified the last IOV + 1 will be used.",
@@ -259,8 +260,14 @@ if __name__     ==  "__main__":
             match = False
 
             if options.dump:
-                outputAndStatus1 = listIov(entry1.getOraclePfn(False), entry1.tagName(), passwdfile)
-                outputAndStatus2 = listIov(entry2.getOraclePfn(False), entry2.tagName(), passwdfile)
+                pfn1 = entry1.getOraclePfn(False)
+                pfn2 = entry2.getOraclePfn(False)
+                if(options.frontier):
+                    pfn1 = entry1.pfn()
+                    pfn2 = entry2.pfn()
+
+                outputAndStatus1 = listIov(pfn1, entry1.tagName(), passwdfile)
+                outputAndStatus2 = listIov(pfn2, entry2.tagName(), passwdfile)
 
                 if outputAndStatus1[0] == 0 and outputAndStatus2[0] == 0: 
                     iovtable1 = IOVTable()
@@ -299,9 +306,8 @@ if __name__     ==  "__main__":
                             #print entry1.rcdID()[0]
                             #print iovtotest1
                             #print endiov
-
-                            difffile1 = dump2XML(globaltag1, entry1.getOraclePfn(False), entry1.tagName(), passwdfile, iovtotest1, endiov)
-                            difffile2 = dump2XML(globaltag2, entry2.getOraclePfn(False), entry2.tagName(), passwdfile, iovtotest2, endiov)
+                            difffile1 = dump2XML(globaltag1, pfn1, entry1.tagName(), passwdfile, iovtotest1, endiov)
+                            difffile2 = dump2XML(globaltag2, pfn2, entry2.tagName(), passwdfile, iovtotest2, endiov)
 
                             if diffXML(difffile1, difffile2):
                                 match = True
@@ -342,264 +348,3 @@ if __name__     ==  "__main__":
 
     sys.exit(1)
     
-
-    # get the releases currently managed
-    known_releases         = cfgfile.get('Common','Releases').split(',')
-    gtconnstring           = cfgfile.get('Common','GTConnectString')
-    passwdfile             = cfgfile.get('Common','Passwd')
-
-    # read the cfg file containing comments
-    commentfile = ConfigParser(dict_type=OrderedDict)
-    commentfile.optionxform = str
-    COMMENTFILENAME = "GT_branches/Comments.cfg"
-    cvsUpdate(COMMENTFILENAME)
-    print 'Reading updated comment file from ',COMMENTFILENAME
-    commentfile.read([ COMMENTFILENAME ])
-
-    # ---------------------------------------------------------------------------
-    # --- check options and expand wildcards and aliases
-
-    # force comments to be added for new tags
-    if options.newtag != 'NONE' and options.comment == 'NONE':
-        # check that the comment has not yet been entered
-        if not commentfile.has_option("TagComments",options.newtag):
-            print warning("***Warning") + " no comments for tag: " + options.newtag
-
- 
-    basedir = "GT_branches/"
-    gtConfList = []
-
-    for conffile in args:
-        gtConfList.append(conffile)
-    
-
-    #print "------------------------"
-    if options.scenario != None and options.releases != None:
-        # wild card for scenarios
-        if 'all' in options.scenario:
-            options.scenario = ['DESIGN','MC','START',"GR_R","CRAFT09"]
-        elif 'mc' in options.scenario:
-            options.scenario = ['DESIGN','MC','START']
-
-
-        # wild-card for releases
-        if 'all' in options.releases:
-            options.releases = known_releases
-
-
-        for gttype in options.scenario:
-            for release in options.releases:
-                print "--- Scenario: " + gttype + " release: " + release
-                gtConf = 'GT_' + release + "_" + gttype + ".cfg"
-                CONFIGFILE = basedir + gtConf            
-                if os.path.isfile(CONFIGFILE):
-                    print '    configuration file: ',CONFIGFILE
-                    gtConfList.append(CONFIGFILE)
-                else:
-                    print "    cfg: " + CONFIGFILE + " doesn't exist!"
-
-
-
-    # loop on the configuration files and update them
-    for cfg in gtConfList:
-        if not os.path.isfile(cfg):
-            print "Cfg: " + CONFIGFILE + " doesn't exist!"
-            sys.exit(1)
-
-            
-        diffconfig = ConfigParser(dict_type=OrderedDict)
-        diffconfig.optionxform = str
-
-        print "---------------------------------------------------------------"
-        print 'Reading configuration file from ',cfg
-        cvsUpdate(cfg)
-        diffconfig.read(cfg)
-
-        # get the old GT name
-        OLDGT = diffconfig.get('Common','OldGT')
-        nextGT = diffconfig.get('Common','NewGT')
-
-        oldfilename = OLDGT + '.conf'
-        print "--- Original GT: " + OLDGT
-        print '        Next GT: ' + nextGT
-        # create the collection of tags
-        tagCollection = GTEntryCollection()
-
-        # --------------------------------------------------------------------------
-        # fill the collection
-        fillGTCollection(oldfilename, OLDGT, tagCollection)
-
-        # 1. Manipulate an existing entry
-        if options.oldtag != "NONE" or options.record != "NONE":
-            # original entry
-            oldentry = GTEntry()
-            
-            if options.oldtag != "NONE":
-                tagName = options.oldtag
-                if not tagCollection.hasTag(tagName):
-                    print warning("***Warning ") + "tag " + tagName + " not found in this GT"
-                    continue
-                oldentry = tagCollection.getByTag(tagName)
-
-            elif options.record != "NONE":
-                rcdandlbl = options.record.split(',')
-                if len(rcdandlbl) == 1:
-                    rcdandlbl.append('')
-                rcdId = RcdID ([rcdandlbl[0],rcdandlbl[1]])
-                if not tagCollection.hasRcdID(rcdId):
-                    print warning("***Warning ") + str(rcdId) + " not found in this GT"
-                    continue
-                oldentry = tagCollection.getByRcdID(rcdId)
-            
-            # A -> dump the entry
-            if options.list:
-                # some useful printout for this tag
-                print " -- List: " + str(oldentry)
-                print "     cfg string:"
-                print "     " + oldentry.getCfgFormat()
-
-            
-            # B -> modify the entry
-            if  options.newtag != 'NONE' or  options.newconnect != 'NONE' or  options.newaccount != 'NONE':
-                # check that the GT is not already in oracle
-                if gtExists(nextGT, gtconnstring, passwdfile):
-                    print error("***Error: GT: " + nextGT + " is already in oracle: cannot be modified!!!")
-                    continue
-                    
-                # modify the relevant properties
-                newentry = oldentry
-                if  options.newtag != 'NONE':
-                    newentry.setTagName(options.newtag)
-                if options.newconnect != 'NONE':
-                    newentry.setConnect(options.newconnect)
-                if options.newaccount != 'NONE':
-                    newentry.setAccount(options.newaccount)
-
-                # check the tag
-                isOnline = False
-                if  diffconfig.get('Common','Environment') != 'offline':
-                    isOnline = True
-                passwdfile =  diffconfig.get('Common','Passwd')
-                gttype =  diffconfig.get('Common','GTType')
-
-                checkIOV(newentry, gttype, isOnline, passwdfile)
-
-                # add the new entry to the collection
-                diffconfig.set('AddRecord',newentry.tagName(), newentry.getCfgFormat())
-
-                # write the comment to the file
-                cvscomment = ''
-                if options.comment != 'NONE':
-                    if options.newtag != 'NONE':
-                        if (not commentfile.has_option("TagComments",options.newtag)):
-                            # this is a comment saved in the central file since associated to a tag
-                            commentfile.set("TagComments",options.newtag,options.comment)
-                    else:
-                        # this comment is added only to the particular scenario file
-                        prevcomment = diffconfig.get("Comments", "Changes")
-                        diffconfig.set("Comments", "Changes",prevcomment + "<br> - " + options.comment)
-                    cvscomment = options.comment
-
-                configfile = open(cfg, 'wb')
-                diffconfig.write(configfile)
-                configfile.close()
-                cvsCommit(cfg,cvscomment)
-
-
-            # B -> check IOV
-            if options.check:
-                isOnline = False
-                if  diffconfig.get('Common','Environment') != 'offline':
-                    isOnline = True
-                passwdfile =  diffconfig.get('Common','Passwd')
-                gttype =  diffconfig.get('Common','GTType')
-                print "--- list IOV: " 
-                outputAndStatus = listIov(oldentry.getOraclePfn(isOnline), oldentry.tagName(), passwdfile)
-                iovtable = IOVTable()
-                iovtable.setFromListIOV(outputAndStatus[1])
-                iovtable.printList()
-
-        # 2. Reset the queue
-        elif options.reset:
-
-            if options.version == 'NONE':
-                print error("***Error:") + " new version not specified, use -v option!"
-                sys.exit(1)
-            resetQueue(cfg, diffconfig, options.version)
-
-        # 3. Add a new entry to the GT
-        else:
-            # no old entry is specified: a new tag must be created from command line options
-            if options.newtag == 'NONE' or options.newconnect == 'NONE' or options.newaccount == 'NONE' or options.newobject == 'NONE' or options.newrecord == 'NONE'  or options.newleaf == 'NONE':
-                print error("***Error:") + " specify <newtag> <newrecord> <newconnect> <newaccount> <newobject> <newleaf> [ <newlabel> ] to create a new entry!"
-                sys.exit(1)
-
-
-            # check that the GT is not already in oracle
-            if gtExists(nextGT, gtconnstring, passwdfile):
-                print error("***Error: GT: " + nextGT + " is already in oracle: cannot be modified!!!")
-                continue
-
-            # create the new entry
-            newentry = GTEntry()
-            newentry.setEntry( options.newtag, 'Calibration', options.newconnect,
-                              options.newaccount, options.newobject, options.newrecord,
-                              options.newleaf, options.newlabel)
-            # check the tag
-            isOnline = False
-            if  diffconfig.get('Common','Environment') != 'offline':
-                isOnline = True
-            passwdfile =  diffconfig.get('Common','Passwd')
-            gttype =  diffconfig.get('Common','GTType')
-            outputAndStatus = listIov(newentry.getOraclePfn(isOnline), newentry.tagName(), passwdfile)
-            if outputAndStatus[0] != 0:
-                print ' -----'
-                print error("***Error:") + " list IOV failed for tag: " + str(newentry)
-                print outputAndStatus[1]
-                print ''
-                sys.exit(1)
-            else:
-                iovtable = IOVTable()
-                iovtable.setFromListIOV(outputAndStatus[1])
-                iovtable.checkConsitency(gttype)
-                print "tag check: done"
-
-            diffconfig.set('AddRecord',newentry.tagName(), newentry.getCfgFormat())
-                
-            print newentry
-
-            # write the file
-            configfile = open(cfg, 'wb')
-            diffconfig.write(configfile)
-            configfile.close()
-            cvsCommit(cfg,'new record added')
-
-
-            # write the comment to the file
-            if options.comment != 'NONE':
-                if options.newtag != 'NONE':
-                    if (not commentfile.has_option("TagComments",options.newtag)):
-                        # this is a comment saved in the central file since associated to a tag
-                        commentfile.set("TagComments",options.newtag,options.comment)
-                else:
-                    # this comment is added only to the particular scenario file
-                    prevcomment = diffconfig.get("Comments", "Changes")
-                    diffconfig.set("Comments", "Changes",prevcomment + "<br> - " + options.comment)
-
-
-
-
-        # write the comment file
-        commfile = open(COMMENTFILENAME, 'wb')
-        commentfile.write(commfile)
-        commfile.close()
-        cvsCommit(COMMENTFILENAME, '')
-            
-
-        
-# TODO:
-# 1. leggi da cfg file
-# 4. update del cfg file da cvs e il commit dopo la modifica
-# 8. meccanismo per rimuovere un record
-# 10. shortcuts per connect string: fprep fprod oprep oprod pprod fonline
-
