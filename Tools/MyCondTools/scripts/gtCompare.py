@@ -8,18 +8,23 @@ from optparse import OptionParser, Option, OptionValueError
 #import coral
 #from CondCore.TagCollection import Node,tagInventory,CommonUtils,entryComment
 from operator import itemgetter
+import Tools.MyCondTools.RunInfo as RunInfo
 
 
 import commands
+import calendar
 
 # tools for color printout
 from Tools.MyCondTools.color_tools import *
 from Tools.MyCondTools.gt_tools import *
 from Tools.MyCondTools.odict import *
 
-def dump2XML(gt, pfn, tag, passwd, begin):
+def dump2XML(gt, pfn, tag, passwd, begin, end = -1):
     scratch = os.environ["SCRATCH"]
-    command = "cd " + scratch + " ; cmscond_2XML -c " + pfn + " -t " + tag + " -b " + str(begin) + " -P " + passwd + "; mv " + tag + ".xml " + tag + "_" + gt + ".xml"
+    cmscond_cmd = "cmscond_2XML -c " + pfn + " -t " + tag + " -b " + str(begin) + " -P " + passwd
+    if end != -1:
+        cmscond_cmd += " -e " + str(end)
+    command = "cd " + scratch + " ; " + cmscond_cmd + "; mv " + tag + ".xml " + tag + "_" + gt + ".xml"
 
     outandstat = commands.getstatusoutput(command)
     if outandstat[0] != 0:
@@ -151,52 +156,11 @@ if __name__     ==  "__main__":
     parser = OptionParser()
 
     parser.add_option("--dump", action="store_true",dest="dump",default=False, help="dump the entry in the GT")
+    parser.add_option("--account", action="store_true",dest="checkaccount",default=False, help="check also the account name")
     
-#     parser.add_option("-s", "--scenario", dest="scenario",
-#                       help="GT scenario: ideal - mc - startup - data - craft09",
-#                       type="str", metavar="<scenario>",action="append")
-#     parser.add_option("-r", "--release", dest="releases",
-#                       help="CMSSW release", type="str",
-#                       metavar="<release>",action="append")
-#     # to substitute a tag or a record you need to specify one of these
-#     parser.add_option("-t", "--tag", dest="oldtag",
-#                       help="tag", type="str", metavar="<tag>",default="NONE")
-#     parser.add_option("--rcd", dest="record",
-#                       help="record and optionally label", type="str", metavar="<record>[,<label>]",default="NONE")
-    
-
-#     parser.add_option("--new-tag", dest="newtag",
-#                       help="new tag", type="str", metavar="<new-tag>",default="NONE")
-#     parser.add_option("--new-connect", dest="newconnect",
-#                       help="new connect", type="str", metavar="<new-connect>",default="NONE")
-#     parser.add_option("--new-account", dest="newaccount",
-#                       help="new account", type="str", metavar="<new-account>",default="NONE")
-#     parser.add_option("--new-rcd", dest="newrecord",
-#                       help="new record", type="str", metavar="<new-record>",default="NONE")
-#     parser.add_option("--new-object", dest="newobject",
-#                       help="new object", type="str", metavar="<new-object>",default="NONE")
-#     parser.add_option("--new-leaf", dest="newleaf",
-#                       help="new leaf", type="str", metavar="<new-leaf>",default="NONE")
-#     parser.add_option("--new-label", dest="newlabel",
-#                       help="new label", type="str", metavar="<new-label>",default="")
-
-
-
-#     parser.add_option("-c", "--comment", dest="comment",
-#                       help="comment", type="str", metavar="<comment>",default="NONE")
-
-    
-#     parser.add_option("--dump", action="store_true",dest="list",default=False, help="dump the entry in the GT")
-#     parser.add_option("--check", action="store_true",dest="check",default=False, help="check the IOV of the tag")
-#     parser.add_option("--reset", action="store_true",dest="reset",default=False, help="clean the queue")
-#     parser.add_option("-v", "--version", dest="version",
-#                       help="version of the new GT (used with --reset)", type="str", metavar="<version>",default="NONE")
-
-    
-    
-    #    parser.add_option("-t", "--globaltag", dest="gt",
-    #                      help="Global-Tag", type="str", metavar="<globaltag>")
-    #parser.add_option("--local", action="store_true",dest="local",default=False)
+    parser.add_option("-r", "--run-number", dest="runnumber",
+                      help="run #: determines which IOV to dump. If not specified the last IOV + 1 will be used.",
+                      type="int", metavar="<run #>")
 
     (options, args) = parser.parse_args()
 
@@ -213,6 +177,8 @@ if __name__     ==  "__main__":
     cfgfile.read([ CONFIGFILE ])
     passwdfile             = cfgfile.get('Common','Passwd')
     gtconnstring           = cfgfile.get('Common','GTConnectString')
+
+    runinfotag = 'runinfo_31X_hlt' # FIXME: get it from the cfg
 
 
     globaltag1 = args[0]
@@ -259,6 +225,22 @@ if __name__     ==  "__main__":
         print "    GT 2: " + globaltag2 + " has " + str(tagCollection2.size()) + " entries"
 
 
+    if options.dump:
+        if options.runnumber != None:
+            # prepare the IOV to dump also for lumibased and timebased tags
+            # build the lumiid
+            h = options.runnumber<<32
+            lumiid = (h|1)
+            # build the timestamp
+            try:
+                runInfo = RunInfo.getRunInfoStartAndStopTime(runinfotag, '', options.runnumber)
+
+            except Exception as error:
+                print "*** Error can not find run: " + str(options.runnumber) + " in RunInfo: " + str(error)
+                raise Exception("Error can not find run: " + str(options.runnumber) + " in RunInfo: " + str(error))
+            nsec = calendar.timegm(runInfo.getDate(runInfo._startTime).timetuple())
+            timeid = nsec<<32
+
     nchanges = 0
 
     # loop over all records and compare the tag names and the # of payloads
@@ -272,9 +254,7 @@ if __name__     ==  "__main__":
         
         entry2 = secondCollection.getByRcdID(entry1.rcdID())
 
-        runnumber = 300000
-
-        if entry1.tagName() != entry2.tagName() or entry1.account() != entry2.account():
+        if entry1.tagName() != entry2.tagName() or (entry1.account() != entry2.account() and options.checkaccount):
 
             match = False
 
@@ -299,8 +279,29 @@ if __name__     ==  "__main__":
                     # 2 - Dump the last IOV in xml and compare
                     else:                     
                         if entry1.rcdID()[0] != "SiPixelGainCalibrationOfflineRcd" and entry1.rcdID()[0] != "DQMReferenceHistogramRootFileRcd":
-                            difffile1 = dump2XML(globaltag1, entry1.getOraclePfn(False), entry1.tagName(), passwdfile, lastiov1.since() + 1)
-                            difffile2 = dump2XML(globaltag2, entry2.getOraclePfn(False), entry2.tagName(), passwdfile, lastiov2.since() + 1)
+                            iovtotest1 = lastiov1.since() + 1
+                            iovtotest2 = lastiov2.since() + 1
+                            if options.runnumber != None:
+                                if iovtable1.timeType() == "runnumber" and iovtable2.timeType() == "runnumber":
+                                    iovtotest1 = options.runnumber
+                                    iovtotest2 = options.runnumber
+                                elif iovtable1.timeType() == "lumiid" and iovtable2.timeType() == "lumiid":
+                                    iovtotest1 = lumiid
+                                    iovtotest2 = lumiid
+                                elif iovtable1.timeType() == "timestamp" and iovtable2.timeType() == "timestamp":
+                                    iovtotest1 = timeid
+                                    iovtotest2 = timeid
+
+                            endiov = -1
+                            if options.runnumber != None:
+                                endiov = iovtotest2
+
+                            #print entry1.rcdID()[0]
+                            #print iovtotest1
+                            #print endiov
+
+                            difffile1 = dump2XML(globaltag1, entry1.getOraclePfn(False), entry1.tagName(), passwdfile, iovtotest1, endiov)
+                            difffile2 = dump2XML(globaltag2, entry2.getOraclePfn(False), entry2.tagName(), passwdfile, iovtotest2, endiov)
 
                             if diffXML(difffile1, difffile2):
                                 match = True
