@@ -465,6 +465,9 @@ class IOVTable:
         self._containerName = ""
         return
 
+    def timeType(self):
+        return self._timeType
+
     def containerName(self):
         return self._containerName
 
@@ -517,9 +520,11 @@ class IOVTable:
                 return
             if len(self._iovList) != 1:
                 for index in range(0, len(self._iovList)-1):
-                    if (self._iovList[index+1].sinceR() - self._iovList[index].tillR()) != 1:
+                    if (self._iovList[index+1].sinceR() - self._iovList[index].tillR()) > 1:
                         print warning("***Warning") + " data tag: " + self._tagName + " has an hole in the IOVs:"
-                        self.printList()
+                        print self._iovList[index]
+                        print self._iovList[index+1]
+                        #self.printList()
                         return
 
     def printList(self):
