@@ -309,6 +309,8 @@ class GTEntry:
         if online == False:
             if self._connstring == 'frontier://FrontierPrep':
                 oracleConn =  'oracle://cms_orcoff_prep'
+            if self._connstring == 'frontier://FrontierInt':
+                oracleConn =  'oracle://cms_orcoff_int'
             elif self._connstring == 'frontier://FrontierArc':
                 # no change is needed since it is anyhow frozen
                 oracleConn =  'frontier://FrontierArc'
@@ -323,7 +325,7 @@ class GTEntry:
         return oracleConn + '/' + self._account
 
     def isInPrepAccount(self):
-        if self._connstring == 'frontier://FrontierPrep':
+        if self._connstring == 'frontier://FrontierPrep' or self._connstring == 'frontier://FrontierInt' :
             return True
         return False
 
@@ -369,36 +371,35 @@ class IOVEntry:
 
     def setFromListIOV(self, line, timetype = "runnumber"):
         listofentries = line.split()
-        #print listofentries
-        index = 0
-        for entry in listofentries:
-            if entry == '':
-                continue
+        if self._timeType == 'timestamp':
+            self._since = int(listofentries[0])
+            self._till = int(listofentries[3])
+            if self._till != 18446744073709551615:
+                self._payloadToken = listofentries[6]
+            else:
+                self._payloadToken = listofentries[5]
+        elif self._timeType == 'lumiid':
+            self._since = int(listofentries[0])
+            self._till = int(listofentries[3])
+            self._payloadToken = listofentries[6]
+        else:
+            self._since = int(listofentries[0])
+            self._till = int(listofentries[1])
+            self._payloadToken = listofentries[2]
             
-            if entry != '':
-                if index == 0:
-                    self._since = int(entry.rstrip())
-                elif index == 1:
-                    self._till = int(entry.rstrip())
-                elif index == 2:
-                    self._payloadToken = entry.rstrip()
-            index = index + 1
-                
         return
 
     def __str__(self):
         if self._timeType == "runnumber":
             return str(self._since) + '\t' + str(self._till) + '\t' + self._payloadToken
         elif self._timeType == "lumiid":
-            return str(self.sinceRL()[0]) + ":" + str(self.sinceRL()[1]) + '\t' + str(self.tillRL()[0]) + ":" + str(self.tillRL()[1]) + '\t' + self._payloadToken
+            return str(self._since) + ' (' + str(self.sinceRL()[0]) + ":" + str(self.sinceRL()[1]) + ')\t'+str(self._till)+ ' (' + str(self.tillRL()[0]) + ":" + str(self.tillRL()[1]) + ')\t'+self._payloadToken
         elif self._timeType == "timestamp":
-            #print timeStamptoUTC(self._since)
-            #print timeStamptoDate(self._since)
             if self._till != 18446744073709551615:
                 till = timeStamptoDate(self._till)
             else:
                 till = 'inf'
-            return str(timeStamptoDate(self._since)) + '(' + str(self._since) + ')' + '\t' + str(till) + '\t' + self._payloadToken
+            return str(self._since) + ' (' + str(timeStamptoDate(self._since)) + ')\t'+str(self._till)+ ' (' + till + ')\t'+self._payloadToken
 
     def sinceDate(self):
         return datetime.strptime(timeStamptoDate(self._since),"%a %b %d %H:%M:%S  %Y")
@@ -487,12 +488,14 @@ class IOVTable:
                 continue
             linewords = line.split()
             if len(linewords) != 0:
+                #print line
                 if 'Tag' in linewords[0]:
                     self._tagName = linewords[1]
                 elif 'TimeType' in linewords[0]:
                     self._timeType = linewords[1]
                 elif 'PayloadContainerName' in linewords[0]:
                     self._containerName = linewords[1]
+
                     
         # print self._tagName
         for line in range(6, nLines-1):
@@ -795,7 +798,7 @@ class GTEntryCollection:
 
     def printTagsInPrep(self):
         if len(self._tagsInPrep) != 0:
-            print "***Warning: the following " + str(len(self._tagsInPrep)) + " tags are read form preparation account:"
+            print "***Warning: the following " + str(len(self._tagsInPrep)) + " tags are read form preparation or integration account:"
         for idx in self._tagsInPrep:
             tag = self._tagList[idx] 
             print "   tag:", tag.tagName()," obj: ",tag._object," account: ",tag._account
