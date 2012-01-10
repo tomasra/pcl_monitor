@@ -289,9 +289,9 @@ public:
 
 #ifndef ROOTANALYSIS
   HistoImpactParam(std::string name, TFileService& fs) : theName(name) {
-    hD0 = fs.make<TH1F>(theName+"_hD0","D0;d0 (cm);#events", 100, 0, 0.1);
+    hD0 = fs.make<TH1F>(theName+"_hD0","D0;d0 (cm);#events", 1000, 0, 1);
     hD0Err = fs.make<TH1F>(theName+"_hD0Err","D0;d0 (cm);#events", 100, 0, 0.1);
-    hD0Sig = fs.make<TH1F>(theName+"_hD0Sig","D0;d0 (cm);#events", 100, 0, 10);
+    hD0Sig = fs.make<TH1F>(theName+"_hD0Sig","D0;d0 (cm);#events", 1000, 0, 100);
   }
 
 #endif

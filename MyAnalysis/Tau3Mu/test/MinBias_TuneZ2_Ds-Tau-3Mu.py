@@ -34,7 +34,7 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.2 $'),
+    version = cms.untracked.string('$Revision: 1.3 $'),
     annotation = cms.untracked.string('MinBias_TuneZ2_7TeV_pythia6_cff.py nevts:1'),
     name = cms.untracked.string('PyReleaseValidation')
 )
@@ -106,7 +106,8 @@ process.generator = cms.EDFilter("Pythia6GeneratorFilter",
 	  use_default_decay = cms.untracked.bool(False),
 	  decay_table = cms.FileInPath('GeneratorInterface/ExternalDecays/data/DECAY_NOLONGLIFE.DEC'),
 	  particle_property_file = cms.FileInPath('GeneratorInterface/ExternalDecays/data/evt.pdl'),
-	  user_decay_file = cms.FileInPath('GeneratorInterface/ExternalDecays/data/Ds_tau_mumumu.dec'),
+	  # user_decay_file = cms.FileInPath('GeneratorInterface/ExternalDecays/data/Ds_tau_mumumu.dec'),
+	  user_decay_file = cms.FileInPath('MyAnalysis/Tau3Mu/data/Ds_tau_mumumu.dec'),
 	  list_forced_decays = cms.vstring('Mytau+','Mytau-','MyD_s+','MyD_s-')
 	  ),
 	parameterSets = cms.vstring('EvtGen')
@@ -125,6 +126,19 @@ process.Dfilter = cms.EDFilter("PythiaFilter",
 
 # ask 3 muons in the acceptance: filter needed!!!!!!!!!!!!
 
+# ask 3 muons in the acceptance
+process.muonParticlesInAcc = cms.EDFilter("GenParticleSelector",
+				  filter = cms.bool(False),
+				  src = cms.InputTag("genParticles"),
+				  cut = cms.string('pt > 1. && abs(pdgId) == 13 && abs(eta) < 2.4'),
+				  stableOnly = cms.bool(True)
+				  )
+
+
+process.threeMuonFilter = cms.EDFilter("CandViewCountFilter",
+			       src = cms.InputTag("muonParticlesInAcc"),
+			       minNumber = cms.uint32(3))
+
 process.options = cms.untracked.PSet(
     wantSummary = cms.untracked.bool(True)
     )
@@ -133,7 +147,7 @@ process.options = cms.untracked.PSet(
 process.ProductionFilterSequence = cms.Sequence(process.generator)
 
 # Path and EndPath definitions
-process.generation_step = cms.Path(process.pgen*process.Dfilter)  # put filter for muon acceptance here!
+process.generation_step = cms.Path(process.pgen*process.Dfilter*process.muonParticlesInAcc*process.threeMuonFilter)  # put filter for muon acceptance here!
 process.genfiltersummary_step = cms.EndPath(process.genFilterSummary)
 process.endjob_step = cms.EndPath(process.endOfProcess)
 process.RAWSIMoutput_step = cms.EndPath(process.RAWSIMoutput)

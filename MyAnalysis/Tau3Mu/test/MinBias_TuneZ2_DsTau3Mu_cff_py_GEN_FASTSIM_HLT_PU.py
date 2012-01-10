@@ -23,7 +23,7 @@ process.load('FastSimulation.Configuration.HLT_GRun_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(10000)
+    input = cms.untracked.int32(100000)
 )
 
 # Input source
@@ -45,7 +45,7 @@ process.configurationMetadata = cms.untracked.PSet(
 process.AODSIMoutput = cms.OutputModule("PoolOutputModule",
     eventAutoFlushCompressedSize = cms.untracked.int32(15728640),
     outputCommands = process.AODSIMEventContent.outputCommands,
-    fileName = cms.untracked.string('MinBias_TuneZ2_DsTau3Mu_cff_py_GEN_FASTSIM_HLT_PU.root'),
+    fileName = cms.untracked.string('/tmp/cerminar/MinBias_TuneZ2_DsTau3Mu_cff_py_GEN_FASTSIM_HLT_PU.root'),
     dataset = cms.untracked.PSet(
         filterName = cms.untracked.string(''),
         dataTier = cms.untracked.string('GEN-SIM-DIGI-RECO')
@@ -71,7 +71,7 @@ process.DsFilter = cms.EDFilter("PythiaFilter",
     MaxEta = cms.untracked.double(3),
     Status = cms.untracked.int32(2),
     MinEta = cms.untracked.double(-3),
-    MinPt = cms.untracked.double(5),
+    MinPt = cms.untracked.double(7),
     ParticleID = cms.untracked.int32(431)
 )
 

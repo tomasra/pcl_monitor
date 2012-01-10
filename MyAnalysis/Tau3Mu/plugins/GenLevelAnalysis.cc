@@ -157,11 +157,15 @@ private:
   HistoKin *hKinDs3RecoMatched2L15Matched;
   HistoKin *hKinDs3RecoMatchedHLTTau3Mu;
 
+
+  TH1F *hNVertex;
+
   HistoKin *hKinDs3L1Matched;
   HistoKin *hKinDs2L1Matched;
   HistoKin *hKinDs2L13p5Matched;
   HistoKin *hKinDs2L15Matched;
   HistoKin *hKinDsHLTTau3Mu;
+
 
 
   int counter;
@@ -348,7 +352,9 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
   reco::Vertex primaryVertex;
   if(pvHandle.isValid()) {
     primaryVertex = pvHandle->at(0); 
+    hNVertex->Fill(pvHandle->size(),weight);
   }
+
 
   // this is needed by the IPTools methods from the tracking group
   edm::ESHandle<TransientTrackBuilder> trackBuilder;
@@ -570,7 +576,7 @@ void GenLevelAnalysis::beginJob() {
   hNRecoMuGoodAll       = fs->make<TH1F>("hNRecoMuGoodAll","Total # reco muons; # of reco muons; #events",10,0,10);
   hNRecoMuGoodMatched   = fs->make<TH1F>("hNRecoMuGoodMatched","Total # reco muons; # of reco muons; #events",10,0,10);
   hNRecoTkMuMatched = fs->make<TH1F>("hNRecoTkMuMatched","Total # reco muons; # of reco muons; #events",10,0,10);
-
+  hNVertex = fs->make<TH1F>("hNVertex","# vertexes; # vertices; #events",100,0,100);
 }
 
 
