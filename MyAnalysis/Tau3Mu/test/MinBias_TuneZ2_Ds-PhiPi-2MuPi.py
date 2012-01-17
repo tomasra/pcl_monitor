@@ -22,7 +22,7 @@ process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(10000)
+    input = cms.untracked.int32(20000)
 )
 
 # Input source
@@ -34,7 +34,7 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.1 $'),
+    version = cms.untracked.string('$Revision: 1.2 $'),
     annotation = cms.untracked.string('MinBias_TuneZ2_7TeV_pythia6_cff.py nevts:1'),
     name = cms.untracked.string('PyReleaseValidation')
 )
@@ -58,7 +58,7 @@ process.RAWSIMoutput = cms.OutputModule("PoolOutputModule",
 # Additional output definition
 
 # Other statements
-process.GlobalTag.globaltag = 'START42_V15B::All'
+process.GlobalTag.globaltag = 'START44_V10::All'
 
 #customized generator settings:
 # - load custom decay for tau to 3mu (phase space) and force to this decay
@@ -73,7 +73,8 @@ process.generator = cms.EDFilter("Pythia6GeneratorFilter",
     maxEventsToPrint = cms.untracked.int32(0),
    
     PythiaParameters = cms.PSet(
-        pythiaUESettings = cms.vstring('MSTU(21)=1     ! Check on possible errors during program execution', 
+        pythiaUESettings = cms.vstring(
+	    'MSTU(21)=1     ! Check on possible errors during program execution', 
             'MSTJ(22)=2     ! Decay those unstable particles', 
             'PARJ(71)=10 .  ! for which ctau  10 mm', 
             'MSTP(33)=0     ! no K factors in hard cross sections', 
@@ -96,17 +97,18 @@ process.generator = cms.EDFilter("Pythia6GeneratorFilter",
             'MSTP(82)=4     ! Defines the multi-parton model'),
         processParameters = cms.vstring('MSEL=1'
 	),
+	
         parameterSets = cms.vstring('pythiaUESettings', 
             'processParameters')
     ),
 	 ExternalDecays = cms.PSet(
-        EvtGen = cms.untracked.PSet(
+          EvtGen = cms.untracked.PSet(
           operates_on_particles = cms.vint32(0), # 0=all
           use_default_decay = cms.untracked.bool(False),
           decay_table = cms.FileInPath('GeneratorInterface/ExternalDecays/data/DECAY_NOLONGLIFE.DEC'),
           particle_property_file = cms.FileInPath('GeneratorInterface/ExternalDecays/data/evt.pdl'),
-          user_decay_file = cms.FileInPath('GeneratorInterface/ExternalDecays/data/Ds_phipi_mumupi.dec'),
-          list_forced_decays = cms.vstring('MyD_s+','MyD_s-','MyPhi')
+          user_decay_file = cms.FileInPath('MyAnalysis/Tau3Mu/data/Ds_phipi_mumupi_new.dec'),
+          list_forced_decays = cms.vstring('MyD_s+','MyD_s-')
           ),
         parameterSets = cms.vstring('EvtGen')
         )			 
@@ -116,12 +118,13 @@ process.generator = cms.EDFilter("Pythia6GeneratorFilter",
 # filter to select events with a Ds
 process.Dfilter = cms.EDFilter("PythiaFilter",
        Status = cms.untracked.int32(2),
-       MaxEta = cms.untracked.double(3),
-       MinEta = cms.untracked.double(-3),
-       MinPt = cms.untracked.double(5),
+       MaxEta = cms.untracked.double(300),
+       MinEta = cms.untracked.double(-300),
+       MinPt = cms.untracked.double(0.0),
        ParticleID = cms.untracked.int32(431)  #D_s 
      
    )
+
 #optionally, insert next filter to check all events have phi from Ds
 process.phifromDfilter = cms.EDFilter("PythiaFilter",
        Status = cms.untracked.int32(2),
@@ -145,11 +148,22 @@ process.options = cms.untracked.PSet(
     wantSummary = cms.untracked.bool(True)
     )
 
+process.printTree = cms.EDAnalyzer("ParticleTreeDrawer",
+    src = cms.InputTag("genParticles"),
+    printP4 = cms.untracked.bool(False),
+    printPtEtaPhi = cms.untracked.bool(False),
+    printVertex = cms.untracked.bool(False),    
+    printStatus = cms.untracked.bool(True),
+    printIndex = cms.untracked.bool(False)
+    #status = cms.untracked.vint32( 3 )
+
+)   
+
 
 process.ProductionFilterSequence = cms.Sequence(process.generator)
 
 # Path and EndPath definitions
-process.generation_step = cms.Path(process.pgen*process.Dfilter*process.phifromDfilter*process.mufromphifilter)
+process.generation_step = cms.Path(process.pgen*process.Dfilter*process.phifromDfilter*process.mufromphifilter) 
 process.genfiltersummary_step = cms.EndPath(process.genFilterSummary)
 process.endjob_step = cms.EndPath(process.endOfProcess)
 process.RAWSIMoutput_step = cms.EndPath(process.RAWSIMoutput)
