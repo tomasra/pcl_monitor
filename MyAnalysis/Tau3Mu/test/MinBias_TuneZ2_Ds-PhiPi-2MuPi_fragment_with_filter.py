@@ -63,7 +63,7 @@ process.Dfilter = cms.EDFilter("PythiaFilter",
        Status = cms.untracked.int32(2),
        MaxEta = cms.untracked.double(3),
        MinEta = cms.untracked.double(-3),
-       MinPt = cms.untracked.double(7.0),
+       MinPt = cms.untracked.double(5.0),
        ParticleID = cms.untracked.int32(431)  #D_s 
      
    )
