@@ -1,9 +1,1 @@
-CondCore/BeamSpotPlugins	V00-01-00
-CondCore/RunInfoPlugins		V05-02-00
-CondFormats/BeamSpotObjects	V00-02-00
-CondFormats/DataRecord		V06-22-00
-CondFormats/RunInfo		V02-01-01
-IOMC/EventVertexGenerators	V01-08-01
-Mixing/Base			V04-01-02
-SimGeneral/MixingModule		V06-01-01
-CalibTracker/SiPixelESProducers	V01-00-04
+

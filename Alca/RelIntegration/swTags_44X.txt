@@ -1,4 +1,3 @@
-CalibTracker/SiStripCommon	V02-02-15
 
 
 
