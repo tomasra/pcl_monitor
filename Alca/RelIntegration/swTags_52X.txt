@@ -1,13 +1,1 @@
-V01-00-00     CaloOnlineTools/EcalTools
-V01-00-00     DPGAnalysis/Skims
-V03-15-02-02  DQM/DTMonitorModule
-V01-00-00     EventFilter/Cosmics
-V01-00-00     HLTrigger/Egamma
-V03-00-00     HLTrigger/HLTcore
-V02-00-00     HLTrigger/HLTfilters
-V01-00-00     HLTrigger/JetMET
-V03-00-00     HLTrigger/Muon
-V04-00-00     HLTrigger/btau
-V02-00-00     HLTrigger/special
-V01-00-00     RecoHI/HiMuonAlgos
-V00-06-03-01  RecoTracker/DeDx
+
