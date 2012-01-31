@@ -24923,11 +24923,13 @@ HLT_Dimuon0_Upsilon_Muon_v11 = cms.Path( HLTBeginSequence + hltL1sL1TripleMu0 + 
 # START-HERE TAU
 HLT_TripleMu0_TauTo3Mu_v1 = cms.Path( HLTBeginSequence + hltL1sL1TripleMu0 + hltPreTripleMu0TauTo3Mu + hltTripleMuonL1Filtered0 + HLTL2muonrecoSequence + hltTripleMuonL2PreFiltered0 + HLTL3muonrecoSequence + hltTauTo3MuL3Filtered + hltDisplacedmumumuVtxProducerTauTo3Mu + hltDisplacedmumumuFilterTauTo3Mu + cms.SequencePlaceholder( "HLTEndSequence" ) )
 
+# NOTE: facendo L3 muon si fanno tracce (hltL3TkTracksFromL2) intorno al mu ma il pt per il seeding nella tracking region e' max(1.5, 0.6*L2MuonPt) 
 
-# the following comes from menu:
-# /online/collisions/2011/5e33/v2.2/HLT/V1
-# path:
-# HLT_Mu5_Track2_Jpsi_v13
+
+# # the following comes from menu:
+# # /online/collisions/2011/5e33/v2.2/HLT/V1
+# # path:
+# # HLT_Mu5_Track2_Jpsi_v13
 
 hltTauTo2MuL2PreFiltered0 = cms.EDFilter( "HLTMuonL2PreFilter",
     BeamSpotTag = cms.InputTag( "offlineBeamSpot" ),
@@ -24975,21 +24977,21 @@ hltTauTo2MuL3Filtered = cms.EDFilter( "HLTMuonDimuonL3Filter",
 
 hltDisplacedmumuVtxProducerTauTo2Mu = cms.EDProducer( "HLTDisplacedmumuVtxProducer",
     Src = cms.InputTag( "hltL3MuonCandidates" ),
-    PreviousCandTag = cms.InputTag( "hltTauTo2MuL3Filtered" ),
+    PreviousCandTag = cms.InputTag( "hltTauTo2MuL2PreFiltered0" ),
     MaxEta = cms.double( 2.5 ),
     MinPt = cms.double( 0.0 ),
     MinPtPair = cms.double( 0.0 ),
-    MinInvMass = cms.double( 0.0 ),
-    MaxInvMass = cms.double( 999999.0 ),
-    ChargeOpt = cms.int32( -1 )
+    MinInvMass = cms.double( 0.0 ), #FIXME: tune
+    MaxInvMass = cms.double( 2.0 ), #FIXME: tune
+    ChargeOpt = cms.int32( -1 ) #FIXME: should drop this? Check the code
 )
 
 hltDisplacedmumuFilterTauTo2Mu = cms.EDFilter( "HLTDisplacedmumuFilter",
     FastAccept = cms.bool( True ),
-    MinLxySignificance = cms.double( 3.0 ),
+    MinLxySignificance = cms.double( 3.0 ), #FIXME: tune
     MaxLxySignificance = cms.double( -1.0 ),
-    MaxNormalisedChi2 = cms.double( 999999.0 ),
-    MinVtxProbability = cms.double( 0.15 ),
+    MaxNormalisedChi2 = cms.double( 999999.0 ), #FIXME: tune
+    MinVtxProbability = cms.double( 0.15 ), #FIXME: tune
     MinCosinePointingAngle = cms.double( 0.9 ),
     saveTags = cms.bool( True ),
     DisplacedVertexTag = cms.InputTag( "hltDisplacedmumuVtxProducerTauTo2Mu" ),
@@ -25001,7 +25003,7 @@ hltDisplacedmumuFilterTauTo2Mu = cms.EDFilter( "HLTDisplacedmumuFilter",
 # ----------
 # Produce pixel tracks
 
-hltMuTrackTauPixelTrackSelector = cms.EDFilter("QuarkoniaTrackSelector",
+hltMuTrackTauPixelTrackSelector = cms.EDProducer("QuarkoniaTrackSelector",
     muonCandidates = cms.InputTag("hltL3MuonCandidates"),
     tracks = cms.InputTag("hltPixelTracks"),
     checkCharge = cms.bool(False),
@@ -25284,32 +25286,7 @@ hltMu3TkMuTauTkMuMassFilteredTight = cms.EDFilter('HLTMuonTrackMassFilter',
      MaxMasses = cms.vdouble(4.1),
    )
 
-# -----------------------------------------
-# build the vertex of the 3 tracks and select on it
-# FIXME how do we handle the 3 tracks here 
-hltDisplacedmumumuVtxProducerTauTo3Mu = cms.EDProducer( "HLTDisplacedmumumuVtxProducer",
-    Src = cms.InputTag( "hltL3MuonCandidates" ),
-    PreviousCandTag = cms.InputTag( "hltTauTo3MuL3Filtered" ),
-    MaxEta = cms.double( 2.5 ),
-    MinPt = cms.double( 0.0 ),
-    MinPtTriplet = cms.double( 0.0 ),
-    MinInvMass = cms.double( 0.0 ),
-    MaxInvMass = cms.double( 20.0 ),
-    ChargeOpt = cms.int32( 1 )
-)
 
-hltDisplacedmumumuFilterTauTo3Mu = cms.EDFilter( "HLTDisplacedmumumuFilter",
-    FastAccept = cms.bool( False ),
-    MinLxySignificance = cms.double( 0.0 ),
-    MaxLxySignificance = cms.double( 0.0 ),
-    MaxNormalisedChi2 = cms.double( 999999.0 ),
-    MinVtxProbability = cms.double( 0.0 ),
-    MinCosinePointingAngle = cms.double( -2.0 ),
-    saveTags = cms.bool( True ),
-    DisplacedVertexTag = cms.InputTag( "hltDisplacedmumumuVtxProducerTauTo3Mu" ),
-    BeamSpotTag = cms.InputTag( "offlineBeamSpot" ),
-    MuonTag = cms.InputTag( "hltL3MuonCandidates" )
-)
 
 #----------------------------
 # the actual path
@@ -25328,7 +25305,8 @@ HLT_DoubleMu0Eta2p1_TauTo2Mu_Track_v1 = cms.Path(HLTBeginSequence + \
                                                  hltTauTo2MuL2PreFiltered0 + \
                                                  HLTL3muonrecoSequence + \
                                                  # FIXME: ho gia' le tracce usate per fare il L3? Posso definire una ROI per le pixel tracks?
-                                                 hltTauTo2MuL3Filtered + \
+                                                 # FIXME: can be dropped since the Minv can be requested in the next filter
+                                                 # hltTauTo2MuL3Filtered + \
                                                  hltDisplacedmumuVtxProducerTauTo2Mu + \
                                                  hltDisplacedmumuFilterTauTo2Mu + \
                                                  HLTMuTrackTauPixelRecoSequence + \
