@@ -7,8 +7,17 @@
 <use name="DataFormats/MuonReco"/>
 <use name="TrackingTools/IPTools"/>
 <use name="TrackingTools/TransientTrack"/>
+<use name="RecoVertex/KinematicFitPrimitives"/>
+<use name="RecoVertex/KinematicFit"/>
+<use name="RecoVertex/KalmanVertexFit"/>
+<use name="RecoVertex/AdaptiveVertexFit"/>
+<use name="RecoVertex/VertexPrimitives"/>
+<use name="RecoVertex/VertexTools"/>
+<use name="PhysicsTools/UtilAlgos"/>
+<use name="PhysicsTools/Utilities"/>
 <use name="root"/>
-
+<use name="rootmath"/>
+<use name="rootcore"/>
 
 <library   file="*.cc" name="MyAnalysisTau3MuPlugins">
   <flags   EDM_PLUGIN="1"/>

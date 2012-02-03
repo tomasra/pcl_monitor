@@ -12,8 +12,8 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "DataFormats/Common/interface/Handle.h"
 
-// #include "DataFormats/VertexReco/interface/Vertex.h"
-// #include "DataFormats/VertexReco/interface/VertexFwd.h"
+#include "DataFormats/VertexReco/interface/Vertex.h"
+#include "DataFormats/VertexReco/interface/VertexFwd.h"
 
 #include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
 #include "DataFormats/Candidate/interface/Particle.h"
@@ -26,7 +26,6 @@
 #include "DataFormats/MuonReco/interface/MuonSelectors.h"
 //#include "DataFormats/MuonReco/interface/MuonEnergy.h" 
 
-
 #include "DataFormats/L1Trigger/interface/L1MuonParticleFwd.h"
 #include "DataFormats/L1Trigger/interface/L1MuonParticle.h"
 #include "DataFormats/L1GlobalTrigger/interface/L1GlobalTriggerReadoutRecord.h"
@@ -36,19 +35,33 @@
 #include "TrackingTools/Records/interface/TransientTrackRecord.h"
 #include "TrackingTools/TransientTrack/interface/TransientTrack.h"
 #include "TrackingTools/IPTools/interface/IPTools.h"
+#include <DataFormats/VertexReco/interface/VertexFwd.h>
 
 #include "FWCore/Common/interface/TriggerNames.h"
 
+#include "DataFormats/GeometryCommonDetAlgo/interface/GlobalError.h"
+#include "DataFormats/Math/interface/Point3D.h"
+#include "RecoVertex/KalmanVertexFit/interface/KalmanVertexFitter.h"
+#include "RecoVertex/AdaptiveVertexFit/interface/AdaptiveVertexFitter.h"
+#include "RecoVertex/VertexTools/interface/VertexDistanceXY.h"
+
+#include "Math/SMatrix.h"
+#include "Math/VectorUtil.h"
+#include "TVector3.h"
 #include "TFile.h"
 #include "TH1.h"
 #include "TH2.h"
 #include "TLorentzVector.h"
 #include <TMath.h>
+#include <TMatrixD.h>
 #include <iostream>
 #include <map>
-
+#include <set>
+#include <TROOT.h>
+//#include "SMatrix.h"
 using namespace std;
-
+using namespace reco;
+using namespace edm;
 
 // USEFUL DOCUMENTS:
 // https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookGenParticleCandidate#GenPCand
@@ -72,12 +85,18 @@ public:
   
  
   pair<int, int> minDPhiPair;
-
   pair<int, int> minDRPair;
 
+  pair<int, int> maxDPhiPair;
+  pair<int, int> maxDRPair;
+
   void closestPair() {
-    int minDPhi = 999999;
-    int minDR = 999999;
+
+    double minDPhi = 999999;
+    double minDR = 999999;
+
+    double maxDPhi = 0;
+    double maxDR = 0;
 
     for(int index1 = 0; index1 != 3; ++index1) {
       for(int index2 = index1+1; index2 != 3; ++index2) {
@@ -87,9 +106,19 @@ public:
 	  minDPhi = theMu[index1].DeltaPhi(theMu[index2]);
 	}
 
+	if(theMu[index1].DeltaPhi(theMu[index2]) > maxDPhi) {
+	  maxDPhiPair = make_pair(index1, index2);
+	  maxDPhi = theMu[index1].DeltaPhi(theMu[index2]);
+	}
+
 	if(theMu[index1].DeltaR(theMu[index2]) < minDR) {
 	  minDRPair = make_pair(index1, index2);
 	  minDR = theMu[index1].DeltaR(theMu[index2]);
+	}
+
+	if(theMu[index1].DeltaR(theMu[index2]) > maxDR) {
+	  maxDRPair = make_pair(index1, index2);
+	  maxDR = theMu[index1].DeltaR(theMu[index2]);
 	}
 
       }
@@ -107,6 +136,10 @@ bool sortByPt(const reco::Candidate *part1, const reco::Candidate *part2) {
   return part1->pt() > part2->pt();
 }
 
+bool sortMuByPt(const reco::Muon mu1, const reco::Muon mu2) {
+
+  return mu1.pt() > mu2.pt();
+}
 
 //-----------------------------------------------------------------
 class GenLevelAnalysis : public edm::EDAnalyzer {
@@ -119,7 +152,7 @@ private:
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob();
   virtual void L1Match(const edm::Event&, TLorentzVector* , std::vector<pair<TLorentzVector,int> >&);
-  
+  virtual void RecoMatch(edm::Handle<reco::MuonCollection>&, TLorentzVector*, reco::MuonCollection *);
 
   
   HistoKin *hKinDs;
@@ -165,13 +198,16 @@ private:
   HistoKin *hKinDs2L15Matched;
   HistoKin *hKinDsHLTTau3Mu;
 
+  TH1F* hDiMuInvMass,* hGoodDiMuInvMass ;
   TH1F* h1MuL1pass,*h2MuL1pass, *h3MuL1pass,* hInputL1;
   TH1F* h1MuL1Matchedpass,*h2MuL1Matchedpass, *h3MuL1Matchedpass;
-  TH1F * hNDs, *hNmuFromTau;
+  TH1F * hNDs, *hNmuFromTau, *hMuMaxDistance;
   TH1F* hNL1Cand,*hNL1MatchedCand;
   TH2F* hL1EtaPt,*hL1MatchedEtaPt,*hMinMuDRVsPtDs;
   TH1F *hInputL1_2cands, *h2MuL1Matchedpass_2cands;
 
+  TH1F *hDL,*hDLSig,*hsvchi2;
+  TH1F* hvtxResx,*hvtxResz,*hvtxResy;
   int counter;
   int countInAccept;
   int counterMoreThan3Muons;
@@ -291,7 +327,77 @@ void GenLevelAnalysis::L1Match(const edm::Event& ev, TLorentzVector* genMus, std
   }
 }
 
+void GenLevelAnalysis::RecoMatch(edm::Handle<reco::MuonCollection>& recoMus, TLorentzVector* genMus, reco::MuonCollection * myMatches ){
+  cout << "Doing Reco Match" << endl;
 
+  bool runMatch=true;
+
+  std::vector<int> muMatches, recoMatches;
+
+  while (runMatch){
+    
+    double dRtmp=0.05;
+    
+    reco::MuonCollection::const_iterator RecoMatch;
+
+    int muIndex,recoIndex;
+
+    bool oneMatch=false;
+    
+    for (int k=0; k<3; ++k){
+      
+      bool alreadyMatchedMu=false;
+
+      for (uint i=0;i<muMatches.size(); ++i){
+	if (muMatches[i]==k) alreadyMatchedMu=true;
+	//if (alreadyMatchedMu) cout << "alredy matched mu " << k << endl;
+      }
+      
+      if (alreadyMatchedMu) continue;
+    
+      int recocounter=-1;
+    
+      for(reco::MuonCollection::const_iterator it=recoMus->begin(); it!=recoMus->end(); it++){
+
+	recocounter++;
+
+	bool alreadyMatchedReco=false;
+
+	for (uint i=0;i<recoMatches.size(); ++i){
+	  if (recoMatches[i]==recocounter) alreadyMatchedReco=true;
+	  //if (alreadyMatchedl1) cout << "alredy matched L1 " << l1counter << endl;
+	}
+
+	if (alreadyMatchedReco) continue;
+
+	 TLorentzVector recop4=TLorentzVector(it->px(),it->py(),it->pz(),it->energy());
+	 double distance=recop4.DeltaR(genMus[k]);
+
+	 if (distance<dRtmp){
+	   oneMatch=true;
+	   dRtmp=distance;
+	   RecoMatch=it;
+	   recoIndex=recocounter;
+	   muIndex=k;
+
+	 }
+       
+      }
+    }
+
+    if (oneMatch){
+      muMatches.push_back(muIndex);
+      recoMatches.push_back(recoIndex);
+      myMatches->push_back(*RecoMatch);
+    }
+
+    else runMatch=false;
+
+    if (myMatches->size()==3) runMatch=false;
+  }
+
+  cout << "Done Reco Matching" << endl;
+}
   
 
 
@@ -328,6 +434,7 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
   vector<const reco::Candidate *> particlesDs;
   vector<const reco::Candidate *> particlesTau;
 
+  bool isDs=false, isTau=false, is3Mu=false;
 
   bool only1Ds=true;
   
@@ -337,6 +444,7 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
     
    
      if (abs(cand.pdgId()) == 431){
+
        cout << "------------------Ds------------" << endl;      
        //nds++;
        int ndau=cand.numberOfDaughters();
@@ -352,12 +460,13 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
 	  int ndau1=d->numberOfDaughters();
 	  if (dauId==333)cout << " : Phi doughters: " ;
 	  else cout << " : Tau doughters: " ;
+
 	  for (int l=0; l<ndau1; l++){
 	    const Candidate * d1 = d->daughter( l );
 	    cout << d1->pdgId() << ", ";
 	  }
 	}
-      }
+       }
       cout << endl;
      }
 
@@ -373,8 +482,6 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
     } else continue;
 
 
-    hNDs->Fill(particlesDs.size());
-
     const reco::Candidate * mother1 = cand.mother();
     const reco::Candidate * mother2 = cand.mother();
 
@@ -383,34 +490,40 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
     if(abs(cand.pdgId()) == 15 && (abs(mother1->pdgId()) == 431 || abs(mother2->pdgId()) == 431)) { // this is a tau from Ds
       genEvt.theTau = TLorentzVector(cand.px(), cand.py(), cand.pz(), cand.energy());
       genEvt.theTauCharge = cand.pdgId();
+      isTau=true;
 	  
       const reco::Candidate* ds = 0;
       if(abs(mother1->pdgId()) == 431) ds = mother1;
       else if(abs(mother2->pdgId()) == 431) ds = mother2;
       genEvt.theDs = TLorentzVector(ds->px(), ds->py(), ds->pz(), ds->energy());
       genEvt.theDsCharge = ds->pdgId();
-
+      isDs=true;
     }
   
     // these are the muons from the tau
     if(abs(mother1->pdgId()) == 15 || abs(mother2->pdgId()) == 15) {
       if(abs(cand.pdgId()) == 13) {
 	if(debug) cout << "   Muon from tau, pt: " << cand.pt() << " eta: " << cand.eta() << endl;
-// 	if(fabs(cand.pseudoRapidity()) < 2.4 && cand.perp() > 1) {
+	//	if(fabs(cand.pseudoRapidity()) < 2.4 && cand.perp() > 1) {
 	  muonsFromTau.push_back(&cand);
-// 	}
+	  if ( muonsFromTau.size()==3) is3Mu=true;
+	  //	}
       }
     }
 
   }
 
+  if (!isDs || !isTau || !is3Mu) {cout << "bad event " << endl; return;}
+
+  hNDs->Fill(particlesDs.size());
   // sort the mu by pt
   sort(muonsFromTau.begin(), muonsFromTau.end(), sortByPt);
+
   hNmuFromTau->Fill(muonsFromTau.size());
 
   if(muonsFromTau.size() == 3) {
-    for(unsigned int index = 0; index != muonsFromTau.size(); ++index) {
 
+    for(unsigned int index = 0; index != muonsFromTau.size(); ++index) {
       genEvt.theMu[index] = TLorentzVector(muonsFromTau[index]->px(),
 					   muonsFromTau[index]->py(),
 					   muonsFromTau[index]->pz(),
@@ -427,8 +540,9 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
     return;
   }
 
-
+ 
   // now fill the plots
+  
   hKinDs->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
   hKinTau->Fill(genEvt.theTau.Pt(), genEvt.theTau.Eta(), genEvt.theTau.Phi(), genEvt.theTau.M(), weight);
   hKinMu->Fill(genEvt.theMu[0].Pt(), genEvt.theMu[0].Eta(), genEvt.theMu[0].Phi(), genEvt.theMu[0].M(), weight);
@@ -437,19 +551,16 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
   hKinMuLead->Fill(genEvt.theMu[0].Pt(), genEvt.theMu[0].Eta(), genEvt.theMu[0].Phi(), genEvt.theMu[0].M(), weight);
   hKinMuTrail->Fill(genEvt.theMu[2].Pt(), genEvt.theMu[2].Eta(), genEvt.theMu[2].Phi(), genEvt.theMu[2].M(), weight);
   hKinDsVsMuLead->Fill(genEvt.theDs.Pt(), genEvt.theMu[0].Pt(), -1, -1, -1, -1, weight);
-
-
+  
   genEvt.closestPair();
   double minDeltaPhi = fabs(genEvt.theMu[genEvt.minDPhiPair.first].DeltaPhi(genEvt.theMu[genEvt.minDPhiPair.second]));
   double deltaR1 = genEvt.theMu[genEvt.minDPhiPair.first].DeltaR(genEvt.theMu[genEvt.minDPhiPair.second]);
   double deltaEta1 = fabs(genEvt.theMu[genEvt.minDPhiPair.first].Eta() - genEvt.theMu[genEvt.minDPhiPair.second].Eta());
   hKinClosestMuPhi->Fill(genEvt.theMu[genEvt.minDPhiPair.first].Pt(), genEvt.theMu[genEvt.minDPhiPair.second].Pt(), minDeltaPhi, deltaEta1, deltaR1, -1., weight);
 
- 
-
+  hMuMaxDistance->Fill(genEvt.theMu[genEvt.maxDPhiPair.first].DeltaR(genEvt.theMu[genEvt.maxDPhiPair.second]));
 
   bool AtLeast3Mu=false;
-
 
   counter++;
   if(muonsFromTau.size() > 2) {
@@ -459,7 +570,7 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
       counterMoreThan3Muons++;
     }
   }  
-  
+
   if (AtLeast3Mu) hMinMuDRVsPtDs->Fill(genEvt.theDs.Pt(),deltaR1);
 
   if (particlesDs.size() >0 && AtLeast3Mu && only1Ds) hInputL1->Fill(genEvt.theDs.Pt()); 
@@ -480,12 +591,15 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
   
   // get the vertex collection
   edm::Handle< std::vector<reco::Vertex> > pvHandle;
-  ev.getByLabel(theMuonLabel, pvHandle );
+  ev.getByLabel(theVertexLabel, pvHandle );
 
 
   // get the PV
+  bool isPvGood=false;
   reco::Vertex primaryVertex;
+
   if(pvHandle.isValid()) {
+    isPvGood=true;
     primaryVertex = pvHandle->at(0); 
     hNVertex->Fill(pvHandle->size(),weight);
   }
@@ -501,11 +615,21 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
   int nMatchedGood = 0;
 
   TLorentzVector recoTau;
-  
-  // check the validity of the collection
+
+  MuonCollection *MyMatchedMuons= new MuonCollection;
+  bool DiMuGood=false;
+
+  std::vector<TransientTrack> tt4vertex, tt4Trivertex;
+
+   // check the validity of the collection
   if(muons.isValid()){
-    for (MuonCollection::const_iterator recoMu = muons->begin();
-         recoMu!=muons->end(); ++recoMu){ // loop over all muons
+    RecoMatch(muons,genEvt.theMu,MyMatchedMuons);
+    sort(MyMatchedMuons->begin(), MyMatchedMuons->end(), sortMuByPt);
+
+    for (MuonCollection::const_iterator recoMu = MyMatchedMuons->begin();
+         recoMu!=MyMatchedMuons->end(); ++recoMu){ // loop over all muons
+
+      nTotal++;
 
       double eta = (*recoMu).eta();
       double phi = (*recoMu).phi();
@@ -524,13 +648,22 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
       bool isGoodMu = muon::isGoodMuon(*recoMu, muon::TMOneStationTight);
       double d0_corr = 0;
       double d0_err = 0;
+
+      reco::TrackRef innerTrack = (*recoMu).innerTrack(); 
+      reco::TransientTrack tt;
+      if ( innerTrack.isNonnull() && innerTrack.isAvailable() ) {
+	tt = trackBuilder->build(innerTrack);
+	tt4Trivertex.push_back(tt);
+	if (nTotal<3) tt4vertex.push_back(tt); //only the two hardest
+      }
+
       if(isGoodMu) {
 	nGood++;
+	if (nTotal==2 && nGood==2) DiMuGood=true;
 	cout << "Good" << endl;
 	// compute the impact parameter significance
-	reco::TrackRef innerTrack = (*recoMu).innerTrack(); 
 	if ( innerTrack.isNonnull() && innerTrack.isAvailable() ) {
-	  reco::TransientTrack tt = trackBuilder->build(innerTrack);
+
 // 	  std::pair<bool,Measurement1D> result = IPTools::absoluteTransverseImpactParameter(tt, primaryVertex);
 	  std::pair<bool,Measurement1D> result = IPTools::absoluteImpactParameter3D(tt, primaryVertex);
 
@@ -541,28 +674,75 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
 	}
 
       }
-
-
-      nTotal++;
-      for(int index = 0; index != 3; ++index) {
-	double deltar = recoMuonMom.DeltaR(genEvt.theMu[index]);
-	cout << "   MC: " << index << " eta: " << genEvt.theMu[index].Eta() << " phi: " << genEvt.theMu[index].Phi()
-	     << " pt: " << genEvt.theMu[index].Pt() << " DR: " << recoMuonMom.DeltaR(genEvt.theMu[index]) << endl;
-	if(deltar < 0.05) {
-	  cout << " matched!" << endl;
-	  nMatched++;
-	  recoTau+= recoMuonMom;
-	  if(isGoodMu) {
-	    nMatchedGood++;
-	    hd0MuonGoodMatched->Fill(d0_corr, d0_err, weight);
-	  }
-
-	}
-      }
-	
       
     }
   }
+
+  TLorentzVector DiMuMom;  
+  if (MyMatchedMuons->size()>=2){
+    TLorentzVector mu1p4=TLorentzVector((*MyMatchedMuons)[0].px(),(*MyMatchedMuons)[0].py(),(*MyMatchedMuons)[0].pz(),(*MyMatchedMuons)[0].energy());
+    TLorentzVector mu2p4=TLorentzVector((*MyMatchedMuons)[1].px(),(*MyMatchedMuons)[1].py(),(*MyMatchedMuons)[1].pz(),(*MyMatchedMuons)[1].energy());
+    DiMuMom=mu1p4+mu2p4;
+    double DiMuMass=(mu1p4+mu2p4).M();
+    hDiMuInvMass->Fill(DiMuMass);
+    if (DiMuGood) hGoodDiMuInvMass->Fill(DiMuMass);
+  }
+
+  TransientVertex tv,tv3;
+  
+  GlobalPoint v(100.,100.,100);
+  double vchi2=0.; 
+  GlobalError errv(0.,0.,0.,0.,0.,0.);
+
+  GlobalPoint v3(100.,100.,100);
+  double v3chi2=0.; 
+  GlobalError errv3(0.,0.,0.,0.,0.,0.);
+  
+  if (tt4vertex.size()>=2){
+
+    AdaptiveVertexFitter avf;
+    tv=avf.vertex(tt4vertex);       
+
+    if (tv.isValid()) { 
+      vchi2=tv.normalisedChiSquared();
+      v = tv.position();
+      errv = tv.positionError();
+
+       if (tt4Trivertex.size()==3){ //try the vertex with 3 muons
+	tv3=avf.vertex(tt4Trivertex);
+	if (tv3.isValid()){
+	  v3chi2=tv3.normalisedChiSquared();
+	  v3 = tv3.position();
+	  errv3 = tv3.positionError();
+	  hvtxResx->Fill(v.x()-v3.x());
+	  hvtxResy->Fill(v.y()-v3.y());
+	  hvtxResz->Fill(v.z()-v3.z());
+	}
+       }
+
+       if (isPvGood){
+	double lxy=((v.x()-primaryVertex.x())*DiMuMom.Px()+(v.y()-primaryVertex.y())*DiMuMom.Py())*DiMuMom.M()/pow(DiMuMom.Pt(),2);
+
+	TVector3 pperp(DiMuMom.Px(), DiMuMom.Py(), 0);
+	//AlgebraicVector vpperp(3);
+	ROOT::Math::SVector<double,3> vpperp;
+	vpperp[0] = pperp.x();
+	vpperp[1] = pperp.y();
+	vpperp[2] = 0.;
+
+	GlobalError sVe= (Vertex(tv)).error();
+	GlobalError PVe = primaryVertex.error();
+
+	//AlgebraicSymMatrix33 
+	ROOT::Math::SMatrix<double,3,3> vXYe = sVe.matrix() + PVe.matrix();
+	double lxyErr = sqrt(ROOT::Math::Similarity(vXYe,vpperp))*DiMuMom.M()/(pperp.Perp2());
+	hDL->Fill(lxy);
+	hDLSig->Fill(lxy/lxyErr);
+	hsvchi2->Fill(vchi2);
+      }
+    }
+  }
+
 
   hNRecoMuAll->Fill(nTotal, weight);
   hNRecoMuMatched->Fill(nMatched, weight);
@@ -583,8 +763,6 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
   if(nMatchedGood >= 2) {
     hKinDs2RecoGoodMatched->Fill(genEvt.theDs.Pt(), genEvt.theDs.Eta(), genEvt.theDs.Phi(), genEvt.theDs.M(), weight);
   }
-
-
 
 
   // ------------------------------------------------------------------------------------------------
@@ -620,13 +798,6 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
   std::vector<pair<TLorentzVector,int> > L1Matches;
 
   if (AtLeast3Mu) L1Match(ev,genEvt.theMu, L1Matches);
-  
-  /* cout << "AAA L1 matches size " << L1Matches.size() << endl;
-  if (L1Matches.size()!=0){
-    for (uint r=0; r<L1Matches.size(); r++){
-      cout << "AAA pt of L1Mu " << (L1Matches[r].first).Pt() << " px of L1 " << (L1Matches[r].first).Px() << " pz of L1 " <<(L1Matches[r].first).Pz()<< " matched with muon number " <<  L1Matches[r].second << endl;
-    }
-    }*/
 
   int nL1MatchedMuons=L1Matches.size();
 
@@ -645,7 +816,8 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
 
   if (particlesDs.size() >0 && AtLeast3Mu && nL1MatchedMuons > 0 && only1Ds){
     h1MuL1Matchedpass->Fill(genEvt.theDs.Pt());
-    if (genEvt.theDs.Pt() > 0){
+
+    /*if (genEvt.theDs.Pt() > 0){
 
       cout << "Check L1 Match:------------------------------------------------------------" << endl;
       cout << "N L1 cands = " << nL1Muons << " N Matched cands = " << nL1MatchedMuons << endl;
@@ -664,8 +836,9 @@ void GenLevelAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSet
 	cout << "pt " << genEvt.theMu[j].Pt() << "  eta " << genEvt.theMu[j].Eta() << "  phi " << genEvt.theMu[j].Phi()<< " Mu Num " << j  << endl; 
       }
 
-    }
+      }*/
   }
+
   if (particlesDs.size() >0 && AtLeast3Mu && nL1MatchedMuons > 1 && only1Ds) {
     h2MuL1Matchedpass->Fill(genEvt.theDs.Pt());
   }
@@ -732,7 +905,7 @@ if (tau3MuTrig){
   }
 
 
-
+ delete MyMatchedMuons;
 }
 
 // ------------ method called once each job just before starting event loop  ------------
@@ -773,6 +946,9 @@ void GenLevelAnalysis::beginJob() {
   hKinDsVsMuLead = new HistoKinPair("DsVsMuLead", 0,10,*fs);
   hKinClosestMuPhi =  new HistoKinPair("ClosestMuPhi", 0,10,*fs);
 
+  hMuMaxDistance = fs->make<TH1F>("hMuMaxDistance","Max dR in 3Mu",100,0,6.28);
+  hMuMaxDistance->Sumw2();
+
   hNRecoMuAll       = fs->make<TH1F>("hNRecoMuAll","Total # reco muons; # of reco muons; #events",10,0,10);
   hNRecoMuMatched       = fs->make<TH1F>("hNRecoMuMatched","Total # reco muons; # of reco muons; #events",10,0,10);
 
@@ -794,6 +970,17 @@ void GenLevelAnalysis::beginJob() {
   hInputL1 = fs->make<TH1F>("hInputL1","Tot L1 input",100,0,50);
 
   hInputL1_2cands = fs->make<TH1F>("hInputL1_2cands","Tot L1 input with 2 cands",100,0,50);
+
+  hDiMuInvMass= fs->make<TH1F>("hDiMuInvMass","Hardest DiMuon Inv. Mass",100,0,10);
+  hGoodDiMuInvMass= fs->make<TH1F>("hGoodDiMuInvMass","Hardest Good DiMuon Inv. Mass",100,0,10);
+
+  hsvchi2= fs->make<TH1F>("hsvchi2","Secondary Vertex chi2",100,0,10);
+  hDL = fs->make<TH1F>("hDL","DiMuon decay lenght",150,-.2,.5);
+  hDLSig = fs->make<TH1F>("hDLSig","DiMuon decay lenght significance",600,-30,30);
+
+  hvtxResx=fs->make<TH1F>("hvtxResx","DiMuon-TriMuon Vtx Residual X",200,-1,1);
+  hvtxResy=fs->make<TH1F>("hvtxResy","DiMuon-TriMuon Vtx Residual Y",200,-1,1);
+  hvtxResz=fs->make<TH1F>("hvtxResz","DiMuon-TriMuon Vtx Residual Z",200,-1,1);
 
   hNDs = fs->make<TH1F>("hNDs","Number of Ds in the event",11,-0.5,10.5);
   hNmuFromTau= fs->make<TH1F>("hNmuFromTau","Number of mu from tau",6,-0.5,5.5);
