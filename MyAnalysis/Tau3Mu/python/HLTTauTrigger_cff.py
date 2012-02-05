@@ -25067,13 +25067,30 @@ HLTMuTrackTauRegionalPixelRecoSequence = cms.Sequence(HLTDoLocalPixelSequence + 
 
 
 
+hltmmkNoRegFilter = cms.EDFilter( "HLTmmkFilter",
+    ThirdTrackMass = cms.double( 0.1 ),
+    MaxEta = cms.double( 2.5 ),
+    MinPt = cms.double( 0.5 ),
+    MinInvMass = cms.double( 0 ),#FIXME: tune
+    MaxInvMass = cms.double( 999.0 ), #FIXME: tune
+    MaxNormalisedChi2 = cms.double( 10.0 ),
+    MinLxySignificance = cms.double( 1.0 ),
+    MinCosinePointingAngle = cms.double( 0.9 ),
+    FastAccept = cms.bool( False ),
+    saveTags = cms.bool( True ),
+    BeamSpotTag = cms.InputTag( "offlineBeamSpot" ),
+    MuCand = cms.InputTag( "hltL3MuonCandidates" ),
+    TrackCand = cms.InputTag( "hltMuTrackTauPixelTrackCands" )
+)
+
+
 
 hltmmkFilter = cms.EDFilter( "HLTmmkFilter",
     ThirdTrackMass = cms.double( 0.1 ),
     MaxEta = cms.double( 2.5 ),
     MinPt = cms.double( 0.5 ),
     MinInvMass = cms.double( 0 ),#FIXME: tune
-    MaxInvMass = cms.double( -1 ), #FIXME: tune
+    MaxInvMass = cms.double( 999.0 ), #FIXME: tune
     MaxNormalisedChi2 = cms.double( 10.0 ),
     MinLxySignificance = cms.double( 1.0 ),
     MinCosinePointingAngle = cms.double( 0.9 ),
@@ -25371,6 +25388,7 @@ HLT_DoubleMu0Eta2p1_TauTo2Mu_Track_v1 = cms.Path(HLTBeginSequence + \
                                                  hltDisplacedmumuVtxProducerTauTo2Mu + \
                                                  hltDisplacedmumuFilterTauTo2Mu + \
                                                  HLTMuTrackTauPixelRecoSequence + \
+                                                 hltmmkNoRegFilter + \
                                                  # hltDoubleMu0Track1TauPixelMassFiltered + \
                                                  # FIXME: possof fare compatibilita' con il vertice trovato prima?
                                                  # FIXME: displ. vertex (2mu + pixel track) + inv mass?
