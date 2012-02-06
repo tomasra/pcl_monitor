@@ -1,1 +1,1 @@
-CalibCalorimetry/EcalLaserSorting V00-03-03-04
+CalibCalorimetry/HcalStandardModules V00-04-07-01
