@@ -91,7 +91,10 @@ for fname in fnames:
     ccc[-1].SetLogy()
     ccc[-1].SetGridy()
     ccc[-1].SetGridx()
-    hhh[-1].Scale(7089*1.0/hhh[-1].GetBinContent(3))
+    if (mode=='data'):
+        hhh[-1].Scale(7089*1.0/hhh[-1].GetBinContent(3))
+    if (mode=='mc'):
+        hhh[-1].Scale(1.0/hhh[-1].GetBinContent(2))
     hhh[-1].DrawCopy()
     ccc[-1].Update()
     ccc[-1].Print('norm_'+str(fname.split('.')[0])+'.png')
