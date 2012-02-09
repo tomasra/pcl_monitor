@@ -1,1 +1,3 @@
-CalibCalorimetry/HcalStandardModules V00-04-07-01
+CalibCalorimetry/EcalLaserAnalyzer	V00-01-07
+Calibration/HcalCalibAlgos		V00-13-15
+Calibration/EcalCalibAlgos		V01-00-08
