@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from ROOT import TH1D, TCanvas, gStyle
 import sys
 
@@ -67,10 +69,11 @@ for fname in fnames:
                     hhh[-1].SetBinContent(1,value2+hhh[-1].GetBinContent(1))
                     if (mode=='data'):
                         hhh[-1].SetBinContent(2,value+hhh[-1].GetBinContent(2))
+
                 if 'hltL1sL1DoubleMu0HighQ' in b:
                     value2=int(' '.join(b.split()).split(' ')[1])
                     if (mode=='mc'):
-                        hhh[-1].SetBinContent(2,value2+hhh[-1].GetBinContent(1))
+                        hhh[-1].SetBinContent(2,value2+hhh[-1].GetBinContent(2))
                     hhh[-1].SetBinContent(3,value+hhh[-1].GetBinContent(3))
                 if 'hltTauTo2MuL2PreFiltered0' in b:
                     hhh[-1].SetBinContent(4,value+hhh[-1].GetBinContent(4))
