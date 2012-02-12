@@ -1,2 +1,2 @@
-| [[%LINKTOGTLIST%/?GlobalTag=GR_R_52_V2][GR_R_52_V2]] | %GREEN%50X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_52_V1 with the following updates:<br> - new Jecs for JPT<br> - JPT updated Jec<br> - new track based muon alignment. |
+| [[%LINKTOGTLIST%/?GlobalTag=GR_R_52_V2][GR_R_52_V2]] | %GREEN%50X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_52_V1 with the following updates:<br> - new Jecs for JPT<br> - new track based muon alignment. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_52_V1][GR_R_52_V1]] | %GREEN%52X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_50_V11 with the following updates:<br> inclusion of new HF payload |
