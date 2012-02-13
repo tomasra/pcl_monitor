@@ -1,0 +1,1 @@
+| [[%LINKTOGTLIST%/?GlobalTag=GR_E_V23][GR_E_V23]] | %GREEN%50X%ENDCOLOR% | To be used for express processing of 2012 data. | As !GR_E_V22 with the following updates:<br> - For 50X<br> - New geometry for 50X<br> - Updating to 50X version<br> - omment<br> - New CSC gas gain for 50X<br> - stripd dEdx updated as in offline<br> - Changing to new name<br> - New HcalMCParams added. |

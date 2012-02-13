@@ -1,2 +1,1 @@
-| [[%LINKTOGTLIST%/?GlobalTag=GR_P_V8][GR_P_V28]] | %GREEN%50X%ENDCOLOR% | To be used for 2011 data. | |
-
+| [[%LINKTOGTLIST%/?GlobalTag=GR_P_V28][GR_P_V28]] | %GREEN%50X%ENDCOLOR% | To be used for prompt data processing @ Tier0. | As !GR_P_V27A with the following updates:<br> - Moving to 50X:<br> - New geometry for 50X<br> - Updating to 50X version<br> - omment<br> - Changing to new name<br> - New CSC gas gain for 50X<br> - stripd dEdx updated as in offline<br> - New HcalMCParams added. |
