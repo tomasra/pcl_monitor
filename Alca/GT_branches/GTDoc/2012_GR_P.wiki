@@ -1,0 +1,2 @@
+| [[%LINKTOGTLIST%/?GlobalTag=GR_P_V27A][GR_P_V27A]] | %GREEN%44X%ENDCOLOR% | To be used for HI data only. | As !GR_P_V27 with the following updates:<br> - add JEC for HI<br> - add centrality tables for HI<br> - upadte SiStrip DCS tag fixing the problem with TEC in the High PU runs. |
+
