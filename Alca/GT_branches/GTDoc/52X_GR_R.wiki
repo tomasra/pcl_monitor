@@ -1,2 +1,3 @@
+| [[%LINKTOGTLIST%/?GlobalTag=GR_R_52_V3][GR_R_52_V3]] | %GREEN%50X%ENDCOLOR% %RED%(Not for prod.[[[#NOTENotProd][1]]])%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_52_V2 with the following updates:<br> - ECAL Selective Readout for 2012<br> - DT t0 migration. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_52_V2][GR_R_52_V2]] | %GREEN%52X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_52_V1 with the following updates:<br> - new Jecs for JPT<br> - new track based muon alignment. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_52_V1][GR_R_52_V1]] | %GREEN%52X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_50_V11 with the following updates:<br> inclusion of new HF payload |
