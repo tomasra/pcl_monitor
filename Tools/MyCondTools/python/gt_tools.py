@@ -309,7 +309,7 @@ class GTEntry:
         if online == False:
             if self._connstring == 'frontier://FrontierPrep':
                 oracleConn =  'oracle://cms_orcoff_prep'
-            if self._connstring == 'frontier://FrontierInt':
+            elif self._connstring == 'frontier://FrontierInt':
                 oracleConn =  'oracle://cms_orcoff_int'
             elif self._connstring == 'frontier://FrontierArc':
                 # no change is needed since it is anyhow frozen
@@ -322,6 +322,7 @@ class GTEntry:
                 oracleConn =  'oracle://cms_orcon_prod'
             elif self._connstring == 'frontier://FrontierPrep':
                 oracleConn =  'oracle://cms_orcoff_prep'
+
         return oracleConn + '/' + self._account
 
     def isInPrepAccount(self):
