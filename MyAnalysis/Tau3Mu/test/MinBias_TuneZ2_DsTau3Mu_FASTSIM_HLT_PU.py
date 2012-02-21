@@ -129,7 +129,7 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.341 $'),
+    version = cms.untracked.string('$Revision: 1.1 $'),
     annotation = cms.untracked.string('MinBias_TuneZ2_DsTau3Mu nevts:10000'),
     name = cms.untracked.string('PyReleaseValidation')
 )
@@ -139,7 +139,7 @@ process.configurationMetadata = cms.untracked.PSet(
 process.AODSIMoutput = cms.OutputModule("PoolOutputModule",
     eventAutoFlushCompressedSize = cms.untracked.int32(15728640),
     outputCommands = process.AODSIMEventContent.outputCommands,
-    fileName = cms.untracked.string('file:/tmp/cerminar/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU.root'),
+    fileName = cms.untracked.string('file:/tmp/guiducci/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU.root'),
     dataset = cms.untracked.PSet(
         filterName = cms.untracked.string(''),
         dataTier = cms.untracked.string('GEN-SIM-DIGI-RECO')
@@ -172,7 +172,7 @@ process.schedule.extend([process.reconstruction,process.AODSIMoutput_step])
 
 
 process.TFileService = cms.Service("TFileService",
-                                   fileName = cms.string("file:/tmp/cerminar/GenLevelAnalysis.root"),
+                                   fileName = cms.string("file:/tmp/guiducci/GenLevelAnalysis.root"),
                                    closeFileFast = cms.untracked.bool(True)
                                    )
 
