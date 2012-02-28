@@ -95,8 +95,8 @@ private:
   virtual void endJob();
   virtual void vtx(std::vector<TransientTrack>&, GlobalPoint &, GlobalError &);
   virtual pair<double,double> Compute_Lxy_and_Significance(Vertex &, TransientVertex &, TLorentzVector&);
-  virtual void findBestDimuon( const edm::EventSetup&, MuonCollection&, MuonCollection&, MuonCollection&, TransientVertex&, Vertex&);
-  virtual void findBestPiCand(const edm::Event&, const edm::EventSetup&, MuonCollection&, TransientVertex&, TLorentzVector&, bool&);
+  virtual void findBestDimuon( const edm::EventSetup&, MuonCollection&, MuonCollection&, MuonCollection&, TransientVertex&, Vertex&, double&, double&);
+  virtual void findBestPiCand(const edm::Event&, const edm::EventSetup&, MuonCollection&, TransientVertex&, TLorentzVector&, bool&, double&, double&);
   virtual bool TriggerDecision(const edm::Event&);
   virtual bool isMu(const edm::Event&, const Track*);
 
@@ -132,7 +132,7 @@ Tau3MuAnalysis::~Tau3MuAnalysis() {}
 //
 // member functions
 //
-void Tau3MuAnalysis::findBestPiCand(const edm::Event& ev, const edm::EventSetup& iSetup, MuonCollection& dimu, TransientVertex& tv, TLorentzVector& pi, bool & isMuon){
+void Tau3MuAnalysis::findBestPiCand(const edm::Event& ev, const edm::EventSetup& iSetup, MuonCollection& dimu, TransientVertex& tv, TLorentzVector& pi, bool & isMuon, double massmin, double massmax){
 
   cout << "Looking for the pi track" << endl;
 
@@ -157,7 +157,7 @@ void Tau3MuAnalysis::findBestPiCand(const edm::Event& ev, const edm::EventSetup&
     TLorentzVector p=TLorentzVector(it->px(),it->py(),it->pz(),sqrt(0.1396*0.1396+it->p()*it->p()));
     TLorentzVector tot=m1+m2+p;
 
-    if (tot.M()<1.7 || tot.M()>2.3) continue;
+    if (tot.M() < massmin || tot.M()> massmax) continue;
 
     vector<TransientTrack> tt;
     TransientVertex tmpvtx;
@@ -206,7 +206,7 @@ bool Tau3MuAnalysis::isMu(const edm::Event& ev,const Track* p){
 
 
 
-void Tau3MuAnalysis::findBestDimuon( const edm::EventSetup& iSetup,MuonCollection& mup, MuonCollection& mum, MuonCollection& dimu, TransientVertex& dimuvtx, Vertex& primaryVertex){
+void Tau3MuAnalysis::findBestDimuon( const edm::EventSetup& iSetup,MuonCollection& mup, MuonCollection& mum, MuonCollection& dimu, TransientVertex& dimuvtx, Vertex& primaryVertex, double massmin, double massmax){
   
   cout << "Finding the dimuon candidate" << endl;
 
@@ -249,7 +249,7 @@ void Tau3MuAnalysis::findBestDimuon( const edm::EventSetup& iSetup,MuonCollectio
 
       TLorentzVector DiMu=TLorentzVector(mup[i].px()+ mum[j].px() , mup[i].py()+ mum[j].py(), mup[i].pz()+ mum[j].pz(), mup[i].energy()+ mum[j].energy());
 
-      if (DiMu.M()> 1.2 || DiMu.M() < 0.9) continue;
+      if (DiMu.M()> massmax || DiMu.M() < massmin) continue;
 
       pair<double,double> lxytmp=Compute_Lxy_and_Significance(primaryVertex,tmpvtx,DiMu);
 
@@ -425,7 +425,12 @@ void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
     
     pair<double,double> lxy;
 
-    findBestDimuon(iSetup, muPlus, muMinus, BestDiMu, tv, primaryVertex);
+    double NDiMuons=muPlus.size()*muMinus.size();
+    //histo ndimu
+
+    double invMassMin=0,invMassMax=1.8;
+
+    findBestDimuon(iSetup, muPlus, muMinus, BestDiMu, tv, primaryVertex,invMassMin,invMassMax);
 
     cout << "dimuons size " << BestDiMu.size() << endl;
 
