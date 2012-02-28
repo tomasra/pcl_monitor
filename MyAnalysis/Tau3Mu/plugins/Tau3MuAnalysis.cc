@@ -104,6 +104,7 @@ private:
   TH1F* hDiMuTrackInvMass,* hGoodDiMuTrackInvMass ;
   TH1F* hDiMuPHITrackInvMass,*hDiMuSBTrackInvMass;
   TH1F* hpt, *hptMu;
+  double Total, Triggered, Offline;
 };
 
 
@@ -124,6 +125,10 @@ template <class T> const T& max ( const T& a, const T& b ) {
 
 
 Tau3MuAnalysis::Tau3MuAnalysis(const edm::ParameterSet& iConfig) {
+  Total=0;
+  Triggered=0;
+  Offline=0;
+
 }
 
 Tau3MuAnalysis::~Tau3MuAnalysis() {}
@@ -132,7 +137,7 @@ Tau3MuAnalysis::~Tau3MuAnalysis() {}
 //
 // member functions
 //
-void Tau3MuAnalysis::findBestPiCand(const edm::Event& ev, const edm::EventSetup& iSetup, MuonCollection& dimu, TransientVertex& tv, TLorentzVector& pi, bool & isMuon, double massmin, double massmax){
+void Tau3MuAnalysis::findBestPiCand(const edm::Event& ev, const edm::EventSetup& iSetup, MuonCollection& dimu, TransientVertex& tv, TLorentzVector& pi, bool & isMuon, double& massmin, double& massmax){
 
   cout << "Looking for the pi track" << endl;
 
@@ -206,7 +211,7 @@ bool Tau3MuAnalysis::isMu(const edm::Event& ev,const Track* p){
 
 
 
-void Tau3MuAnalysis::findBestDimuon( const edm::EventSetup& iSetup,MuonCollection& mup, MuonCollection& mum, MuonCollection& dimu, TransientVertex& dimuvtx, Vertex& primaryVertex, double massmin, double massmax){
+void Tau3MuAnalysis::findBestDimuon( const edm::EventSetup& iSetup,MuonCollection& mup, MuonCollection& mum, MuonCollection& dimu, TransientVertex& dimuvtx, Vertex& primaryVertex, double& massmin, double& massmax){
   
   cout << "Finding the dimuon candidate" << endl;
 
@@ -243,7 +248,6 @@ void Tau3MuAnalysis::findBestDimuon( const edm::EventSetup& iSetup,MuonCollectio
 
       double vChi2 = tmpvtx.totalChiSquared();
       float vNDF = tmpvtx.degreesOfFreedom();
-
 
       float vProb(TMath::Prob(vChi2,(int)vNDF));
 
@@ -352,7 +356,11 @@ void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
 
   bool triggered=TriggerDecision(ev);
 
-  if (triggered){
+  Total++;
+
+  if (triggered || 1){
+
+    Triggered++;
 
     cout << "--- new event ---" << endl;
 
@@ -448,12 +456,13 @@ void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
     if (TwoGood)  hGoodDiMuInvMass->Fill(DiMuMom.M());
 
     bool isAlsoMu=false;
+    invMassMin=1.75;invMassMax=1.8;
+    findBestPiCand(ev, iSetup, BestDiMu, tv3, pitrack, isAlsoMu,invMassMin,invMassMax);
 
-    findBestPiCand(ev, iSetup, BestDiMu, tv3, pitrack,isAlsoMu);
-
-    if (pitrack.Px() !=0){      
+    if (pitrack.Px() !=0){
+      
+      Offline++;
       DiMuTrackMom = DiMuMom+pitrack;
-
       hDiMuTrackInvMass->Fill(DiMuTrackMom.M());
       
       if (TwoGood)  {
@@ -488,8 +497,8 @@ void Tau3MuAnalysis::beginJob() {
   hDiMuInvMass= fs->make<TH1F>("hDiMuInvMass","DiMuon Inv. Mass",40,0.9,1.2);
   hGoodDiMuInvMass= fs->make<TH1F>("hGoodDiMuInvMass","Good DiMuon Inv. Mass",40,0.9,1.2);
 
-  hGoodDiMuTrackInvMass= fs->make<TH1F>("hGoodDiMuTrackInvMass","Good DiMuon+Track Inv. Mass",60,1.7,2.3);
-  hDiMuTrackInvMass= fs->make<TH1F>("hDiMuTrackInvMass","DiMuon+Track Inv. Mass",60,1.7,2.3);
+  hGoodDiMuTrackInvMass= fs->make<TH1F>("hGoodDiMuTrackInvMass","Good DiMuon+Track Inv. Mass",60,1.6,2.3);
+  hDiMuTrackInvMass= fs->make<TH1F>("hDiMuTrackInvMass","DiMuon+Track Inv. Mass",60,1.6,2.3);
 
   hDiMuPHITrackInvMass= fs->make<TH1F>("hDiMuPHITrackInvMass","DiMuonPHI+Track Inv. Mass",60,1.7,2.3);
   hDiMuSBTrackInvMass= fs->make<TH1F>("hDiMuSBTrackInvMass","DiMuonSB+Track Inv. Mass",60,1.7,2.3);
@@ -512,7 +521,9 @@ void Tau3MuAnalysis::beginJob() {
 // ------------ method called nce each job just after ending the event loop  ------------
 void 
 Tau3MuAnalysis::endJob() {
- 
+  std::cout << "Total " << Total << std::endl;
+  std::cout << "Triggered " << Triggered << std::endl;
+  std::cout << "Offline " << Offline << std::endl; 
 }
 
 #include "FWCore/Framework/interface/MakerMacros.h"  
