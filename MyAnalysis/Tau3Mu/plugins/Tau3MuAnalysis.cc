@@ -95,16 +95,26 @@ private:
   virtual void endJob();
   virtual void vtx(std::vector<TransientTrack>&, GlobalPoint &, GlobalError &);
   virtual pair<double,double> Compute_Lxy_and_Significance(Vertex &, TransientVertex &, TLorentzVector&);
-  virtual void findBestDimuon( const edm::EventSetup&, MuonCollection&, MuonCollection&, MuonCollection&, TransientVertex&, Vertex&, double&, double&);
-  virtual void findBestPiCand(const edm::Event&, const edm::EventSetup&, MuonCollection&, TransientVertex&, TLorentzVector&, bool&, double&, double&);
+  virtual void findBestDimuon( const edm::EventSetup&, MuonCollection&, MuonCollection&, MuonCollection&, TransientVertex&, Vertex&);
+  virtual void findBestPiCand(const edm::Event&, const edm::EventSetup&, MuonCollection&, TransientVertex&, TLorentzVector&, bool&);
   virtual bool TriggerDecision(const edm::Event&);
   virtual bool isMu(const edm::Event&, const Track*);
+  virtual int countTracksAround(const edm::Event&, TLorentzVector*, double&);
 
   TH1F* hDiMuInvMass,* hGoodDiMuInvMass ;
   TH1F* hDiMuTrackInvMass,* hGoodDiMuTrackInvMass ;
   TH1F* hDiMuPHITrackInvMass,*hDiMuSBTrackInvMass;
   TH1F* hpt, *hptMu;
+  TH1F* hchi2,*hchi3, *hlxy2, *hlxy3, *hvprob2, *hvprob3, *hlxys2, *hlxys3,*hdistv2v3;
+  TH1F* hMaxDistance;
+  TH1F* hNtracksVsDR;
   double Total, Triggered, Offline;
+  double diMuMassMin, diMuMassMax, diMuLxyMin,diMuLxySigMin,diMuVtxChi2, diMuVprobMin;
+  double diMuTrackMassMin, diMuTrackMassMax, diMuTrackLxyMin,diMuTrackLxySigMin,diMuTrackVtxChi2,diMuTrackVprobMin;
+  double MinTrackPt, MinMuPt;
+
+  std::vector<string> HLT_paths;
+  std::string HLT_process;
 };
 
 
@@ -124,11 +134,31 @@ template <class T> const T& max ( const T& a, const T& b ) {
 //
 
 
-Tau3MuAnalysis::Tau3MuAnalysis(const edm::ParameterSet& iConfig) {
+Tau3MuAnalysis::Tau3MuAnalysis(const edm::ParameterSet& cfg) {
+
   Total=0;
   Triggered=0;
   Offline=0;
 
+  diMuMassMin= cfg.getParameter<double> ("DiMuMassMin"); 
+  diMuMassMax= cfg.getParameter<double> ("DiMuMassMax");  
+  diMuLxyMin = cfg.getParameter<double> ("DiMuLxyMin"); 
+  diMuLxySigMin = cfg.getParameter<double> ("DiMuLxySigMin");
+  diMuVtxChi2= cfg.getParameter<double> ("DiMuVtxChi2Max");
+  diMuVprobMin= cfg.getParameter<double> ("DiMuVprobMin");
+  
+  diMuTrackMassMin= cfg.getParameter<double> ("DiMuTrackMassMin"); 
+  diMuTrackMassMax= cfg.getParameter<double> ("DiMuTrackMassMax"); 
+  diMuTrackLxyMin = cfg.getParameter<double> ("DiMuTrackLxyMin");
+  diMuTrackLxySigMin = cfg.getParameter<double> ("DiMuTrackLxySigMin");
+  diMuTrackVtxChi2= cfg.getParameter<double> ("DiMuTrackVtxChi2Max");
+  diMuTrackVprobMin= cfg.getParameter<double> ("DiMuTrackVprobMin");
+
+  MinMuPt=cfg.getParameter<double> ("MuPTCut");
+  MinTrackPt=cfg.getParameter<double> ("TrackPTCut");
+
+  HLT_paths = cfg.getParameter<std::vector<string> > ("HLT_paths");
+  HLT_process = cfg.getParameter<std::string> ("HLT_process");
 }
 
 Tau3MuAnalysis::~Tau3MuAnalysis() {}
@@ -137,7 +167,7 @@ Tau3MuAnalysis::~Tau3MuAnalysis() {}
 //
 // member functions
 //
-void Tau3MuAnalysis::findBestPiCand(const edm::Event& ev, const edm::EventSetup& iSetup, MuonCollection& dimu, TransientVertex& tv, TLorentzVector& pi, bool & isMuon, double& massmin, double& massmax){
+void Tau3MuAnalysis::findBestPiCand(const edm::Event& ev, const edm::EventSetup& iSetup, MuonCollection& dimu, TransientVertex& tv, TLorentzVector& pi, bool & isMuon){
 
   cout << "Looking for the pi track" << endl;
 
@@ -149,20 +179,20 @@ void Tau3MuAnalysis::findBestPiCand(const edm::Event& ev, const edm::EventSetup&
 
   KalmanVertexFitter avf;
 
-  float tmpProb=0.;
+  float tmpProb=diMuTrackVprobMin;
 
   for(TrackCollection::const_iterator it = tracks->begin();it != tracks->end(); ++it){
 
     if ((it->pt()==dimu[0].innerTrack()->pt() && it->eta()==dimu[0].innerTrack()->eta()) || (it->pt()==dimu[1].innerTrack()->pt() && it->eta()==dimu[1].innerTrack()->eta())) continue;
 
-    if (!(it->quality(TrackBase::highPurity)) || it->pt()< 0.5) continue;
+    if (!(it->quality(TrackBase::highPurity)) || it->pt()< MinTrackPt) continue;
 
     TLorentzVector m1=TLorentzVector(dimu[0].px(),dimu[0].py(),dimu[0].pz(),dimu[0].energy());
     TLorentzVector m2=TLorentzVector(dimu[1].px(),dimu[1].py(),dimu[1].pz(),dimu[1].energy());
     TLorentzVector p=TLorentzVector(it->px(),it->py(),it->pz(),sqrt(0.1396*0.1396+it->p()*it->p()));
     TLorentzVector tot=m1+m2+p;
 
-    if (tot.M() < massmin || tot.M()> massmax) continue;
+    if (tot.M() < diMuTrackMassMin || tot.M()> diMuTrackMassMax) continue;
 
     vector<TransientTrack> tt;
     TransientVertex tmpvtx;
@@ -181,7 +211,7 @@ void Tau3MuAnalysis::findBestPiCand(const edm::Event& ev, const edm::EventSetup&
 
     //cout << "chi " << vChi2 << " ndof " << vNDF <<" Vprob " << vProb <<endl;
 
-    if (vProb>tmpProb  && vChi2/vNDF < 10){
+    if (vProb>tmpProb  && vChi2/vNDF < diMuTrackVtxChi2){
       tmpProb=vProb;
       pi=p;
       isMuon=isMu(ev,&(*it));
@@ -209,9 +239,26 @@ bool Tau3MuAnalysis::isMu(const edm::Event& ev,const Track* p){
   return ItIs;
 }
 
+int Tau3MuAnalysis::countTracksAround(const edm::Event& ev, TLorentzVector* vec, double& dR){
 
+  int N=0;
+  Handle<TrackCollection> tracks;
+  ev.getByLabel("generalTracks", tracks);
+  TLorentzVector TotMom= vec[0]+vec[1]+vec[2];
 
-void Tau3MuAnalysis::findBestDimuon( const edm::EventSetup& iSetup,MuonCollection& mup, MuonCollection& mum, MuonCollection& dimu, TransientVertex& dimuvtx, Vertex& primaryVertex, double& massmin, double& massmax){
+  for(TrackCollection::const_iterator it = tracks->begin();it != tracks->end(); ++it){
+    bool isIn=false;
+    TLorentzVector tvec=TLorentzVector(it->px(),it->py(),it->pz(),sqrt(0.1396*0.1396+it->p()*it->p()));
+    for (int k=0; k<3; k++){
+      if (tvec.Px()==vec[k].Px() && tvec.Py()==vec[k].Py() && tvec.Pz()==vec[k].Pz()) isIn=true;
+    }
+    if (isIn) continue;
+    if (TotMom.DeltaR(tvec) < dR) N++;
+  }
+  return N;
+}
+
+void Tau3MuAnalysis::findBestDimuon( const edm::EventSetup& iSetup,MuonCollection& mup, MuonCollection& mum, MuonCollection& dimu, TransientVertex& dimuvtx, Vertex& primaryVertex){
   
   cout << "Finding the dimuon candidate" << endl;
 
@@ -219,7 +266,8 @@ void Tau3MuAnalysis::findBestDimuon( const edm::EventSetup& iSetup,MuonCollectio
   iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", Builder); 
 
   int plus=1000, minus=1000;
-  float tmpProb=0.005;  
+
+  float tmpProb=diMuVprobMin;  
 
   KalmanVertexFitter avf;
 
@@ -253,13 +301,13 @@ void Tau3MuAnalysis::findBestDimuon( const edm::EventSetup& iSetup,MuonCollectio
 
       TLorentzVector DiMu=TLorentzVector(mup[i].px()+ mum[j].px() , mup[i].py()+ mum[j].py(), mup[i].pz()+ mum[j].pz(), mup[i].energy()+ mum[j].energy());
 
-      if (DiMu.M()> massmax || DiMu.M() < massmin) continue;
+      if (DiMu.M()> diMuMassMax || DiMu.M() < diMuMassMin) continue;
 
       pair<double,double> lxytmp=Compute_Lxy_and_Significance(primaryVertex,tmpvtx,DiMu);
 
       // cout <<"vertex prob " <<vProb << endl;
 
-      if (vProb>tmpProb && lxytmp.first/lxytmp.second > 2 && vChi2/vNDF < 10){
+      if (vProb>tmpProb && lxytmp.first > diMuLxyMin && lxytmp.first/lxytmp.second > diMuLxySigMin  && vChi2/vNDF < diMuVtxChi2){
 
 	cout << "DiMu found!!" << endl;
 	tmpProb=vProb;
@@ -326,9 +374,14 @@ bool Tau3MuAnalysis::TriggerDecision(const edm::Event& ev){
 
   // check fired HLT paths
   edm::Handle<edm::TriggerResults> hltresults;
-  edm::InputTag trigResultsTag("TriggerResults","","HLT");
+  edm::InputTag trigResultsTag("TriggerResults","",HLT_process);
   ev.getByLabel(trigResultsTag,hltresults);
-  //ev.getByLabel("TriggerResults", hltresults);
+
+  if (HLT_paths.size()==0){
+    cout << "WARNING:No HLT Path Selected, the event will pass!!!" << endl;
+    passed=true;
+    return passed;
+  }
 
   if (hltresults.isValid()) {
     const edm::TriggerNames TrigNames_ = ev.triggerNames(*hltresults);
@@ -336,8 +389,11 @@ bool Tau3MuAnalysis::TriggerDecision(const edm::Event& ev){
     for (int itr=0; itr<ntrigs; itr++){
       if (!hltresults->accept(itr)) continue;
       TString trigName=TrigNames_.triggerName(itr);
-      // cout<<"Found HLT path "<< trigName<<endl;
-      if (trigName=="HLT_Dimuon0_Omega_Phi_v3" || trigName=="HLT_Dimuon0_Omega_Phi_v4" ) passed=true;
+      //cout<<"Found HLT path "<< trigName<<endl;
+      for (uint i=0; i<HLT_paths.size(); ++i){
+	if (trigName==HLT_paths[i]) passed=true;
+      }
+      //      if (trigName=="HLT_Dimuon0_Omega_Phi_v3" || trigName=="HLT_Dimuon0_Omega_Phi_v4" || trigName=="HLT_Tau2Mu_RegPixTrack_v1") passed=true;
     }
   }
   else
@@ -377,11 +433,10 @@ void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
     
     
     // get the PV
-    bool isPvGood=false;
+   
     reco::Vertex primaryVertex;
-    
+
     if(pvHandle.isValid()) {
-      isPvGood=true;
       primaryVertex = pvHandle->at(0); 
       //hNVertex->Fill(pvHandle->size());
     }
@@ -412,7 +467,7 @@ void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
 	cout << "[MuonAnalysis] New Muon found:" << muonType << endl;
 	cout << "-- eta: " << eta << " phi: " << phi << " pt: " << pt << " q: " << q << endl;       
 	
-        if (recoMu->pt() < 1) continue;
+        if (recoMu->pt() < MinMuPt) continue;
 	if (recoMu->charge() < 0) muMinus.push_back(*recoMu);
 	if (recoMu->charge() > 0) muPlus.push_back(*recoMu);
 	
@@ -424,6 +479,8 @@ void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
     MuonCollection BestDiMu;
     
     TLorentzVector DiMuMom=TLorentzVector(0.,0.,0.,0.);
+    TLorentzVector Mu1Mom=TLorentzVector(0.,0.,0.,0.);
+    TLorentzVector Mu2Mom=TLorentzVector(0.,0.,0.,0.);
     TLorentzVector pitrack=TLorentzVector(0.,0.,0.,0.);
 
     TLorentzVector DiMuTrackMom;
@@ -431,14 +488,12 @@ void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
     TransientVertex tv;
     TransientVertex tv3;
     
-    pair<double,double> lxy;
+    pair<double,double> lxy2, lxy3;
 
-    double NDiMuons=muPlus.size()*muMinus.size();
+    //double NDiMuons=muPlus.size()*muMinus.size();
     //histo ndimu
 
-    double invMassMin=0,invMassMax=1.8;
-
-    findBestDimuon(iSetup, muPlus, muMinus, BestDiMu, tv, primaryVertex,invMassMin,invMassMax);
+    findBestDimuon(iSetup, muPlus, muMinus, BestDiMu, tv, primaryVertex);
 
     cout << "dimuons size " << BestDiMu.size() << endl;
 
@@ -448,21 +503,68 @@ void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
 
     if ((muon::isGoodMuon(BestDiMu[0], muon::TMOneStationTight)) && (muon::isGoodMuon(BestDiMu[1], muon::TMOneStationTight))) TwoGood=true; 
       
-    DiMuMom=TLorentzVector(BestDiMu[0].px()+ BestDiMu[1].px() , BestDiMu[0].py()+ BestDiMu[1].py(), BestDiMu[0].pz()+ BestDiMu[1].pz(), BestDiMu[0].energy()+ BestDiMu[1].energy());
+    Mu1Mom=TLorentzVector(BestDiMu[0].px() , BestDiMu[0].py(), BestDiMu[0].pz(), BestDiMu[0].energy());
+    Mu2Mom=TLorentzVector(BestDiMu[1].px() , BestDiMu[1].py(), BestDiMu[1].pz(), BestDiMu[1].energy());
+
+    DiMuMom=Mu1Mom+Mu2Mom;
+      //=TLorentzVector(BestDiMu[0].px()+ BestDiMu[1].px() , BestDiMu[0].py()+ BestDiMu[1].py(), BestDiMu[0].pz()+ BestDiMu[1].pz(), BestDiMu[0].energy()+ BestDiMu[1].energy());
    
     cout << "dimuon mass " << DiMuMom.M() << endl;
 
     hDiMuInvMass->Fill(DiMuMom.M());
+
+    lxy2=Compute_Lxy_and_Significance(primaryVertex,tv,DiMuMom);
+
+    float v2Chi2 = tv.totalChiSquared();
+    float v2NDF  = tv.degreesOfFreedom();
+    float v2Prob(TMath::Prob(v2Chi2,(int)v2NDF));
+
+    //fill some dimuon histos
+    hchi2->Fill(v2Chi2);
+    hlxy2->Fill(lxy2.first);
+    hlxys2->Fill(lxy2.first/lxy2.second);
+    hvprob2->Fill(v2Prob);
+
     if (TwoGood)  hGoodDiMuInvMass->Fill(DiMuMom.M());
 
     bool isAlsoMu=false;
-    invMassMin=1.75;invMassMax=1.8;
-    findBestPiCand(ev, iSetup, BestDiMu, tv3, pitrack, isAlsoMu,invMassMin,invMassMax);
+
+    findBestPiCand(ev, iSetup, BestDiMu, tv3, pitrack, isAlsoMu);
 
     if (pitrack.Px() !=0){
-      
-      Offline++;
+
+      double Dr1,Dr2;
+      Dr1=pitrack.DeltaR(Mu1Mom);
+      Dr2=pitrack.DeltaR(Mu2Mom);
+      if (Dr1>Dr2) hMaxDistance->Fill(Dr1);
+      else hMaxDistance->Fill(Dr2);
+
       DiMuTrackMom = DiMuMom+pitrack;
+
+      TLorentzVector TotMomArray[3]={Mu1Mom, Mu2Mom, pitrack};
+
+      double drs[]={0.1,0.2,0.3,0.4,0.5,0.6};
+      int sizer=sizeof(drs)/sizeof(drs[0]);
+
+      for (int i=0; i< sizer; ++i){
+	int Ntracks = countTracksAround(ev,TotMomArray,drs[i]);
+	hNtracksVsDR->Fill(drs[i],Ntracks);
+      }
+
+      lxy3=Compute_Lxy_and_Significance(primaryVertex,tv3,DiMuTrackMom);
+
+      float v3Chi2 = tv3.totalChiSquared();
+      float v3NDF  = tv3.degreesOfFreedom();
+      float v3Prob(TMath::Prob(v3Chi2,(int)v3NDF));
+
+      //fill some dimuon histos
+      hchi3->Fill(v3Chi2);
+      hlxy3->Fill(lxy3.first);
+      hlxys3->Fill(lxy3.first/lxy3.second);
+      hvprob3->Fill(v3Prob);      
+      hdistv2v3->Fill(abs(lxy2.first-lxy3.first));
+
+      Offline++;
       hDiMuTrackInvMass->Fill(DiMuTrackMom.M());
       
       if (TwoGood)  {
@@ -502,6 +604,18 @@ void Tau3MuAnalysis::beginJob() {
 
   hDiMuPHITrackInvMass= fs->make<TH1F>("hDiMuPHITrackInvMass","DiMuonPHI+Track Inv. Mass",60,1.7,2.3);
   hDiMuSBTrackInvMass= fs->make<TH1F>("hDiMuSBTrackInvMass","DiMuonSB+Track Inv. Mass",60,1.7,2.3);
+
+  hchi2= fs->make<TH1F>("chi2DiMu","chi2 DiMu vtx",200,0,-2.3);
+  hchi3= fs->make<TH1F>("chi2DiMuTrack","chi2 DiMu+Track vtx",200,0,-2.3);
+  hlxy2= fs->make<TH1F>("lxyDiMu","lxy DiMu",200,0,-2.3);
+  hlxy3 =fs->make<TH1F>("lxyDiMuT","lxy DiMu+Track",200,0,-2.3);
+  hvprob2= fs->make<TH1F>("VpDiMu","Vprob DiMu",200,0,-2.3);
+  hvprob3 =fs->make<TH1F>("VpDiMuT","Vprob DiMu+Track",200,0,-2.3);
+  hlxys2 =fs->make<TH1F>("lxySDiMu","lxy Sig. DiMu",200,0,-2.3);
+  hlxys3=fs->make<TH1F>("lxySDiMuT","lxy Sig. DiMu+Track",200,0,-2.3);
+  hdistv2v3=fs->make<TH1F>("LxyDiff","lxy(DiMu)-lxy(DiMu+Track)",200,0,-2.3);
+  hMaxDistance=fs->make<TH1F>("MaxDist","Max dR Mu-Track",200,0,-2.3);
+  hNtracksVsDR=fs->make<TH1F>("NtracksInDr","Number of tracks vs DR wrt DiMu+Track 4Mom",6,0.1,0.6);
 
   hpt->Sumw2();
   hptMu->Sumw2();
