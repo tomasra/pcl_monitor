@@ -33,7 +33,7 @@ process.source = cms.Source("PoolSource",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_012.root",
 #"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_013.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_014.root",
-"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_015.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_015.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_016.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_017.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_018.root",
@@ -128,31 +128,38 @@ process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(50000))
 process.source.duplicateCheckMode = cms.untracked.string('noDuplicateCheck')
 
 process.ana = cms.EDAnalyzer('Tau3MuAnalysis',
-                             
+
+Debug=cms.bool(False),
+
+OnlyOppositeChargeMuons=cms.bool(False), #False for tau->3mu, True for Ds->phi pi
+
 DiMuMassMin= cms.double(0.0),
-DiMuMassMax= cms.double(1.8),
+DiMuMassMax= cms.double(3),
 DiMuLxyMin= cms.double(0.0),
 DiMuLxySigMin= cms.double(0.0),
 DiMuVtxChi2Max= cms.double(100),
 DiMuVprobMin=cms.double(0.0),
 
-DiMuTrackMassMin= cms.double(5),
-DiMuTrackMassMax= cms.double(5),
-DiMuTrackLxyMin= cms.double(5),
-DiMuTrackLxySigMin= cms.double(5),
-DiMuTrackVtxChi2Max= cms.double(5),
+GuessForTrackMass=cms.double(0.1057), #Guess for the mass of the track | 0.1396 pion | 0.1057 muon |
+
+DiMuTrackMassMin= cms.double(0),
+DiMuTrackMassMax= cms.double(3),
+DiMuTrackLxyMin= cms.double(0), #for now not used
+DiMuTrackLxySigMin= cms.double(0), #for now not used
+DiMuTrackVtxChi2Max= cms.double(100),
 DiMuTrackVprobMin=cms.double(0.0),
 
 MuPTCut=cms.double(1.0),
 TrackPTCut=cms.double(0.5),
 
 HLT_paths = cms.vstring(
-"HLT_Dimuon0_Omega_Phi_v3",
-"HLT_Dimuon0_Omega_Phi_v4",
-"HLT_Tau2Mu_RegPixTrack_v1"
+#"HLT_Dimuon0_Omega_Phi_v3",
+#"HLT_Dimuon0_Omega_Phi_v4",
+#"HLT_Tau2Mu_RegPixTrack_v1"
 ),
 
 HLT_process = cms.string("HLT")
+
 )
 
 
