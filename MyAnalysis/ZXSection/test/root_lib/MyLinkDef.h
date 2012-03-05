@@ -1,5 +1,6 @@
 #include "RunLumiIndex.h"
 #include "LumiFileReader.h"
+#include "RunLumiBXIndex.h"
 
 
 #ifdef __CINT__
@@ -15,6 +16,8 @@
 // #pragma link C++ class Utils;
 #pragma link C++ class RunLumiIndex;
 #pragma link C++ class LumiFileReader;
+#pragma link C++ class LumiFileReaderByBX;
+#pragma link C++ class RunLumiBXIndex;
 
 //#pragma link C++ function  operator<<(std::ostream &, const Number&);
 // #pragma link C++ class CutTableBuilder;
