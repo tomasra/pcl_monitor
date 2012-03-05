@@ -1,6 +1,8 @@
 #if !defined(__CINT) || defined(__MAKECINT__)
 
 #include "TH1F.h"
+#include "TH2F.h"
+
 #include "TStyle.h"
 #include "TString.h"
 #include "TFile.h"
@@ -21,23 +23,34 @@
 using namespace std;
 
 bool debug = false;
-double massMin = 91.-15.;
-double massMax = 91.+15.;
+double massMin = 91.-8.;
+double massMax = 91.+8.;
 
 
 //172822
 
+bool doLumiCalc1 = true;
+bool doLumiCalc2 = false;
+
+bool doPromptV6 = false;
+
+bool doSingleMu = false;
+
 void run() {
   LumiFileReader lumiMap;
-  lumiMap.readFile("/data/Analysis/LumiDB/Lumi1-May10.csvt");
-  lumiMap.readFile("/data/Analysis/LumiDB/Lumi2-PromptV4.csvt");
-  lumiMap.readFile("/data/Analysis/LumiDB/Lumi3-Aug5.csvt");
-//   lumiMap.readFile("/data/Analysis/LumiDB/Lumi4-PromptV6.csvt");
+  if(doLumiCalc1) {
+    lumiMap.readFile("/data/Analysis/LumiDB/Lumi1-May10.csvt");
+    lumiMap.readFile("/data/Analysis/LumiDB/Lumi2-PromptV4.csvt");
+    lumiMap.readFile("/data/Analysis/LumiDB/Lumi3-Aug5.csvt");
+    if(doPromptV6) lumiMap.readFile("/data/Analysis/LumiDB/Lumi4-PromptV6.csvt");
+  } else {
+    lumiMap.readFile("/data/Analysis/LumiDB/Lumi1d-v2-May10.csvt");
+    lumiMap.readFile("/data/Analysis/LumiDB/Lumi2d-v2-PromptV4.csvt");
+    lumiMap.readFile("/data/Analysis/LumiDB/Lumi3d-v2-Aug5.csvt");
+    if(doPromptV6) lumiMap.readFile("/data/Analysis/LumiDB/Lumi4d-v2-PromptV6.csvt");
+  }
+  
 
-//   lumiMap.readFile("/data/Analysis/LumiDB/Lumi1d-v2-May10.csvt");
-//   lumiMap.readFile("/data/Analysis/LumiDB/Lumi2d-v2-PromptV4.csvt");
-//   lumiMap.readFile("/data/Analysis/LumiDB/Lumi3d-v2-Aug5.csvt");
-// //   lumiMap.readFile("/data/Analysis/LumiDB/Lumi4d-v2-PromptV6.csvt");
 
 
   
@@ -49,16 +62,16 @@ void run() {
   cout << "Total rec. lumi: " << lumiMap.getRecIntegral(RunLumiIndex(1,1),RunLumiIndex(300000,1)) << endl;
 
   vector<TString> fileNames;
-  fileNames.push_back("/data/Analysis/42X_110823/DoubleMuMay10ReReco.root");
-  fileNames.push_back("/data/Analysis/42X_110823/DoubleMuPromptRecov4.root");
-  fileNames.push_back("/data/Analysis/42X_110823/DoubleMu05AugReReco.root");
-  fileNames.push_back("/data/Analysis/42X_110823/SingleMu05AugReReco.root");
-  fileNames.push_back("/data/Analysis/42X_110823/SingleMuPromptRecov4.root");
-  fileNames.push_back("/data/Analysis/42X_110823/SingleMuMay10ReReco.root");
-
-//    fileNames.push_back("/data/Analysis/42X_110823/SingleMuPromptRecov6_172620_173244.root");
-
-//    fileNames.push_back("/data/Analysis/42X_110823/DoubleMuPromptRecov6_172620_173244.root");
+  fileNames.push_back("/data/Analysis/42X_BX_v0/DoubleMu-May10ReReco.root");
+  fileNames.push_back("/data/Analysis/42X_BX_v0/DoubleMu-PromptReco-v4.root");
+  fileNames.push_back("/data/Analysis/42X_BX_v0/DoubleMu-05Aug2011.root");
+  if(doPromptV6) fileNames.push_back("/data/Analysis/42X_BX_v0/DoubleMu-PromptReco-v6.root");
+  if(doSingleMu) {
+    fileNames.push_back("/data/Analysis/42X_BX_v0/SingleMu-05Aug2011.root");
+    fileNames.push_back("/data/Analysis/42X_BX_v0/SingleMu-PromptReco-v4.root");
+    fileNames.push_back("/data/Analysis/42X_BX_v0/SingleMu-May10ReReco.root");
+    if(doPromptV6) fileNames.push_back("/data/Analysis/42X_BX_v0/SingleMu-PromptReco-v6.root");
+  }
 
   int run = -1;
   int ls = -1;
@@ -66,9 +79,18 @@ void run() {
   float p2x, p2y, p2z, e2;
 
   
-  TFile *outFile = new TFile("outFile.root","recreate");
+  TString outFileName = "outFile_";
+  if(doLumiCalc1) {
+    outFileName += "lc1.root";
+  } else {
+    outFileName += "lc2.root";
+  }
+
+  TFile *outFile = new TFile(outFileName.Data(),"recreate");
 
   TH1F *hEventPerLumi = new TH1F("hEventPerLumi", "# events; avg. inst. lumi. [Hz/um]", 20, 200, 2000);
+
+  TH2F *hZMassVsLumi = new TH2F("hZMassVsLumi", "# events; avg. inst. lumi. [Hz/um]", 20, 200, 2000, 80, 50, 130);
 
   for(vector<TString>::const_iterator file = fileNames.begin();
       file != fileNames.end(); ++file) {
@@ -111,6 +133,7 @@ void run() {
 
       if(mass >= massMin && mass <= massMax) { //cut on Z mass
 	hEventPerLumi->Fill(instLumi);
+	hZMassVsLumi->Fill(instLumi, mass);
       }
 
       
@@ -118,7 +141,7 @@ void run() {
 
   }
   
-  TH1F *hRecLumiInteg = new TH1F("hRecLumiInteg", "rec. lumi. integ.; rec. lumi. integ. [1/ub]", hEventPerLumi->GetNbinsX(), 200, 2000);
+  TH1F *hRecLumiInteg = new TH1F("hRecLumiInteg", "rec. lumi. integ.; avg. inst. lumi. [Hz/um]", hEventPerLumi->GetNbinsX(), 200, 2000);
 
   double avgInstLumi[hEventPerLumi->GetNbinsX()];
   double xsec[hEventPerLumi->GetNbinsX()];
@@ -133,6 +156,7 @@ void run() {
     double width = hEventPerLumi->GetBinWidth(bin);
     double upEdge = lowEdge + width;
     pair<double, double> integAndMean = lumiMap.getRecIntegralInLumiBin(lowEdge, upEdge);
+    
     double recLumiInteg = integAndMean.first;
     avgInstLumi[bin-1] = integAndMean.second;
     xsec[bin-1] = hEventPerLumi->GetBinContent(bin)/recLumiInteg;
@@ -158,6 +182,7 @@ void run() {
   hRecLumiInteg->Write();
   gSigma->Write();
   hSigma->Write();
+  hZMassVsLumi->Write();
   outFile->Close();
 
 
