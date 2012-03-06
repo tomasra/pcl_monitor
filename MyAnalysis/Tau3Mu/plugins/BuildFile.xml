@@ -9,9 +9,7 @@
 <use name="TrackingTools/TransientTrack"/>
 <use name="HLTrigger/HLTcore"/>
 <use   name="RecoTracker/TkTrackingRegions"/>
-<use   name="RecoVertex/VertexPrimitives"/>
 <use   name="TrackingTools/Records"/>
-<use   name="TrackingTools/TransientTrack"/>
 <use name="RecoVertex/KinematicFitPrimitives"/>
 <use name="RecoVertex/KinematicFit"/>
 <use name="RecoVertex/KalmanVertexFit"/>
