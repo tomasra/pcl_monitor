@@ -103,9 +103,10 @@ private:
   virtual void findBestPiCand(const edm::Event&, const edm::EventSetup&, MuonCollection&, TransientVertex&, Vertex&, TransientVertex&,pair<double,double>& ,TLorentzVector&, bool&,bool& ,int&);
   virtual bool TriggerDecision(const edm::Event&);
   virtual pair<bool,bool> isMu(const edm::Event&, const Track*);
-  virtual int countTracksAround(const edm::Event&, TLorentzVector*, double&);
+  virtual int countTracksAround(const edm::Event&, const edm::EventSetup&, TLorentzVector*, double&, TransientVertex&);
   virtual pair<double,double> ComputeImpactParameterWrtPoint(TransientTrack& tt, Vertex&);
   virtual bool isMcMatched(const edm::Event&,TLorentzVector*);
+  virtual bool isInPV(Vertex&, TLorentzVector&);
 
   TH1F* hDiMuInvMass,* hGoodDiMuInvMass;
   TH1F* hDiMuTrackInvMass,* hGoodDiMuTrackInvMass,*hTriMuInvMass ;
@@ -128,15 +129,17 @@ private:
   TLorentzVector* _Mu1_4Mom,*_Mu2_4Mom,*_MuTrack_4Mom, *_DiMu4Mom, *_DiMuPlusTrack4Mom;
   int _Mu1Q,_Mu2Q,_Mu3Q;
 
-  TVector3 *_PV,*_SV,*_SVT;
+  TVector3 *_PV,*_SV,*_SVT,*_PVe,*_SVe,*_SVTe;
 
   double _SVchi,_SVprob;
   double _SVTchi,_SVTprob;
   double _Lxy,_LxySig,_LxyT,_LxyTSig;
   double _d0T,_d0TSig;
+  double _M3,_M2 ,_PtT,_dRdiMuT;
   int _NTracksInDr;
   bool _TrackIsMu;
   bool _Mu1IsGood,_Mu2IsGood,_TrackIsGoodMu;
+  bool _IsMu1InPV, _IsMu2InPV,_IsMu3InPV;
 
   bool OnlyGenMatchInTree;
 
@@ -302,6 +305,18 @@ void Tau3MuAnalysis::findBestPiCand(const edm::Event& ev, const edm::EventSetup&
   }
 }
 
+bool Tau3MuAnalysis::isInPV(Vertex& pv,TLorentzVector& track){
+
+  bool inPV=false;
+  for(std::vector<reco::TrackBaseRef>::const_iterator it = pv.tracks_begin() ; it != pv.tracks_end(); ++it ){
+    if (!(it->isNonnull() && it->isAvailable())) continue;
+    Track tr=*(it->get());
+    TLorentzVector vect=TLorentzVector(tr.px(),tr.py(),tr.pz(),0);
+    if (vect.DeltaR(track)<1.e-4) inPV=true;
+  }
+  return inPV;
+}
+
 bool Tau3MuAnalysis::isMcMatched(const edm::Event& ev,TLorentzVector* recov){
 
   if (debug) cout << "GEN-RECO Matching ...." << endl;
@@ -420,7 +435,11 @@ std::pair<bool,bool> Tau3MuAnalysis::isMu(const edm::Event& ev,const Track* p){
   return make_pair(ItIs,isGood);
 }
 
-int Tau3MuAnalysis::countTracksAround(const edm::Event& ev, TLorentzVector* vec, double& dR){
+int Tau3MuAnalysis::countTracksAround(const edm::Event& ev, const edm::EventSetup& iSetup,TLorentzVector* vec, double& dR, TransientVertex& sv ){
+
+
+  edm::ESHandle<TransientTrackBuilder> Builder;
+  iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", Builder);
 
   int N=0;
   Handle<TrackCollection> tracks;
@@ -429,6 +448,12 @@ int Tau3MuAnalysis::countTracksAround(const edm::Event& ev, TLorentzVector* vec,
 
   for(TrackCollection::const_iterator it = tracks->begin();it != tracks->end(); ++it){
     bool isIn=false;
+
+    TransientTrack ttpi=Builder->build(*it);
+    Vertex diMuVtx=Vertex(sv);
+    pair<double,double> d0tracktmp=ComputeImpactParameterWrtPoint(ttpi,diMuVtx);
+    if (d0tracktmp.first > 0.2) continue; //The track is not close to SV
+
     TLorentzVector tvec=TLorentzVector(it->px(),it->py(),it->pz(),sqrt(TrackMass*TrackMass+it->p()*it->p()));
     for (int k=0; k<3; k++){
       if (tvec.Px()==vec[k].Px() && tvec.Py()==vec[k].Py() && tvec.Pz()==vec[k].Pz()) isIn=true;
@@ -717,8 +742,8 @@ void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
     if (muon::isGoodMuon(BestDiMu[0], muon::TMOneStationTight)) Good1=true;    
     if (muon::isGoodMuon(BestDiMu[1], muon::TMOneStationTight)) Good2=true;
 
-    Mu1Mom=TLorentzVector(BestDiMu[0].px() , BestDiMu[0].py(), BestDiMu[0].pz(), BestDiMu[0].energy());
-    Mu2Mom=TLorentzVector(BestDiMu[1].px() , BestDiMu[1].py(), BestDiMu[1].pz(), BestDiMu[1].energy());
+    Mu1Mom=TLorentzVector(BestDiMu[0].innerTrack()->px() , BestDiMu[0].innerTrack()->py(), BestDiMu[0].innerTrack()->pz(), BestDiMu[0].energy());
+    Mu2Mom=TLorentzVector(BestDiMu[1].innerTrack()->px() , BestDiMu[1].innerTrack()->py(), BestDiMu[1].innerTrack()->pz(), BestDiMu[1].energy());
 
     q1=BestDiMu[0].charge();
     q2=BestDiMu[1].charge();
@@ -755,7 +780,7 @@ void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
 
       GenMatches++;
 
-      int NDr = countTracksAround(ev,TotMomArray,DRTracks);	
+      int NDr = countTracksAround(ev,iSetup,TotMomArray,DRTracks,tv);	
 
       lxy3=Compute_Lxy_and_Significance(primaryVertex,tv3,DiMuTrackMom);
 
@@ -764,6 +789,10 @@ void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
       double v3Prob(TMath::Prob(v3Chi2,(int)v3NDF));
 
       hDiMuTrackInvMass->Fill(DiMuTrackMom.M());
+
+      bool InPV1=isInPV(primaryVertex,Mu1Mom);
+      bool InPV2=isInPV(primaryVertex,Mu2Mom);
+      bool InPV3=isInPV(primaryVertex,pitrack);
 
       hpt->Fill(pitrack.Pt());
 
@@ -791,13 +820,23 @@ void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
       _Mu1_4Mom->SetPxPyPzE(Mu1Mom.Px(),Mu1Mom.Py(),Mu1Mom.Pz(),Mu1Mom.E());
       _MuTrack_4Mom->SetPxPyPzE(pitrack.Px(),pitrack.Py(),pitrack.Pz(),pitrack.E());
       
+      _M3=DiMuTrackMom.M();
+      _M2=DiMuMom.M(); 
+      _PtT=pitrack.Pt();
+      _dRdiMuT=pitrack.DeltaR(DiMuMom);
+
       _Mu1Q=q1;
       _Mu2Q=q2;
       _Mu3Q=qtr;
       
       _PV->SetXYZ(primaryVertex.x(),primaryVertex.y(),primaryVertex.z());
+      _PVe->SetXYZ(primaryVertex.xError(),primaryVertex.yError(),primaryVertex.zError());
+
       _SV->SetXYZ(tv.position().x(),tv.position().y(),tv.position().z());
+      _SVe->SetXYZ(tv.positionError().cxx(),tv.positionError().cyy(),tv.positionError().czz());
+
       _SVT->SetXYZ(tv3.position().x(),tv3.position().y(),tv3.position().z());
+      _SVTe->SetXYZ(tv3.positionError().cxx(),tv3.positionError().cyy(),tv3.positionError().czz());
       
       _SVchi=v2Chi2/v2NDF;
       _SVprob=v2Prob;
@@ -820,6 +859,10 @@ void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
       _NTracksInDr=NDr;
       _Mu1IsGood=Good1;
       _Mu2IsGood=Good2;
+
+      _IsMu1InPV =InPV1;
+      _IsMu2InPV=InPV2;
+      _IsMu3InPV=InPV3;
 
       ExTree->Fill();
 
@@ -844,6 +887,11 @@ void Tau3MuAnalysis::Initialize_TreeVars(){
   _SV->SetXYZ(0.,0.,0.);
   _SVT->SetXYZ(0.,0.,0.);
 
+
+  _M3=0;
+  _M2=0; 
+  _PtT=0;
+  _dRdiMuT=0;
   _SVchi=-99;
   _SVprob=-99;
   _SVTchi=-99;
@@ -854,11 +902,18 @@ void Tau3MuAnalysis::Initialize_TreeVars(){
   _LxyTSig=-99;
   _d0T=-99;
   _d0TSig=-99;
+
   _NTracksInDr=-1;
+
   _TrackIsMu=false;
   _Mu1IsGood=false;
   _Mu2IsGood=false;
+
   _TrackIsGoodMu=false;
+
+  _IsMu1InPV=false;
+  _IsMu2InPV=false;
+  _IsMu3InPV=false;
 }
 
 
@@ -881,6 +936,10 @@ void Tau3MuAnalysis::beginJob() {
   _SV=new TVector3(0.,0.,0.);
   _SVT=new TVector3(0.,0.,0.);
 
+  _PVe= new TVector3(0.,0.,0.);
+  _SVe=new TVector3(0.,0.,0.);
+  _SVTe=new TVector3(0.,0.,0.);
+
   ExTree->Branch("DiMu4Mom","TLorentzVector",&_DiMu4Mom); 
   ExTree->Branch("DiMuPlusTrack4Mom","TLorentzVector",&_DiMuPlusTrack4Mom); 
 
@@ -889,8 +948,12 @@ void Tau3MuAnalysis::beginJob() {
   ExTree->Branch("MuTrack_4Mom","TLorentzVector",&_MuTrack_4Mom); 
 
   ExTree->Branch("PV","TVector3",&_PV); 
-  ExTree->Branch("PV","TVector3",&_SV);
-  ExTree->Branch("PV","TVector3",&_SVT);
+  ExTree->Branch("SV","TVector3",&_SV);
+  ExTree->Branch("SVT","TVector3",&_SVT);
+
+  ExTree->Branch("PVerr","TVector3",&_PVe); 
+  ExTree->Branch("SVerr","TVector3",&_SVe);
+  ExTree->Branch("SVTerr","TVector3",&_SVTe);
 
   ExTree->Branch("Mu1Q",&_Mu1Q   , "_Mu1Q/I");
   ExTree->Branch("Mu2Q",&_Mu2Q   , "_Mu2Q/I");
@@ -903,6 +966,11 @@ void Tau3MuAnalysis::beginJob() {
   ExTree->Branch("SVTchi",&_SVTchi   ,"_SVTchi/D"); 
   ExTree->Branch("SVTprob",&_SVTprob   ,"_SVTprob/D"); 
 
+  ExTree->Branch("MinvDiMuT",&_M3   ,"_M3/D");
+  ExTree->Branch("MinvDiMu",&_M2   ,"_M2/D");
+  ExTree->Branch("PtTrack",&_PtT   ,"_PtT/D");
+  ExTree->Branch("dRTrack-DiMu",&_dRdiMuT   ,"_dRdiMuT/D");
+
   ExTree->Branch("Lxy",&_Lxy   ,"_Lxy/D");
   ExTree->Branch("LxySig",&_LxySig   ,"_LxySig/D");
   ExTree->Branch("LxyT",&_LxyT   ,"_LxyT/D");
@@ -914,8 +982,11 @@ void Tau3MuAnalysis::beginJob() {
   ExTree->Branch("Mu2IsGood",&_Mu2IsGood   ,"_Mu2IsGood/B");
   ExTree->Branch("TrackIsGoodMu",&_TrackIsGoodMu   ,"_TrackIsGoodMu/B");
   ExTree->Branch("TrackIsMu",&_TrackIsMu ,"_TrackIsMu/B");
- 
 
+  ExTree->Branch("IsMu1InPV",&_IsMu1InPV ,"_IsMu1InPV/B");
+  ExTree->Branch("IsMu2InPV",&_IsMu2InPV ,"_IsMu2InPV/B");
+  ExTree->Branch("IsMu3InPV",&_IsMu3InPV ,"_IsMu3InPV/B");
+ 
   hpt= new TH1F("TrackPT","Track pT",250,0,50);
   hptMu= new TH1F("TrackMuPT","Track with MuId pT",250,0,50);
 
@@ -1096,6 +1167,10 @@ Tau3MuAnalysis::endJob() {
   delete _SVT;
   delete _SV;
   delete _PV;
+
+  delete _SVTe;
+  delete _SVe;
+  delete _PVe;
 
   delete _MuTrack_4Mom;
   delete _Mu2_4Mom;

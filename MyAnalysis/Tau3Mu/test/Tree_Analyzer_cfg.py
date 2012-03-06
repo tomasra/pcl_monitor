@@ -122,15 +122,15 @@ process.source.duplicateCheckMode = cms.untracked.string('noDuplicateCheck')
 
 process.ana = cms.EDAnalyzer('Tau3MuAnalysis',
 
-OutFileName=cms.string("OUT_Tree_Azzo.root"),
+OutFileName=cms.string("OUT_Tree_SignalGenMatched.root"),
 
 Debug=cms.bool(False),
 
-SaveOnlyGenMatchedVar=cms.bool(True),
+SaveOnlyGenMatchedVar=cms.bool(False),
 
 OnlyOppositeChargeMuons=cms.bool(False), #False for tau->3mu, True for Ds->phi pi
 
-DiMuMassMin= cms.double(0.0),
+DiMuMassMin= cms.double(0.2),
 DiMuMassMax= cms.double(1.8),#1.8
 
 DiMuLxyMin= cms.double(-10),
@@ -141,8 +141,8 @@ DiMuVprobMin=cms.double(0.00),
 
 GuessForTrackMass=cms.double(0.1057), #Guess for the mass of the track | 0.1396 pion | 0.1057 muon |
 
-DiMuTrackMassMin= cms.double(1.6),
-DiMuTrackMassMax= cms.double(2.3),
+DiMuTrackMassMin= cms.double(1.7),
+DiMuTrackMassMax= cms.double(1.85),
 
 DiMuTrackLxyMin= cms.double(-10), #for now not used
 DiMuTrackLxySigMin= cms.double(-10), #for now not used
