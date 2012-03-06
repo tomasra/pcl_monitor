@@ -20,6 +20,8 @@
 #include "TrackingTools/TrajectoryState/interface/FreeTrajectoryState.h" 
 #include "TrackingTools/TrajectoryParametrization/interface/GlobalTrajectoryParameters.h"
 
+#include "TrackingTools/IPTools/interface/IPTools.h"
+
 #include "DataFormats/BeamSpot/interface/BeamSpot.h"
 
 #include "DataFormats/Math/interface/deltaPhi.h"
@@ -46,8 +48,9 @@ HLTMuMuTrkVertexFilter::HLTMuMuTrkVertexFilter(const edm::ParameterSet& iConfig)
   fastAccept_(iConfig.getParameter<bool>("FastAccept")),
   beamSpotTag_ (iConfig.getParameter<edm::InputTag> ("BeamSpotTag"))
 {
-  muCandLabel_   = iConfig.getParameter<edm::InputTag>("MuCand");
-  trkCandLabel_  = iConfig.getParameter<edm::InputTag>("TrackCand");
+  muCandLabel_         = iConfig.getParameter<edm::InputTag>("MuCand");
+  trkCandLabel_        = iConfig.getParameter<edm::InputTag>("TrackCand");
+  displacedMuVtxLabel_ = iConfig.getParameter<edm::InputTag>("MuVtxCand" ),
   
   produces<VertexCollection>();
   produces<CandidateCollection>();
@@ -108,6 +111,12 @@ bool HLTMuMuTrkVertexFilter::hltFilter(edm::Event& iEvent, const edm::EventSetup
   Handle<RecoChargedCandidateCollection> mucands;
   iEvent.getByLabel (muCandLabel_,mucands);
 
+  // get the displaced vtx from the two muons
+  Handle<VertexCollection> displacedMuVtxHandle;
+  iEvent.getByLabel(displacedMuVtxLabel_,displacedMuVtxHandle);
+  const VertexCollection& displacedMuVtxCollection = *displacedMuVtxHandle;
+  cout<<"Size of dimuon vertex collections: "<<displacedMuVtxCollection.size()<<endl;
+  
   // get track candidates around displaced muons
   Handle<RecoChargedCandidateCollection> trkcands;
   iEvent.getByLabel (trkCandLabel_,trkcands);
@@ -234,8 +243,26 @@ bool HLTMuMuTrkVertexFilter::hltFilter(edm::Event& iEvent, const edm::EventSetup
 
 			FreeTrajectoryState InitialFTS = initialFreeState(*trk3, magField);
 			TrajectoryStateClosestToBeamLine tscb( blsBuilder(InitialFTS, *recoBeamSpotHandle) );
+			
+			double d0value = tscb.transverseImpactParameter().value();
+			double d0error = tscb.transverseImpactParameter().error();
 			double d0sig = tscb.transverseImpactParameter().significance();
+			cout<<"d0 to beam spot:    value="<<d0value<<"  error="<<d0error<<"  signif="<<d0sig<<endl;
 
+			// LG what happens if I check the Impact Parameter of current track wrt the dimuon vertex
+			for (VertexCollection::const_iterator idmv = displacedMuVtxCollection.begin(), idmvend = displacedMuVtxCollection.end(); 
+			     idmv!=idmvend; ++idmv){
+			  std::pair<bool,Measurement1D> d0_transv_dimu = IPTools::absoluteTransverseImpactParameter(t_tks[2],*idmv );
+			  //std::pair<bool,Measurement1D> result = IPTools::absoluteImpactParameter3D(t_tks[2],*idmv );
+			  double d0_dimuvtx_corr = d0_transv_dimu.second.value();
+			  double d0_dimuvtx_err = d0_transv_dimu.second.error();
+			  double d0_dimuvtx_sig = d0_transv_dimu.second.significance();
+			  cout<<"d0 to di-mu vtx:    value="<<d0_dimuvtx_corr<<"  error="<<d0_dimuvtx_err<<"  signif="<<d0_dimuvtx_sig<<endl;
+			  
+			}
+			cout<<endl;
+			
+			// maybe here we can do something smart in comparing the d0sig and the d0_dimuvtx_sig
 			if (d0sig < minD0Significance_) continue;
 			
 			KalmanVertexFitter kvf;
@@ -272,6 +299,10 @@ bool HLTMuMuTrkVertexFilter::hltFilter(edm::Event& iEvent, const edm::EventSetup
 			if (normChi2 > maxNormalisedChi2_) continue;
 			if (lxy/lxyerr < minLxySignificance_) continue;
 			if(cosAlpha < minCosinePointingAngle_) continue;
+
+
+
+
 
 			// put vertex in the event
 			vertexCollection->push_back(vertex);

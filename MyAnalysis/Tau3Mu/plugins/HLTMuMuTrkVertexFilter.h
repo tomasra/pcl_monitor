@@ -48,7 +48,8 @@ class HLTMuMuTrkVertexFilter : public HLTFilter {
   
   edm::InputTag muCandLabel_;
   edm::InputTag trkCandLabel_; 
-  
+  edm::InputTag displacedMuVtxLabel_;
+
   const double thirdTrackMass_;
   const double maxEta_;
   const double minPt_;
