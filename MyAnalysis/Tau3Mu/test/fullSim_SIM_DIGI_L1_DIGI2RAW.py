@@ -2,7 +2,7 @@
 # using: 
 # Revision: 1.366 
 # Source: /local/reps/CMSSW.admin/CMSSW/Configuration/PyReleaseValidation/python/ConfigBuilder.py,v 
-# with command line options: fullSim -s SIM,DIGI,L1,DIGI2RAW --filein pippo.root --conditions START52_V2A::All
+# with command line options: fullSimRaw -s SIM,DIGI,L1,DIGI2RAW --filein pippo.root --conditions START52_V2A::All --no_exec --eventcontent GENRAW -n -1 --datatier GEN-SIM-RAW --geometry DB
 import FWCore.ParameterSet.Config as cms
 
 process = cms.Process('DIGI2RAW')
@@ -38,21 +38,21 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.1 $'),
-    annotation = cms.untracked.string('fullSim nevts:1'),
+    version = cms.untracked.string('$Revision: 1.366 $'),
+    annotation = cms.untracked.string('fullSimRaw nevts:-1'),
     name = cms.untracked.string('PyReleaseValidation')
 )
 
 # Output definition
 
-process.RECOSIMoutput = cms.OutputModule("PoolOutputModule",
+process.GENRAWoutput = cms.OutputModule("PoolOutputModule",
     splitLevel = cms.untracked.int32(0),
     eventAutoFlushCompressedSize = cms.untracked.int32(5242880),
-    outputCommands = process.RECOSIMEventContent.outputCommands,
-    fileName = cms.untracked.string('fullSim_SIM_DIGI_L1_DIGI2RAW.root'),
+    outputCommands = process.GENRAWEventContent.outputCommands,
+    fileName = cms.untracked.string('fullSimRaw_SIM_DIGI_L1_DIGI2RAW.root'),
     dataset = cms.untracked.PSet(
         filterName = cms.untracked.string(''),
-        dataTier = cms.untracked.string('')
+        dataTier = cms.untracked.string('GEN-SIM-RAW')
     )
 )
 
@@ -67,10 +67,11 @@ process.digitisation_step = cms.Path(process.pdigi)
 process.L1simulation_step = cms.Path(process.SimL1Emulator)
 process.digi2raw_step = cms.Path(process.DigiToRaw)
 process.endjob_step = cms.EndPath(process.endOfProcess)
-process.RECOSIMoutput_step = cms.EndPath(process.RECOSIMoutput)
+process.GENRAWoutput_step = cms.EndPath(process.GENRAWoutput)
 
 # Schedule definition
-process.schedule = cms.Schedule(process.simulation_step,process.digitisation_step,process.L1simulation_step,process.digi2raw_step,process.endjob_step,process.RECOSIMoutput_step)
+process.schedule = cms.Schedule(process.simulation_step,process.digitisation_step,process.L1simulation_step,process.digi2raw_step,process.endjob_step,process.GENRAWoutput_step)
+
 
 import L1Trigger.Configuration.L1Trigger_custom
 process = L1Trigger.Configuration.L1Trigger_custom.customiseL1Menu(process)
