@@ -23,7 +23,7 @@ process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(100)
+    input = cms.untracked.int32(10)
 )
 
 # Input source
@@ -38,7 +38,7 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.366 $'),
+    version = cms.untracked.string('$Revision: 1.1 $'),
     annotation = cms.untracked.string('fullSim nevts:1'),
     name = cms.untracked.string('PyReleaseValidation')
 )
@@ -72,3 +72,6 @@ process.RECOSIMoutput_step = cms.EndPath(process.RECOSIMoutput)
 # Schedule definition
 process.schedule = cms.Schedule(process.simulation_step,process.digitisation_step,process.L1simulation_step,process.digi2raw_step,process.endjob_step,process.RECOSIMoutput_step)
 
+import L1Trigger.Configuration.L1Trigger_custom
+process = L1Trigger.Configuration.L1Trigger_custom.customiseL1Menu(process)
+#process.hltL1sL1DoubleMu0HighQ.L1SeedsLogicalExpression = 'L1_DoubleMu0er_HighQ'
