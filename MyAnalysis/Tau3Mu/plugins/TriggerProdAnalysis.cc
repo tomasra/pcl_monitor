@@ -106,59 +106,10 @@ private:
   edm::InputTag beamSpotTag_;
   edm::InputTag L3muCandLabel_;
   edm::InputTag L3muDisplVtxCandLabel_;
-
-//   HistoKin *hKinDs;
-//   HistoKin *hKinRecoDs;
-//   HistoKin *hKinRecoTau;
-
-//   HistoKin *hKinDs3RecoMatched;
-//   HistoKin *hKinDs2RecoMatched;
-
-//   HistoKin *hKinDs3RecoGoodMatched;
-//   HistoKin *hKinDs2RecoGoodMatched;
-
-//   HistoImpactParam *hd0MuonGood;
-//   HistoImpactParam *hd0MuonGoodMatched;
-
-
-//   HistoKin *hKinTau;
-//   HistoKin *hKinMu;
-//   HistoKin *hKinMuLead;
-//   HistoKin *hKinMuTrail;
-//   HistoKin *hKinPhi;
-//   HistoKin *hKinPi;
-//   HistoKinPair *hKinDsVsMuLead;
-//   HistoKinPair *hKinClosestMuPhi;
-
-
-//   TH1F *hNRecoMuAll;
-//   TH1F *hNRecoMuMatched;
-//   TH1F *hNRecoMuGoodAll;
-//   TH1F *hNRecoMuGoodMatched;
-
-//   TH1F *hNRecoTkMuMatched;
-
-//   HistoKin *hKinDs3RecoMatched3L1Matched;
-//   HistoKin *hKinDs3RecoMatched2L1Matched;
-//   HistoKin *hKinDs3RecoMatched2L13p5Matched;
-//   HistoKin *hKinDs3RecoMatched2L15Matched;
-//   HistoKin *hKinDs3RecoMatchedHLTTau3Mu;
-
-
-//   TH1F *hNVertex;
-
-//   HistoKin *hKinDs3L1Matched;
-//   HistoKin *hKinDs2L1Matched;
-//   HistoKin *hKinDs2L13p5Matched;
-//   HistoKin *hKinDs2L15Matched;
-//   HistoKin *hKinDsHLTTau3Mu;
-//   HistoKin *hKinDsHLTTau2MuPixTrack;
-//   HistoKin *hKinDsHLTTau2MuRegionalPixelTrack;
-//   HistoKin *hKinDsHLTTau2MuRegionalPixelTrackTight;
-//   HistoKin *hKinDsHLTTau2MuRegionalPixelTrackAnd3RecoMu;
-//   HistoKin *hKinDsHLTTau2MuRegionalPixelTrackAnd2RecoMu;
+  edm::InputTag mmkVtxLabel;
 
   HistoVertex *hHLTDiMuonVertex;
+  HistoVertex *hHLTTriTrackVertex;
 
   int counter;
   int countInAccept;
@@ -200,6 +151,8 @@ TriggerProdAnalysis::TriggerProdAnalysis(const edm::ParameterSet& iConfig) {
 								       edm::InputTag("offlineBeamSpot"));
   L3muCandLabel_        = iConfig.getUntrackedParameter<edm::InputTag>("l3MuonCands",
 								       edm::InputTag("hltL3MuonCandidates::reHLT"));
+  mmkVtxLabel           = iConfig.getUntrackedParameter<edm::InputTag>("mmkVtxLabel",
+								       edm::InputTag("hltTau2MuTkMuMuTkFilter::HLT"));
   debug                 = iConfig.getUntrackedParameter<bool>("debug", false);
 
 }
@@ -315,7 +268,7 @@ void TriggerProdAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& i
         
 	  float significance = lxy/lxyerr;
 	  // FIXME: add plots lxy and signif vs Pt Ds
-	  hHLTDiMuonVertex->Fill(normChi2, vtxProb, lxy, significance, 0, weight);
+	  hHLTDiMuonVertex->Fill(normChi2, vtxProb, lxy, significance, 0, 0, weight);
 
   }
 
@@ -353,10 +306,72 @@ void TriggerProdAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& i
     }
   }
 
+  // get the L3 mu & track candidates passing the hltTau2MuTkMuMuTkFilter 
+  edm::Handle<trigger::TriggerFilterObjectWithRefs> dimuAndTrackVtxCands;
+  ev.getByLabel(mmkVtxLabel,dimuAndTrackVtxCands);
+  if (dimuAndTrackVtxCands.isValid()){
+    std::vector<RecoChargedCandidateRef> muons;
+    dimuAndTrackVtxCands->getObjects(trigger::TriggerMuon, muons);
+    cout << "# of L3 muons: " << muons.size() << endl;
+
+    std::vector<RecoChargedCandidateRef> tracks;
+    dimuAndTrackVtxCands->getObjects(trigger::TriggerTrack, tracks);
+    cout << "# of tracks: " << tracks.size() << endl;
 
 
+  }
 
+  
+  // get displaced vertices formed by 2 L3 muons
+  reco::VertexCollection threeTrackVertexColl;
+  edm::Handle<reco::VertexCollection> threeTrackVertexCollHandle;
+  edm::InputTag  threeTrackVertexTag("hltTau2MuTkMuMuTkFilter");
+  bool found3trkVertexColl = ev.getByLabel(threeTrackVertexTag, threeTrackVertexCollHandle);
+  if(found3trkVertexColl) {
+    threeTrackVertexColl = *threeTrackVertexCollHandle;
+    cout << "#of 3trk vertices: " << threeTrackVertexColl.size() << endl;
 
+    // loop over vertex collection
+    for(reco::VertexCollection::iterator it = displacedVertexColl.begin(); it!= displacedVertexColl.end(); it++){
+      reco::Vertex vertex = *it;
+
+      // get vertex position and error to calculate the decay length significance
+      //      GlobalPoint secondaryVertex = vertex.position();
+      // GlobalError err = vertex.positionError();
+      reco::Vertex::Point vpoint=vertex.position();
+      //translate to global point, should be improved
+      GlobalPoint secondaryVertex (vpoint.x(), vpoint.y(), vpoint.z());
+
+      reco::Vertex::Error verr = vertex.error();
+      // translate to global error, should be improved
+      GlobalError err(verr.At(0,0), verr.At(1,0), verr.At(1,1), verr.At(2,0), verr.At(2,1), verr.At(2,2) );
+
+      //calculate decay length  significance w.r.t. the beamspot
+      GlobalPoint displacementFromBeamspot( -1*((vertexBeamSpot.x0() -secondaryVertex.x()) +
+						(secondaryVertex.z() - vertexBeamSpot.z0()) * vertexBeamSpot.dxdz()),
+					    -1*((vertexBeamSpot.y0() - secondaryVertex.y())+
+						(secondaryVertex.z() -vertexBeamSpot.z0()) * vertexBeamSpot.dydz()), 0);
+
+      float lxy = displacementFromBeamspot.perp();
+      float lxyerr = sqrt(err.rerr(displacementFromBeamspot));
+      
+      // get normalizes chi2
+      float normChi2 = vertex.normalizedChi2();
+      double vtxProb = 0.0;
+      if( (vertex.chi2()>=0.0) && (vertex.ndof()>0) ) vtxProb = TMath::Prob(vertex.chi2(), vertex.ndof() );
+
+      //calculate the angle between the decay length and the mumu momentum
+      Vertex::Point vperp(displacementFromBeamspot.x(),displacementFromBeamspot.y(),0.);
+      math::XYZTLorentzVectorD  p = vertex.p4();   
+      math::XYZVector pperp(p.x(),p.y(),0.);
+
+      float cosAlpha = vperp.Dot(pperp)/(vperp.R()*pperp.R());
+      
+      hHLTTriTrackVertex->Fill(normChi2, vtxProb, lxy, lxy/lxyerr, 0, cosAlpha, weight);
+      // FIXME: add mass and pt of the 3 tracks
+      // FIXME: add some printout and compare with the filter
+ }		
+  }
 
 }
 
@@ -366,6 +381,7 @@ void TriggerProdAnalysis::beginJob() {
   edm::Service<TFileService> fs;
 
   hHLTDiMuonVertex = new HistoVertex("HLTDiMuonVertex",*fs);
+  hHLTTriTrackVertex = new HistoVertex("HLTTriTrackVertex",*fs);
 
 }
 
