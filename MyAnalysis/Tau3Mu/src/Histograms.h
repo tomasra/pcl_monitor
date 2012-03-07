@@ -414,10 +414,11 @@ public:
   HistoVertex(std::string name, TFileService& fs) : theName(name) {
     hNormChi2 = fs.make<TH1F>(theName+"_hNormChi2","Norm #Chi^{2};Norm #Chi^{2};#events", 1000, 0, 1000);
     hVtxProb = fs.make<TH1F>(theName+"_hVtxProb", "Vertex prob.;Vtx prob; # events", 100,0,1);
-    hLxy = fs.make<TH1F>(theName+"_hLxy", "Transv. displ w.r.t BS;Lxy (cm); # events", 100,-0.5,0.5);
+    hLxy = fs.make<TH1F>(theName+"_hLxy", "Transv. displ w.r.t BS;Lxy (cm); # events", 100,0,1);
     hLxySig = fs.make<TH1F>(theName+"_hLxysig", "Sig. Transv. displ w.r.t BS;LxySig; # events", 100,-5,30);
     hLxySigVsPtDs = fs.make<TH2F>(theName+"_hLxysigVsPtDs", "Sig. Transv. displ w.r.t BS;P_{T}()D_{s}; LxySig;", 100, 0, 200, 100,-5,30);
-    
+    hCosPointAngle = fs.make<TH1F>(theName+"_hCosPointAngle", "Cosine pointing angle;Cos pointing angle; # events", 300,-1,1);
+    hMass = fs.make<TH1F>(theName+"_hMass", "Mass;Mass (GeV); # events", 200,0,5);
   }
 
 #endif
@@ -431,6 +432,8 @@ public:
     hLxy = 0;
     hLxySig = 0;
     hLxySigVsPtDs = 0;
+    hCosPointAngle = 0;
+    hMass = 0;
   }
 
 
@@ -445,6 +448,8 @@ public:
     hLxy = (TH1F *) file->Get(dir + theName+"_hLxy");
     hLxySig = (TH1F *) file->Get(dir + theName+"_hLxySig");
     hLxySigVsPtDs = (TH2F *) file->Get(dir + theName+"_hLxySigVsPtDs");
+    hCosPointAngle = (TH1F *) file->Get(dir + theName+"_hCosPointAngle");
+    hMass =  (TH1F *) file->Get(dir + theName+"_hMass");
   }
 
 
@@ -493,13 +498,15 @@ public:
 
 //   }
   
-  void Fill(double normChi2, double vtxProb, double lxy, double lxySig, double ptDs, double weight) {
+  void Fill(double normChi2, double vtxProb, double lxy, double lxySig, double ptDs, double cosPA, double mass, double weight) {
     hNormChi2->Fill(normChi2,weight);
     hVtxProb->Fill(vtxProb,weight);
     hLxy->Fill(lxy,weight);
     hLxySig->Fill(lxySig,weight);
     hLxySigVsPtDs->Fill(ptDs, lxySig,weight);
-  }
+    hCosPointAngle->Fill(cosPA, weight);
+    hMass->Fill(mass, weight);
+}
 
   /// Destructor
   virtual ~HistoVertex() {}
@@ -512,7 +519,8 @@ public:
   TH1F *hLxy;
   TH1F *hLxySig;
   TH2F *hLxySigVsPtDs;
-
+  TH1F *hCosPointAngle;
+  TH1F *hMass;
 };
 
 

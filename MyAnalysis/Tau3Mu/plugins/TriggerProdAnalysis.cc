@@ -110,6 +110,7 @@ private:
 
   HistoVertex *hHLTDiMuonVertex;
   HistoVertex *hHLTTriTrackVertex;
+  TH1F *hNVtxMuMuTrk;
 
   int counter;
   int countInAccept;
@@ -183,6 +184,7 @@ void TriggerProdAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& i
 
   // count number of L1 Muons at correct BX
   // no matching to reco by now. it will require some attention for multiples match, and the phi at MS2
+  /*
   edm::Handle<l1extra::L1MuonParticleCollection> l1Muon; 
   ev.getByLabel(l1ExtraParticlesIntag, l1Muon);
 
@@ -198,7 +200,7 @@ void TriggerProdAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& i
     }
   }
   if(debug) cout<<"Found "<<nL1Muons<<" L1 Muons"<<endl;
-
+*/
   // check fired HLT paths
   edm::Handle<edm::TriggerResults> hltresults;
   ev.getByLabel(inputTr, hltresults);
@@ -268,7 +270,7 @@ void TriggerProdAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& i
         
 	  float significance = lxy/lxyerr;
 	  // FIXME: add plots lxy and signif vs Pt Ds
-	  hHLTDiMuonVertex->Fill(normChi2, vtxProb, lxy, significance, 0, 0, weight);
+	  hHLTDiMuonVertex->Fill(normChi2, vtxProb, lxy, significance, 0, 0, 0, weight);
 
   }
 
@@ -319,6 +321,42 @@ void TriggerProdAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& i
     cout << "# of tracks: " << tracks.size() << endl;
 
 
+
+
+
+    for(std::vector<RecoChargedCandidateRef>::const_iterator track = tracks.begin();
+	track != tracks.end(); ++track) {
+
+      /*
+      // Combined system
+      e1 = sqrt(trk1->momentum().Mag2()+MuMass2);
+      e2 = sqrt(trk2->momentum().Mag2()+MuMass2);
+      e3 = sqrt(trk3->momentum().Mag2()+thirdTrackMass2);
+			
+      p1 = Particle::LorentzVector(trk1->px(),trk1->py(),trk1->pz(),e1);
+      p2 = Particle::LorentzVector(trk2->px(),trk2->py(),trk2->pz(),e2);
+      p3 = Particle::LorentzVector(trk3->px(),trk3->py(),trk3->pz(),e3);
+			
+      p = p1+p2+p3;
+			
+
+      double eps(1.44e-4);
+
+      double dpt = a.pt() - b.pt();
+      dpt *= dpt;
+
+      double dphi = deltaPhi(a.phi(), b.phi()); 
+      dphi *= dphi; 
+
+      double deta = a.eta() - b.eta(); 
+      deta *= deta; 
+
+      if ((dpt + dphi + deta) < eps) {
+      return 1;
+      } 
+      */
+    
+    }
   }
 
   
@@ -330,9 +368,9 @@ void TriggerProdAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& i
   if(found3trkVertexColl) {
     threeTrackVertexColl = *threeTrackVertexCollHandle;
     cout << "#of 3trk vertices: " << threeTrackVertexColl.size() << endl;
-
+    hNVtxMuMuTrk->Fill(threeTrackVertexColl.size(),weight);
     // loop over vertex collection
-    for(reco::VertexCollection::iterator it = displacedVertexColl.begin(); it!= displacedVertexColl.end(); it++){
+    for(reco::VertexCollection::iterator it = threeTrackVertexColl.begin(); it!= threeTrackVertexColl.end(); it++){
       reco::Vertex vertex = *it;
 
       // get vertex position and error to calculate the decay length significance
@@ -362,15 +400,14 @@ void TriggerProdAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& i
 
       //calculate the angle between the decay length and the mumu momentum
       Vertex::Point vperp(displacementFromBeamspot.x(),displacementFromBeamspot.y(),0.);
-      math::XYZTLorentzVectorD  p = vertex.p4();   
+      math::XYZTLorentzVectorD  p = vertex.p4(0.);   
       math::XYZVector pperp(p.x(),p.y(),0.);
-
+      cout << "----- Mass: " << p.mass() << " pt: " << p.Pt() << endl;
       float cosAlpha = vperp.Dot(pperp)/(vperp.R()*pperp.R());
       
-      hHLTTriTrackVertex->Fill(normChi2, vtxProb, lxy, lxy/lxyerr, 0, cosAlpha, weight);
+      hHLTTriTrackVertex->Fill(normChi2, vtxProb, lxy, lxy/lxyerr, 0, cosAlpha,  p.mass(), weight);
       // FIXME: add mass and pt of the 3 tracks
-      // FIXME: add some printout and compare with the filter
- }		
+    }		
   }
 
 }
@@ -382,7 +419,7 @@ void TriggerProdAnalysis::beginJob() {
 
   hHLTDiMuonVertex = new HistoVertex("HLTDiMuonVertex",*fs);
   hHLTTriTrackVertex = new HistoVertex("HLTTriTrackVertex",*fs);
-
+  hNVtxMuMuTrk = fs->make<TH1F>("hNVtxMuMuTrk", "# vertices;# vertices; # events", 100,0,100);
 }
 
 
