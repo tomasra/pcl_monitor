@@ -113,10 +113,10 @@ private:
 
   TH1F* hpt, *hptMu,*hDiMuPt;
   TH1F* htotEff,* hDiMuEff, *hTrackEff;
-
+  TH1F* hgenDr;
   //
-  double diMuMassMin, diMuMassMax, diMuLxyMin,diMuLxySigMin,diMuVtxChi2Max, diMuVprobMin;
-  double diMuTrackMassMin, diMuTrackMassMax, diMuTrackLxyMin,diMuTrackLxySigMin,diMuTrackVtxChi2Max,diMuTrackVprobMin;
+  double diMuMassMin, diMuMassMax, diMuLxyMin, diMuLxyMax,diMuLxySigMin,diMuVtxChi2Max, diMuVprobMin;
+  double diMuTrackMassMin, diMuTrackMassMax, diMuTrackLxyMin,diMuTrackLxyMax,diMuTrackLxySigMin,diMuTrackVtxChi2Max,diMuTrackVprobMin;
   double MinTrackPt, MinMuPt;
   double Trackd0Max,Trackd0SigMin;
   double DRTracks;
@@ -182,6 +182,7 @@ Tau3MuAnalysis::Tau3MuAnalysis(const edm::ParameterSet& cfg) {
   diMuMassMin= cfg.getParameter<double> ("DiMuMassMin"); 
   diMuMassMax= cfg.getParameter<double> ("DiMuMassMax");  
   diMuLxyMin = cfg.getParameter<double> ("DiMuLxyMin"); 
+  diMuLxyMax = cfg.getParameter<double> ("DiMuLxyMax"); 
   diMuLxySigMin = cfg.getParameter<double> ("DiMuLxySigMin");
   diMuVtxChi2Max= cfg.getParameter<double> ("DiMuVtxChi2Max");
   diMuVprobMin= cfg.getParameter<double> ("DiMuVprobMin");
@@ -189,6 +190,7 @@ Tau3MuAnalysis::Tau3MuAnalysis(const edm::ParameterSet& cfg) {
   diMuTrackMassMin= cfg.getParameter<double> ("DiMuTrackMassMin"); 
   diMuTrackMassMax= cfg.getParameter<double> ("DiMuTrackMassMax"); 
   diMuTrackLxyMin = cfg.getParameter<double> ("DiMuTrackLxyMin");
+  diMuTrackLxyMax = cfg.getParameter<double> ("DiMuTrackLxyMax");
   diMuTrackLxySigMin = cfg.getParameter<double> ("DiMuTrackLxySigMin");
   diMuTrackVtxChi2Max= cfg.getParameter<double> ("DiMuTrackVtxChi2Max");
   diMuTrackVprobMin= cfg.getParameter<double> ("DiMuTrackVprobMin");
@@ -258,6 +260,7 @@ void Tau3MuAnalysis::findBestPiCand(const edm::Event& ev, const edm::EventSetup&
     tt.push_back(Builder->build(dimu[0].innerTrack()));
     tt.push_back(Builder->build(dimu[1].innerTrack()));
     tt.push_back(Builder->build(*it));
+
     ttpi=Builder->build(*it);
 
     Vertex diMuVtx=Vertex(tv);
@@ -287,7 +290,7 @@ void Tau3MuAnalysis::findBestPiCand(const edm::Event& ev, const edm::EventSetup&
 
     pair<double,double> lxytmp=Compute_Lxy_and_Significance(primaryVertex,tmpvtx,tot);
 
-    if (lxytmp.first < diMuTrackLxyMin) continue;
+    if (lxytmp.first < diMuTrackLxyMin || lxytmp.first > diMuTrackLxyMax ) continue;
     ntlxy++;
 
     if (lxytmp.first/lxytmp.second < diMuTrackLxySigMin) continue;
@@ -329,9 +332,15 @@ bool Tau3MuAnalysis::isMcMatched(const edm::Event& ev,TLorentzVector* recov){
   string mcTruthCollection = "genParticles";
   edm::Handle< reco::GenParticleCollection > genParticleHandle;
   ev.getByLabel(mcTruthCollection,genParticleHandle) ;
+
+  if (!(genParticleHandle.isValid())) return ThreeMatches;
+
   const reco::GenParticleCollection *genParticleCollection = genParticleHandle.product();
 
   reco::GenParticleCollection::const_iterator genPart;
+
+  if (debug) cout << "Loop on genPart" << endl;
+
   for(genPart=genParticleCollection->begin(); genPart!=genParticleCollection->end(); genPart++) {
     const reco::Candidate & cand = *genPart;
 
@@ -360,6 +369,8 @@ bool Tau3MuAnalysis::isMcMatched(const edm::Event& ev,TLorentzVector* recov){
   std::vector<int> recoIndexes;
   std::vector<int> genIndexes;
 
+  if (debug) cout << "Matching to reco objects" << endl;
+
   while (RunMatch){
 
     double dRtmp=0.05;
@@ -386,6 +397,8 @@ bool Tau3MuAnalysis::isMcMatched(const edm::Event& ev,TLorentzVector* recov){
 
 	double dR=recov[r].DeltaR(TheGenMus[g]);
 	if (dR < dRtmp){
+	  if (debug) cout << "Mc match found" << endl;
+	  hgenDr->Fill(dR);
 	  dRtmp=dR;
 	  indR=r;
 	  indG=g;
@@ -394,10 +407,12 @@ bool Tau3MuAnalysis::isMcMatched(const edm::Event& ev,TLorentzVector* recov){
     }
 
     if (dRtmp==0.05) RunMatch=false;
+
     else{
       recoIndexes.push_back(indR);
       genIndexes.push_back(indG);
     }
+
     if (genIndexes.size()==3) RunMatch=false;
   }
 
@@ -527,7 +542,7 @@ void Tau3MuAnalysis::findBestDimuon( const edm::EventSetup& iSetup,MuonCollectio
 
       if (debug) cout <<"vertex prob " <<vProb << endl;
 
-      if (lxytmp.first < diMuLxyMin) continue;
+      if (lxytmp.first < diMuLxyMin || lxytmp.first > diMuLxyMax) continue;
       ndmlxy++;
 
       if (lxytmp.first/lxytmp.second < diMuLxySigMin) continue;
@@ -535,7 +550,7 @@ void Tau3MuAnalysis::findBestDimuon( const edm::EventSetup& iSetup,MuonCollectio
 
       if (vProb < tmpProb) continue;
 
-      if (debug) cout << "DiMu found!!" << endl;
+      if (debug) cout << "Potential candidate found" << endl;
       tmpProb=vProb;
       one=i;
       two=j;
@@ -731,6 +746,10 @@ void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
 
     if (BestDiMu.size()!=2) return;
 
+    if (debug) cout << "DiMuons candidate found:" << endl;
+    if (debug) cout << "Mu1 -- eta: " << BestDiMu[0].innerTrack()->eta() << " phi: " << BestDiMu[0].innerTrack()->phi() << " pt: " << BestDiMu[0].innerTrack()->pt() << " q: " << BestDiMu[0].innerTrack()->charge() << endl; 
+    if (debug) cout << "Mu2 -- eta: "  << BestDiMu[1].innerTrack()->eta() << " phi: " << BestDiMu[1].innerTrack()->phi() << " pt: " << BestDiMu[1].innerTrack()->pt() << " q: " << BestDiMu[1].innerTrack()->charge() << endl;
+
     FoundDiMu++;
 
     bool TwoGood=false;
@@ -768,8 +787,11 @@ void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
       Offline++;
 
       if (debug) cout << "track muon found" << endl;
+      if (debug) cout << "eta " << pitrack.Eta() << " phi " << pitrack.Phi() << " pT " << pitrack.Pt() << endl;
 
       DiMuTrackMom = DiMuMom+pitrack;
+
+      if (debug) cout << " 3Mu Inv. Mass= " <<  DiMuTrackMom.M() << endl;
 
       TLorentzVector TotMomArray[3]={Mu1Mom, Mu2Mom, pitrack};
 
@@ -986,7 +1008,7 @@ void Tau3MuAnalysis::beginJob() {
   ExTree->Branch("IsMu1InPV",&_IsMu1InPV ,"_IsMu1InPV/B");
   ExTree->Branch("IsMu2InPV",&_IsMu2InPV ,"_IsMu2InPV/B");
   ExTree->Branch("IsMu3InPV",&_IsMu3InPV ,"_IsMu3InPV/B");
- 
+
   hpt= new TH1F("TrackPT","Track pT",250,0,50);
   hptMu= new TH1F("TrackMuPT","Track with MuId pT",250,0,50);
 
@@ -1000,8 +1022,11 @@ void Tau3MuAnalysis::beginJob() {
   hGoodDiMuTrackInvMass= new TH1F("hGoodDiMuTrackInvMass","Good DiMuon+Track Inv. Mass",100,diMuTrackMassMin,diMuTrackMassMax);
   hDiMuTrackInvMass= new TH1F("hDiMuTrackInvMass","DiMuon+Track Inv. Mass",100,diMuTrackMassMin,diMuTrackMassMax);
 
+  hgenDr= new TH1F("MatchDR","MatchDr",50,0,0.05);
  
-  if (OnlyGenMatchInTree)  htotEff=new TH1F("TotEff","Tot Eff",5,-0.5,4.5);
+  if (OnlyGenMatchInTree)  {
+    htotEff=new TH1F("TotEff","Tot Eff",5,-0.5,4.5);
+  }
 
   if (!OnlyGenMatchInTree){
     htotEff=new TH1F("TotEff","Tot Eff",4,-0.5,3.5);
@@ -1134,6 +1159,7 @@ Tau3MuAnalysis::endJob() {
   hptMu->Write();
   hDiMuPt->Write();
   htotEff->Write();
+  hgenDr->Write();
 
   if (!OnlyGenMatchInTree){
     hDiMuEff->Write();
@@ -1145,7 +1171,6 @@ Tau3MuAnalysis::endJob() {
   hDiMuTrackInvMass->Write();
   hGoodDiMuTrackInvMass->Write();
   hTriMuInvMass->Write();
-
   thefile->Write();
 
   //thefile->Close();
@@ -1154,6 +1179,8 @@ Tau3MuAnalysis::endJob() {
   delete hptMu;
   delete hDiMuPt;
   delete htotEff;
+  delete hgenDr;
+   
   if (!OnlyGenMatchInTree){
     delete hDiMuEff;
     delete hTrackEff;

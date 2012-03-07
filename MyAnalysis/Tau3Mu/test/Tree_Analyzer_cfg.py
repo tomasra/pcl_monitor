@@ -116,7 +116,7 @@ fileNames = cms.untracked.vstring(
     )
 )
 
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(300))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(1000))
 
 process.source.duplicateCheckMode = cms.untracked.string('noDuplicateCheck')
 
@@ -126,37 +126,39 @@ OutFileName=cms.string("OUT_Tree_SignalGenMatched.root"),
 
 Debug=cms.bool(False),
 
-SaveOnlyGenMatchedVar=cms.bool(False),
+SaveOnlyGenMatchedVar=cms.bool(True),
 
 OnlyOppositeChargeMuons=cms.bool(False), #False for tau->3mu, True for Ds->phi pi
 
 DiMuMassMin= cms.double(0.2),
 DiMuMassMax= cms.double(1.8),#1.8
 
-DiMuLxyMin= cms.double(-10),
-DiMuLxySigMin= cms.double(-10),
+DiMuLxyMin= cms.double(0),
+DiMuLxyMax= cms.double(0.5),
+DiMuLxySigMin= cms.double(3.),
 
-DiMuVtxChi2Max= cms.double(100),
-DiMuVprobMin=cms.double(0.00),
+DiMuVtxChi2Max= cms.double(10),
+DiMuVprobMin=cms.double(0.005),
 
 GuessForTrackMass=cms.double(0.1057), #Guess for the mass of the track | 0.1396 pion | 0.1057 muon |
 
 DiMuTrackMassMin= cms.double(1.7),
 DiMuTrackMassMax= cms.double(1.85),
 
-DiMuTrackLxyMin= cms.double(-10), #for now not used
-DiMuTrackLxySigMin= cms.double(-10), #for now not used
+DiMuTrackLxyMin= cms.double(0),
+DiMuTrackLxyMax= cms.double(0.7),
+DiMuTrackLxySigMin= cms.double(1.), 
 
-DiMuTrackVtxChi2Max= cms.double(100),
-DiMuTrackVprobMin=cms.double(0.0),
+DiMuTrackVtxChi2Max= cms.double(10),
+DiMuTrackVprobMin=cms.double(0.005),
 
-Trackd0Max= cms.double(100),
-Trackd0SigMin= cms.double(-10),
+Trackd0Max= cms.double(200),
+Trackd0SigMin= cms.double(-10.),
 
 MuPTCut=cms.double(1.0),
 TrackPTCut=cms.double(0.5),
 
-MaxDrForTrackCount=cms.double(0.5),
+MaxDrForTrackCount=cms.double(0.5),#not a real cut, is only for plotting
 
 HLT_paths = cms.vstring( # noting means passtrough
 #"HLT_Dimuon0_Omega_Phi_v3",
