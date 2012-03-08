@@ -25,6 +25,7 @@
 #include "DataFormats/BeamSpot/interface/BeamSpot.h"
 
 #include "DataFormats/Math/interface/deltaPhi.h"
+#include <TMath.h>
 
 #include "HLTMuMuTrkVertexFilter.h"
 
@@ -44,6 +45,7 @@ HLTMuMuTrkVertexFilter::HLTMuMuTrkVertexFilter(const edm::ParameterSet& iConfig)
   maxNormalisedChi2_(iConfig.getParameter<double>("MaxNormalisedChi2")),
   minLxySignificance_(iConfig.getParameter<double>("MinLxySignificance")),
   minCosinePointingAngle_(iConfig.getParameter<double>("MinCosinePointingAngle")),
+  minVtxProb_(iConfig.getParameter<double>("MinVtxProb")),
   minD0Significance_(iConfig.getParameter<double>("MinD0Significance")),
   fastAccept_(iConfig.getParameter<bool>("FastAccept")),
   beamSpotTag_ (iConfig.getParameter<edm::InputTag> ("BeamSpotTag"))
@@ -144,7 +146,7 @@ bool HLTMuMuTrkVertexFilter::hltFilter(edm::Event& iEvent, const edm::EventSetup
   	if ( trkcands->size()<1) break;
   
   	TrackRef trk1 = mucand1->get<TrackRef>();
-	cout << " 1st muon: q*pt= " << trk1->charge()*trk1->pt() << ", eta= " << trk1->eta() << ", hits= " << trk1->numberOfValidHits() << endl;
+	//	cout << " 1st muon: q*pt= " << trk1->charge()*trk1->pt() << ", eta= " << trk1->eta() << ", hits= " << trk1->numberOfValidHits() << endl;
 	LogDebug("HLTDisplacedMumukFilter") << " 1st muon: q*pt= " << trk1->charge()*trk1->pt() << ", eta= " << trk1->eta() << ", hits= " << trk1->numberOfValidHits();
   
   	// eta cut
@@ -158,7 +160,7 @@ bool HLTMuMuTrkVertexFilter::hltFilter(edm::Event& iEvent, const edm::EventSetup
   	for (RecoChargedCandidateCollection::const_iterator endCand2=mucands->end(); mucand2!=endCand2; ++mucand2) {
   
   		TrackRef trk2 = mucand2->get<TrackRef>();
-		cout <<  " 2nd muon: q*pt= " << trk2->charge()*trk2->pt() << ", eta= " << trk2->eta() << ", hits= " << trk2->numberOfValidHits() << endl;
+		// cout <<  " 2nd muon: q*pt= " << trk2->charge()*trk2->pt() << ", eta= " << trk2->eta() << ", hits= " << trk2->numberOfValidHits() << endl;
 		LogDebug("HLTDisplacedMumukFilter") << " 2nd muon: q*pt= " << trk2->charge()*trk2->pt() << ", eta= " << trk2->eta() << ", hits= " << trk2->numberOfValidHits();
 
 		// eta cut
@@ -197,7 +199,7 @@ bool HLTMuMuTrkVertexFilter::hltFilter(edm::Event& iEvent, const edm::EventSetup
   		for ( trkcand = trkcands->begin(), endCandTrk=trkcands->end(), isUsedIter = isUsedCand.begin(), endIsUsedCand = isUsedCand.end(); trkcand != endCandTrk && isUsedIter != endIsUsedCand; ++trkcand, ++isUsedIter) {
  
   			TrackRef trk3 = trkcand->get<TrackRef>();
-			cout << " 3rd track: q*pt= " << trk3->charge()*trk3->pt() << ", eta= " << trk3->eta() << ", hits= " << trk3->numberOfValidHits() << endl;
+			//			cout << " 3rd track: q*pt= " << trk3->charge()*trk3->pt() << ", eta= " << trk3->eta() << ", hits= " << trk3->numberOfValidHits() << endl;
  
 			LogDebug("HLTDisplacedMumukFilter") << " 3rd track: q*pt= " << trk3->charge()*trk3->pt() << ", eta= " << trk3->eta() << ", hits= " << trk3->numberOfValidHits();
  
@@ -230,7 +232,7 @@ bool HLTMuMuTrkVertexFilter::hltFilter(edm::Event& iEvent, const edm::EventSetup
  			double invmass = abs(p.mass());
 			
 			LogDebug("HLTDisplacedMumukFilter") << " Invmass= " << invmass;
-			cout << " Invmass= " << invmass << endl;
+
 			if (invmass>maxInvMass_ || invmass<minInvMass_) continue;
 			
 			// do the vertex fit
@@ -292,23 +294,37 @@ bool HLTMuMuTrkVertexFilter::hltFilter(edm::Event& iEvent, const edm::EventSetup
 			float cosAlpha = vperp.Dot(pperp)/(vperp.R()*pperp.R());
 			
 			LogDebug("HLTDisplacedMumukFilter") << " vertex fit normalised chi2: " << normChi2 << ", Lxy significance: " << lxy/lxyerr << ", cosine pointing angle: " << cosAlpha;
-			cout <<  " vertex fit normalised chi2: " << normChi2
-			     << ", Lxy significance: " << lxy/lxyerr
-			     << ", cosine pointing angle: " << cosAlpha << endl;
-			
+			double vtxProb = 0.0;
+			if( (vertex.chi2()>=0.0) && (vertex.ndof()>0) ) vtxProb = TMath::Prob(vertex.chi2(), vertex.ndof() );
+
 			if (normChi2 > maxNormalisedChi2_) continue;
 			if (lxy/lxyerr < minLxySignificance_) continue;
 			if(cosAlpha < minCosinePointingAngle_) continue;
-
-
-
-
+			if(vtxProb < minVtxProb_) continue;
 
 			// put vertex in the event
 			vertexCollection->push_back(vertex);
 			
 			LogDebug("HLTDisplacedMumukFilter") << " Event passed!";
+
 			cout << " Event passed!" << endl;
+			cout << " 1st muon: q*pt= " << trk1->charge()*trk1->pt()
+			     << ", eta= " << trk1->eta()
+			     << ", phi= " << trk1->phi()
+			     << ", hits= " << trk1->numberOfValidHits() << endl;
+			cout <<  " 2nd muon: q*pt= " << trk2->charge()*trk2->pt()
+			     << ", eta= " << trk2->eta() 
+			     << ", phi= " << trk2->phi()
+			     << ", hits= " << trk2->numberOfValidHits() << endl;
+			cout << " 3rd track: q*pt= " << trk3->charge()*trk3->pt()
+			     << ", eta= " << trk3->eta()
+			     << ", phi= " << trk3->phi()
+			     << ", hits= " << trk3->numberOfValidHits() << endl;
+			cout <<  " vertex fit normalised chi2: " << normChi2
+			     << ", Lxy significance: " << lxy/lxyerr
+			     << ", cosine pointing angle: " << cosAlpha << endl;
+			cout << " Invmass= " << invmass << endl;
+
 			//Add event
 			++counter;
  			
@@ -388,7 +404,8 @@ int HLTMuMuTrkVertexFilter::overlap(const reco::Candidate &a, const reco::Candid
   double deta = a.eta() - b.eta(); 
   deta *= deta; 
 
-  if ((dpt + dphi + deta) < eps) {
+  //  if ((dpt + dphi + deta) < eps) {
+  if ((dphi + deta) < eps) {
     return 1;
   } 
 
