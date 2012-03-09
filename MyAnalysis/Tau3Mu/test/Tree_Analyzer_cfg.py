@@ -11,6 +11,7 @@ process.GlobalTag.globaltag = 'START52_V2A::All'
 # Source
 process.source = cms.Source("PoolSource",
 fileNames = cms.untracked.vstring(
+    #"file:Reco_MinBias_cff_py_RAW2DIGI_RECO.root"
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_000.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_001.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_002.root",
@@ -65,13 +66,13 @@ fileNames = cms.untracked.vstring(
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_051.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_052.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_053.root",
-#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_054.root",
+##"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_054.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_055.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_056.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_057.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_058.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_059.root",
-#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_060.root",
+"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_060.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_061.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_062.root",
 ##"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_063.root",
@@ -79,18 +80,18 @@ fileNames = cms.untracked.vstring(
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_065.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_066.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_067.root",
-#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_068.root",
+##"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_068.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_069.root",
-#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_070.root",
+##"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_070.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_071.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_072.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_073.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_074.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_075.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_076.root",
-#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_077.root",
-"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_078.root",
-#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_079.root",
+###"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_077.root",
+##"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_078.root",
+###"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_079.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_080.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_081.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_082.root",
@@ -108,15 +109,41 @@ fileNames = cms.untracked.vstring(
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_094.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_095.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_096.root",
-#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_097.root",
+##"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_097.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_098.root",
 "rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsTau3Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_099.root"
+###
+#       
 #
-       
-    )
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_000.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_001.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_002.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_003.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_004.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_005.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_006.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_007.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_008.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_009.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_010.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_011.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_012.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_013.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_014.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_015.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_016.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_017.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_018.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_019.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_020.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_021.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_022.root",
+#"rfio:/castor/cern.ch/user/g/guiducci/Tau3Mu/52x/DsPhi2Mu_FASTSIM/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_023.root"
+#
+)
 )
 
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(1000))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(5000))
 
 process.source.duplicateCheckMode = cms.untracked.string('noDuplicateCheck')
 
@@ -126,7 +153,8 @@ OutFileName=cms.string("OUT_Tree_SignalGenMatched.root"),
 
 Debug=cms.bool(False),
 
-SaveOnlyGenMatchedVar=cms.bool(True),
+IsMC=cms.bool(True),     #Be sure you run on MC otherwise you get a crash!
+isSignal=cms.bool(True), #If true the gen matching is done on Signal else on Norm. sample
 
 OnlyOppositeChargeMuons=cms.bool(False), #False for tau->3mu, True for Ds->phi pi
 
@@ -142,8 +170,8 @@ DiMuVprobMin=cms.double(0.005),
 
 GuessForTrackMass=cms.double(0.1057), #Guess for the mass of the track | 0.1396 pion | 0.1057 muon |
 
-DiMuTrackMassMin= cms.double(1.7),
-DiMuTrackMassMax= cms.double(1.85),
+DiMuTrackMassMin= cms.double(1.6),
+DiMuTrackMassMax= cms.double(2.0),
 
 DiMuTrackLxyMin= cms.double(0),
 DiMuTrackLxyMax= cms.double(0.7),
@@ -156,7 +184,7 @@ Trackd0Max= cms.double(200),
 Trackd0SigMin= cms.double(-10.),
 
 MuPTCut=cms.double(1.0),
-TrackPTCut=cms.double(0.5),
+TrackPTCut=cms.double(1.0),
 
 MaxDrForTrackCount=cms.double(0.5),#not a real cut, is only for plotting
 
