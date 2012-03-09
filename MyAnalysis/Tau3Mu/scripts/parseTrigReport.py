@@ -23,7 +23,7 @@ gStyle.SetPadLeftMargin(0.12)
 
 
 if len(sys.argv)<2:
-    print 'Usage: parseTrigReport.py <data|mc> file1 file2 file...'
+    print 'Usage: parseTrigReport.py <data|mc> filelist'
     sys.exit()
 fnames=sys.argv[2:]
 mode=sys.argv[1]
@@ -70,24 +70,24 @@ for fname in fnames:
                     if (mode=='data'):
                         hhh[-1].SetBinContent(2,value+hhh[-1].GetBinContent(2))
 
-                if 'hltL1sL1DoubleMu0HighQ' in b:
+                if 'hltL1sL1DoubleMu0or33HighQ' in b:
                     value2=int(' '.join(b.split()).split(' ')[1])
                     if (mode=='mc'):
                         hhh[-1].SetBinContent(2,value2+hhh[-1].GetBinContent(2))
                     hhh[-1].SetBinContent(3,value+hhh[-1].GetBinContent(3))
-                if 'hltTauTo2MuL2PreFiltered0' in b:
+                if 'hltDimuon0or33L2PreFiltered0' in b:
                     hhh[-1].SetBinContent(4,value+hhh[-1].GetBinContent(4))
                 if 'hltTauTo2MuL3Filtered' in b:
                     hhh[-1].SetBinContent(5,value+hhh[-1].GetBinContent(5))
-                if 'hltDisplacedmumuFilterTauTo2Mu' in b:
+                if 'hltDisplacedmumuFilterDoubleMuTau2Mu' in b:
                     hhh[-1].SetBinContent(6,value+hhh[-1].GetBinContent(6))
-                if 'hltTauTo2MuTracFilter' in b:
+                if 'hltTau2MuTkMuMuTkFilter' in b:
                     hhh[-1].SetBinContent(7,value+hhh[-1].GetBinContent(7))
                 if 'hltBoolEnd' in b:
                     hhh[-1].SetBinContent(8,value+hhh[-1].GetBinContent(8))
 
   
-    hhh[-1].DrawCopy()
+    hhh[-1].DrawCopy("htext")
     ccc[-1].Update()
     ccc[-1].Print('count_'+str(fname.split('.')[0])+'.png')
     ccc.append(TCanvas())
@@ -98,7 +98,7 @@ for fname in fnames:
         hhh[-1].Scale(7089*1.0/hhh[-1].GetBinContent(3))
     if (mode=='mc'):
         hhh[-1].Scale(1.0/hhh[-1].GetBinContent(2))
-    hhh[-1].DrawCopy()
+    hhh[-1].DrawCopy("htext")
     ccc[-1].Update()
     ccc[-1].Print('norm_'+str(fname.split('.')[0])+'.png')
 
