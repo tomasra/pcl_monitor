@@ -7,7 +7,7 @@ gStyle.SetCanvasColor(0)
 gStyle.SetPalette(0)
 gStyle.SetCanvasBorderMode(0)
 gStyle.SetPadBorderMode(0)
-gStyle.SetPaintTextFormat("5.2f")
+gStyle.SetPaintTextFormat("5.3f")
 
 
 gStyle.SetLineWidth(2)
@@ -39,15 +39,15 @@ for fname in fnames:
     hhh.append(TH1D(fname,fname,10,0.5,10.5))
     if (mode=='data'):
         hhh[-1].GetXaxis().SetBinLabel(1,'Total')
-        hhh[-1].GetXaxis().SetBinLabel(2,'L1DoubleMu0HQ')
+        hhh[-1].GetXaxis().SetBinLabel(2,'hltL1sL1DoubleMu0or33HighQ')
     if (mode=='mc'):
         hhh[-1].GetXaxis().SetBinLabel(1,'')
         hhh[-1].GetXaxis().SetBinLabel(2,'Total')
-    hhh[-1].GetXaxis().SetBinLabel(3,'L1DoubleMu0erHQ')
-    hhh[-1].GetXaxis().SetBinLabel(4,'hltTauTo2MuL2PreFiltered0')
+    hhh[-1].GetXaxis().SetBinLabel(3,'hltL1sL1DoubleMu0or33HighQ')
+    hhh[-1].GetXaxis().SetBinLabel(4,'hltDimuon0or33L2PreFiltered0')
     hhh[-1].GetXaxis().SetBinLabel(5,'hltTauTo2MuL3Filtered')
-    hhh[-1].GetXaxis().SetBinLabel(6,'hltDisplacedmumuFilterTauTo2Mu')
-    hhh[-1].GetXaxis().SetBinLabel(7,'hltTauTo2MuTracFilter')
+    hhh[-1].GetXaxis().SetBinLabel(6,'hltDisplacedmumuFilterDoubleMuTauTo2Mu')
+    hhh[-1].GetXaxis().SetBinLabel(7,'hltTau2MuTkMuMuTkFilter')
     hhh[-1].GetXaxis().SetBinLabel(8,'hltBoolEnd')
     hhh[-1].GetYaxis().SetName('Events')
     if (mode=='data'):
