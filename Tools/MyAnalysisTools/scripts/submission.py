@@ -11,6 +11,18 @@ from Tools.MyAnalysisTools.color_tools import *
 import FWCore.ParameterSet.Config as cms
 
 
+class TaskConfig:
+    def __init__(self, taskName, cfgfile):
+        self.taskName      = taskName
+        self.version       = cfgfile.get('General','selFlag')
+        self.configFile    = cfgfile.get('General','configFile')
+        self.filesPerJob   = int(cfgfile.get('General','filesPerJob'))
+        self.outputDir     = cfgfile.get('General','outputDirBase') + '/' + self.version  + '/' + taskName
+        self.fileBaseName  = cfgfile.get('General','fileBaseName').split(',')
+        self.inputDir      = cfgfile.get(taskName,'inputDir')
+        self.queue         = cfgfile.get('General','queue')
+        self.isProduction  = False
+
 def createJobSetups(inputCfg, inputDir, outputDir, outputBaseName, JobName, nFilesPerJob, queue):
 
     JobName += "/"
@@ -49,8 +61,11 @@ def createJobSetups(inputCfg, inputDir, outputDir, outputBaseName, JobName, nFil
 
 
     castorFileList = []
-    storeDir = inputDir.split("cern.ch/cms")[1]
-    #storeDir = "rfio://" + inputDir
+    storeDir = ''
+    if 'cern.ch/cms' in inputDir:
+        storeDir = inputDir.split("cern.ch/cms")[1]
+    else:
+        storeDir = "rfio://" + inputDir
     for castorFileLine in castorDir_out[1].split("\n"):
         castorFile = castorFileLine.split()[8]
         if "root" in castorFile and not "histo" in castorFile:
@@ -98,6 +113,14 @@ def createJobSetups(inputCfg, inputDir, outputDir, outputBaseName, JobName, nFil
             expandedFile = file(cfgfilename,"w")
             expandedFile.write(expanded)
             expandedFile.close()
+
+            # zip it
+            gzip_cmd = "gzip " + cfgfilename
+            gzip_out = commands.getstatusoutput(gzip_cmd)
+            if gzip_out[0]:
+                print gzip_out[1]
+                sys.exit(1)
+                
             print "Writing submission script for job # " + str(indexJob) + "...."
             scriptname = "SubmissionJob_" +  str(indexJob) + ".csh"
             scriptfile = open(scriptname, 'w')
@@ -106,13 +129,20 @@ def createJobSetups(inputCfg, inputDir, outputDir, outputBaseName, JobName, nFil
             scriptfile.write("#BSUB -q " + queue + "\n")
             scriptfile.write("setenv runningDir $PWD\n")
             scriptfile.write("cd " +  submissionArea + "\n")
-            scriptfile.write("setenv SCRAM_ARCH slc5_amd64_gcc434 \n")
+            # FIXME: get the arch from env
+            scriptfile.write("setenv SCRAM_ARCH slc5_amd64_gcc462 \n")
             scriptfile.write("eval `scram runtime -csh`\n")
-            scriptfile.write("cp " + cfgfilename + " $runningDir\n")
+            scriptfile.write("cp " + cfgfilename + ".gz $runningDir\n")
             scriptfile.write("cd $runningDir\n")
+            scriptfile.write("gunzip " + cfgfilename + ".gz\n")
             scriptfile.write("cmsRun " + cfgfilename + "\n")
+            scriptfile.write("set CMSSW_EXIT = $status\n")
             scriptfile.write("rfcp " + outputFileNameTmp + " " + outputDir + outputFileName + "\n")
-            scriptfile.write("#rfcp histograms.root " + outputDir + "/histograms_" +  str(indexJob) + ".root\n")
+            scriptfile.write("set RFCP_EXIT = $status\n")
+            scriptfile.write("set EXIT = 0\n")
+            scriptfile.write("@ EXIT = $RFCP_EXIT + $CMSSW_EXIT\n")
+            scriptfile.write("exit $EXIT\n")
+            #scriptfile.write("rfcp MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU.root " + outputDir + "/MinBias_TuneZ2_DsTau3Mu_FASTSIM_HLT_PU_" +  str(indexJob) + ".root\n")
             scriptfile.write("\n")
             scriptfile.close()
             os.chmod(scriptname, 0777)
@@ -127,7 +157,31 @@ def createJobSetups(inputCfg, inputDir, outputDir, outputBaseName, JobName, nFil
 
 if __name__     ==  "__main__":
     # --- set the command line options
-    parser = OptionParser()
+    # description
+    usage = '\n'+\
+            '   * create Job Configurations from cfg file:\n'+ \
+            '     %prog [options] --file <conffile>\n\n'+ \
+            '   * submit jobs from cfg file:\n'+\
+            '     %prog [options] --queue <queue> --submit --file <conffile>\n\n'+\
+            '   * check job status:\n'+\
+            '     %prog [options] --status --file <conffile>\n\n'+\
+            '   * copy the output files of the various tasks in the cfg to a target dir.:\n'+\
+            '     %prog [options] --copy --file <conffile> <targetdir>\n\n'
+
+    revision = '$Revision: 1.11 $'
+    vnum = revision.lstrip('$')
+    vnum = vnum.lstrip('Revision: ')
+    vnum = vnum.rstrip(' $')
+    
+    version="%prog version: " + vnum
+    description = "Create one or more GTs starting from the conf file. The destination can be an sqlite or can be modified to write to oracle"
+    
+    # instantiate the parser
+    parser = OptionParser(usage=usage, version=version, description=description)
+                                      
+
+
+    #parser = OptionParser()
 
     parser.add_option("-q", "--queue", dest="queue",
                       help="queue", type="str", metavar="<queue>")
@@ -143,6 +197,10 @@ if __name__     ==  "__main__":
                       help="job name", type="str", metavar="<job name>")
     parser.add_option("-f", "--file-basename", dest="basename",
                       help="file basename", type="str", metavar="<file basename>")
+    parser.add_option("-n", "--n-jobs", dest="njobs",
+                      help="# of jobs", type="int", metavar="<# jobs>")
+
+
 
     parser.add_option("--submit", action="store_true",dest="submit",default=False, help="submit the jobs")
     parser.add_option("--copy", action="store_true",dest="copy",default=False, help="copy the output of the jobs from castor to a local dir (argument)")
@@ -154,99 +212,81 @@ if __name__     ==  "__main__":
 
     (options, args) = parser.parse_args()
 
-    if options.status:
-
-        if options.file != None:
-            print 'Reading configuration file from ',options.file
-            # read a global configuration file
-            cfgfile = ConfigParser()
-            cfgfile.optionxform = str
-
-            cfgfile.read([options.file ])
-            
-            # get the releases currently managed
-            listOfJobs = cfgfile.get('General','jobsToSubmit').split(',')
-            flag = cfgfile.get('General','selFlag')
-            configFile = cfgfile.get('General','configFile')
-            filesPerJob = int(cfgfile.get('General','filesPerJob'))
-            outputDirBase = cfgfile.get('General','outputDirBase')
-            fileBaseName = cfgfile.get('General','fileBaseName')
-            queue = cfgfile.get('General','queue')
-
-            for job in listOfJobs:
-                print "--- Task name: " + blue(job) + "  (" + flag + "_" + job + ")"
-                status = ok("OK")
-                ls_cmd = "ls " + flag + "_" + job
-                ls_out = commands.getstatusoutput(ls_cmd)
-                nJobs = 0
-                if ls_out[0] == 0:
-                    lslines = ls_out[1].split("\n")
-                    for lsline in lslines:
-                        if "SubmissionJob" in lsline:
-                            nJobs += 1
-                else:
-                    print ls_out[1]
-                print "    # of jobs: " + str(nJobs)
-                outdir = outputDirBase + "/" + flag + "/" + job + "/"
-
-                bjobs_cmd = "bjobs -J " + flag + "_" + job
-                bjobs_out = commands.getstatusoutput(bjobs_cmd)
-                if bjobs_out[0] == 0:
-                    if not "not found" in bjobs_out[1]:
-                        print bjobs_out[1]
-                else:
-                    print bjobs_out[1]
-                pending = False
-                if len(bjobs_out[1].split("\n")) > 1:
-                    status = warning("PENDING")
-                    pending = True
-
-                print "    Output dir: " + outdir
-                rfdir_cmd = "rfdir " + outdir
-                nOutFile = 0
-                outCastorDir_out = commands.getstatusoutput(rfdir_cmd)
-                if outCastorDir_out[0] == 0:
-                    castorLines = outCastorDir_out[1].split("\n")
-                    if len(castorLines) != 0:
-                        for castorFileLine in castorLines:
-                            if 'cerminar' in castorFileLine and "root" in castorFileLine:
-                                print "        - " + castorFileLine.split()[8]
-                                nOutFile += 1
-                else:
-                    print outCastorDir_out[1]
-                print "    # of output files: " + str(nOutFile)
-                if nOutFile != nJobs and not pending:
-                    status = error("ERROR")
-                print "    Status: " + status
-
-                
-            sys.exit(0)
-                
-    if options.copy:
-        if options.file == None:
-            print "no cfg file specified!"
-            sys.exit(1)
-
-        
+    taskCfgList = []
+    # read the configuration file
+    if options.file != None:
+        print 'Reading configuration file from ',options.file
         # read a global configuration file
         cfgfile = ConfigParser()
         cfgfile.optionxform = str
-
-        print 'Reading configuration file from ',options.file
+        
         cfgfile.read([options.file ])
-
+        
         # get the releases currently managed
-        listOfJobs = cfgfile.get('General','jobsToSubmit').split(',')
-        flag = cfgfile.get('General','selFlag')
-        configFile = cfgfile.get('General','configFile')
-        filesPerJob = int(cfgfile.get('General','filesPerJob'))
-        outputDirBase = cfgfile.get('General','outputDirBase')
-        fileBaseName = cfgfile.get('General','fileBaseName')
-        queue = cfgfile.get('General','queue')
+        taskToSubmit = cfgfile.get('General','jobsToSubmit').split(',')
+        for task in taskToSubmit:
+            taskCfg = TaskConfig(task, cfgfile)
+            taskCfgList.append(taskCfg)
+        print "# tasks: " + str(len(taskCfgList))
 
-        for job in listOfJobs:
-            inputDir = cfgfile.get(job,'inputDir')
-            rfdir_cmd = "rfdir " + outputDirBase + "/" + flag + "/" + job + "/"
+    # check the status of the jobs for each particular task
+    if options.status:
+        for taskCfg in taskCfgList:
+            task = taskCfg.taskName
+            flag = taskCfg.version
+            print "--- Task name: " + blue(task) + "  (" + taskCfg.version + "_" + task + ")"            
+            status = ok("OK")
+            ls_cmd = "ls " + flag + "_" + task
+            ls_out = commands.getstatusoutput(ls_cmd)
+            nJobs = 0
+            if ls_out[0] == 0:
+                lslines = ls_out[1].split("\n")
+                for lsline in lslines:
+                    if "SubmissionJob" in lsline:
+                        nJobs += 1
+            else:
+                print ls_out[1]
+            print "    # of jobs: " + str(nJobs)
+
+            bjobs_cmd = "bjobs -J " + flag + "_" + task
+            bjobs_out = commands.getstatusoutput(bjobs_cmd)
+            if bjobs_out[0] == 0:
+                if not "not found" in bjobs_out[1]:
+                    print bjobs_out[1]
+            else:
+                print bjobs_out[1]
+            pending = False
+            if len(bjobs_out[1].split("\n")) > 1:
+                status = warning("PENDING")
+                pending = True
+
+            print "    Output dir: " + taskCfg.outputDir
+            rfdir_cmd = "rfdir " + taskCfg.outputDir
+            nOutFile = 0
+            outCastorDir_out = commands.getstatusoutput(rfdir_cmd)
+            if outCastorDir_out[0] == 0:
+                castorLines = outCastorDir_out[1].split("\n")
+                if len(castorLines) != 0:
+                    for castorFileLine in castorLines:
+                        if 'cerminar' in castorFileLine and "root" in castorFileLine:
+                            print "        - " + castorFileLine.split()[8]
+                            nOutFile += 1
+            else:
+                print outCastorDir_out[1]
+            print "    # of output files: " + str(nOutFile)
+            if nOutFile != nJobs and not pending:
+                status = error("ERROR")
+            print "    Status: " + status
+        sys.exit(0)
+
+    # copy to the target directory the output files of all the tasks listed in the cfg file
+    if options.copy:
+        # read the target directory from command line
+        targetDir = args[0]
+        for taskCfg in taskCfgList:
+            task = taskCfg.taskName
+            # list the content of the output directory
+            rfdir_cmd = "rfdir " + taskCfg.outputDir
             outCastorDir_out = commands.getstatusoutput(rfdir_cmd)
             if outCastorDir_out[0] != 0:
                 print outCastorDir_out[1]
@@ -259,28 +299,37 @@ if __name__     ==  "__main__":
                 for castorFileLine in castorLines:
                     if 'root' in castorFileLine:
                         castorFile = castorFileLine.split()[8]
-                        if "root" in castorFile and fileBaseName in castorFile:
-                            filesToCopy.append(outputDirBase + "/" + flag + "/" + job + "/" + castorFile)
+                        if "root" in castorFile:
+                            for filebase in taskCfg.fileBaseName:
+                                if filebase in castorFile:
+                                    filesToCopy.append(taskCfg.outputDir + '/' +castorFile)
                             
             else:
-                print "dir empty..."
+                print 'dir ' + taskCfg.outputDir + " empty..."
 
             # do the actual copy
             unique = False
             if len(filesToCopy) == 1:
                 unique = True
 
+            
+
             for filename in filesToCopy:
-                cp_cmd = "xrdcp root://castorcms/" + filename + " " + args[0]
+                fileBaseName = ''
+                for namebase in taskCfg.fileBaseName:
+                    if namebase in filename:
+                        fileBaseName = namebase
+                
+                cp_cmd = "xrdcp root://castorcms/" + filename + " " + targetDir
                 outputFile = ""
                 if unique:
-                    outputFile = fileBaseName + "_" + job + ".root"
+                    outputFile = fileBaseName + "_" + task + ".root"
                 else:
-                    outputFile = fileBaseName + "_" + job + filename.split(fileBaseName)[1]
+                    outputFile = fileBaseName + "_" + task + filename.split(fileBaseName)[1]
                 cp_cmd += "/" + outputFile
                 
-                if os.path.exists(args[0] + "/" + outputFile):
-                      print "*** Warning, the file: " + args[0] + "/" + outputFile + " already exists!"
+                if os.path.exists(targetDir + "/" + outputFile):
+                      print "*** Warning, the file: " + targetDir + "/" + outputFile + " already exists!"
                       confirm = raw_input('Overwrite? (y/N)')
                       confirm = confirm.lower() #convert to lowercase
                       if confirm != 'y':
@@ -338,8 +387,8 @@ if __name__     ==  "__main__":
                         time.sleep(10)
                         counterSub += 1
                         if counterSub == 10:
-                            print "will wait 500 sec....sorry!"
-                            time.sleep(500)
+                            print "will wait 50 sec....sorry!"
+                            time.sleep(50)
                             counterSub = 0
                 os.chdir(pwd)
                 
