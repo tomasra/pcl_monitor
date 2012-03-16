@@ -23,23 +23,59 @@ def stripws(myinput):
     result=('').join(myinput.split(' '))
     result=('').join(result.split('\n'))
     return result
+def convertCommaInsideBraket(metadatastr, replacementText):
+    if metadatastr.find(replacementText) != -1:
+        print "Error, TEMPORARY_REPLACEMENT_TEXT found in the string, edit the code and change the string used in the parser."
+        os.exit(1)
+    newmetadatastr = ''
+    insideBraket = False
+    for element in metadatastr:
+        toSave = element
+        if insideBraket:
+            if element == ">":
+                insideBraket = False
+            elif element == ",":
+                toSave = replacementText
+        elif element == "<":
+            insideBraket = True
+        newmetadatastr += toSave
+    # print "newmetadatastr = ", newmetadatastr
+    return newmetadatastr
 def converttagdata(value):
     mytagdata={}
     startbrack=value.find('{')
     endbrack=value.find('}')
     metadatastr=value[startbrack+1:endbrack]
     mytagdata['tagname']=value[0:startbrack]
-    metadatalist=metadatastr.split(',')
-    for pair in metadatalist:
-        #print pair
+    # print "metadatastr =", metadatastr
+    replacementText="TEMPORARY_REPLACEMENT_TEXT"
+    newmetadatastr = convertCommaInsideBraket(metadatastr, replacementText)
+    metadatalist=newmetadatastr.split(',')
+    for rawPair in metadatalist:
+        pair = rawPair.replace(replacementText, ',')
+        # print "pair =", pair
         mydata=pair.split('=',1)
         mytagdata[mydata[0]]=mydata[1]
     return mytagdata
+# def converttagdata(value):
+#     mytagdata={}
+#     startbrack=value.find('{')
+#     endbrack=value.find('}')
+#     metadatastr=value[startbrack+1:endbrack]
+#     mytagdata['tagname']=value[0:startbrack]
+#     metadatalist=metadatastr.split(',')
+#     print "medadatalist =", metadatalist
+#     for pair in metadatalist:
+#         print "pair =", pair
+#         mydata=pair.split('=',1)
+#         mytagdata[mydata[0]]=mydata[1]
+#     return mytagdata
 def converttagcollection(value):
     cleanvalue=stripws(value)
     mytagcollection=[]
     taglist=cleanvalue.split(';')
     for tagdata in taglist:
+        print "adding tagdata:", tagdata
         mytagcollection.append(converttagdata(tagdata))
     return mytagcollection
 def check_tagdata(option, opt, value):
