@@ -262,8 +262,11 @@ if __name__     ==  "__main__":
                 # get list of plugin libraries
 
                 objectRecords = getObjectsAndRecords(swScramArch, maxRel)    
-                obj = ""    
-                listiovout = listIov("oracle://cms_orcoff_prod/" + options.newaccount, options.newtag, passwdfile)
+                obj = ""
+                listiovout = listIov("oracle://cms_orcon_adg/" + options.newaccount, options.newtag, passwdfile)
+                # listiovout = listIov("oracle://cms_orcoff_prod/" + options.newaccount, options.newtag, passwdfile)
+                if listiovout[0] != 0:
+                    listiovout = listIov("oracle://cms_orcoff_prod/" + options.newaccount, options.newtag, passwdfile)
                 if listiovout[0] != 0:
                     listiovout = listIov("oracle://cms_orcoff_prep/" + options.newaccount, options.newtag, passwdfile)
 

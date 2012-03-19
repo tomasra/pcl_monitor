@@ -66,7 +66,7 @@ if __name__     ==  "__main__":
     swScramArch         = config.get('Common','scramArch')
     passwd              = config.get('Common','Passwd')
 
-
+    testScramArch       = os.environ["SCRAM_ARCH"]
     
     GTCREATIONAREA = gpnArea + cmsswVersion + "/src"
     GTVALIDATIONAREA =  config.get("Common","testArea")
@@ -92,7 +92,7 @@ if __name__     ==  "__main__":
         for scenario in options.scenario:
             cfgfile = "GT_branches/GT_" + release + "_" + scenario + ".cfg"
 
-            confbuild_cmd = "cmsenv; gtConfManager.py --force " + cfgfile
+            confbuild_cmd = "echo $SCRAM_ARCH; cmsenv; gtConfManager.py --force " + cfgfile
             print confbuild_cmd
             confbuild_out = executeCommad(confbuild_cmd)
             gtchanges.append(confbuild_out[1])
@@ -135,8 +135,8 @@ if __name__     ==  "__main__":
             relType = "nightly"
 
         # get the list of available release
-        releasesAndArea = getReleaseList(swScramArch, relType)
-        #print releases
+        releasesAndArea = getReleaseList(testScramArch, relType)
+        #print releasesAndArea
         maxRel = getLastRelease(releasesAndArea, release)
         releaseVal1 = maxRel[0]
 
@@ -151,7 +151,7 @@ if __name__     ==  "__main__":
         runDir = GTVALIDATIONAREA + '/' + topdirname + '/' + releaseVal1 + '/src/'
         relDir = GTVALIDATIONAREA + '/' + topdirname + '/' + releaseVal1 +'/'
         
-        gtvalidation_cmd = 'ssh lxbuild170 "cd ' + GTVALIDATIONAREA + '; gtValidation.py -f ' + tagfile + ' -r ' + releaseVal1 + ' --auto ' + gtlistnames + '"'
+        gtvalidation_cmd = 'ssh lxbuild170 "cd ' + GTVALIDATIONAREA + '; setenv SCRAM_ARCH ' + testScramArch + '; gtValidation.py -f ' + tagfile + ' -r ' + releaseVal1 + ' --auto ' + gtlistnames + '"'
 
         print gtvalidation_cmd
         gtvalidation_out = executeCommad(gtvalidation_cmd)

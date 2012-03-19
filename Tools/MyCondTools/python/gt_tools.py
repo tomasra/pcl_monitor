@@ -112,7 +112,7 @@ def convertnodecollection(value):
 # python wrappers of cmscon commands
 
 def listIov(connect, tag, passwd):
-    listiovCommand = 'cmscond_list_iov -c ' + connect + '  -t ' + tag
+    listiovCommand = 'export TNS_ADMIN=/afs/cern.ch/project/oracle/admin; cmscond_list_iov -c ' + connect + '  -t ' + tag
     if passwd != 'None' and passwd != '':
         listiovCommand = listiovCommand + ' -P ' + passwd
     statusAndOutput = commands.getstatusoutput(listiovCommand)
@@ -344,20 +344,24 @@ class GTEntry:
     def getOraclePfn(self, online):
         if online == False:
             if self._connstring == 'frontier://FrontierPrep':
-                oracleConn =  'oracle://cms_orcoff_prep'
+                # oracleConn =  'oracle://cms_orcoff_prep'
+                oracleConn =  'oracle://cms_orcon_adg'
             elif self._connstring == 'frontier://FrontierInt':
                 oracleConn =  'oracle://cms_orcoff_int'
             elif self._connstring == 'frontier://FrontierArc':
                 # no change is needed since it is anyhow frozen
                 oracleConn =  'frontier://FrontierArc'
             else:
-                oracleConn =  'oracle://cms_orcoff_prod'
+                # oracleConn =  'oracle://cms_orcoff_prod'
+                oracleConn =  'oracle://cms_orcon_adg'
 
         elif online == True:
             if self._connstring == 'frontier://FrontierProd':
-                oracleConn =  'oracle://cms_orcon_prod'
+                # oracleConn =  'oracle://cms_orcon_prod'
+                oracleConn =  'oracle://cms_orcon_adg'
             elif self._connstring == 'frontier://FrontierPrep':
-                oracleConn =  'oracle://cms_orcoff_prep'
+                # oracleConn =  'oracle://cms_orcoff_prep'
+                oracleConn =  'oracle://cms_orcon_adg'
 
         return oracleConn + '/' + self._account
 
