@@ -21,7 +21,7 @@ from Tools.MyCondTools.odict import *
 
 def dump2XML(gt, pfn, tag, passwd, begin, end = -1):
     scratch = os.environ["SCRATCH"]
-    cmscond_cmd = "export TNS_ADMIN=/afs/cern.ch/project/oracle/admin; cmscond_2XML -c " + pfn + " -t " + tag + " -b " + str(begin) + " -P " + passwd
+    cmscond_cmd = "export TNS_ADMIN=/afs/cern.ch/cms/DB/conddb; cmscond_2XML -c " + pfn + " -t " + tag + " -b " + str(begin) + " -P " + passwd
     if end != -1:
         cmscond_cmd += " -e " + str(end)
     command = "cd " + scratch + " ; " + cmscond_cmd + "; mv " + tag + ".xml " + tag + "_" + gt + ".xml"
