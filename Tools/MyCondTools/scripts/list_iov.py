@@ -22,7 +22,7 @@ def main():
     
     parser.add_option("-P", "--passwdfile", dest="passwdfile",
                       help="password file",
-                      type="str", metavar="<passwdfile>",default="/afs/cern.ch/cms/DB/conddb")
+                      type="str", metavar="<passwdfile>",default="/afs/cern.ch/cms/DB/conddb/ADG")
 
     (options, args) = parser.parse_args()
 
