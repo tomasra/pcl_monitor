@@ -187,8 +187,8 @@ if __name__     ==  "__main__":
     globaltag1 = args[0]
     globaltag2 = args[1]
     
-    #print "Compare "
-    #print "      GT 1: " + globaltag1 + " with GT 2: " + globaltag2
+    # print "Compare "
+    # print "      GT 1: " + globaltag1 + " with GT 2: " + globaltag2
 
     filename1 = globaltag1 + '.conf'
     filename2 = globaltag2 + '.conf'

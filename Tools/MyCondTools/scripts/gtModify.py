@@ -266,7 +266,8 @@ if __name__     ==  "__main__":
                 listiovout = listIov("oracle://cms_orcon_adg/" + options.newaccount, options.newtag, passwdfile)
                 # listiovout = listIov("oracle://cms_orcoff_prod/" + options.newaccount, options.newtag, passwdfile)
                 if listiovout[0] != 0:
-                    listiovout = listIov("oracle://cms_orcoff_prod/" + options.newaccount, options.newtag, passwdfile)
+                    listiovout = listIov("oracle://cms_orcon_adg/" + options.newaccount, options.newtag, passwdfile)
+                    # listiovout = listIov("oracle://cms_orcoff_prod/" + options.newaccount, options.newtag, passwdfile)
                 if listiovout[0] != 0:
                     listiovout = listIov("oracle://cms_orcoff_prep/" + options.newaccount, options.newtag, passwdfile)
 

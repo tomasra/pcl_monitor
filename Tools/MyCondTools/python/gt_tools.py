@@ -75,7 +75,7 @@ def converttagcollection(value):
     mytagcollection=[]
     taglist=cleanvalue.split(';')
     for tagdata in taglist:
-        print "adding tagdata:", tagdata
+        # print "adding tagdata:", tagdata
         mytagcollection.append(converttagdata(tagdata))
     return mytagcollection
 def check_tagdata(option, opt, value):
