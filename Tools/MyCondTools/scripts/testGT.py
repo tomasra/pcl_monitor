@@ -33,7 +33,7 @@ def modifyCfgs(wf, GT, local):
                                     line = ""
                                 # To make the test work offline.
                                 if GT.startswith("GR_H") != -1:
-                                    line += "process.GlobalTag.pfnPrefix = cms.untracked.string('frontier://FrontierProd/')"
+                                    line += "process.GlobalTag.pfnPrefix = cms.untracked.string('frontier://FrontierProd/')\n"
                         print line,
     return testDir, cfgList
 
