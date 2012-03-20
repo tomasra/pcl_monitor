@@ -71,183 +71,8 @@ def duplicateWorkflowForGTTest(matrixreader, wfid, newwfid, gtName, isLocal=Fals
             else:
                 # old versin of the API
                 matrixreader.workFlows.append(WorkFlow(str(newwfid), newWfname, modifyCommandForGT(wf.cmdStep1,gtName, isLocal), modifyCommandForGT(wf.cmdStep2,gtName, isLocal), modifyCommandForGT(wf.cmdStep3,gtName, isLocal), modifyCommandForGT(wf.cmdStep4,gtName, isLocal)))
-
-
-def runGTSelectionFrom52(gts, gtmap, isLocal, nThreads=4, original=False, show=False):
-
-    print "new release"
-    stdList = ['5.2', # SingleMu10 FastSim
-               '7',   # Cosmics+RECOCOS+ALCACOS
-               '8',   # BeamHalo+RECOCOS+ALCABH
-               '25',  # TTbar+RECO2+ALCATT2  STARTUP
-               ]
-    hiStatList = [
-                  '121',   # TTbar_Tauola
-                  '123.3', # TTBar FastSim
-                   ]
-
-
-
-
-
-
-
-    import optparse
-    usage = 'usage: runTheMatrix.py --show -s '
-
-    # parser = optparse.OptionParser(usage)
-
-    parser.add_option('-j','--nproc',
-                      help='number of threads. 0 Will use 4 threads, not execute anything but create the wfs',
-                      dest='nThreads',
-                      default=4
-                     )
-    parser.add_option('-n','--showMatrix',
-                      help='Only show the worflows. Use --ext to show more',
-                      dest='show',
-                      default=False,
-                      action='store_true'
-                      )
-    parser.add_option('-e','--extended',
-                      help='Show details of workflows, used with --show',
-                      dest='extended',
-                      default=False,
-                      action='store_true'
-                      )
-    parser.add_option('-s','--selected',
-                      help='Run a pre-defined selected matrix of wf',
-                      dest='restricted',
-                      default=False,
-                      action='store_true'
-                      )
-    parser.add_option('-l','--list',
-                     help='Coma separated list of workflow to be shown or ran',
-                     dest='testList',
-                     default=None
-                     )
-    parser.add_option('-r','--raw',
-                      help='Temporary dump the .txt needed for prodAgent interface. To be discontinued soon. Argument must be the name of the set (standard, pileup,...)',
-                      dest='raw'
-                      )
-    parser.add_option('-i','--useInput',
-                      help='Use recyling where available',
-                      dest='useInput',
-                      default=None
-                      )
-    parser.add_option('-w','--what',
-                      help='Specify the set to be used. Argument must be the name of the set (standard, pileup,...)',
-                      dest='what',
-                      default='all'
-                      )
-    parser.add_option('--step1',
-                      help='Used with --raw. Limit the production to step1',
-                      dest='step1Only',
-                      default=False
-                      )
-    parser.add_option('--fromScratch',
-                      help='Coma separated list of wf to be run without recycling',
-                      dest='fromScratch',
-                      default=None
-                       )
-    parser.add_option('--refRelease',
-                      help='Allow to modify the recycling dataset version',
-                      dest='refRel',
-                      default=None
-                      )
-    parser.add_option('--wmcontrol',
-                      help='Create the workflows for injection to WMAgent. In the WORKING. -wmcontrol init will create the the workflows, -wmcontrol test will dryRun a test, -wmcontrol submit will submit to wmagent',
-                      dest='wmcontrol',
-                      default=None,
-                      )
-    parser.add_option('--command',
-                      help='provide a way to add additional command to all of the cmsDriver commands in the matrix',
-                      dest='command',
-                      default=None
-                      )
-    parser.add_option('--workflow',
-                      help='define a workflow to be created or altered from the matrix',
-                      action='append',
-                      dest='workflow',
-                      default=None
-                      )
-    
-    opt,args = parser.parse_args()
-    if opt.testList: opt.testList = map(float,opt.testList.split(','))
-    if opt.restricted:
-        limitedMatrix=[5.1, #FastSim ttbar
-                       8, #BH/Cosmic MC
-                       25, #MC ttbar
-                       4.22, #cosmic data
-                       4.291, #hlt data
-                       1000, #data+prompt
-                       1001, #data+express
-                       4.53, #HI data
-                       40, #HI MC
-                       ]
-        if opt.testList:
-            opt.testList.extend(limitedMatrix)
-        else:
-            opt.testList=limitedMatrix
-    if opt.useInput: opt.useInput = opt.useInput.split(',')
-    if opt.fromScratch: opt.fromScratch = opt.fromScratch.split(',')
-    if opt.nThreads: opt.nThreads=int(opt.nThreads)
-
-    # if opt.wmcontrol:
-    #     if opt.show:
-    #         print 'Not injecting to wmagent in --show mode. Need to run the worklfows.'
-    #         sys.exit(-1)
-    #     if opt.wmcontrol=='submit' and opt.nThreads==0:
-    #         print 'Not injecting to wmagent in -j 0 mode. Need to run the worklfows.'
-    #         sys.exit(-1)
-    #     if opt.wmcontrol=='init':        opt.nThreads=0
-
-        
-    # # some sanity checking:
-    # if opt.useInput and opt.useInput != 'all' :
-    #     for item in opt.useInput:
-    #         if opt.fromScratch and item in opt.fromScratch:
-    #             print 'FATAL error: request to run workflow ',item,'from scratch and using input. '
-    #             sys.exit(-1)
-
-    # if opt.raw and opt.show: ###prodAgent to be discontinued
-    #     ret = showRaw(opt)
-    # else:
-    #     ret = runSelected(opt)
-
-
-
-
-    mrd = MatrixReader(opt)
-    mrd.prepare(opt.useInput, opt.refRel, opt.fromScratch)
-
-    testList = []
-    index = 10000
-    for gt in gts:
-        # print "about to duplicate: " + gt
-        wfidtodup = gtmap[gt]
-        # add the workflows for the test of the GT (local)
-        if wfidtodup == 40:
-            index = 40
-        duplicateWorkflowForGTTest(mrd, wfidtodup, index, gt, isLocal) 
-        if original:
-            testList.append(wfidtodup)
-        else:
-            testList.append(index)
-        index = index + 1
-
-    if len(testList) == 0 :
-        print "No process selected"
-        return 0
-
-    ret = 0
-    if show:
-        mrd.show([float(x) for x in testList])
-        print 'selected items:', testList
-    else:
-        mRunnerHi = MatrixRunner(mrd.workFlows, nThreads)
-        ret = mRunnerHi.runTests(testList)
-
-    return ret
+                                              
+                                              
 
 
 def runGTSelectionNew(gts, gtmap, isLocal, nThreads=4, original=False, show=False, useInput=None) :
@@ -411,17 +236,13 @@ if __name__ == '__main__':
     print gts
     #sys.exit(0)
 
+
+
     np=4 # default: four threads
     releasearea = os.environ["CMSSW_BASE"]
 
-    if 'CMSSW_3_6' in releasearea or 'CMSSW_3_7' in  releasearea :
+    if 'CMSSW_3_6' in  releasearea or 'CMSSW_3_7' in  releasearea :
         ret = runGTSelection(gts, globaltagsandWfIds, options.local, np, options.original, options.show)
-    elif 'CMSSW_3' in releasearea or 'CMSSW_4' in releasearea or 'CMSSW_5_0' in releasearea or 'CMSSW_5_1' in releasearea:
-        ret = runGTSelectionNew(gts, globaltagsandWfIds, options.local, np, options.original, options.show)
     else:
-<<<<<<< gtRunTheMatrix.py
-        ret = runGTSelectionFrom52(gts, globaltagsandWfIds, options.local, np, options.original, options.show)
-=======
         ret = runGTSelectionNew(gts, globaltagsandWfIds, options.local, np, options.original, options.show, useInput)
->>>>>>> 1.11
     #sys.exit(ret)
