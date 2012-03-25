@@ -36,6 +36,7 @@
 #include "TrackingTools/TransientTrack/interface/TransientTrack.h"
 #include "TrackingTools/IPTools/interface/IPTools.h"
 #include <DataFormats/VertexReco/interface/VertexFwd.h>
+#include <TrackingTools/TrajectoryState/interface/TrajectoryStateClosestToPoint.h>
 
 #include "FWCore/Common/interface/TriggerNames.h"
 
@@ -100,7 +101,7 @@ private:
   virtual void vtx(std::vector<TransientTrack>&, GlobalPoint &, GlobalError &);
   virtual pair<double,double> Compute_Lxy_and_Significance(Vertex &, TransientVertex &, TLorentzVector&);
   virtual void findBestDimuon( const edm::EventSetup&, MuonCollection&, MuonCollection&, TransientVertex&, Vertex&);
-  virtual void findBestPiCand(const edm::Event&, const edm::EventSetup&, MuonCollection&, TransientVertex&, Vertex&, TransientVertex&,pair<double,double>& ,TLorentzVector&, bool&,bool& ,int&);
+  virtual void findBestPiCand(const edm::Event&, const edm::EventSetup&, MuonCollection&, TransientVertex&, Vertex&, TransientVertex&,pair<double,double>& ,pair<double,double>&,TLorentzVector&, bool&,bool& ,int&,Track&);
   virtual bool TriggerDecision(const edm::Event&);
   virtual pair<bool,bool> isMu(const edm::Event&, const Track*);
   virtual int countTracksAround(const edm::Event&, const edm::EventSetup&, TLorentzVector*, double&, TransientVertex&);
@@ -108,6 +109,8 @@ private:
   virtual bool isMcMatched(const edm::Event&,TLorentzVector*,TVector3&);
   virtual bool isInPV(Vertex&, TLorentzVector&);
   virtual double Compute_CosPointingAngle(Vertex& , TransientVertex& ,TLorentzVector&);
+  virtual bool isClose(TransientTrack&, TransientVertex&);
+  virtual bool isVtxErrorOk(TransientVertex&);
 
   TH1F* hDiMuInvMass,* hGoodDiMuInvMass;
   TH1F* hDiMuTrackInvMass,* hGoodDiMuTrackInvMass,*hTriMuInvMass ;
@@ -136,9 +139,10 @@ private:
   double _SVchi,_SVprob;
   double _SVTchi,_SVTprob;
   double _Lxy,_LxySig,_LxyT,_LxyTSig;
-  double _d0T,_d0TSig;
+  double _d0T,_d0T3,_d0TSig,_d0T3Sig, _dzT2;
   double _M3,_M2 ,_PtT,_dRdiMuT;
   double _cosp2,_cosp3;
+  bool _TrigBit[10];
 
   int _NTracksInDr;
 
@@ -146,15 +150,15 @@ private:
   bool _Mu1IsGood,_Mu2IsGood,_TrackIsGoodMu;
   bool _IsMu1InPV, _IsMu2InPV,_IsMu3InPV;
   bool _IsMcMatched;
-
+  bool _IsTrig;
   std::vector<string> HLT_paths;
   std::string HLT_process;
 
   bool OnlyOppositeCharge;
   bool debug;
 
-  double ndm, ndmv, ndmm, ndmlxy, ndmlxys, ndmchi, ndmvprob;
-  double nt, ntq, ntm, ntd0, ntd0s,ntv, ntlxy, ntlxys, ntchi, ntvprob;
+  double ndm, ndmv, ndmm, ndmlxy, ndmlxys, ndmchi, ndmvprob,ndmclos;
+  double nt, ntq, ntm, ntd0, ntd0s,ntv, ntlxy, ntlxys, ntchi, ntvprob,ntclos;
 
   double Total, Triggered, FoundDiMu , Offline, GenMatches;  
 
@@ -179,9 +183,10 @@ Tau3MuAnalysis::Tau3MuAnalysis(const edm::ParameterSet& cfg) {
   Triggered=0;
   FoundDiMu=0;
   Offline=0;
+  GenMatches=0;
 
-  ndm=0; ndmv=0; ndmm=0; ndmlxy=0; ndmlxys=0; ndmchi=0; ndmvprob=0;
-  nt=0; ntq=0; ntm=0; ntd0=0; ntd0s=0;ntv=0; ntlxy=0; ntlxys=0; ntchi=0; ntvprob=0;
+  ndm=0; ndmv=0; ndmm=0; ndmlxy=0; ndmlxys=0; ndmchi=0; ndmvprob=0;ndmclos=0;
+  nt=0; ntq=0; ntm=0; ntd0=0; ntd0s=0;ntv=0; ntlxy=0; ntlxys=0; ntchi=0; ntvprob=0;ntclos=0;
 
   diMuMassMin= cfg.getParameter<double> ("DiMuMassMin"); 
   diMuMassMax= cfg.getParameter<double> ("DiMuMassMax");  
@@ -233,7 +238,72 @@ Tau3MuAnalysis::~Tau3MuAnalysis() {}
 //
 // member functions
 //
-void Tau3MuAnalysis::findBestPiCand(const edm::Event& ev, const edm::EventSetup& iSetup, MuonCollection& dimu ,TransientVertex& tv, Vertex& primaryVertex,TransientVertex& dimuvtx ,pair<double,double>& d0track, TLorentzVector& pi, bool & isMuon, bool& isGood ,int& q){
+
+bool Tau3MuAnalysis::isVtxErrorOk(TransientVertex& vtx){
+
+  bool ok=true;
+
+  double vxerr= vtx.positionError().cxx();
+  double vyerr= vtx.positionError().cyy();
+  double vzerr= vtx.positionError().czz();
+
+  if (vxerr > 0.02 || vyerr > 0.02 || vzerr > 0.03) ok=false;
+
+  return ok;
+
+}
+
+
+bool Tau3MuAnalysis::isClose(TransientTrack& t, TransientVertex& tvtx){
+
+  bool ok=false;
+
+  Vertex vtx=Vertex(tvtx);
+
+  /*double tz=t.trajectoryStateClosestToPoint(vtx.position()).position().z();
+  double tx=t.trajectoryStateClosestToPoint(vtx.position()).position().x();
+  double ty=t.trajectoryStateClosestToPoint(vtx.position()).position().y();
+
+  double tez=t.trajectoryStateClosestToPoint(vtx.position()).perigeeError().longitudinalImpactParameterError();
+  double tet=t.trajectoryStateClosestToPoint(vtx.position()).perigeeError().transverseImpactParameterError();
+ 
+ 
+  //cout << "diffx " << diffx << " tet " << tet << endl;
+
+  double diffz=fabs(tz-vtx.position().z());
+  double diffy=fabs(ty-vtx.position().y());
+  double diffx=fabs(tx-vtx.position().x());
+
+  double vxerr= vtx.positionError().cxx();
+  double vyerr= vtx.positionError().cyy();
+  double vzerr= vtx.positionError().czz();
+
+  vxerr=2*sqrt(vxerr*vxerr+tet*tet);
+  vyerr=2*sqrt(vyerr*vyerr+tet*tet);
+  vzerr=2*sqrt(vzerr*vzerr+tez*tez);
+  
+  
+
+  if (debug){
+  cout << "SV distance to track:" << endl; 
+  cout << "diffz " << diffz <<  " verrz " << vzerr << endl;
+  cout << "diffy " << diffy <<  " verry " << vyerr << endl;
+  cout << "diffx " << diffx <<  " verrx " << vxerr << endl;
+  }
+
+  if (diffz < vzerr && diffx < vxerr && diffy < vyerr) ok=true;
+  */
+  double dz=t.track().dz(vtx.position());
+  double verrz=vtx.zError();
+
+  if (dz<0.03 && dz < verrz) ok=true;
+
+  return ok;
+
+
+}
+
+void Tau3MuAnalysis::findBestPiCand(const edm::Event& ev, const edm::EventSetup& iSetup, MuonCollection& dimu ,TransientVertex& tv, Vertex& primaryVertex,TransientVertex& dimuvtx ,pair<double,double>& d0track, pair<double,double>& d0track3, TLorentzVector& pi, bool & isMuon, bool& isGood ,int& q, Track& track){
 
   if (debug) cout << "Looking for the pi track" << endl;
 
@@ -257,7 +327,12 @@ void Tau3MuAnalysis::findBestPiCand(const edm::Event& ev, const edm::EventSetup&
 
     bool goodTrack=false;
     if (it->quality(TrackBase::highPurity) && it->pt()> MinTrackPt) goodTrack=true;
+
     if (!goodTrack) continue;
+
+    //if (fabs(it->eta()-dimu[0].innerTrack()->eta()) > 0.5 ||fabs(it->eta()-dimu[0].innerTrack()->eta()) > 0.5) continue;
+
+
 
     ntq++;
 
@@ -269,36 +344,43 @@ void Tau3MuAnalysis::findBestPiCand(const edm::Event& ev, const edm::EventSetup&
     if (tot.M() < diMuTrackMassMin || tot.M()> diMuTrackMassMax) continue;
     ntm++;
 
+    TransientTrack ttpi=Builder->build(*it);
+
+    // if (!isClose(ttpi,dimuvtx)) continue;
+    ntclos++;
+
     vector<TransientTrack> tt;
     TransientVertex tmpvtx;
-    TransientTrack ttpi;
 
-    tt.push_back(Builder->build(dimu[0].innerTrack()));
-    tt.push_back(Builder->build(dimu[1].innerTrack()));
-    tt.push_back(Builder->build(*it));
+    TransientTrack tt1=Builder->build(dimu[0].innerTrack());
+    TransientTrack tt2=Builder->build(dimu[1].innerTrack());
 
-    ttpi=Builder->build(*it);
+    tt.push_back(tt1);
+    tt.push_back(tt2);
+    tt.push_back(ttpi);
 
-    Vertex diMuVtx=Vertex(tv);
+    Vertex diMuVtx=Vertex(dimuvtx);
     pair<double,double> d0tracktmp=ComputeImpactParameterWrtPoint(ttpi,diMuVtx);
-
     
     if (d0tracktmp.first > Trackd0Max) continue;
     ntd0++;
 
-    if (d0tracktmp.first/d0tracktmp.second < Trackd0SigMin) continue; 
+    if (fabs(d0tracktmp.first/d0tracktmp.second) < Trackd0SigMin) continue; 
     ntd0s++;
 
     tmpvtx=avf.vertex(tt);
     
-    if (!tmpvtx.isValid()) continue;
+    if (!tmpvtx.isValid() || tmpvtx.positionError().czz() > 0.1) continue;
     ntv++;
-    
+
     double vChi2 = tmpvtx.totalChiSquared();
     double vNDF  = tmpvtx.degreesOfFreedom();
-    double vProb(TMath::Prob(vChi2,(int)vNDF));
 
+    if (vChi2==0) continue;
+
+    double vProb(TMath::Prob(vChi2,(int)vNDF));
     if (vProb < Vp0) continue;
+
     ntvprob++;
 
     if (vChi2/vNDF > diMuTrackVtxChi2Max) continue;
@@ -314,14 +396,18 @@ void Tau3MuAnalysis::findBestPiCand(const edm::Event& ev, const edm::EventSetup&
     ntlxys++;
 
     if (vProb < tmpProb) continue;
-    
+
     tmpProb=vProb;
     pi=p;
     isMuon=isMu(ev,&(*it)).first;
     isGood=isMu(ev,&(*it)).second;
+    track=Track(*it);
     q=it->charge();
     tv=tmpvtx;
-    d0track=d0tracktmp;      
+    d0track=d0tracktmp;   
+    Vertex tmpvtx3=Vertex(tmpvtx);
+    d0track3=ComputeImpactParameterWrtPoint(ttpi,tmpvtx3);
+
   }
 }
 
@@ -332,7 +418,7 @@ bool Tau3MuAnalysis::isInPV(Vertex& pv,TLorentzVector& track){
     if (!(it->isNonnull() && it->isAvailable())) continue;
     Track tr=*(it->get());
     TLorentzVector vect=TLorentzVector(tr.px(),tr.py(),tr.pz(),0);
-    if (vect.DeltaR(track)<1.e-4) inPV=true;
+    if (vect.DeltaR(track)==0) inPV=true;
   }
   return inPV;
 }
@@ -598,31 +684,46 @@ void Tau3MuAnalysis::findBestDimuon( const edm::EventSetup& iSetup,MuonCollectio
 
     if (!(inone.isNonnull() && inone.isAvailable())) continue;
 
+    if (!muIn[i].isTrackerMuon()) continue;
+
     for (uint j=i+1; j<muIn.size(); ++j){
 
       reco::TrackRef intwo = muIn[j].innerTrack();
 
       if (!(intwo.isNonnull() && intwo.isAvailable())) continue;
+     
+      if (!muIn[j].isTrackerMuon()) continue;
 
       ndm++;
 
       if (OnlyOppositeCharge && muIn[i].charge()==muIn[j].charge()) continue;
 
-      TLorentzVector DiMu=TLorentzVector(muIn[i].px()+ muIn[j].px() , muIn[i].py()+ muIn[j].py(), muIn[i].pz()+ muIn[j].pz(), muIn[i].energy()+ muIn[j].energy());
 
-      if (DiMu.M()> diMuMassMax || DiMu.M() < diMuMassMin) continue;
+      TLorentzVector DiMu=TLorentzVector(muIn[i].innerTrack()->px()+ muIn[j].innerTrack()->px() , muIn[i].innerTrack()->py()+ muIn[j].innerTrack()->py(), muIn[i].innerTrack()->pz()+ muIn[j].innerTrack()->pz(), muIn[i].energy()+ muIn[j].energy());
+
+
+      if (DiMu.M() > diMuMassMax || DiMu.M() < diMuMassMin) continue;
       
       ndmm++;
 
       std::vector<TransientTrack> tt;
 
-      tt.push_back(Builder->build(inone));
-      tt.push_back(Builder->build(intwo));
+      TransientTrack tt1=Builder->build(inone);
+      TransientTrack tt2=Builder->build(intwo);
+
+      tt.push_back(tt1);
+      tt.push_back(tt2);
 
       tmpvtx=avf.vertex(tt);
 
       if (!(tmpvtx.isValid())) continue;
+      if (!isVtxErrorOk(tmpvtx)) continue;
       ndmv++;
+
+      //if (!(isClose(tt1,tmpvtx) && isClose(tt2,tmpvtx))) continue;
+      //      Vertex ttv=Vertex(tmpvtx);
+
+      ndmclos++;
 
       double vChi2 = tmpvtx.totalChiSquared();
       double vNDF = tmpvtx.degreesOfFreedom();
@@ -648,6 +749,7 @@ void Tau3MuAnalysis::findBestDimuon( const edm::EventSetup& iSetup,MuonCollectio
       if (vProb < tmpProb) continue;
 
       if (debug) cout << "Potential DiMu candidate found" << endl;
+
       tmpProb=vProb;
       one=i;
       two=j;
@@ -732,16 +834,23 @@ bool Tau3MuAnalysis::TriggerDecision(const edm::Event& ev){
 
   bool passed=false;
 
+
+
   // check fired HLT paths
   edm::Handle<edm::TriggerResults> hltresults;
   edm::InputTag trigResultsTag("TriggerResults","",HLT_process);
   ev.getByLabel(trigResultsTag,hltresults);
 
   if (HLT_paths.size()==0){
-    cout << "WARNING:No HLT Path Selected, the event will pass!!!" << endl;
+    if (debug) cout << "WARNING:No HLT Path Selected, the event will pass!!!" << endl;
     passed=true;
     return passed;
   }
+
+  if (HLT_paths.size()>10){
+    cout << "WARNING:Only the first 10 paths will be considered!!!" << endl;
+  }
+
 
   if (hltresults.isValid()) {
     const edm::TriggerNames TrigNames_ = ev.triggerNames(*hltresults);
@@ -750,8 +859,12 @@ bool Tau3MuAnalysis::TriggerDecision(const edm::Event& ev){
       if (!hltresults->accept(itr)) continue;
       TString trigName=TrigNames_.triggerName(itr);
       if (debug) cout<<"Found HLT path "<< trigName<<endl;
-      for (uint i=0; i<HLT_paths.size(); ++i){
-	if (trigName==HLT_paths[i]) passed=true;
+      int Tsize=HLT_paths.size();
+      for (int i=0; i<min(Tsize,10); ++i){
+	if (trigName==HLT_paths[i]) {
+	  passed=true;
+	  _TrigBit[i]=true;
+	}
       }
       //      if (trigName=="HLT_Dimuon0_Omega_Phi_v3" || trigName=="HLT_Dimuon0_Omega_Phi_v4" || trigName=="HLT_Tau2Mu_RegPixTrack_v1") passed=true;
     }
@@ -761,7 +874,7 @@ bool Tau3MuAnalysis::TriggerDecision(const edm::Event& ev){
       cout<<"Trigger results not found"<<endl;
     }
 
-  if (passed) cout << "Passed!!!!!!" << endl;
+  if (passed && (debug)) cout << "Passed!!!!!!" << endl;
 
   return passed;
 
@@ -771,15 +884,13 @@ bool Tau3MuAnalysis::TriggerDecision(const edm::Event& ev){
 // ------------ method called to for each event  ------------
 void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup) {
 
+  Initialize_TreeVars();
+
   bool triggered=TriggerDecision(ev);
 
   Total++;
 
-  if (triggered){
-
-    Initialize_TreeVars();
-
-    Triggered++;
+  if (triggered)  Triggered++;
 
     if (debug) cout << "//////////// NEW EVENT ///////////" << endl;
 
@@ -815,14 +926,18 @@ void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
 	double phi = (*recoMu).phi();
 	double pt = (*recoMu).pt();
 	double q=(*recoMu).charge();
-	
+	double d0=0;
+	if(recoMu->isTrackerMuon()) d0=(*recoMu).innerTrack()->d0();
+	double dz=0;
+	if(recoMu->isTrackerMuon())dz=(*recoMu).innerTrack()->dz();
+
 	string muonType = "";
 	if(recoMu->isGlobalMuon()) muonType = " Glb";
 	if(recoMu->isStandAloneMuon()) muonType = muonType + " STA";
 	if(recoMu->isTrackerMuon()) muonType = muonType + " Trk";
 	
 	if (debug) cout << "[MuonAnalysis] New Muon found:" << muonType << endl;
-	if (debug) cout << "-- eta: " << eta << " phi: " << phi << " pt: " << pt << " q: " << q << endl;       
+	if (debug) cout << "-- eta: " << eta << " phi: " << phi << " pt: " << pt << " q: " << q << " d0: " << d0 << " dz: " << dz << endl;       
 	
         if (recoMu->pt() < MinMuPt) continue;
 
@@ -842,7 +957,7 @@ void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
     TransientVertex tv;
     TransientVertex tv3;
     
-    pair<double,double> d0track;
+    pair<double,double> d0track,d0track3;
     pair<double,double> lxy2, lxy3;
 
     if (muSkim.size() < 2) return;
@@ -886,20 +1001,15 @@ void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
 
     bool isAlsoMu=false;
     bool isAlsoGoodMu=false;
+    Track thetrack;
 
-    findBestPiCand(ev, iSetup, BestDiMu, tv3, primaryVertex,tv, d0track, pitrack, isAlsoMu, isAlsoGoodMu, qtr);
+    findBestPiCand(ev, iSetup, BestDiMu, tv3, primaryVertex, tv, d0track, d0track3 ,pitrack, isAlsoMu, isAlsoGoodMu, qtr, thetrack);
 
     if (pitrack.Px() !=0 && pitrack.Py()!=0 ){  //just a way to say that pitrack has been found
 
       Offline++;
-      /* if (d0track.first > 0.4) {
-	cout << "EVENT with anomalous d0= " << ev.id().event() << " In position " << Total << endl;
-	cout << "Mu1 eta " << Mu1Mom.Eta() << " phi " << Mu1Mom.Phi() << " pT " << Mu1Mom.Pt() << endl;
-	cout << "Mu2 eta " << Mu2Mom.Eta() << " phi " << Mu2Mom.Phi() << " pT " << Mu2Mom.Pt() << endl;
-	cout << "Track eta " << pitrack.Eta() << " phi " << pitrack.Phi() << " pT " << pitrack.Pt() << endl;
-	}*/
 
-      if (debug) cout << "track muon found" << endl;
+      if (debug) cout << "track found" << endl;
       if (debug) cout << "eta " << pitrack.Eta() << " phi " << pitrack.Phi() << " pT " << pitrack.Pt() << endl;
 
       DiMuTrackMom = DiMuMom+pitrack;
@@ -913,6 +1023,28 @@ void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
       if (IsMC){
 	isEventMatched=isMcMatched(ev,TotMomArray,GenSV);
 	if (isEventMatched) GenMatches++;
+      }
+
+      Vertex tvv=Vertex(tv);
+
+      if (d0track.first > 0.4 && isEventMatched && debug) {
+	cout << "//////////////////////////////////////////" << endl;
+	cout << "EVENT with anomalous d0= " << ev.id().event() << " In position " << Total << endl;
+	cout << "Mu1 eta " << Mu1Mom.Eta() << " phi " << Mu1Mom.Phi() << " pT " << Mu1Mom.Pt() << endl;
+	cout << "Mu2 eta " << Mu2Mom.Eta() << " phi " << Mu2Mom.Phi() << " pT " << Mu2Mom.Pt() << endl;
+	cout << "Track eta " << pitrack.Eta() << " phi " << pitrack.Phi() << " pT " << pitrack.Pt() << endl;
+	cout << "SV reco x " << tv3.position().x() << " y " << tv3.position().y() << " z "<< tv3.position().z() << endl;
+	cout << "SV gen x " << GenSV.X() << " y " << GenSV.Y() << " z "<< GenSV.Z() << endl;
+      }
+      if (!isEventMatched && debug) {
+	cout << "MU1 DZ" << BestDiMu[0].innerTrack()->dz() << " D0 " <<  BestDiMu[0].innerTrack()->d0() << endl;
+	cout << "MU2 DZ" << BestDiMu[1].innerTrack()->dz() << " D0 " <<  BestDiMu[1].innerTrack()->d0() << endl;
+	cout << "wrt SV" << endl;
+	cout << "MU1 DZ" << BestDiMu[0].innerTrack()->dz(tvv.position()) << " D0 " <<  BestDiMu[0].innerTrack()->d0() << endl;
+	cout << "MU2 DZ" << BestDiMu[1].innerTrack()->dz(tvv.position()) << " D0 " <<  BestDiMu[1].innerTrack()->d0() << endl;
+	cout << "tr DZ" << thetrack.dz(tvv.position()) << " D0 " << thetrack.d0() << endl;
+	cout << "VTX Z" << tvv.z() << " error " << tvv.zError() << endl;
+
       }
 
       double cos2=Compute_CosPointingAngle(primaryVertex,tv,DiMuMom);
@@ -972,10 +1104,11 @@ void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
       _Mu1Q=q1;
       _Mu2Q=q2;
       _Mu3Q=qtr;
+
+      _dzT2=thetrack.dz(tvv.position());
       
       _PV->SetXYZ(primaryVertex.x(),primaryVertex.y(),primaryVertex.z());
       _PVe->SetXYZ(primaryVertex.xError(),primaryVertex.yError(),primaryVertex.zError());
-
 
       _GenSV->SetXYZ(GenSV.X(),GenSV.Y(),GenSV.Z());
       _SV->SetXYZ(tv.position().x(),tv.position().y(),tv.position().z());
@@ -997,8 +1130,11 @@ void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
       _LxyTSig=lxy3.first/lxy3.second;
 
       _d0T=d0track.first;
+      _d0T3=d0track3.first;
       _d0TSig=d0track.first/d0track.second;
+      _d0T3Sig=d0track3.first/d0track3.second;
       
+      _IsTrig=triggered;
       _cosp2=cos2;
       _cosp3=cos3;
 
@@ -1018,10 +1154,13 @@ void Tau3MuAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
 
       if (debug) cout << "Tree filled" << endl;
     }    
-  }
 }
 
 void Tau3MuAnalysis::Initialize_TreeVars(){
+
+  for (int k=0; k<10; k++){
+    _TrigBit[k]=false;
+  }
 
   _DiMu4Mom->SetPxPyPzE(0.,0.,0.,0.);
   _DiMuPlusTrack4Mom->SetPxPyPzE(0.,0.,0.,0.);
@@ -1038,7 +1177,7 @@ void Tau3MuAnalysis::Initialize_TreeVars(){
   _SV->SetXYZ(0.,0.,0.);
   _SVT->SetXYZ(0.,0.,0.);
 
-
+  _dzT2=-99;
   _M3=0;
   _M2=0; 
   _PtT=0;
@@ -1052,6 +1191,7 @@ void Tau3MuAnalysis::Initialize_TreeVars(){
   _LxyT=-99;
   _LxyTSig=-99;
   _d0T=-99;
+  _d0T3=-99;
   _cosp2=-99;
   _cosp3=-99;
   _d0TSig=-99;
@@ -1063,7 +1203,7 @@ void Tau3MuAnalysis::Initialize_TreeVars(){
   _Mu2IsGood=false;
 
   _TrackIsGoodMu=false;
-
+  _IsTrig=false;
   _IsMu1InPV=false;
   _IsMu2InPV=false;
   _IsMu3InPV=false;
@@ -1094,6 +1234,12 @@ void Tau3MuAnalysis::beginJob() {
   _PVe= new TVector3(0.,0.,0.);
   _SVe=new TVector3(0.,0.,0.);
   _SVTe=new TVector3(0.,0.,0.);
+
+  int Tsize=HLT_paths.size();
+
+  for (int i=0; i< min(Tsize,10); ++i){
+    ExTree->Branch(HLT_paths[i].c_str(), &_TrigBit[i],"_TrigBit/B");
+  }
 
   ExTree->Branch("DiMu4Mom","TLorentzVector",&_DiMu4Mom); 
   ExTree->Branch("DiMuPlusTrack4Mom","TLorentzVector",&_DiMuPlusTrack4Mom); 
@@ -1131,8 +1277,11 @@ void Tau3MuAnalysis::beginJob() {
   ExTree->Branch("LxySig",&_LxySig   ,"_LxySig/D");
   ExTree->Branch("LxyT",&_LxyT   ,"_LxyT/D");
   ExTree->Branch("LxyTSig",&_LxyTSig   ,"_LxyTSig/D");
-  ExTree->Branch("d0T",&_d0T   ,"_d0T/D");
+  ExTree->Branch("dzT2vtx",&_dzT2   ,"_dzT2/D");
+  ExTree->Branch("d0T2vtx",&_d0T   ,"_d0T/D");
+  ExTree->Branch("d0T3vtx",&_d0T3   ,"_d0T3/D");
   ExTree->Branch("d0TSig",&_d0TSig   ,"_d0TSig/D");
+  ExTree->Branch("d0T3Sig",&_d0T3Sig   ,"_d0T3Sig/D");
 
   ExTree->Branch("CosPoint2",&_cosp2   ,"_cosp2/D");
   ExTree->Branch("CosPoint3",&_cosp3   ,"_cosp3/D");
@@ -1145,6 +1294,7 @@ void Tau3MuAnalysis::beginJob() {
   ExTree->Branch("IsMu1InPV",&_IsMu1InPV ,"_IsMu1InPV/B");
   ExTree->Branch("IsMu2InPV",&_IsMu2InPV ,"_IsMu2InPV/B");
   ExTree->Branch("IsMu3InPV",&_IsMu3InPV ,"_IsMu3InPV/B");
+  ExTree->Branch("TriggerDecision",&_IsTrig ,"_IsTrig/B");
 
   ExTree->Branch("IsMcMatched",&_IsMcMatched ,"_IsMcMatched/B");
 
@@ -1167,8 +1317,8 @@ void Tau3MuAnalysis::beginJob() {
   hgenDr= new TH1F("MatchDR","MatchDr",50,0,0.05);
   
   htotEff=new TH1F("TotEff","Tot Eff",4,-0.5,3.5);
-  hDiMuEff=new TH1F("DiMuEff","DiMuEff",8,-0.5,7.5);
-  hTrackEff=new TH1F("TrackEff","TrackEff",11,-0.5,10.5);
+  hDiMuEff=new TH1F("DiMuEff","DiMuEff",9,-0.5,8.5);
+  hTrackEff=new TH1F("TrackEff","TrackEff",12,-0.5,11.5);
   
   hpt->Sumw2();
   hptMu->Sumw2();
@@ -1211,32 +1361,36 @@ Tau3MuAnalysis::endJob() {
   hDiMuEff->SetBinContent(1,1);
   hDiMuEff->GetXaxis()->SetBinLabel(1,"tot");
   
-  if(ndm!=0) hDiMuEff->SetBinContent(2,ndmm/ndm);
-  sprintf(title,"InvMassIn(%5.2f,%5.2f)",diMuMassMin, diMuMassMax);
-  hDiMuEff->GetXaxis()->SetBinLabel(2,title);
+  if(ndm!=0){
+    hDiMuEff->SetBinContent(2,ndmm/ndm);
+    sprintf(title,"InvMassIn(%5.2f,%5.2f)",diMuMassMin, diMuMassMax);
+    hDiMuEff->GetXaxis()->SetBinLabel(2,title);
   
-  if(ndmm!=0) hDiMuEff->SetBinContent(3,ndmv/ndm);
-  hDiMuEff->GetXaxis()->SetBinLabel(3,"Vertex Ok");
-    
-  if(ndmv!=0) hDiMuEff->SetBinContent(4,ndmvprob/ndm);
-  sprintf(title,"Vprob > %5.2f ", diMuVprobMin);
-  hDiMuEff->GetXaxis()->SetBinLabel(4,title);
+    if(ndm !=0) hDiMuEff->SetBinContent(3,ndmv/ndm);
+    hDiMuEff->GetXaxis()->SetBinLabel(3,"Vertex Ok");
+
+    hDiMuEff->SetBinContent(4,ndmclos/ndm);
+    hDiMuEff->GetXaxis()->SetBinLabel(4,"Close to SV");
   
-  if(ndmvprob!=0) hDiMuEff->SetBinContent(5,ndmchi/ndm);
-  sprintf(title,"ch2Vtx < %5.2f",diMuVtxChi2Max);
-  hDiMuEff->GetXaxis()->SetBinLabel(5,title);
+    if(ndmv!=0) hDiMuEff->SetBinContent(5,ndmvprob/ndm);
+    sprintf(title,"Vprob > %5.2f ", diMuVprobMin);
+    hDiMuEff->GetXaxis()->SetBinLabel(5,title);
   
-  if(ndmchi!=0) hDiMuEff->SetBinContent(6,ndmlxy/ndm);
-  sprintf(title,"Lxy > %5.2f",diMuLxyMin);
-  hDiMuEff->GetXaxis()->SetBinLabel(6,title);
+    if(ndmvprob!=0) hDiMuEff->SetBinContent(6,ndmchi/ndm);
+    sprintf(title,"ch2Vtx < %5.2f",diMuVtxChi2Max);
+    hDiMuEff->GetXaxis()->SetBinLabel(6,title);
   
-  if(ndmlxy!=0) hDiMuEff->SetBinContent(7,ndmlxys/ndm);
-  sprintf(title,"LxySig > %5.2f",diMuLxySigMin);
-  hDiMuEff->GetXaxis()->SetBinLabel(7,title);
+    if(ndmchi!=0) hDiMuEff->SetBinContent(7,ndmlxy/ndm);
+    sprintf(title,"Lxy > %5.2f",diMuLxyMin);
+    hDiMuEff->GetXaxis()->SetBinLabel(7,title);
   
-  if(ndmlxys!=0) hDiMuEff->SetBinContent(8,FoundDiMu/ndm);
-  hDiMuEff->GetXaxis()->SetBinLabel(8,"Selected");
+    if(ndmlxy!=0) hDiMuEff->SetBinContent(8,ndmlxys/ndm);
+    sprintf(title,"LxySig > %5.2f",diMuLxySigMin);
+    hDiMuEff->GetXaxis()->SetBinLabel(8,title);
   
+    if(ndmlxys!=0) hDiMuEff->SetBinContent(9,FoundDiMu/ndm);
+    hDiMuEff->GetXaxis()->SetBinLabel(9,"Selected");
+  }
   //Tracks eff
   sprintf(title,"TotTracks= %5.2f  PassedTracks= %5.2f",nt,Offline);
   
@@ -1244,43 +1398,48 @@ Tau3MuAnalysis::endJob() {
   hTrackEff->SetBinContent(1,1);
   hTrackEff->GetXaxis()->SetBinLabel(1,"tot");
   
-  if(nt!=0) hTrackEff->SetBinContent(2,ntq/nt);
-  hTrackEff->GetXaxis()->SetBinLabel(2,"Quality Ok");
+  if(nt!=0){
+    hTrackEff->SetBinContent(2,ntq/nt);
+    hTrackEff->GetXaxis()->SetBinLabel(2,"Quality Ok");
   
-  if(ntq!=0) hTrackEff->SetBinContent(3,ntm/nt);
-  sprintf(title,"InvMassIn(%5.2f,%5.2f)",diMuTrackMassMin,diMuTrackMassMax);
-  hTrackEff->GetXaxis()->SetBinLabel(3,title);
+    if(ntq!=0) hTrackEff->SetBinContent(3,ntm/nt);
+    sprintf(title,"InvMassIn(%5.2f,%5.2f)",diMuTrackMassMin,diMuTrackMassMax);
+    hTrackEff->GetXaxis()->SetBinLabel(3,title);
   
-  if(ntm!=0) hTrackEff->SetBinContent(4,ntd0/nt);
-  sprintf(title,"d0 wrt SV < %5.2f",Trackd0Max);
-  hTrackEff->GetXaxis()->SetBinLabel(4,title);
+    if(ntm!=0) hTrackEff->SetBinContent(4,ntclos/nt);
+    hTrackEff->GetXaxis()->SetBinLabel(4,"Close to SV");
+
+    if(ntm!=0) hTrackEff->SetBinContent(5,ntd0/nt);
+    sprintf(title,"d0 wrt SV < %5.2f",Trackd0Max);
+    hTrackEff->GetXaxis()->SetBinLabel(5,title);
   
-  if(ntd0!=0) hTrackEff->SetBinContent(5,ntd0s/nt);
-  sprintf(title,"d0sig  > %5.2f",Trackd0SigMin);
-  hTrackEff->GetXaxis()->SetBinLabel(5,title);
+    if(ntd0!=0) hTrackEff->SetBinContent(6,ntd0s/nt);
+    sprintf(title,"d0sig  > %5.2f",Trackd0SigMin);
+    hTrackEff->GetXaxis()->SetBinLabel(6,title);
   
-  if(ntd0s!=0) hTrackEff->SetBinContent(6,ntv/nt);
-  hTrackEff->GetXaxis()->SetBinLabel(6,"Vertex Ok");
+    if(ntd0s!=0) hTrackEff->SetBinContent(7,ntv/nt);
+    hTrackEff->GetXaxis()->SetBinLabel(7,"Vertex Ok");
   
-  if(ntv!=0) hTrackEff->SetBinContent(7,ntvprob/nt);
-  sprintf(title,"Vprob > %5.2f ", diMuTrackVprobMin);
-  hTrackEff->GetXaxis()->SetBinLabel(7,title);
+    if(ntv!=0) hTrackEff->SetBinContent(8,ntvprob/nt);
+    sprintf(title,"Vprob > %5.2f ", diMuTrackVprobMin);
+    hTrackEff->GetXaxis()->SetBinLabel(8,title);
   
-  if(ntvprob!=0) hTrackEff->SetBinContent(8,ntchi/nt);
-  sprintf(title,"ch2Vtx < %5.2f",diMuTrackVtxChi2Max);
-  hTrackEff->GetXaxis()->SetBinLabel(8,title);
+    if(ntvprob!=0) hTrackEff->SetBinContent(9,ntchi/nt);
+    sprintf(title,"ch2Vtx < %5.2f",diMuTrackVtxChi2Max);
+    hTrackEff->GetXaxis()->SetBinLabel(9,title);
     
-  if(ntchi!=0) hTrackEff->SetBinContent(9,ntlxy/nt);
-  sprintf(title,"Lxy > %5.2f",diMuTrackLxyMin);
-  hTrackEff->GetXaxis()->SetBinLabel(9,title);
+    if(ntchi!=0) hTrackEff->SetBinContent(10,ntlxy/nt);
+    sprintf(title,"Lxy > %5.2f",diMuTrackLxyMin);
+    hTrackEff->GetXaxis()->SetBinLabel(10,title);
     
-  if(ntlxy!=0) hTrackEff->SetBinContent(10,ntlxys/nt);
-  sprintf(title,"LxySig > %5.2f",diMuTrackLxySigMin);
-  hTrackEff->GetXaxis()->SetBinLabel(10,title);
+    if(ntlxy!=0) hTrackEff->SetBinContent(11,ntlxys/nt);
+    sprintf(title,"LxySig > %5.2f",diMuTrackLxySigMin);
+    hTrackEff->GetXaxis()->SetBinLabel(11,title);
     
-  if(ntlxys!=0) hTrackEff->SetBinContent(11,Offline/nt);
-  hTrackEff->GetXaxis()->SetBinLabel(11,"Selected");
-    
+    if(ntlxys!=0) hTrackEff->SetBinContent(12,Offline/nt);
+    hTrackEff->GetXaxis()->SetBinLabel(12,"Selected");
+  }
+ 
   thefile->cd();
 
   //some control histos
