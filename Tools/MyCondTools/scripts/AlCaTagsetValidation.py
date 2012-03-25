@@ -134,6 +134,8 @@ for release in tagsets:
 
     # Test done, write the list of tagsets and give green light in case of success.
     outputFile.write("\nTested tagsets:\n")
+    # Remove duplicates
+    tagsetList = list(set(tagsetList))
     for element in tagsetList:
         outputFile.write(element+"\n")
     if success:
@@ -142,3 +144,4 @@ for release in tagsets:
 
 outputFile.close()
 os.system("mail -s \"Tagset validation\" \"marco.de.mattia@cern.ch\" < \""+outputFileName+"\"")
+os.system("mail -s \"Tagset validation\" \"cms-alca-globaltag@cern.ch\" < \""+outputFileName+"\"")
