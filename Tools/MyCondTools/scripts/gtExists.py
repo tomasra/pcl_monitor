@@ -27,8 +27,7 @@ if __name__     ==  "__main__":
     # get the releases currently managed
     gtconnect         = cfgfile.get('Common','GTConnectString')
     authpath             = cfgfile.get('Common','Passwd')
-
-    #authpath  = "/afs/cern.ch/cms/DB/conddb"
+    # authpath  = "/afs/cern.ch/cms/DB/conddb"
 
     for globaltag in args:
         if gtExists(globaltag, gtconnect, authpath):

@@ -93,12 +93,12 @@ for release in tagsets:
     # Checkout the tags (including checkdeps) and prepare the list of tested tagsets.
     try:
         outputFile.write("Running validation for release cycle " + release + ". Using release " + lastRelease + "\n")
-        list = []
+        cvsTagList = []
         tagsetList = []
         for line in tagsets[release]:
-            list.append(line[1] + " " + line[2])
+            cvsTagList.append(line[1] + " " + line[2])
             tagsetList.append(line[0])
-        for tag in sorted(list):
+        for tag in sorted(cvsTagList):
             outputFile.write("Checking out tag "+ tag + "\n")
             cmd = enterDirCmd+" addpkg " + tag
             try:
@@ -143,5 +143,5 @@ for release in tagsets:
     outputFile.write(separator)
 
 outputFile.close()
-os.system("mail -s \"Tagset validation\" \"marco.de.mattia@cern.ch\" < \""+outputFileName+"\"")
+# os.system("mail -s \"Tagset validation\" \"marco.de.mattia@cern.ch\" < \""+outputFileName+"\"")
 os.system("mail -s \"Tagset validation\" \"cms-alca-globaltag@cern.ch\" < \""+outputFileName+"\"")
