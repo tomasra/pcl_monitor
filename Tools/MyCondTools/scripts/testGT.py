@@ -21,19 +21,19 @@ def modifyCfgs(wf, GT, local):
                 if file.endswith(".py"):
                     print file
                     cfgList.append(file)
+                    #FIXME this can be done directly with a runTheMatrix option
                     for line in fileinput.FileInput(dir+"/"+file,inplace=1):
-                        if line.find("process.GlobalTag.globaltag") != -1:
-                            # Special case for the HLT tests. The GT must be modified only the steps that already include it.
-                            # The condition is: if the GT is not HLT or if it is HLT and the file name contains HLT GT.
-                            if GT.startswith("GR_H") == -1 or (GT.startswith("GR_H") != -1 and file.find("HLT") != -1):
+                        # Remove any unneeded pre-existing connection string if running in local
+                        localConnect = local and line.find("process.GlobalTag.connect") != -1
+                        if localConnect:
+                            line = "\n"
+                        # Replace the globalTag name
+                        notHltStepGreaterThan1 = GT.startswith("GR_H") == -1 or (GT.startswith("GR_H") != -1 and file.find("HLT") != -1)
+                        if notHltStepGreaterThan1:
+                            if line.find("process.GlobalTag.globaltag") != -1:
                                 line = "process.GlobalTag.globaltag = '"+GT+"::All'\n"
                                 if local:
                                     line += 'process.GlobalTag.connect = "sqlite_file:/afs/cern.ch/user/a/alcaprod/public/Alca/GlobalTag/'+GT+'.db"\n'
-                                elif line.find("process.GlobalTag.connect") != -1:
-                                    line = ""
-                                # To make the test work offline.
-                                if GT.startswith("GR_H") != -1:
-                                    line += "process.GlobalTag.pfnPrefix = cms.untracked.string('frontier://FrontierProd/')\n"
                         print line,
     return testDir, cfgList
 
