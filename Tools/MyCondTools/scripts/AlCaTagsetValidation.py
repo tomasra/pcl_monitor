@@ -44,6 +44,9 @@ def checkCall(cmd):
         raise p.returncode
 
 
+# Cleanup old directories, be very careful with this command.
+os.system("rm -rf "+testDir+"/CMSSW_*")
+
 print "Checking all tagsets waiting for AlCa sign-off"
 
 outputFileName = testDir+"/TagsetTest.txt"
