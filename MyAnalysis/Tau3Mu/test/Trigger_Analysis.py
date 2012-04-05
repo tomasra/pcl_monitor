@@ -4,6 +4,7 @@ import FWCore.ParameterSet.Config as cms
 process = cms.Process('TRIGANA')
 
 # import of standard configurations
+process.load("TrackingTools.PatternTools.TSCBLBuilderNoMaterial_cfi")
 process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
 process.load('Configuration.StandardSequences.Services_cff')
 process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
@@ -24,7 +25,7 @@ process.maxEvents = cms.untracked.PSet(
 process.source = cms.Source("PoolSource",
     secondaryFileNames = cms.untracked.vstring(),
     fileNames = cms.untracked.vstring(
-    "/store/caf/user/fiori/outputFULL_Tau3Mu.root"
+    "/store/caf/user/fiori/outputFULL_L1L2L3.root"
     )
 )
 
@@ -51,7 +52,7 @@ process.RECOSIMoutput = cms.OutputModule("PoolOutputModule",
 
 process.ana = cms.EDAnalyzer('TriggerProdAnalysis',
 
-OutFileName=cms.string("/tmp/fiori/RecoFullsim_Tau3Mu_L2Skim.root"),
+OutFileName=cms.string("TriggerProductionHistos.root"),
 
 )
 
