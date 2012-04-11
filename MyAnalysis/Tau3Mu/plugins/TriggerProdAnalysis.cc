@@ -134,6 +134,7 @@ private:
   HistoKin *hDiMuL2;
   HistoKin *hDiMuL2Filtered;
   HistoKin *hDiMuL3;
+  HistoKin *hDiMuL3Filtered;
   HistoKin *hDiMuL3FilteredDispVtx;
   HistoKin *hDiMuL3Filtered3Vtx;
   HistoKin *hDiMuL3Trk;
@@ -448,7 +449,13 @@ void TriggerProdAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& i
     l3mufilt->getObjects(trigger::TriggerMuon, mu);
     if (mu.size()<2) return;
     hL3f->Fill(thePT);
-
+    if (mu.size()>=2){
+      TLorentzVector mu1p4=TLorentzVector(mu[0]->px(),mu[0]->py(),mu[0]->pz(),mu[0]->energy());
+      TLorentzVector mu2p4=TLorentzVector(mu[1]->px(),mu[1]->py(),mu[1]->pz(),mu[1]->energy());
+      TLorentzVector DiMu = mu1p4+mu2p4;
+      double DiMuMass=(mu1p4+mu2p4).M();
+      hDiMuL3Filtered->Fill(DiMu.Pt(),DiMu.Eta(),DiMu.Phi(),DiMu.M(),weight);
+    }
   }
 
    // get displaced vertices formed by 2 L3 muons
@@ -564,11 +571,11 @@ void TriggerProdAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& i
       hDoSigTk->Fill(d0sig);
 
       KalmanVertexFitter kvf;
-      cout << "transient" << endl;
+      //cout << "transient" << endl;
       TransientVertex tv = kvf.vertex(t_tks);
       Vertex vertex = tv;
       if (!tv.isValid()) continue;
-      cout << "after transient" << endl;
+      //cout << "after transient" << endl;
       // get vertex position and error to calculate the decay length significance
       GlobalPoint secondaryVertex = tv.position();
       GlobalError err = tv.positionError();
@@ -603,6 +610,7 @@ void TriggerProdAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& i
   if (dimuAndTrackVtxCands.isValid()){
 
     std::vector<RecoChargedCandidateRef> muons;
+    //cout << "n3Vertices " << dimuAndTrackVtxCands.size();
 
     dimuAndTrackVtxCands->getObjects(trigger::TriggerMuon, muons);
     cout << "# of L3 muons: " << muons.size() << endl;
@@ -694,7 +702,7 @@ void TriggerProdAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& i
       math::XYZVector pperp(p.x(),p.y(),0.);
       cout << "----- Mass: " << p.mass() << " pt: " << p.Pt() << endl;
       float cosAlpha = vperp.Dot(pperp)/(vperp.R()*pperp.R());
-      
+      if (p.mass() < 1.7) cout << "anomalous event " << endl; 
       hHLTTriTrackVertex->Fill(normChi2, vtxProb, lxy, lxy/lxyerr, 0, cosAlpha,  p.mass(), weight);
       // FIXME: add mass and pt of the 3 tracks
     }		
@@ -720,6 +728,7 @@ void TriggerProdAnalysis::beginJob() {
   hDiMuL2=new HistoKin("L2DiMuons",*fs);
   hDiMuL2Filtered=new HistoKin("L2DiMuonsFiltered",*fs);
   hDiMuL3=new HistoKin("L3DiMuons",*fs);
+  hDiMuL3Filtered=new HistoKin("L3DiMuonsFiltered",*fs);
   hDiMuL3FilteredDispVtx=new HistoKin("L3DiMuonsFilteredDispVtx",*fs);
   hDiMuL3Filtered3Vtx=new HistoKin("L3DiMuonsFiltered3Vtx",*fs);
   hDiMuL3Trk=new HistoKin("L3DiMuonsTrack",*fs);
