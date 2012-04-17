@@ -410,6 +410,7 @@ class IOVEntry:
 
     def setFromListIOV(self, line, timetype = "runnumber"):
         listofentries = line.split()
+        # print "listofentries =", listofentries
         if self._timeType == 'timestamp':
             self._since = int(listofentries[0])
             self._till = int(listofentries[3])
@@ -422,6 +423,9 @@ class IOVEntry:
             self._till = int(listofentries[3])
             self._payloadToken = listofentries[6]
         else:
+            # print "since =", listofentries[0]
+            # print "till =", listofentries[1]
+            # print "payloadToken =", listofentries[2]
             self._since = int(listofentries[0])
             self._till = int(listofentries[1])
             self._payloadToken = listofentries[2]
@@ -538,8 +542,11 @@ class IOVTable:
                     
         # print self._tagName
         for line in range(6, nLines-1):
-            if "Since" in listiovlines[line] or "------------" in listiovlines[line] or listiovlines[line] == "":
+            # print "listiovlines =", listiovlines[line]
+            # if "Since" in listiovlines[line] or "------------" in listiovlines[line] or listiovlines[line] == "":
+            if "Since" in listiovlines[line] or "------------" in listiovlines[line] or listiovlines[line] == "" or "TimeType" in listiovlines[line]:
                 continue
+            # print "after continue listiovlines =", listiovlines[line]
             ioventry = IOVEntry(self._timeType)
             if self._containerName == "":
                 items = listiovlines[line].split()
