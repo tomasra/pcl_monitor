@@ -264,8 +264,10 @@ def getRunReport(runinfoTag, run, promptCalibDir, fileList, iovtableByRun_oracle
             emptyPayload = True
             print "   " + colorTools.warning("***Warning") + ": no payload in sqlite file!"
         else:
+            
             emptyPayload = False
 
+            
             # list the iov in the tag
             connect    = "sqlite_file:" + promptCalibDir + dbFile
             listiov_run_sqlite = gtTools.listIov(connect, tagRun, '')
@@ -280,7 +282,10 @@ def getRunReport(runinfoTag, run, promptCalibDir, fileList, iovtableByRun_oracle
                         #print iovOracle
                     else:
                         print "    " + colorTools.warning("Warning:") + " runbased IOV not found in Oracle"
-                
+            else:
+                print colorTools.warning("Warning") +  " can not list IOV for file",connect
+                #raise Exception("Error can not list IOV for file",connect)
+              
 
             missingIOV = False
             listiov_lumi_sqlite = gtTools.listIov(connect, tagLumi, '')
@@ -298,9 +303,13 @@ def getRunReport(runinfoTag, run, promptCalibDir, fileList, iovtableByRun_oracle
                         print "    " + colorTools.warning("Warning:") + " lumibased IOV not found in Oracle for since: " + str(iov.since())
                         missingIOV = True
             else:
-                raise Exception("Error can not list IOV for file",connect)
+                emptyPayload = True
+                print "   " + colorTools.warning("***Warning") + ": no payload in sqlite file!"
+                print colorTools.warning("Warning") +  " can not list IOV for file",connect
+                #raise Exception("Error can not list IOV for file",connect)
                 
-                
+
+        if not emptyPayload:
             if not missingIOV:
                 allLumiIOVFound = True
                 print "    All lumibased IOVs found in oracle!"
