@@ -1,5 +1,6 @@
-import os,string,sys,commands,time
+import os,string,sys,commands,time,json
 import xmlrpclib
+from Tools.MyCondTools.rrapi import RRApi, RRApiError
 
 
 def getRunList(minRun):
@@ -27,3 +28,73 @@ def getRunList(minRun):
         #print "RUN: " + run
         runlist.append(int(run))
     return runlist
+
+
+def getValues(json, key, selection = ''):
+    # lookup for a key in a json file applying possible selections
+    data = []
+    check = 0
+    if selection != '':
+        check = 1
+        (k, v) = selection
+
+    for o in json:
+        #print o
+        try:
+            if check == 1:
+                if (o[k] == v): 
+                    data.append(o[key])
+            else:
+                data.append(o[key])
+        except KeyError as error:
+            print "[RunRegistryTools::getValues] key: " + key + " not found in json file"
+            print error
+            raise
+        except:
+            print "[RunRegistryTools::getValues] unknown error"
+            raise
+            #pass
+    #print data
+    return data
+
+
+
+def getRunListRR3(minRun, datasetName, runClassName):
+
+    FULLADDRESS  = "http://runregistry.web.cern.ch/runregistry/"
+
+    print "RunRegistry from: ",FULLADDRESS
+
+    # connect to API
+    try:
+        api = RRApi(FULLADDRESS, debug = True)
+    except RRApiError, error:
+        print error
+
+
+    filter = {}
+    filter['runNumber'] = ">= %s" % str(minRun)
+    filter['datasetName'] = " LIKE '%" + datasetName + "%'"
+    #filter = {'runNumber': ">= %s" % str(minRun), 'datasetName':  " LIKE '%" + datasetName + "%'"}
+
+    if runClassName != '':
+        filter['runClassName'] = " = '%s'" % runClassName
+
+    print filter
+
+    template = 'json'
+    table = 'datasets'
+    data = api.data(workspace = 'GLOBAL', columns = ['runNumber', 'datasetName', 'runClassName'], table = table, template = template, filter = filter)
+
+    #print json.dumps(data)
+
+    #print getValues(data, 'runNumber')
+    
+
+    return getValues(data, 'runNumber')
+
+
+
+if __name__ == "__main__":
+    print getRunListRR3(181950, "Online", "Commissioning12")
+    
