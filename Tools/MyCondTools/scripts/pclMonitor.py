@@ -95,7 +95,9 @@ def runBackEnd():
     # --- get the list of collision runs from RR (only for the runs not yet cached)
     runList = []
     try:
-        runList = RunRegistryTools.getRunList(lastCachedRun+1)
+        #runList = RunRegistryTools.getRunList(lastCachedRun+1)
+        runList = RunRegistryTools.getRunListRR3(lastCachedRun+1, "Online", "Collisions12")
+        runList.sort(reverse=True)
     except Exception as error:
         print '*** Error 1: RR query has failed'
         print error
@@ -153,16 +155,17 @@ def runBackEnd():
             unknownRunMsg = "Error: can not get report for run: " + str(run) + ", reason: " + str(error)
             print unknownRunMsg
         else:
-            
-            # check this is not older than the one for the following run
-            if isFirst or rRep.jobTime() < lastDate:
-                rRep.isOutoforder(False)
-                if rRep._pclRun:
-                    isFirst = False
-                    lastDate = rRep.jobTime()
-            else:
-                print "   " + warning("Warning: ") + " this comes after the following run!!!"
-                rRep.isOutoforder(True)
+
+            if rRep._pclRun:
+                # check this is not older than the one for the following run
+                if isFirst or rRep.jobTime() < lastDate:
+                    rRep.isOutoforder(False)
+                    if rRep._pclRun:
+                        isFirst = False
+                        lastDate = rRep.jobTime()
+                else:
+                    print "   " + warning("Warning: ") + " this comes after the following run!!!"
+                    rRep.isOutoforder(True)
 
             runReports.append(rRep)
 
@@ -211,6 +214,7 @@ if __name__ == "__main__":
     #    statAndMsg = 1000, "unknown error"
     
     status.setStatus(statAndMsg[0],statAndMsg[1])
+    #print datetime.datetime.today()
     status.setUpdateTime(datetime.datetime.today())
     status.writeJsonFile(webArea + "status.json")
 
