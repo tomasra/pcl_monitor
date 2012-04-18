@@ -117,6 +117,16 @@ class Tier0DasInterface:
             raise
             return 0
 
+    def promptGlobalTag(self, run, dataset):
+        url = self._t0DasBaseUrl + "reco_config?run=" + str(run) + "&dataset=" + dataset
+        try:
+            json = self.getData(url)
+            return max(self.getValues(json, 'global_tag'))
+        except Exception:
+            print "[Tier0DasInterface::firstConditionSafeRun] error"
+            raise
+            return 0
+
 
 if __name__ == "__main__":
 
@@ -127,9 +137,17 @@ if __name__ == "__main__":
     except Exception as error:
         print 'Error 1'
         print error
+
     try:
-        print "Tier0 DAS first run safe for condition update:", test.firstConditionSafeRun()
+        run = test.firstConditionSafeRun()
+        print "Tier0 DAS first run safe for condition update:", run
     except Exception as error:
         print 'Error 2'
         print error
 
+    try:
+        dataset = 'MinimumBias'
+        print "Tier0 DAS GT for run: " + str(run) + " dataset: " + dataset + " :", test.promptGlobalTag(run, dataset)
+    except Exception as error:
+        print 'Error 3'
+        print error
