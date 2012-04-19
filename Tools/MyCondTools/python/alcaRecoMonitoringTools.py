@@ -1,51 +1,8 @@
-#!/usr/bin/env python
-
-import os,sys, DLFCN
-sys.setdlopenflags(DLFCN.RTLD_GLOBAL+DLFCN.RTLD_LAZY)
-
-from Tools.MyCondTools.gt_tools import *
-from Tools.MyCondTools.color_tools import *
-#from Tools.MyCondTools.Tier0LastRun import *
-from Tools.MyCondTools.RunValues import *
-from Tools.MyCondTools.tableWriter import *
-
-import shutil
-
-from pluginCondDBPyInterface import *
-
-a = FWIncantation()
-
-# --------------------------------------------------------------------------------
-# configuratio
-#cacheFileName          = "cache_monitoring.txt"
-
-
-#os.putenv("CORAL_AUTH_PATH","/afs/cern.ch/cms/DB/conddb")
-rdbms = RDBMS("/afs/cern.ch/cms/DB/conddb")
-dbName =  "oracle://cms_orcoff_prod/CMS_COND_31X_RUN_INFO"
-logName = "oracle://cms_orcoff_prod/CMS_COND_31X_POPCONLOG"
-
-rdbms.setLogger(logName)
-from CondCore.Utilities import iovInspector as inspect
-
-# db = rdbms.getDB(dbName)
-# tags = db.allTags()
-
-
-
-#webArea = './'
-# for inspecting last run after run has stopped  
-#tag = 'runsummary_test'
-
-
-from ROOT import *
-from array import array
-
+import Tools.MyCondTools.tableWriter as tableWriter
+import commands
+import os
 import datetime
-
-import os,string,sys,commands,time
-import xmlrpclib
-
+from ROOT import *
 
 class AlcaRecoDetails:
     def __init__(self, dataset, pd, epoch, version):
@@ -63,6 +20,10 @@ class AlcaRecoDetails:
 
     def name(self):
         return self._shortname
+
+    def pd(self):
+        return self._pd
+
 
 class WebPageIndex:
     def __init__(self):
@@ -165,31 +126,8 @@ class WebPageWriter:
         htmlpage.write('</body>\n')
         htmlpage.write('</html>\n')
         htmlpage.close()
-                            
-def getRunList(minRun, rrSet):
-    runlist = []
 
-    #FULLADDRESS="http://pccmsdqm04.cern.ch/runregistry_api/"
-    #FULLADDRESS="http://pccmsdqm04.cern.ch/runregistry/xmlrpc"
-    FULLADDRESS="http://cms-service-runregistry-api.web.cern.ch/cms-service-runregistry-api/xmlrpc"
 
-    print "RunRegistry from: ",FULLADDRESS
-    server = xmlrpclib.ServerProxy(FULLADDRESS)
-    # you can use this for single run query
-#    sel_runtable="{runNumber} = "+run+" and {datasetName} LIKE '%Express%'"
-    sel_runtable="{groupName} ='" + rrSet + "' and {runNumber} >= " + str(minRun) + " and {datasetName} LIKE '%Online%'"
-    #print sel_runtable
-    #sel_runtable="{groupName} ='Commissioning11' and {runNumber} >= " + str(minRun)# + " and {datasetName} LIKE '%Express%'"
-
-    run_data = server.DataExporter.export('RUN', 'GLOBAL', 'csv_runs', sel_runtable)
-    for line in run_data.split("\n"):
-        #print line
-        run=line.split(',')[0]
-        if "RUN_NUMBER" in run or run == "":
-            continue
-        #print "RUN: " + run
-        runlist.append(int(run))
-    return runlist
 
 def dbsQueryRunList(dataset, minRun = 1, maxRun = -1):
     dbs_cmd = 'dbs search --noheader --query="find run where dataset=' + dataset
@@ -358,7 +296,7 @@ class DBSAlCaRecoResults():
             tableForCache.append(rrep.getList())
             
         cacheFile = file(cacheFileName,"w")
-        pprint_table(cacheFile, tableForCache)
+        tableWriter.pprint_table(cacheFile, tableForCache)
         cacheFile.close()
         return
 
@@ -384,6 +322,8 @@ class DBSAlCaRecoResults():
         hNEvents = TH1F(self._cachefilename + "-hNEvents","# events",nRuns, 0, nRuns);
         binN = 1
         for rrep in self._infoPerRun:
+            #print rrep.nEvents()
+            # print rrep.run()
             hNEvents.SetBinContent(binN, rrep.nEvents())
             hNEvents.GetXaxis().SetBinLabel(binN, str(rrep.run()))
             binN += 1
@@ -432,140 +372,43 @@ def getDatasets(pd, epoch, version, tier):
                 listforret.append(dataset)
     return listforret
 
-    
-if __name__ == "__main__":
-
-    configfile = ConfigParser()
-    configfile.optionxform = str
 
 
-    configfile.read('GT_branches/AlCaRecoMonitoring.cfg')
-    webArea = configfile.get('Common','webArea')
-    groups = configfile.get('Common','groups').split(",")
-    refreshCache = bool(configfile.get('Common','refreshCache'))
-    alcarecoDatasets = []
+
+import json
+
+class AlcaRecoDatasetJson:
+    def __init__(self, name):
+        self._name = name
+        self._datasetMap = {}
+
+    def addDataset(self, dataset, details):
+        self._datasetMap[dataset] = {}
+        self._datasetMap[dataset]["dataset"] = details._datasetname
+        self._datasetMap[dataset]["epoch"] = details._epoch
+        self._datasetMap[dataset]["version"] = details._version
+        self._datasetMap[dataset]["pd"] = details._pd
+        print dataset
         
+    def writeJsonFile(self):
+        filename =  self._name + ".json"
+        # get a string with JSON encoding the list
+        #dthandler = lambda obj: obj.isoformat() if isinstance(obj, datetime.datetime) else None
+        dump = json.dumps(self._datasetMap)
+        file = open(filename, 'w')
+        file.write(dump + "\n")
+        file.close()
 
+    def readJsonFile(self):
+        filename = self._name + ".json"
+        jsonData = open(filename)
+        self._datasetMap = json.load(jsonData)
+        jsonData.close()
 
-    #print runList
+    def getDatasetDetails(self, dataset):
+        dataMap = self._datasetMap[dataset]
+        details = AlcaRecoDetails(dataMap["dataset"], dataMap["pd"], dataMap["epoch"], dataMap["version"])
+        return details
 
-    os.chdir(webArea)
-
-
-    # 1 find all the alcarecos and theyr parets for each "group"
-    for group in groups:
-        if group == "":
-            continue
-        print "--------------------------------------------"
-        print "--------------------------------------------"
-        print "==== Group: " + group
-        epoch = configfile.get(group, 'epoch')
-        version = configfile.get(group, 'version')
-        rawversion = configfile.get(group, 'rawversion')
-        htmlwriter = WebPageWriter(group, epoch, version)
-        datasets = getDatasets("*",epoch, version, "ALCARECO")
-        for dataset in datasets:
-            pd = dataset.split("/")[1]
-            parenttier = "RECO"
-            # exception
-            if group == "Run2011A-v4":
-                parenttier = "RAW"
-            pdforhtml = pd
-            details = AlcaRecoDetails(dataset, pdforhtml, epoch, version)
-            if pd == 'StreamExpressCosmics':
-                continue
-            htmlwriter.addDataset(pdforhtml, details)
-            if pd == 'StreamExpress':
-                pd = 'ExpressPhysics'
-                parenttier = "FEVT"
-            if pd == 'StreamHIExpress':
-                pd = 'HIExpressPhysics'
-                parenttier = "FEVT"
-            parent = getDatasets(pd,epoch, version, parenttier)
-            if len(parent) == 0 or parent[0] == '':
-                parent = getDatasets(pd,epoch, rawversion,"RAW")
-            print "--------------------------------------------"
-            print "dataset: " + dataset
-            print "parent: " + parent[0]
-            alcarecoDatasets.append(DBSAlCaRecoResults(dataset, parent[0]))
-        htmlwriter.buildPage()
-
-
-    indexBuilder = WebPageIndex()
-    indexBuilder.scan(webArea)
-    indexBuilder.buildPage()
-
-
-
-
-    #alcarecoDatasets.append(DBSAlCaRecoResults("/StreamExpress/Run2011A-TkAlMinBias-v2/ALCARECO", "/ExpressPhysics/Run2011A-Express-v2/FEVT"))
-
-    # --- set the style 
-    gStyle.SetOptStat(0) 
-    gStyle.SetPadBorderMode(0) 
-    gStyle.SetCanvasBorderMode(0) 
-    gStyle.SetPadColor(0);
-    gStyle.SetCanvasColor(0);
-    gStyle.SetOptTitle(0)
-    gStyle.SetPadBottomMargin(0.13)
-    gStyle.SetTitleXOffset(1.6)
-    gStyle.SetTitleOffset(1.6,"X")
-    gStyle.SetPadGridY(True)
-
-
-    #2 get the statistics and draw the results
-    cachedlisttype = "DUMMY"
-    cachedlist = []
-    
-
-    for dataset in alcarecoDatasets:
-        print dataset.name()
-        lastCached = dataset.readCache() #FIXME
-        #lastCached = 160404
-        if refreshCache:
-            query = dbsQuery(dataset.name(), lastCached)
-            dataset.appendQuery(query[1])
-            queryParent = dbsQuery(dataset.parent(), lastCached)
-            dataset.addParentQuery(queryParent[1])
-
-            rrSet = ""
-            if "2010" in  dataset.name():
-                rrSet = "Collisions10"
-            elif "2011" in dataset.name():
-                rrSet = "Collisions11"
-
-
-            # cache the list from RR
-            if rrSet != cachedlisttype:
-                cachedlisttype = rrSet
-                cachedlist = getRunList(1, rrSet)    
-            runList = cachedlist            
-            print "RR: " + rrSet + " # runs: " + str(len(runList))
-            #print runList
-
-            dataset.purgeList(runList)
-            #dataset.printAll()
-            dataset.writeCache()
-
-        label1 = TLatex(0.012, 0.94007, dataset.name())
-        label1.SetNDC(True)
-        hNEvents = dataset.buildHistoNEvents()
-        c1 = TCanvas(hNEvents.GetName(),"hNEvents",1200,600)
-        hNEvents.Draw("")
-        label1.Draw("same")
-        c1.Print(".png")
-        hEff = dataset.buildHistoEff()
-        c2 = TCanvas(hEff.GetName(),"hEff",1200,600)
-        c2.cd()
-        hEff.Draw("")
-        label1.Draw("same")
-        c2.Print(".png")
-
-
-
-    #raw_input ("Enter to quit")
-    sys.exit(0)
-    
-    
-
-    
+    def getDatasets(self):
+        return self._datasetMap.keys()
