@@ -1,1 +1,1 @@
-| [[%LINKTOGTLIST%/?GlobalTag=GR_R_53_V1][GR_R_53_V1]] | %GREEN%52X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_52_V7 with the following updates:<br> - omment<br> - updated ECAL local containment corrections. |
+| [[%LINKTOGTLIST%/?GlobalTag=GR_R_53_V1][GR_R_53_V1]] | %GREEN%52X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_52_V7 with the following updates:<br> - new PF cluster regression<br> - updated ECAL local containment corrections. |
