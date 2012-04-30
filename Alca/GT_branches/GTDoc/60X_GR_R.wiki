@@ -1,2 +1,2 @@
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_53_V1][GR_R_53_V1]] | %GREEN%52X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_52_V7 with the following updates:<br> - new PF cluster regression<br> - updated ECAL local containment corrections. |
-| [[%LINKTOGTLIST%/?GlobalTag=GR_R_60_V0][GR_R_60_V0]] | %GREEN%52X%ENDCOLOR% %RED%(Not for prod.[[[#NOTENotProd][1]]])%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_52_V7 with the following updates:<br> - New PF cluster regretion. |
+| [[%LINKTOGTLIST%/?GlobalTag=GR_R_60_V0][GR_R_60_V0]] | %GREEN%52X%ENDCOLOR% %RED%(Not for prod.[[[#NOTENotProd][1]]])%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_52_V7 with the following updates:<br> - New PF cluster regression. |
