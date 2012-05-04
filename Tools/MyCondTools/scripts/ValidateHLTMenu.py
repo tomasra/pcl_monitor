@@ -2,6 +2,7 @@
 
 # This script dumps the content of the AlCaRecoTriggerBits tag provided in input and checks that all the hlt selection paths are selecting some triggers
 # by looking at the HLT menu also provided as input. It does the mapping between AlCaRecos and Primary Datasets with the AlCaRecoMatrix.
+# The AlCaRecoMatrix is read from the wiki file /afs/cern.ch/cms/CAF/CMSALCA/ALCA_GLOBAL/GTDoc/doc/AlCaRecoMatrix.wiki.
 # It produces an output file called validation.txt with the list of matched triggers including prescales.
 
 import sys
@@ -56,7 +57,7 @@ def findHLTPath(PrimaryDataset, HLTpath, HLTMenu):
 
 # read the AlCaRecoMatrix and prepare a dictionary of AlCaReco-PD
 AlCaRecoMatrix = {}
-for line in open("AlCaRecoMatrix.wiki"):
+for line in open("/afs/cern.ch/cms/CAF/CMSALCA/ALCA_GLOBAL/GTDoc/doc/AlCaRecoMatrix.wiki"):
     if line.find("*Primary Dataset*") != -1:
         continue
     splittedLine = line.split("|")
