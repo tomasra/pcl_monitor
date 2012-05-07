@@ -6,11 +6,12 @@ sys.setdlopenflags(DLFCN.RTLD_GLOBAL+DLFCN.RTLD_LAZY)
 #from pluginCondDBPyInterface import *
 import pluginCondDBPyInterface as condDB
 
-dbName =  "oracle://cms_orcoff_prod/CMS_COND_31X_RUN_INFO"
-logName = "oracle://cms_orcoff_prod/CMS_COND_31X_POPCONLOG"
+# FIXME: this should go to cfg
+dbName =  "oracle://cms_orcon_adg/CMS_COND_31X_RUN_INFO"
+logName = "oracle://cms_orcon_adg/CMS_COND_31X_POPCONLOG"
 
 fwkInc = condDB.FWIncantation()
-rdbms = condDB.RDBMS("/afs/cern.ch/cms/DB/conddb")
+rdbms = condDB.RDBMS("/afs/cern.ch/cms/DB/conddb/ADG")
 rdbms.setLogger(logName)
 
 from CondCore.Utilities import iovInspector as inspect
