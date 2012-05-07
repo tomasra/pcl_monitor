@@ -67,7 +67,7 @@ def getRunListRR3(minRun, datasetName, runClassName):
 
     # connect to API
     try:
-        api = RRApi(FULLADDRESS, debug = True)
+        api = RRApi(FULLADDRESS, debug = False)
     except RRApiError, error:
         print error
 
