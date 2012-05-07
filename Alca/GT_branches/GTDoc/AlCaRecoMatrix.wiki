@@ -10,7 +10,7 @@
 | !DoubleElectron | !EcalCalElectron |
 | Cosmics | !TkAlCosmics0T,  !MuAlGlobalCosmics, !HcalCalHOCosmics, !DtCalibCosmics |
 | !AlCaP0 | |
-| !AlCaPhiSym | !EcalCalPhiSym |
+| !AlCaPhiSym | |
 | !HcalNZS | !HcalCalMinBias |
 | !TestEnablesTracker | !TkAlLAS |
 | !AlCaLumiPixels | !LumiPixels |
