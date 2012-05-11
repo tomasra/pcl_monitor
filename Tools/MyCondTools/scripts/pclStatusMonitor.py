@@ -48,26 +48,27 @@ if __name__ == "__main__":
 
 
     try:
+        name    = statusdict['name']
         status  = statusdict['status']
         message = statusdict['msg']
         webinterface = statusdict['weburl']
         lastupdate = datetime.datetime.strptime(statusdict['update'],"%Y-%m-%d %H:%M:%S.%f")
         
         if datetime.datetime.today() - lastupdate > datetime.timedelta(hours=8,minutes=10):
-            print "WARNING: reading staled information, last update on: %s.  &#60a target='newpage' href&#61\"%s\"&#62 More details &#60/a&#62 " % (statusdict['update'], webinterface)
+            print name + ": WARNING: reading staled information, last update on: %s.  &#60a target='newpage' href&#61\"%s\"&#62 More details &#60/a&#62 " % (statusdict['update'], webinterface)
             raise SystemExit, UNKNOWN
 
         if status == 0:
-            print "%s. &#60a target='newpage' href&#61\"%s\"&#62 More details &#60/a&#62 " % (message,webinterface)
+            print name + ": %s. &#60a target='newpage' href&#61\"%s\"&#62 More details &#60/a&#62 " % (message,webinterface)
             raise SystemExit, OK
         elif status < 0:
-            print "%s. &#60a target='newpage' href&#61\"%s\"&#62 More details &#60/a&#62 " % (message,webinterface)
+            print name + ": %s. &#60a target='newpage' href&#61\"%s\"&#62 More details &#60/a&#62 " % (message,webinterface)
             raise SystemExit, UNKNOWN
         elif status > 1000:
-            print "%s. &#60a target='newpage' href&#61\"%s\"&#62 More details &#60/a&#62 " % (message,webinterface)
+            print name + ": %s. &#60a target='newpage' href&#61\"%s\"&#62 More details &#60/a&#62 " % (message,webinterface)
             raise SystemExit, CRITICAL
         elif status > 100:
-            print "%s. &#60a target='newpage' href&#61\"%s\"&#62 More details &#60/a&#62 " % (message,webinterface)
+            print name + ": %s. &#60a target='newpage' href&#61\"%s\"&#62 More details &#60/a&#62 " % (message,webinterface)
             raise SystemExit, WARNING
         
     except Exception, e:

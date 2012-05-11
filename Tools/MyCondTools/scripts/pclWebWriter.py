@@ -1,6 +1,27 @@
 #!/usr/bin/env python
 
 
+import ConfigParser as ConfigParser
+#from ConfigParser import ConfigParser
+
+
+# --------------------------------------------------------------------------------
+# configuration
+
+# read a global configuration file
+cfgfile = ConfigParser.ConfigParser()
+cfgfile.optionxform = str
+
+CONFIGFILE = "GT_branches/pclMonitoring.cfg"
+print 'Reading configuration file from ',CONFIGFILE
+cfgfile.read([ CONFIGFILE ])
+
+tier0DasSrc                 = cfgfile.get('Common','tier0DasSrc')
+webArea                     = cfgfile.get('PCLMonitor','webArea')
+
+
+writeToWeb             = True
+
 
 class WebPageWriter:
     def __init__(self):
@@ -79,10 +100,6 @@ class WebPageWriter:
         htmlpage.close()
 
 
-
-tier0DasSrc            = "https://cmsweb.cern.ch/tier0/"
-webArea                = '/afs/cern.ch/user/a/alcaprod/www/Monitoring/PCLTier0Workflow/'
-writeToWeb             = True
 
 
 

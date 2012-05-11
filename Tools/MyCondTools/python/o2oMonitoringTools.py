@@ -1,4 +1,5 @@
 import datetime
+import time
 import os
 import Tools.MyCondTools.RunInfo as RunInfo
 import Tools.MyCondTools.tableWriter as tableWriter
@@ -6,25 +7,20 @@ import Tools.MyCondTools.color_tools as colorTools
 import Tools.MyCondTools.gt_tools as gtTools
 
 
-# fixme find a method to configure which records/tafs need to be monitored
-tagLumi                = "BeamSpotObject_ByLumi"
-tagRun                 = "BeamSpotObject_ByRun"
 
-
-class RunReport:
+class RunReportTagCheck:
     def __init__(self):
         self._runnumber = -1
-        self._pclRun = True
-        self._hasPayload = True
-        self._hasUpload = True
-        self._isOutOfOrder = False
         self._startTime = None
         self._stopTime = None
-        #self._runInfo = None
-        self._latencyFromEnd = -1.
-        self._latencyFromBeginning = -1.
-        self._jobTime = datetime.datetime
+        self._recordList = []
+        self._recordStatus = []
+        
         return
+
+    def runNumber(self):
+        return self._runnumber
+
 
     def startTime(self):
         return self._startTime
@@ -35,55 +31,89 @@ class RunReport:
     def setRunNumber(self, number):
         self._runnumber = number
 
-    def sqliteFound(self, isFound):
-        self._pclRun = isFound
-
-    def payloadFound(self, isFound):
-        self._hasPayload = isFound
-
-    def isUploaded(self, isUploaded):
-        self._hasUpload = isUploaded
-
-    def isOutoforder(self, isOutofOrder):
-        self._isOutOfOrder = isOutofOrder
-
-    def setRunInfoContent(self, runInfo):
-        self._startTime = runInfo.startTime()
-        self._stopTime = runInfo.stopTime()
-        #self._runInfo = runInfo
-
     def setStartTime(self, start):
         self._startTime = start
 
     def setStopTime(self, stop):
         self._stopTime = stop
 
+    def setRunInfoContent(self, runInfo):
+        self._startTime = runInfo.startTime()
+        self._stopTime = runInfo.stopTime()
+        #self._runInfo = runInfo
+
     # hours
     def runLenght(self):
         deltaTRun = self.stopTime() - self.startTime()
-        return deltaTRun.days*24. + deltaTRun.seconds/(60.*60.)
-
-    def setLatencyFromEnd(self, timeFromEnd):
-        self._latencyFromEnd = timeFromEnd
-
-    def setLatencyFromBeginning(self, timeFromBeginning):
-        self._latencyFromBeginning = timeFromBeginning
-        
+        return deltaTRun.days*24.0 + deltaTRun.seconds/(60.*60.)
 
     def __str__(self):
         return "--- run #: " + str(self._runnumber) + " start time: " + str(self.startTime())
 
     def getList(self):
-        theList = [str(self._runnumber), str(self.startTime()), str(self.stopTime()), self._pclRun,  self._hasPayload, self._hasUpload, self._isOutOfOrder, float(self._latencyFromBeginning), float(self._latencyFromEnd)]
-        return theList
+             theList = [str(self._runnumber), str(self.startTime()), str(self.stopTime())]
+             for index in range(0, len(self._recordList)):
+                 #theList.append(self._recordList[index])
+                 theList.append(self._recordStatus[index])
+             return theList
 
-    def setJobTime(self, time):
-        self._jobTime = time
+    def addRecordAndStatus(self, record, status):
+        if not record in  self._recordList:
+            self._recordList.append(record)
+            self._recordStatus.append(status)
+        else:
+            print "Record already registered!"
 
-    def jobTime(self):
-        return self._jobTime
+
+class RecordReport:
+    def __init__(self, recordname):
+        self._properties = {}
+        self._properties['recordName'] = recordname
+        self._properties['tagName'] = None
+        self._properties['accountName'] = None
+        self._properties['lastWrite'] = None
+        self._properties['lastWriteAge'] = None
+        self._properties['lastWriteStatus'] = None
+        self._properties['lastRun'] = None
+        self._properties['lastRunAge'] = None
+        self._properties['lastRunStatus'] = None
+        self._properties['lastSince'] = None
+        self._properties['lastSinceAge'] = None
+        self._properties['lastSinceStatus'] = None
 
 
+
+    def getProperty(self, key):
+        data = self._properties[key]
+        if data:
+            if key == 'lastSince' or key == 'lastWrite' or key == 'lastRun':
+                return datetime.datetime.fromtimestamp(data)
+            elif key == 'lastSinceAge' or key == 'lastWriteAge' or key == 'lastRunAge':
+                return datetime.timedelta(days=data[0],seconds=data[1],microseconds=data[2])
+        return data
+
+        
+    def setLastO2ORun(self, dateandtime, age, status):
+        self._properties['lastRun'] = time.mktime(dateandtime.timetuple())
+        self._properties['lastRunAge'] = [age.days, age.seconds, age.microseconds]
+        self._properties['lastRunStatus'] = status
+
+    def setLastO2OWrite(self, dateandtime, age, status):
+        self._properties['lastWrite'] = time.mktime(dateandtime.timetuple())
+        self._properties['lastWriteAge'] = [age.days, age.seconds, age.microseconds]
+        self._properties['lastWriteStatus'] = status
+
+
+    def setLastSince(self, dateandtime, age, status):
+        self._properties['lastSince'] = time.mktime(dateandtime.timetuple())
+        self._properties['lastSinceAge'] = [age.days, age.seconds, age.microseconds]
+        #time.mktime(age.timetuple())
+        self._properties['lastSinceStatus'] = status
+
+
+    def setTagAndAccount(self, tag, account):
+        self._properties['tagName'] = tag
+        self._properties['accountName'] = account
 
 
 
@@ -103,47 +133,31 @@ def readCache(filename):
                 runCached = int(items[0])
                 runNumbers.append(runCached)
                 # create the report
-                runReport = RunReport()
-                runReport.setRunNumber(runCached)
-
-                if items[5] == "True":
-                    runReport.sqliteFound(True)
-                else:
-                    runReport.sqliteFound(False)
-
-                if items[6] == "True":
-                    runReport.payloadFound(True)
-                else:
-                    runReport.payloadFound(False)
-
-                if items[7] == "True":
-                    runReport.isUploaded(True)
-                else:
-                    runReport.isUploaded(False)
-
-                if items[8] == "True":
-                    runReport.isOutoforder(True)
-                else:
-                    runReport.isOutoforder(False)
-                    oooCached = True
-
-
+                rRep = RunReportTagCheck()
+                rRep.setRunNumber(runCached)
+                
                 startCached = RunInfo.getDate(items[1] + " " + items[2])
-                runReport.setStartTime(startCached)
-                
+                rRep.setStartTime(startCached)
+
                 stopCached = RunInfo.getDate(items[3] + " " + items[4])
-                runReport.setStopTime(stopCached)
+                rRep.setStopTime(stopCached)
                 
-                latencyStartCached = float(items[9])
-                latencyEndCached = float(items[10])
-
-                runReport.setLatencyFromBeginning(latencyStartCached)
-                runReport.setLatencyFromEnd(latencyEndCached)
-
-                runReports.append(runReport)
+                remaining = len(items) - 5
+                last = 4
+                #print runCached
+                while remaining >= 1:
+                    record = data[0].split()[last]
+                    status = items[last+1]
+                    rRep.addRecordAndStatus(record,status)
+                    #print data[0].split()
+                    #print record, status
+                    last += 1
+                    remaining -= 1
+                runReports.append(rRep)
         cache.close()                
 
     return runNumbers, runReports
+
 
 def writeCacheAndLog(cachefilename, logfilename, runReports):
     last2days = datetime.timedelta(days=2)
@@ -187,10 +201,6 @@ def getRunReport(runinfoTag, run, promptCalibDir, fileList, iovtableByRun_oracle
         print "*** Error can not find run: " + str(run) + " in RunInfo: " + str(error)
         raise Exception("Error can not find run: " + str(run) + " in RunInfo: " + str(error))
 
-    if int(run) != int(runInfo.run()):
-        raise Exception("Error mismatch with the runInfo payload for run: " + str(run) + " in RunInfo: " + str(runInfo.run()))
-    #print run
-    #print runInfo.run()
     rRep = RunReport()
     rRep.setRunNumber(runInfo.run())
     rRep.setRunInfoContent(runInfo)
@@ -268,10 +278,8 @@ def getRunReport(runinfoTag, run, promptCalibDir, fileList, iovtableByRun_oracle
             emptyPayload = True
             print "   " + colorTools.warning("***Warning") + ": no payload in sqlite file!"
         else:
-            
             emptyPayload = False
 
-            
             # list the iov in the tag
             connect    = "sqlite_file:" + promptCalibDir + dbFile
             listiov_run_sqlite = gtTools.listIov(connect, tagRun, '')
@@ -286,10 +294,7 @@ def getRunReport(runinfoTag, run, promptCalibDir, fileList, iovtableByRun_oracle
                         #print iovOracle
                     else:
                         print "    " + colorTools.warning("Warning:") + " runbased IOV not found in Oracle"
-            else:
-                print colorTools.warning("Warning") +  " can not list IOV for file",connect
-                #raise Exception("Error can not list IOV for file",connect)
-              
+                
 
             missingIOV = False
             listiov_lumi_sqlite = gtTools.listIov(connect, tagLumi, '')
@@ -307,13 +312,9 @@ def getRunReport(runinfoTag, run, promptCalibDir, fileList, iovtableByRun_oracle
                         print "    " + colorTools.warning("Warning:") + " lumibased IOV not found in Oracle for since: " + str(iov.since())
                         missingIOV = True
             else:
-                emptyPayload = True
-                print "   " + colorTools.warning("***Warning") + ": no payload in sqlite file!"
-                print colorTools.warning("Warning") +  " can not list IOV for file",connect
-                #raise Exception("Error can not list IOV for file",connect)
+                raise Exception("Error can not list IOV for file",connect)
                 
-
-        if not emptyPayload:
+                
             if not missingIOV:
                 allLumiIOVFound = True
                 print "    All lumibased IOVs found in oracle!"
@@ -345,4 +346,50 @@ def getRunReport(runinfoTag, run, promptCalibDir, fileList, iovtableByRun_oracle
             rRep.isUploaded(True)
 
     return rRep
+
+
+import json
+
+
+class O2ORecordJson:
+    def __init__(self, name):
+        self._name = name
+        self._recordMap = {}
+
+    #def rcdID(self):
+    #    return RcdID([self._record,self._label])
+
+
+    def addRcd(self, rcdId, rcdRep):
+        self._recordMap[rcdId[0]] = rcdRep._properties
+
+        
+    def writeJsonFile(self, dirName):
+        filename =  self._name + ".json"
+        # get a string with JSON encoding the list
+        #dthandler = lambda obj: obj.isoformat() if isinstance(obj, datetime.datetime) else None
+        dump = json.dumps(self._recordMap)
+        file = open(dirName + '/' + filename, 'w')
+        file.write(dump + "\n")
+        file.close()
+
+    def readJsonFile(self, dirName):
+        filename = self._name + ".json"
+        jsonData = open(dirName + '/' + filename)
+        self._recordMap = json.load(jsonData)
+        jsonData.close()
+
+    def getRecordReport(self, rcdId):
+        rcdRep = RecordReport(rcdId[0])
+        rcdRep._properties = self._recordMap[rcdId]
+        return rcdRep
+
+    def getRecordIds(self):
+        return self._recordMap.keys()
+
+
+
+
+
+
 

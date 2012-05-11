@@ -17,33 +17,54 @@ import Tools.MyCondTools.pclMonitoringTools as pclMonitoringTools
 import shutil
 
 
+
+import ConfigParser as ConfigParser
+#from ConfigParser import ConfigParser
+
+
 # --------------------------------------------------------------------------------
 # configuration
-runinfoTag             = 'runinfo_31X_hlt'
-#runinfoTag             = 'runinfo_start_31X_hlt'
-promptCalibDir         = '/afs/cern.ch/cms/CAF/CMSALCA/ALCA_PROMPT/'
-webArea                = '/afs/cern.ch/user/a/alcaprod/www/Monitoring/PCLTier0Workflow/'
-tagLumi                = "BeamSpotObject_ByLumi"
-tagRun                 = "BeamSpotObject_ByRun"
-tier0DasSrc            = "https://cmsweb.cern.ch/tier0/"
-#tier0DasSrc            = "http://gowdy-wttest.cern.ch:8304/tier0/runs"
-passwd                 = "/afs/cern.ch/cms/DB/conddb"
-connectOracle          =  "oracle://cms_orcoff_prod/CMS_COND_31X_BEAMSPOT"
-tagRunOracle           = "BeamSpotObjects_PCL_byRun_v0_offline"
-tagLumiOracle          = "BeamSpotObjects_PCL_byLumi_v0_prompt"
-cacheFileName          = "PCLMonitorCache.txt"
-weburl                 = "http://cms-alcadb.web.cern.ch/cms-alcadb/Monitoring/PCLTier0Workflow/"
 
-writeToWeb             = True
-nRunsToPlot            = 100
+# read a global configuration file
+cfgfile = ConfigParser.ConfigParser()
+cfgfile.optionxform = str
+
+CONFIGFILE = "GT_branches/pclMonitoring.cfg"
+print 'Reading configuration file from ',CONFIGFILE
+cfgfile.read([ CONFIGFILE ])
+
+
+runinfoTag                  = cfgfile.get('Common','runinfoTag')
+tier0DasSrc                 = cfgfile.get('Common','tier0DasSrc')
+passwdfile                  = cfgfile.get('Common','passwdfile')
+# FIXME: use consistently with or without ADG in al applications
+passwd                 = "/afs/cern.ch/cms/DB/conddb/ADG"
+
+
+
+promptCalibDir              = cfgfile.get('PCLMonitor','promptCalibDir')
+weburl                      = cfgfile.get('PCLMonitor','weburl')
+webArea                     = cfgfile.get('PCLMonitor','webArea')
+tagLumi                     = cfgfile.get('PCLMonitor','tagBSLumi')
+tagRun                      = cfgfile.get('PCLMonitor','tagBSRun')
+connectOracle               = cfgfile.get('PCLMonitor','connectBSOracle')
+tagRunOracle                = cfgfile.get('PCLMonitor','tagBSRunOracle')
+tagLumiOracle               = cfgfile.get('PCLMonitor','tagBSLumiOracle')
+cacheFileName               = cfgfile.get('PCLMonitor','cacheFileName')
+rrDatasetName               = cfgfile.get('PCLMonitor','rrDatasetName')
+rrRunClassName              = cfgfile.get('PCLMonitor','rrRunClassName')
+
+
+
+
+
+
+
+
 
 #os.putenv("CORAL_AUTH_PATH","/afs/cern.ch/cms/DB/conddb")
 
 
-
-#webArea = './'
-# for inspecting last run after run has stopped  
-#tag = 'runsummary_test'
 
 
 
@@ -96,13 +117,16 @@ def runBackEnd():
     runList = []
     try:
         #runList = RunRegistryTools.getRunList(lastCachedRun+1)
-        runList = RunRegistryTools.getRunListRR3(lastCachedRun+1, "Online", "Collisions12")
+        #runList2 = RunRegistryTools.getRunListRR3(lastCachedRun+1, "Express", "Collisions12")
+        runList = RunRegistryTools.getRunListRR3(lastCachedRun+1, rrDatasetName, rrRunClassName)
+        #print runList
+        #print runList2
         runList.sort(reverse=True)
     except Exception as error:
         print '*** Error 1: RR query has failed'
         print error
         return 101, "Error: failed to get collision runs from RunRegistry: " + str(error)
-        
+    print runList
     # --- get the prompt reco status from Tier0-DAS
     tier0Das = tier0DasInterface.Tier0DasInterface(tier0DasSrc) 
     lastPromptRecoRun = lastCachedRun
@@ -190,7 +214,7 @@ def runBackEnd():
     status = retValues[0]
     message = retValues[1]
     if status == 0 and unknownRun:
-        status = 1005
+        status = 10
         message = unknownRunMsg
     return status, message
 

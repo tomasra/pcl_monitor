@@ -5,6 +5,71 @@ try:
     import cx_Oracle
 except ImportError, e: 
     print "Cannot import cx_Oracle:", e 
+
+
+
+from xml.sax.handler import ContentHandler
+from xml.sax import make_parser, SAXException
+import re 
+
+# this implements the generic parsing of the authentication file
+def extract(searchTerm, authfile='./authentication.xml'):
+    '''
+    Obtains DB connection string from xml file
+
+    @var searchTerm1: DB name for which connection string is constructed
+    @var authfile: xml file name where stored connection data
+    
+    @return: tuple ('connectionString', 'user', 'schema')
+    '''
+    
+    class conHandler(ContentHandler):
+        '''        
+        Overriden SAX ContentHandler for parser
+        '''
+        
+        def __init__(self, searchTerm):
+            self.searchTerm = searchTerm
+            self.state = 0 # 0 - searching; 1 - DB name obtained; 2 - username obtained
+            self.conDict = {}
+            
+        def startElement(self, name, attrs):
+            # getting password
+            if self.state == 2:
+                self.conDict['password'] = attrs.getValue("value")
+                raise SAXException() # stop parsing
+            # getting username
+            if self.state == 1:
+                self.conDict['user'] = attrs.getValue("value")
+                self.state = 2
+            # getting DB name & schema
+            if name == "connection" and attrs.getValue("name") == self.searchTerm:
+                splitedDBConList = re.split(r'//', attrs.getValue("name"))
+                splitedDBConList = re.split(r'/', splitedDBConList[1])
+                self.conDict['dbName'] = splitedDBConList[0]
+                if len(splitedDBConList) == 1 or splitedDBConList[1] == '':   # Checking for schema presence
+                    self.conDict['schema'] = ''
+                else:
+                    self.conDict['schema'] = splitedDBConList[1]
+                self.state = 1
+            
+    parser = make_parser()
+    handler = conHandler(searchTerm)
+    parser.setContentHandler(handler)
+    try:
+        parser.parse(authfile)
+    except Exception, e:
+        if 'password' in handler.conDict:
+            connectionString = str(handler.conDict['user']+'/'+handler.conDict['password']+'@'+handler.conDict['dbName'])           
+            connectionDict = {'connectionstring': connectionString, 'user':str(handler.conDict['user']), 'schema': str(handler.conDict['schema'])}
+            return connectionDict
+        else:
+            raise Exception('Can\'t extract connection string from ' + authfile + '\n\tError code: ' + str(e))
+    
+    return None
+
+
+
     
 class PopCon_Monitoring_last_updates:
     """
@@ -34,28 +99,10 @@ class PopCon_Monitoring_last_updates:
         </connectionlist>
         """
         try:
-            xmldoc = minidom.parse(authfile)
-            
-            reflist     =   xmldoc.getElementsByTagName('connection')
-            bitref      =   reflist[0]
-            db_name     =   bitref.attributes["name"]
-            
-            reflist     =   xmldoc.getElementsByTagName('parameter')
-            bitref      =   reflist[0]
-            user        =   bitref.attributes["value"]
-            bitref      =   reflist[1]
-            password    =   bitref.attributes["value"]
-            
-            
-            lista = re.split(r'//', db_name.value)
-            lista = re.split(r'/', lista[1])
-            db_name.value   =   lista[0]
-            #user.value      =   lista[1]
             conn_dict               =   {}
-            conn_dict['account']    =   lista[1]  
-            conn_dict['user']       =   user.value
-            conn_dict['password']   =   password.value
-            conn_dict['db_name']    =   db_name.value
+            conn_dict = extract("oracle://cms_orcon_adg/CMS_COND_31X_POPCONLOG", authfile)
+            conn_dict['account'] = 'CMS_COND_31X_POPCONLOG'
+            #print conn_dict            
             return conn_dict
         except IOError, e:
             print "Authentication file not found", e
@@ -70,6 +117,48 @@ class PopCon_Monitoring_last_updates:
             print time.ctime()," no new payload uploads"    
             
         return records
+
+    def PopConJobRunTime(self, authfile="./auth.xml",logFile = 'EcalLaserTimeBasedO2O.log'):
+        try:
+            conn_dict =   self.extract(authfile)
+            #conn_string =   str(conn_dict['user']+'/'+conn_dict['password']+'@'+conn_dict['db_name'])
+            conn_string = conn_dict['connectionstring']
+        except Exception, e:
+            print "Something went wrong with auth file", e
+            sys.exit()
+        
+        #print conn_string
+        conn =   cx_Oracle.connect(conn_string)
+        try:
+            start = time.time()
+            curs = conn.cursor()
+
+            # payloadtoken,
+
+            sqlstr = """
+            select 
+            crontime,
+            prevcrontime,
+            short_tail
+            FROM """+str(conn_dict['account'])+""".logtails
+            WHERE
+            filename = '""" + str(logFile) + """'
+            """
+            rows    =   curs.execute(sqlstr)
+            #rows    =   curs.fetchall()
+            name_of_columns =   []
+            for fieldDesc in curs.description:     
+                name_of_columns.append(fieldDesc[0])
+            rows                        =   {}
+            rows['name_of_columns']     =   name_of_columns
+            rows['data']                =   {}
+            rows['data']                =   curs.fetchall()
+            self.num_rows   =   len(rows['data'])
+            #print rows['data']
+            return rows['data']
+        finally:
+            conn.close()
+
     
     def PopConRecentActivityRecorded(self,authfile="./auth.xml",account="",iovtag="",start_date="",end_date=""):
         if start_date=='':
@@ -90,7 +179,8 @@ class PopCon_Monitoring_last_updates:
         """
         try:
             conn_dict =   self.extract(authfile)
-            conn_string =   str(conn_dict['user']+'/'+conn_dict['password']+'@'+conn_dict['db_name'])
+            #conn_string =   str(conn_dict['user']+'/'+conn_dict['password']+'@'+conn_dict['db_name'])
+            conn_string = conn_dict['connectionstring']
         except Exception, e:
             print "Something went wrong with auth file", e
             sys.exit()
@@ -171,5 +261,9 @@ class PopCon_Monitoring_last_updates:
             return one_month_ago
 
 if __name__     ==  "__main__":
+    authentication = "/afs/cern.ch/cms/DB/conddb/ADG/authentication.xml"
+
     p=PopCon_Monitoring_last_updates(interval=300)
-    p.check()
+    p.check(authentication)
+    print extract("oracle://cms_orcon_adg/CMS_COND_31X_POPCONLOG", authentication)
+    p.PopConJobRunTime(authentication)

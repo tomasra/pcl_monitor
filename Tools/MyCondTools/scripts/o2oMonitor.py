@@ -14,18 +14,6 @@ import dateutil.parser
 import shutil
 
 
-# Configuration
-passwdfile             = "/afs/cern.ch/cms/DB/conddb"
-tier0DasSrc            = "https://cmsweb.cern.ch/tier0/"
-referenceDataset       = "MinimumBias"
-weburl                 = "http://cms-alcadb.web.cern.ch/cms-alcadb/Monitoring/PCLO2O/"
-gtconnstring           = 'oracle://cms_orcoff_prod/CMS_COND_31X_GLOBALTAG'
-monitoredrecords       = 'EcalLaserAPDPNRatiosRcd,SiStripDetVOffRcd'
-# FIXME: move to a better place
-cacheFileName          = 'o2oMonitor.cache'
-runinfoTag             = 'runinfo_31X_hlt'
-webArea                = '/afs/cern.ch/user/a/alcaprod/www/Monitoring/PCLO2O/' 
-
 import Tools.MyCondTools.monitorStatus as monitorStatus
 import Tools.MyCondTools.tier0DasInterface as tier0DasInterface
 import Tools.MyCondTools.gt_tools as gtTools
@@ -35,10 +23,43 @@ import Tools.MyCondTools.popcon_monitoring_last_updates as popConLog
 import Tools.MyCondTools.color_tools as colorPrintTools
 import Tools.MyCondTools.RunInfo as RunInfo
 import Tools.MyCondTools.tableWriter as tableWriter
+import ConfigParser as ConfigParser
+#from ConfigParser import ConfigParser
 
 
+
+# read a global configuration file
+cfgfile = ConfigParser.ConfigParser()
+cfgfile.optionxform = str
+
+CONFIGFILE = "GT_branches/pclMonitoring.cfg"
+print 'Reading configuration file from ',CONFIGFILE
+cfgfile.read([ CONFIGFILE ])
+
+passwdfile                  = cfgfile.get('Common','passwdfile')
+tier0DasSrc                 = cfgfile.get('Common','tier0DasSrc')
+referenceDataset            = cfgfile.get('Common','referenceDataset')
+gtconnstring                = cfgfile.get('Common','gtconnstring')
+runinfoTag                  = cfgfile.get('Common','runinfoTag')
+
+monitoredrecords            = cfgfile.get('O2OMonitor','monitoredrecords')
+weburl                      = cfgfile.get('O2OMonitor','weburl')
+webArea                     = cfgfile.get('O2OMonitor','webArea')
+cacheFileName               = cfgfile.get('O2OMonitor','cacheFileName')
+rrDatasetName               = cfgfile.get('O2OMonitor','rrDatasetName')
+rrRunClassName              = cfgfile.get('O2OMonitor','rrRunClassName')
+o2oLogfileList              = cfgfile.get('O2OMonitor','o2oLogfileList')
+thresholdLastWrite          = cfgfile.get('O2OMonitor','thresholdLastWrite')
+thresholdLastSince          = cfgfile.get('O2OMonitor','thresholdLastSince')
 
 def runBackEnd():
+
+    # this will store the exit status for the json report
+    retValues = 0, "OK"
+    # flag in case we miss the info for some runs 
+    unknownRun = False
+    unknownRunMsg = ""
+
     tier0Das = tier0DasInterface.Tier0DasInterface(tier0DasSrc) 
     try:
         nextPromptRecoRun = tier0Das.firstConditionSafeRun()
@@ -49,15 +70,14 @@ def runBackEnd():
         print '*** Error 2: Tier0-DAS query has failed'
         print error
         return 102, "Error: Tier0-DAS query has failed: " + str(error)
-    
+
 
     gtName = gtFromPrompt.split('::')[0]
     gtConfFile = gtName + '.conf'
 
     
     if not gtTools.confFileFromDB(gtName, gtConfFile, gtconnstring, passwdfile):
-        # FIXME: which return #?
-        return 1000
+        return 201, "GT: " + gtFromPrompt + " could not be found in ORACLE!"
     
 
     # create the collection of tags
@@ -68,8 +88,10 @@ def runBackEnd():
 
     print "Tags to be monitored: "
     for record in monitoredrecords.split(','):
-        # FIXME: the label should come from the configuration
         label = ''
+        if ':' in record:
+            label = record.split(':')[1]
+            record = record.split(':')[0]
         rcdId =  gtTools.RcdID([record, label])
         if not tagCollection.hasRcdID(rcdId):
             print "Error: rcd: " + rcdIdn + " not found in GT: " + gtName
@@ -103,7 +125,7 @@ def runBackEnd():
     try:
         # FIXME: do we need to restrict to Collision12?
         #runList = RunRegistryTools.getRunListRR3(lastCachedRun+1,"Online", "Commissioning12")
-        runList = RunRegistryTools.getRunListRR3(lastCachedRun+1,"Online", "Collisions12")
+        runList = RunRegistryTools.getRunListRR3(lastCachedRun+1, rrDatasetName, rrRunClassName)
 
     except Exception as error:
         print '*** Error 1: RR query has failed'
@@ -115,14 +137,16 @@ def runBackEnd():
 
     # --------------------------------------------------------------------------------
     # --- check O2O and DB tag status for each record
-    threshold = datetime.timedelta(hours=2)
-    thresholdSince = datetime.timedelta(hours=48)
+    threshold = datetime.timedelta(hours=int(thresholdLastWrite))
+    thresholdSince = datetime.timedelta(hours=int(thresholdLastSince))
 
     today = datetime.datetime.today()
     fromUTCToLocal = datetime.timedelta(hours=2)
     recordandlastsince = {}
 
     tableTitle = ["# run", "start-time", "end-time"]
+
+    rcdJson = o2oMonitoringTools.O2ORecordJson("o2oMonitor")
 
     for entry in tagsTomonitor:
         print "- Tag:", entry
@@ -137,12 +161,46 @@ def runBackEnd():
         rcdRep = o2oMonitoringTools.RecordReport(recordName)
         rcdRep.setTagAndAccount(tagName, accountName)
 
-        # 1. get the last updates from PopConLogger
+
         nDays = 1
         nSec = nDays*24*60*60
         popLog = popConLog.PopCon_Monitoring_last_updates(interval=nSec)
+
+        # 0. get the last time the O2O run
+        o2oLogfiles = {}
+
+        for rcdEntry in o2oLogfileList.split(','):
+            key = rcdEntry.split(':')[0]
+            logFileForKey = rcdEntry.split(':')[1]
+            o2oLogfiles[key] = logFileForKey
+        jobData = popLog.PopConJobRunTime(authfile=passwdfile + "/ADG/authentication.xml",
+                                          logFile=o2oLogfiles[recordName])
+
+        if len(jobData) != 0:
+            lastO2ORun = jobData[0][0] + fromUTCToLocal
+            previouO2ORun = jobData[0][1] + fromUTCToLocal
+            runO2OAge = today - lastO2ORun
+
+            statusForRpt = "OK"
+
+            print "  - Last O2O run on: " + str(lastO2ORun) + " (" + str(runO2OAge) + " ago)"
+            if  runO2OAge > 2*(lastO2ORun - previouO2ORun):
+                print "      " + colorPrintTools.error("Error") + ": the O2O for rcd " + recordName + " is not running since a while (" + str(runO2OAge) + ")"
+                statusForRpt = "ERROR"
+                if 2050 > retValues[0]:
+                    retValues = 2050, "Error: the O2O for rcd " + recordName + " is not running since a while (" + str(runO2OAge) + ")"
+
+            rcdRep.setLastO2ORun(lastO2ORun, runO2OAge, statusForRpt)
+        else:
+            print "Error: No O2O job logs for tag: " + tagName + " in account: " + accountName + " could be found in the PopConLogs"
+            if 2051 > retValues[0]:
+                retValues = 2051, "Error: no O2O job logs found for rcd: " + recordName
+
+
+
+        # 1. get the last updates from PopConLogger
         # FIXME: the auth.xml can it be read from a central place?
-        logData = popLog.PopConRecentActivityRecorded(authfile=passwdfile + "/authentication.xml",
+        logData = popLog.PopConRecentActivityRecorded(authfile=passwdfile + "/ADG/authentication.xml",
                                                       account=accountName,
                                                       iovtag=tagName)
 
@@ -157,18 +215,28 @@ def runBackEnd():
 
             updateage = today - datelastupdate
             statusForRpt = "OK"
-            print "  - Last O2O run on: " + str(datelastupdate) + " (" +  str(updateage) + " ago)"
+            print "  - Last O2O wrote on: " + str(datelastupdate) + " (" +  str(updateage) + " ago)"
             print "    status:",status, "payload token:", token.split("<br>")[4]
             if updateage > threshold:
-                print "      " + colorPrintTools.warning("Warning") + ": O2O is not running since a while!"
+                print "      " + colorPrintTools.warning("Warning") + ": O2O is not writing since a while!"
                 statusForRpt = "OLD"
+                if 2001 > retValues[0]:
+                    retValues = 2001, "Warning: the O2O for rcd: " + recordName + " is not writing since a while!"
             if status != 'OK':
                 print "      Warning: O2O status is: " + status + "!"
                 statusForRpt = "ERROR"
+                if 2002 > retValues[0]:
+                    retValues = 2002, "Error: the O2O status for rcd: " + recordName + " is " + status + "!"
+                
             rcdRep.setLastO2OWrite(datelastupdate, updateage, statusForRpt)
         else:
-            print "Error: No O2O updates to tag: " + tagName + " in account: " + accountName
+            print "Error: No O2O updates to tag: " + tagName + " in account: " + accountName + " could be found in the PopConLogs"
+            if 2010 > retValues[0]:
+                retValues = 2010, "Error: no O2O updates logged for rcd: " + recordName
+
             #rcdRep.setLastO2OWrite(datelastupdate, updateage, "ERROR")
+
+        
 
 
             
@@ -186,15 +254,17 @@ def runBackEnd():
         stat = "OK"
         if sinceage > thresholdSince:
             stat = "OLD"
+            if 2101 > retValues[0]:
+                retValues = 2101, "Error: the last IOV of rcd: " + recordName + " is OLD (since: " + str(datesince) + ")!"
         rcdRep.setLastSince(datesince, sinceage, stat)
 
 
-        
-        #pageWriter.addRecordReport(recordName, rcdRep)
+        rcdJson.addRcd(gtTools.RcdID([recordName,""]), rcdRep)
+
 
     # --------------------------------------------------------------------------------
     # --- Write the Rcd status to cache
-    # FIXME
+    rcdJson.writeJsonFile(webArea)
     
 
     # --------------------------------------------------------------------------------
@@ -210,7 +280,9 @@ def runBackEnd():
         except Exception as error:
             print '*** Error XXX: RunInfo query failed!'
             print error
-            #return 102, "Error: Run-Info query has failed: " + str(error)
+            unknownRun = True
+            unknownRunMsg = "Error: can not get report for run: " + str(run) + ", since run-info query failed: " + str(error)
+            print unknownRunMsg
             continue
             
         rRep = o2oMonitoringTools.RunReportTagCheck()
@@ -257,7 +329,7 @@ def runBackEnd():
     tableForLog.append(tableTitle)
 
     for rep in runReports:
-        if rep.runNumber() < nextPromptRecoRun:
+        if int(rep.runNumber()) < int(nextPromptRecoRun):
             tableForCache.append(rep.getList())            
         tableForLog.append(rep.getList()) 
 
@@ -274,7 +346,13 @@ def runBackEnd():
     logFile.close()
 
 
-
+    status = retValues[0]
+    message = retValues[1]
+    if status == 0 and unknownRun:
+        status = 10
+        message = unknownRunMsg
+    return status, message
+    
 
 
 
@@ -292,6 +370,10 @@ if __name__     ==  "__main__":
     #try:
     statAndMsg = runBackEnd()
     
-    
+    status.setStatus(statAndMsg[0],statAndMsg[1])
+    #print datetime.datetime.today()
+    status.setUpdateTime(datetime.datetime.today())
+    status.writeJsonFile(webArea + "status.json")
+
 
     sys.exit(0)
