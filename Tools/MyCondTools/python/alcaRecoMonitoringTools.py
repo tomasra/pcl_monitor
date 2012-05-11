@@ -141,6 +141,13 @@ def dbsQueryRunList(dataset, minRun = 1, maxRun = -1):
     dbs_out = commands.getstatusoutput(dbs_cmd)
     return dbs_out
 
+def dbsQueryMinRun(dataset):
+    dbs_cmd = 'dbs search --noheader --query="find min(run) where dataset=' + dataset
+    dbs_cmd += '"'
+    #print dbs_cmd
+    dbs_out = commands.getstatusoutput(dbs_cmd)
+    return dbs_out
+
 
 def dbsQuery(dataset, minRun = 1, maxRun = -1):
     dbs_cmd = 'dbs search --noheader --query="find run,sum(file.numevents) where dataset=' + dataset
