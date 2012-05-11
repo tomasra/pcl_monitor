@@ -211,6 +211,7 @@ class DBSAlCaRecoResults():
         pd = name.split("/")[1]
         othername = name.split("/")[2]
         self._cachefilename = pd + '-' + othername
+        self._lasCachedRun = 1
         return
 
 
@@ -279,7 +280,7 @@ class DBSAlCaRecoResults():
         runtoremove = []
         for rrep in self._infoPerRun:
             #print rrep.run()
-            if not rrep.run() in runs:
+            if not rrep.run() in runs and rrep.run() > self._lasCachedRun:
                 #print "run: " + str(rrep.run()) + " is not a Collision run: remove!"
                 runtoremove.append(rrep)
         for run in runtoremove:
@@ -290,6 +291,7 @@ class DBSAlCaRecoResults():
 
     def writeCache(self):
         cacheFileName = self._cachefilename + ".cache"
+        print "Write cache file: " + cacheFileName
         tableForCache =[]
         tableForCache.append(["# run", "# events", "# events parent"])
         for rrep in self._infoPerRun:
@@ -302,6 +304,7 @@ class DBSAlCaRecoResults():
 
     def readCache(self):
         cacheFileName = self._cachefilename + ".cache"
+        print "reading cache file: " + cacheFileName
         if os.path.exists(cacheFileName):
             cache = file(cacheFileName,"r")
             data = cache.readlines()
@@ -313,7 +316,11 @@ class DBSAlCaRecoResults():
                     self._infoPerRun.append(rrep)
             cache.close()      
             if len(self._infoPerRun) != 0:
+                self._lasCachedRun = self._infoPerRun[len(self._infoPerRun)-1].run()
                 return self._infoPerRun[len(self._infoPerRun)-1].run()
+        else:
+            print "Error: no file found"
+            # FIXME: throw exception
         return 1
         
 
