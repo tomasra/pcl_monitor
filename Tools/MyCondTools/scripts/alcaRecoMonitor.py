@@ -90,20 +90,21 @@ if __name__ == "__main__":
     cachedlist = []
     
 
-
+    print "Getting details for each dataset:"
     
     for dataset in alcarecoDatasets:
-        print dataset.name()
+        print ""
+        print "-----------"
+        print "Dataset: " + dataset.name()
         lastCached = dataset.readCache() #FIXME
+        print "  last cached run: " + str(lastCached)
+        if lastCached == 1:
+            minRunDBS = int(alcaRecoMonitoringTools.dbsQueryMinRun(dataset.name())[1])
+            print " no cache found...get the first run from DBS: " + str(minRunDBS)
+            lastCached = minRunDBS
+            
         #lastCached = 160404
         if refreshCache:
-            # FIXME: max run (used to limit the size of the query)
-            maxRun = -1
-            #maxRun = lastCached + 500
-            query = alcaRecoMonitoringTools.dbsQuery(dataset.name(), lastCached, maxRun)
-            dataset.appendQuery(query[1])
-            queryParent = alcaRecoMonitoringTools.dbsQuery(dataset.parent(), lastCached, maxRun)
-            dataset.addParentQuery(queryParent[1])
 
             rrSet = ""
             if "2010" in  dataset.name():
@@ -113,19 +114,46 @@ if __name__ == "__main__":
             elif "2012" in dataset.name():
                 rrSet = "Collisions12"
 
-
             # cache the list from RR
-            if rrSet != cachedlisttype:
-                cachedlisttype = rrSet
-                #cachedlist = getRunList(1, rrSet)
-                cachedlist = RunRegistryTools.getRunListRR3(1, "Online", "Collisions12")
-
-                
+            #if rrSet != cachedlisttype:
+            cachedlisttype = rrSet
+            #cachedlist = getRunList(1, rrSet)
+            cachedlist = RunRegistryTools.getRunListRR3(lastCached, "Online", "Collisions12")
+            cachedlist.sort()
+            print cachedlist
             runList = cachedlist            
             print "RR: " + rrSet + " # runs: " + str(len(runList))
             #print runList
 
+
+            # FIXME: max run (used to limit the size of the query)
+            minRun = cachedlist[0]
+            maxRun = minRun
+            if len(cachedlist) > 1:
+                while maxRun < cachedlist[1]:
+                    maxRun = maxRun + 500
+            else:
+                maxRun = maxRun + 500
+            print "min: " + str(minRun) + " max: " + str(maxRun)
+            query = alcaRecoMonitoringTools.dbsQuery(dataset.name(), minRun, maxRun)
+            if query[0] != 0:
+                print query[1]
+            else:
+                dataset.appendQuery(query[1])
+            queryParent = alcaRecoMonitoringTools.dbsQuery(dataset.parent(), minRun, maxRun)
+            if queryParent[0] != 0:
+                print queryParent[1]
+            else: 
+                dataset.addParentQuery(queryParent[1])
+
+
+
+
+                
+
             dataset.purgeList(runList)
+
+
             dataset.printAll()
             dataset.writeCache()
 
