@@ -52,7 +52,10 @@ for line in statusandoutput[1].split("\n"):
         tag = elem[2].split(":")[1]
         connectionString = elem[6].split("pfn:")[1]
         # Do not use Frontier because of cache problems (running two times in a row may connect to different instances and give different results).
-        connectionString = connectionString.replace("frontier://FrontierProd/", "oracle://cms_orcon_adg/")
+        # connectionString = connectionString.replace("frontier://FrontierProd/", "oracle://cms_orcon_adg/")
+        connectionString = "oracle://cms_orcon_adg/" + connectionString.split("/")[-1]
+        # print "connectionString =", connectionString
+        # connectionString = connectionString.replace("frontier://FrontierProd/", "oracle://cms_orcon_adg/")
 
         iovs = listIov(connectionString, tag, passwdfile)
         # print "tag:",tag
@@ -97,7 +100,8 @@ try:
              print "Error: tags out of order."
              raise
          if oldIOV != newIOV:
-             mailFile.write("New IOV " + newIOV + " appended for tag " + oldTag + ". Previous IOV was " + oldIOV + "\n")
+             # mailFile.write("New IOV " + newIOV + " appended for tag " + oldTag + ". Previous IOV was " + oldIOV + "\n")
+             mailFile.write(oldTag + " : new IOV " + newIOV + " appended. Previous IOV was " + oldIOV + "\n")
              # print "New IOV " + newIOV + " appended for tag " + oldTag + ". Previous IOV was " + oldIOV
              # print "oldFile[",i,"] =", oldFile[i]
              # print "newFile[",i,"] =", newFile[i]
@@ -108,8 +112,8 @@ mailFile.close()
 # Send mail if needed
 if len(open(mailFileName).readlines()) > 2:
     print "Sending mail"
-    os.system("mail -s \"GT Monitoring\" \"marco.de.mattia@cern.ch\" < \""+mailFileName+"\"")
-    # os.system("mail -s \"GT Monitoring\" \"cms-alca-globaltag@cern.ch\" < \""+mailFileName+"\"")
+    # os.system("mail -s \"GT Monitoring\" \"marco.de.mattia@cern.ch\" < \""+mailFileName+"\"")
+    os.system("mail -s \"GT Monitoring\" \"cms-alca-globaltag@cern.ch\" < \""+mailFileName+"\"")
 
 # Move the new file to old
 os.system("mv "+globaltag+"_lastIOVs.txt "+globaltag+"_lastIOVs_previous.txt")
