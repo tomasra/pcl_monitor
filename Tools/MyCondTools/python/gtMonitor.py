@@ -65,43 +65,43 @@ mailFile = open(mailFileName, "w")
 mailFile.write("New appends for GT " + globaltag + "\n\n")
 
 outputFileName = globaltag+"_lastIOVs.txt"
-# outputFile = open(outputFileName, "w")
-# 
-# statusandoutput = tagtreeList(globaltag, gtconnstring, passwdfile)
-# 
-# # create the collection of tags
-# tagCollection = GTEntryCollection()
-# # --------------------------------------------------------------------------
-# # fill the collection
-# if not confFileFromDB(globaltag, globaltag+".conf", gtconnstring, passwdfile):
-#     print error("*** Error" + " original GT conf file: " + globaltag + " doesn't exist!")
-#     sys.exit(5)
-# fillGTCollection(globaltag+".conf", globaltag, tagCollection)
-# 
-# outputLines = []
-# # loop over all records and compare the tag names and the # of payloads
-# for index in range(0, len(tagCollection._tagOrder)):
-#     entry = tagCollection._tagList[tagCollection._tagOrder[index]]
-#     connectionString = "oracle://cms_orcon_adg/" + entry._account
-#     iovs = listIov(connectionString, entry._tag, passwdfile)
-#     if iovs[0] != 0:
-#         print "Error in listIov for tag: " + entry._tag
-#         mailFile.write("Error in listIov for tag: " + entry._tag + "\n")
-#         continue
-#     # Read the next to last element. The last one is text with the number of IOVs.
-#     lastIOV = iovs[1].split("\t")[-2].split()[0]
-#     if iovs[1].split("\t")[-1].find("Total") == -1:
-#         lastIOV = iovs[1].split("\t")[-1].split()[0]
-#     outputLabel = "\"\""
-#     if entry._label != "":
-#         outputLabel = entry._label
-#     outputText = "tag: " + entry._tag + ", rcd: " + entry._record + ", label: " + outputLabel + ", lastIOV: " + lastIOV + "\n"
-#     outputLines.append(outputText)
-# 
-# # Save all the tags and the last IOVs to an output file
-# for line in outputLines:
-#     outputFile.write(line)
-# outputFile.close()
+outputFile = open(outputFileName, "w")
+
+statusandoutput = tagtreeList(globaltag, gtconnstring, passwdfile)
+
+# create the collection of tags
+tagCollection = GTEntryCollection()
+# --------------------------------------------------------------------------
+# fill the collection
+if not confFileFromDB(globaltag, globaltag+".conf", gtconnstring, passwdfile):
+    print error("*** Error" + " original GT conf file: " + globaltag + " doesn't exist!")
+    sys.exit(5)
+fillGTCollection(globaltag+".conf", globaltag, tagCollection)
+
+outputLines = []
+# loop over all records and compare the tag names and the # of payloads
+for index in range(0, len(tagCollection._tagOrder)):
+    entry = tagCollection._tagList[tagCollection._tagOrder[index]]
+    connectionString = "oracle://cms_orcon_adg/" + entry._account
+    iovs = listIov(connectionString, entry._tag, passwdfile)
+    if iovs[0] != 0:
+        print "Error in listIov for tag: " + entry._tag
+        mailFile.write("Error in listIov for tag: " + entry._tag + "\n")
+        continue
+    # Read the next to last element. The last one is text with the number of IOVs.
+    lastIOV = iovs[1].split("\t")[-2].split()[0]
+    if iovs[1].split("\t")[-1].find("Total") == -1:
+        lastIOV = iovs[1].split("\t")[-1].split()[0]
+    outputLabel = "\"\""
+    if entry._label != "":
+        outputLabel = entry._label
+    outputText = "tag: " + entry._tag + ", rcd: " + entry._record + ", label: " + outputLabel + ", lastIOV: " + lastIOV + "\n"
+    outputLines.append(outputText)
+
+# Save all the tags and the last IOVs to an output file
+for line in outputLines:
+    outputFile.write(line)
+outputFile.close()
 
 # Compare the old list with the new one and prepare the mail with the changes.
 cathegoryATags = []
