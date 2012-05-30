@@ -10,6 +10,7 @@ The list of records and labels in cathegory A are defined in cathegoryA here.
 
 cathegoryA = ["L1TriggerKeyRcd",
               "L1GtTriggerMaskAlgoTrigRcd",
+              "L1GtTriggerMaskVetoAlgoTrigRcd",
               "L1GtTriggerMaskTechTrigRcd",
               "L1GtTriggerMaskVetoTechTrigRcd",
               "L1GtPrescaleFactorsAlgoTrigRcd",
@@ -22,9 +23,12 @@ cathegoryA = ["L1TriggerKeyRcd",
               "L1RPCConeDefinitionRcd",
               "L1RPCHsbConfigRcd",
               "L1RPCBxOrConfigRcd",
+              "CSCL1TPParametersRcd",
               "RunInfoRcd",
               "SiStripDetVOffRcd",
-              "DTCCBConfigRcd"
+              "DTCCBConfigRcd",
+              "DTHVStatusRcd",
+              "BeamSpotObjectsRcd"
               ]
 
 def findCathegory(rcd, label):
@@ -125,7 +129,7 @@ try:
         newIOV = newFileSplit[-1].split()[1]
         oldRcd = oldFileSplit[1].split()[1]
         oldLabel = ""
-        if len(oldFileSplit[2].split()) > 1:
+        if len(oldFileSplit[2].split()) > 1 and oldFileSplit[2].find("\"\"") == -1:
             oldLabel = oldFileSplit[2].split()[1]
         # print "old tag: "+oldTag+" IOV: "+oldIOV
         # print "new tag: "+newTag+" IOV: "+newIOV
