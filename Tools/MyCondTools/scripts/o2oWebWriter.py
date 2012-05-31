@@ -1,6 +1,23 @@
 #!/usr/bin/env python
 
-#tier0DasSrc            = "https://cmsweb.cern.ch/tier0/runs"
+
+
+############################################################################################
+#
+# Description:
+# This script creates the web-pages for the monitoring of the O2O Jobs for PCL.
+# The configuration is handled via the INI file:  GT_branches/pclMonitoring.cfg
+# which is common to the "back-end" part and all other PCL monitoring tools.
+# The web page is created relying on the data created by the script "o2oMonitor.py"
+# which implements the real montoring. The output of this script are static html pages
+# and a "status" JSON file used by the mail notification and eventually by the NAGIOS plugin.
+#
+# $Date: $
+# $Revision: $
+# Author: G.Cerminara
+#
+############################################################################################
+
 
 import Tools.MyCondTools.o2oMonitoringTools as o2oMonitoringTools
 import Tools.MyCondTools.tier0DasInterface as tier0DasInterface
@@ -44,6 +61,9 @@ tier0Mon               = tier0DasSrc.split('tier0')[0] + "T0Mon/static/pages/ind
 
 
 class WebPageWriter:
+    """
+    This class generates the static html page showing the results of the monitoring.
+    """
     def __init__(self):
         self._recordReports = dict()
         self._records = []
@@ -177,7 +197,10 @@ class WebPageWriter:
 
 #from ROOT import *
 def producePlots(tagsTomonitor, runReports, lastPromptRecoRun):
-
+    """
+    Draw a plot (using PyROOT) for each record to be montiored showing graphically the
+    content of the runReports. The plots are saved in png format to the webArea.
+    """
     # ================================================================================
     # draw a plot for each record
     # --- set the style 
@@ -242,7 +265,6 @@ def producePlots(tagsTomonitor, runReports, lastPromptRecoRun):
             status = report._recordStatus[rcdidx]
             histoPerRecord[rcd].GetXaxis().SetBinLabel(binIdx, str(run))
             histoPerRecord[rcd].SetBinContent(binIdx, 1, float(status)+0.01)
-            
         binIdx += 1
 
     lineLastPromptRecoEnd = ROOT.TLine(indexLastT0Run, 0, indexLastT0Run, 1)
@@ -251,7 +273,6 @@ def producePlots(tagsTomonitor, runReports, lastPromptRecoRun):
     lineLastPromptRecoEnd.SetLineStyle(2)
     newlegend.AddEntry(lineLastPromptRecoEnd, "Prompt-reco status", "L")
 
-
     for rcdidx in range(0, len(tagsTomonitor)):
         record = tagsTomonitor[rcdidx].getProperty('recordName')
         c4 = ROOT.TCanvas("c" + record,"c" + record,1200,200)
@@ -259,8 +280,7 @@ def producePlots(tagsTomonitor, runReports, lastPromptRecoRun):
         c4.GetPad(0).SetLeftMargin(0.01)
         c4.GetPad(0).SetRightMargin(0.02)
 
-        rcd = report._recordList[rcdidx]
-        hist = histoPerRecord[rcd]
+        hist = histoPerRecord[record]
         hist.SetMaximum(1)
         hist.SetMinimum(0)
         hist.GetXaxis().SetLabelSize(0.12)
