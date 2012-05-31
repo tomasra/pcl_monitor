@@ -4,8 +4,8 @@
 This script saves a list of the last IOV for all the tags in a given GT.
 This list is compared with the previous file to see if there was any new IOV appended.
 It sends a mail with the list of new IOVs. It sends no mail in case no difference is found.
-Tags are divided in cathegory A and not cathegory A and the two lists are separated in the mail.
-The list of records and labels in cathegory A are defined in cathegoryA here.
+Tags are divided in cathegory A, cathegory C and not cathegory A,C and the lists are separated in the mail.
+The list of records and labels in cathegory A and C are defined in cathegoryA and cathegoryC here.
 """
 
 cathegoryA = ["L1TriggerKeyRcd",
@@ -27,16 +27,21 @@ cathegoryA = ["L1TriggerKeyRcd",
               "RunInfoRcd",
               "SiStripDetVOffRcd",
               "DTCCBConfigRcd",
-              "DTHVStatusRcd",
-              "BeamSpotObjectsRcd"
+              "DTHVStatusRcd"
               ]
+
+cathegoryC = ["BeamSpotObjectsRcd"]
+
 
 def findCathegory(rcd, label):
     """Returns True if the tag is in cathegory A."""
     for elem in cathegoryA:
         if elem.find(rcd) != -1 and elem.find(label) != -1:
-            return True
-    return False
+            return "A"
+    for elem in cathegoryC:
+        if elem.find(rcd) != -1 and elem.find(label) != -1:
+            return "C"
+    return "B"
 
 
 import sys
@@ -109,7 +114,8 @@ outputFile.close()
 
 # Compare the old list with the new one and prepare the mail with the changes.
 cathegoryATags = []
-cathegoryNotATags = []
+cathegoryCTags = []
+cathegoryNotACTags = []
 try:
     # Read the files again
     newFile = open(outputFileName).readlines()
@@ -141,8 +147,10 @@ try:
         if oldIOV != newIOV:
             # mailFile.write("New IOV " + newIOV + " appended for tag " + oldTag + ". Previous IOV was " + oldIOV + "\n")
             outputLine = oldTag + " (rcd: "+oldRcd+", label: "+oldLabel+") : new IOV " + newIOV + " appended. Previous IOV was " + oldIOV + "\n"
-            if findCathegory(oldRcd, oldLabel): cathegoryATags.append(outputLine)
-            else: cathegoryNotATags.append(outputLine)
+            cathegory = findCathegory(oldRcd, oldLabel)
+            if cathegory == "A": cathegoryATags.append(outputLine)
+            elif cathegory == "C": cathegoryCTags.append(outputLine)
+            else: cathegoryNotACTags.append(outputLine)
             # print "New IOV " + newIOV + " appended for tag " + oldTag + ". Previous IOV was " + oldIOV
             # print "oldFile[",i,"] =", oldFile[i]
             # print "newFile[",i,"] =", newFile[i]
@@ -150,9 +158,14 @@ try:
 except:
     pass
 
-if len(cathegoryNotATags) > 0:
-    mailFile.write("Cathegory B, C and D tags updated:\n\n")
-    for line in cathegoryNotATags:
+if len(cathegoryNotACTags) > 0:
+    mailFile.write("Cathegory B and D tags updated:\n\n")
+    for line in cathegoryNotACTags:
+        mailFile.write(line)
+
+if len(cathegoryCTags) > 0:
+    mailFile.write("\n\nCathegory C tags updated (PCL):\n\n")
+    for line in cathegoryCTags:
         mailFile.write(line)
 
 if len(cathegoryATags) > 0:
@@ -164,8 +177,8 @@ mailFile.close()
 # Send mail if needed
 if len(open(mailFileName).readlines()) > 2:
     print "Sending mail"
-    # os.system("mail -s \"GT Monitoring\" \"marco.de.mattia@cern.ch\" < \""+mailFileName+"\"")
-    os.system("mail -s \"GT Monitoring\" \"cms-alca-globaltag@cern.ch\" < \""+mailFileName+"\"")
+    os.system("mail -s \"GT Monitoring\" \"marco.de.mattia@cern.ch\" < \""+mailFileName+"\"")
+    # os.system("mail -s \"GT Monitoring\" \"cms-alca-globaltag@cern.ch\" < \""+mailFileName+"\"")
 
 # Move the new file to old
 os.system("mv "+globaltag+"_lastIOVs.txt "+globaltag+"_lastIOVs_previous.txt")
