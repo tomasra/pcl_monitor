@@ -9,6 +9,7 @@ The list of records and labels in cathegory A and C are defined in cathegoryA an
 """
 
 cathegoryA = ["L1TriggerKeyRcd",
+              "L1TriggerKeyListRcd",
               "L1GtTriggerMaskAlgoTrigRcd",
               "L1GtTriggerMaskVetoAlgoTrigRcd",
               "L1GtTriggerMaskTechTrigRcd",
@@ -30,7 +31,8 @@ cathegoryA = ["L1TriggerKeyRcd",
               "DTHVStatusRcd"
               ]
 
-cathegoryC = ["BeamSpotObjectsRcd"]
+cathegoryC = ["BeamSpotObjectsRcd",
+              "EcalLaserAPDPNRatiosRcd"]
 
 
 def findCathegory(rcd, label):
@@ -159,7 +161,7 @@ except:
     pass
 
 if len(cathegoryNotACTags) > 0:
-    mailFile.write("Cathegory B and D tags updated:\n\n")
+    mailFile.write("Cathegory B and D tags updated (Require approval):\n\n")
     for line in cathegoryNotACTags:
         mailFile.write(line)
 
