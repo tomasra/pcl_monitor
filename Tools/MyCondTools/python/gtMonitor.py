@@ -32,7 +32,8 @@ cathegoryA = ["L1TriggerKeyRcd",
               ]
 
 cathegoryC = ["BeamSpotObjectsRcd",
-              "EcalLaserAPDPNRatiosRcd"]
+              "EcalLaserAPDPNRatiosRcd",
+              "SiStripBadFiberRcd"]
 
 
 def findCathegory(rcd, label):
