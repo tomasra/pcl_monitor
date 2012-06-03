@@ -27,6 +27,12 @@ cathegoryA = ["L1TriggerKeyRcd",
               "CSCL1TPParametersRcd",
               "RunInfoRcd",
               "SiStripDetVOffRcd",
+              "SiStripBadChannelRcd",
+              "SiStripPedestalsRcd",
+              "SiStripNoisesRcd",
+              "SiStripLatencyRcd",
+              "SiStripThresholdRcd",
+              "EcalDCSTowerStatusRcd",
               "DTCCBConfigRcd",
               "DTHVStatusRcd"
               ]
