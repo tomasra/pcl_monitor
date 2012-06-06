@@ -47,7 +47,11 @@ cathegoryA = ["L1TriggerKeyRcd",
               "EcalTPGLinearizationConstRcd",
               "EcalTPGLutGroupRcd",
               "EcalTPGFineGrainEBGroupRcd",
-              "EcalTPGPhysicsConstRcd"
+              "EcalTPGPhysicsConstRcd",
+              "EcalTPGStripStatusRcd",
+              "EcalTPGTowerStatusRcd",
+              "EcalTPGCrystalStatusRcd",
+              "EcalPedestalsRcd"
               ]
 
 cathegoryC = ["BeamSpotObjectsRcd",
