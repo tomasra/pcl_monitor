@@ -34,7 +34,20 @@ cathegoryA = ["L1TriggerKeyRcd",
               "SiStripThresholdRcd",
               "EcalDCSTowerStatusRcd",
               "DTCCBConfigRcd",
-              "DTHVStatusRcd"
+              "DTHVStatusRcd",
+              "EcalTPGSlidingWindowRcd",
+              "EcalTPGFineGrainStripEERcd",
+              "EcalTPGPedestalsRcd",
+              "EcalTPGLutIdMapRcd",
+              "EcalTPGFineGrainTowerEERcd",
+              "EcalTPGWeightIdMapRcd",
+              "EcalTPGSpikeRcd",
+              "EcalTPGWeightGroupRcd",
+              "EcalTPGFineGrainEBIdMapRcd",
+              "EcalTPGLinearizationConstRcd",
+              "EcalTPGLutGroupRcd",
+              "EcalTPGFineGrainEBGroupRcd",
+              "EcalTPGPhysicsConstRcd"
               ]
 
 cathegoryC = ["BeamSpotObjectsRcd",
