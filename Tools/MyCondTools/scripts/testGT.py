@@ -84,6 +84,10 @@ def getWfList(GT):
         return [29, 35]
     elif GT.startswith("GR_H"):
         return [4.291]
+    elif GT.startswith("GR_E"):
+        return [1001]
+    elif GT.startswith("GR_P"):
+        return [1000]
     elif GT.startswith("GR"):
         return [4.17]
     else:
