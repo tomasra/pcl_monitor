@@ -188,18 +188,36 @@ def getRunReport(runinfoTag, run, promptCalibDir, fileList, iovtableByRun_oracle
         raise Exception("Error can not find run: " + str(run) + " in RunInfo: " + str(error))
 
     if int(run) != int(runInfo.run()):
-        raise Exception("Error mismatch with the runInfo payload for run: " + str(run) + " in RunInfo: " + str(runInfo.run()))
+        # try to get the payload from runinfo_start: this run might still be ongoing
+        # FIXME: need to get this from cfg
+        runinfoStartTag = "runinfo_start_31X_hlt"
+        try:
+            runInfo = RunInfo.getRunInfoStartAndStopTime(runinfoStartTag, '', run)
+            if int(run) != int(runInfo.run()):
+                raise Exception("Error mismatch with the runInfo payload for run: " + str(run) + " in RunInfo: " + str(runInfo.run()))
+        except Exception as error:
+            print "*** Error can not find run: " + str(run) + " in RunInfo (start): " + str(error)
+            raise Exception("Error can not find run: " + str(run) + " in RunInfo (start): " + str(error))
+        
+        
+
     #print run
     #print runInfo.run()
     rRep = RunReport()
     rRep.setRunNumber(runInfo.run())
     rRep.setRunInfoContent(runInfo)
 
-    deltaTRun = runInfo.stopTime() - runInfo.startTime()
-    deltaTRunH = deltaTRun.days*24. + deltaTRun.seconds/(60.*60.)
+    if(runInfo.stopTime() != 'null'):
 
-    print "-- run #: " + colorTools.blue(runInfo.run())            
-    print "   start: " + str(runInfo.startTime()) + " stop: " + str(runInfo.stopTime()) + " lenght (h): " + str(deltaTRunH)
+        deltaTRun = runInfo.stopTime() - runInfo.startTime()
+        deltaTRunH = deltaTRun.days*24. + deltaTRun.seconds/(60.*60.)
+        
+        print "-- run #: " + colorTools.blue(runInfo.run())            
+        print "   start: " + str(runInfo.startTime()) + " stop: " + str(runInfo.stopTime()) + " lenght (h): " + str(deltaTRunH)
+    else:
+        print "-- run #: " + colorTools.blue(runInfo.run())            
+        print "   start: " + str(runInfo.startTime()) + " is ongoing according to RunInfo" 
+
 
     # --- status flags for this run
     isFileFound = False
