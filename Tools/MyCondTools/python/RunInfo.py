@@ -21,13 +21,35 @@ db = rdbms.getDB(dbName)
 #tags = db.allTags()
 
 
+
+"""
+Module providing tools to query the RunInfo tags in the condition DB
+
+$Date: 2012/05/31 10:43:32 $
+$Revision: 1.3 $
+Author: G.Cerminara
+
+"""
+
+
+
+
+
+
 def getDate(string):
+    """
+    Convert a string into a datetime object
+    """
     date = string.split()[0].split('-')
     time = string.split()[1].split(':')
     datet = datetime.datetime(int(date[0]),int(date[1]),int(date[2]),int(time[0]),int(time[1]),int(float(time[2])))
     return datet
 
 class RunInfoContent:
+    """
+    This object stores the result of a query to RunInfo for a given run.
+    """
+    
     def __init__(self, summary):
         listofEntries = summary.split(',')
         #print listofEntries
@@ -41,15 +63,31 @@ class RunInfoContent:
         return
 
     def startTime(self):
+        """
+        Returns a datetime object for the start time of the run
+        """
         return self.getDate(self._startTime)+self._fromUTCToLocal
 
     def stopTime(self):
-        return self.getDate(self._stopTime)+self._fromUTCToLocal
+        """
+        Returns a datetime object for the stop time of the run
+        """
+        if self._stopTime != 'null':
+            return self.getDate(self._stopTime)+self._fromUTCToLocal
+        else:
+            return self._stopTime
 
+            
     def run(self):
+        """
+        Run number
+        """
         return self._run
 
     def getDate(self, string):
+        """
+        String to datetime conversion
+        """
         #print string
         if string != 'null':
             date = string.split('T')[0].split('-')
@@ -62,6 +100,9 @@ class RunInfoContent:
 
 
 def getRunInfoStartAndStopTime(runinfoTag, runinfoaccount, run):
+    """
+    Builds a RunInfoContent for a given run. Input parameters are the RunInfo tag name, connection string and run #
+    """
     try :
         db.startTransaction()
         log = db.lastLogEntry(runinfoTag)
