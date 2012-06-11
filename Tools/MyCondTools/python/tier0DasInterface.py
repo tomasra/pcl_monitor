@@ -4,8 +4,25 @@ import time
 
 #from xml.dom import minidom
 
+"""
+Module providing an interface to common queries to Tier0-DAS
+
+$Date: 2012/05/31 10:43:32 $
+$Revision: 1.3 $
+Author: G.Cerminara
+
+"""
+
+
+
 class Tier0DasInterface:
+    """
+    Class handling common Tier0-DAS queries and connected utilities
+    """
     def __init__(self, url = 'https://cmsweb.cern.ch/tier0/'):
+        """
+        Need base url for Tier0-DAS as input
+        """
         #self._t0DasBaseUrl = "http://gowdy-wttest.cern.ch:8304/tier0/"
         self._t0DasBaseUrl = url
         self._debug = False
@@ -13,6 +30,9 @@ class Tier0DasInterface:
         self._maxretry = 5
         
     def getData(self, src, tout = 5, proxy = None ):
+        """
+        Get the JSON file for a give query specified via the Tier0-DAS url. Timeout can be set via paramter.
+        """
         # actually get the json file from the given url of the T0-Das service
         # and returns the data
         
@@ -68,6 +88,9 @@ class Tier0DasInterface:
             return data
 
     def getValues(self, json, key, selection = ''):
+        """
+        Extract the value corrisponding to a given key from a JSON file. It is also possible to apply further selections.
+        """
         # lookup for a key in a json file applying possible selections
         data = []
         check = 0
@@ -95,6 +118,9 @@ class Tier0DasInterface:
         return data
 
     def lastPromptRun(self):
+        """
+        Query to get the last run released for prompt
+        """
         url = self._t0DasBaseUrl + "runs"
         try:
             json = self.getData(url)
@@ -108,6 +134,9 @@ class Tier0DasInterface:
 
 
     def firstConditionSafeRun(self):
+        """
+        Query to ge the run for which the Tier0 system considers safe the update to the conditions
+        """
         url = self._t0DasBaseUrl + "firstconditionsaferun"
         try:
             json = self.getData(url)
@@ -118,6 +147,9 @@ class Tier0DasInterface:
             return 0
 
     def promptGlobalTag(self, run, dataset):
+        """
+        Query the GT currently used by prompt.
+        """
         url = self._t0DasBaseUrl + "reco_config?run=" + str(run) + "&dataset=" + dataset
         try:
             json = self.getData(url)

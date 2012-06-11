@@ -4,8 +4,24 @@ import os
 import datetime
 from ROOT import *
 
+"""
+Module providing utils for the monitoring of AlcaReco production
+
+$Date: 2012/05/31 10:43:32 $
+$Revision: 1.3 $
+Author: G.Cerminara
+
+"""
+
+
+
+
 class AlcaRecoDetails:
+    """
+    Simple structure to stores the details about the AlcaReco dataset: epoch, pd, version and dataset name
+    """
     def __init__(self, dataset, pd, epoch, version):
+        
         self._datasetname = dataset
         self._epoch = epoch
         self._version = version
@@ -26,12 +42,22 @@ class AlcaRecoDetails:
 
 
 class WebPageIndex:
+    """
+    Generates the index page pointing to all the sub-pages for each datataking period
+    (correspondig to a particular epoch/version fo the RAW dataset.
+
+    The list of sub-pages is generated directly scanning the web area and is based on a precise namign convention.
+    """
     def __init__(self):
         self._epochs = []
         self._versions = []
         self._filenames = []
 
     def scan(self, dir):
+        """
+        Scans the web area looking for sub-pages for the different data-taking periods.
+        All the HTML pages are added.
+        """
         dirlist = os.listdir(dir)
         for fname in dirlist:
             if ".html" in fname and fname != 'index.html' and not '~' in fname:
@@ -44,6 +70,9 @@ class WebPageIndex:
                     self._versions.append(namesplit[1])
 
     def buildPage(self):
+        """
+        Actually writes the HTML page (index.html)
+        """
         htmlpage = file('index.html',"w")
         htmlpage.write('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">\n')
         htmlpage.write('<html><head>\n')
@@ -64,7 +93,15 @@ class WebPageIndex:
         htmlpage.close()
         
 class WebPageWriter:
+    """
+    Writes the HTML page for all the AlcaRecos of a given epoch/period.
+    For each alcareco the plots and log files are shown. The alcareco are indexed by PD
+    """
+    
     def __init__(self, name, epoch, version):
+        """
+        set the parameters for the page
+        """
         self._fineName = name + ".html"
         self._title = "pippo"
         self._pds = []
@@ -75,6 +112,9 @@ class WebPageWriter:
 
         
     def addDataset(self, pd, alcarecodetails):
+        """
+        add the report for a given AlcaReco
+        """
         if not pd in self._datasets:
             self._pds.append(pd)
             self._datasets[pd] = []
@@ -82,6 +122,9 @@ class WebPageWriter:
         return
 
     def buildPage(self):
+        """
+        Actually write the HTML page
+        """
         htmlpage = file(self._fineName,"w")
         htmlpage.write('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">\n')
         htmlpage.write('<html><head>\n')
@@ -130,6 +173,9 @@ class WebPageWriter:
 
 
 def dbsQueryRunList(dataset, minRun = 1, maxRun = -1):
+    """
+    Query DBS to get the list of runs in a given dataset
+    """
     dbs_cmd = 'dbs search --noheader --query="find run where dataset=' + dataset
     if minRun > 1:
         dbs_cmd += ' and run > ' + str(minRun)
@@ -142,6 +188,9 @@ def dbsQueryRunList(dataset, minRun = 1, maxRun = -1):
     return dbs_out
 
 def dbsQueryMinRun(dataset):
+    """
+    Query DBS for the minimum run number in the dataset
+    """
     dbs_cmd = 'dbs search --noheader --query="find min(run) where dataset=' + dataset
     dbs_cmd += '"'
     #print dbs_cmd
@@ -150,6 +199,9 @@ def dbsQueryMinRun(dataset):
 
 
 def dbsQuery(dataset, minRun = 1, maxRun = -1):
+    """
+    Query DBS to ge the list of runs and the # of events for each run
+    """
     dbs_cmd = 'dbs search --noheader --query="find run,sum(file.numevents) where dataset=' + dataset
     if minRun > 1:
         dbs_cmd += ' and run > ' + str(minRun)
@@ -163,6 +215,10 @@ def dbsQuery(dataset, minRun = 1, maxRun = -1):
 
 
 class DBSAlCaRecoRunInfo():
+    """
+    Stores the information for each run of a given dataset and computes the efficiencyof the selection.
+    Can be filled directly from the DBS output
+    """
     def __init__(self):
         self._runnumber = -1
         #self._nlumi = -1
@@ -211,7 +267,17 @@ class DBSAlCaRecoRunInfo():
 
 
 class DBSAlCaRecoResults():
+    """
+    Stores and manipulate all the information for a given dataset (AlcaReco)
+     - It can be filled out of DBS output or out of a txt cache file.
+     - It is also able to write the content to txt file for cache
+     Internally stores a list of DBSAlCaRecoRunInfo 
+    """
+    
     def __init__(self, name, parent):
+        """
+        Takes as input the dataset name and the name of the parent dataset
+        """
         self._datasetname = str(name)
         self._parent = str(parent)
         self._infoPerRun = []
@@ -223,18 +289,30 @@ class DBSAlCaRecoResults():
 
 
     def name(self):
+        """
+        Access the dataset name
+        """
         return self._datasetname
 
 
 
     def parent(self):
+        """
+        Access the parent dataset name
+        """
         return self._parent
 
     def sort(self):
+        """
+        Sort the list of details by run
+        """
         self._infoPerRun.sort(key=lambda rr: rr._runnumber)
         return
 
     def appendQuery(self, queryOut):
+        """
+        Add a new DBSAlCaRecoRunInfo directly from the DBS query output
+        """
         lines = queryOut.split("\n")
         #print len(lines)
         for line in lines:
@@ -250,9 +328,15 @@ class DBSAlCaRecoResults():
             print "run #: " + str(run.run() ) + " # events: " + str(run.nEvents()) + " eff.: "  + str(run.selEfficiency())
 
     def size(self):
+        """
+        Access the size of the DBSAlCaRecoRunInfo list
+        """
         return len(self._infoPerRun)
     
     def search(self, run):
+        """
+        Search for a particular run
+        """
         self.sort()
         hi = self.size()
         lo = 0
@@ -269,6 +353,9 @@ class DBSAlCaRecoResults():
         return -1
 
     def addParentQuery(self, query):
+        """
+        Add the # of events per run for the parent dataset starting directly from the DBS query
+        """
         for line in query.split("\n"):
             if line != "":
                 print line
@@ -280,6 +367,9 @@ class DBSAlCaRecoResults():
 
 
     def purgeList(self, runs):
+        """
+        Purge the input list of run # from the list of DBSAlCaRecoRunInfo 
+        """
         #print runs
         print "Prune run list:"
         #print "   - # collision runs: " + str(len(runs))
@@ -297,6 +387,9 @@ class DBSAlCaRecoResults():
         print "   - # runs in the list (after): " + str(len(self._infoPerRun))
 
     def writeCache(self):
+        """
+        Dump the full content to txt file (cache and log purposes)
+        """
         cacheFileName = self._cachefilename + ".cache"
         print "Write cache file: " + cacheFileName
         tableForCache =[]
@@ -310,6 +403,9 @@ class DBSAlCaRecoResults():
         return
 
     def readCache(self):
+        """
+        Reads the full list from a txt file
+        """
         cacheFileName = self._cachefilename + ".cache"
         print "reading cache file: " + cacheFileName
         if os.path.exists(cacheFileName):
@@ -332,6 +428,9 @@ class DBSAlCaRecoResults():
         
 
     def buildHistoNEvents(self):
+        """
+        Produce the summary histograms of # of events using pyRoot
+        """
         nRuns = self.size()
         hNEvents = TH1F(self._cachefilename + "-hNEvents","# events",nRuns, 0, nRuns);
         binN = 1
@@ -351,6 +450,9 @@ class DBSAlCaRecoResults():
 
 
     def buildHistoEff(self):
+        """
+        Produce the summary histograms of the selection efficiency using pyRoot
+        """
         nRuns = self.size()
         hEff = TH1F(self._cachefilename + "-hEff","# events",nRuns, 0, nRuns);
         binN = 1
@@ -366,6 +468,9 @@ class DBSAlCaRecoResults():
         return hEff
 
 def getDatasets(pd, epoch, version, tier):
+    """
+    Query DBS to find all the datasets for a given PD/Epoch/version/datatier set
+    """
     dbs_cmd = 'dbs search --noheader --query="find dataset where dataset=/' + pd + '/' + epoch + '*' + version + '/' + tier +'"'
     print dbs_cmd
     dbs_out = commands.getstatusoutput(dbs_cmd)
