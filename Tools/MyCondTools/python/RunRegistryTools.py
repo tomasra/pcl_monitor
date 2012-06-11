@@ -2,8 +2,22 @@ import os,string,sys,commands,time,json
 import xmlrpclib
 from Tools.MyCondTools.rrapi import RRApi, RRApiError
 
+"""
+Module providing an interface to the RunRegistry 2 and RunRegistry 3 APIs.
+
+$Date: 2012/05/31 10:43:32 $
+$Revision: 1.3 $
+Author: G.Cerminara
+
+"""
+
+
 
 def getRunList(minRun):
+    """
+    Gets the list of Collision runs registered as 'Online' and 'Collision11' in RR2.
+    The only input parameter is the minRun #, all the rest is hard-coded...sorry about it.
+    """
     runlist = []
 
     #FULLADDRESS="http://pccmsdqm04.cern.ch/runregistry_api/"    
@@ -31,6 +45,9 @@ def getRunList(minRun):
 
 
 def getValues(json, key, selection = ''):
+    """
+    Extract a value for a particular key in a json file.
+    """
     # lookup for a key in a json file applying possible selections
     data = []
     check = 0
@@ -60,7 +77,10 @@ def getValues(json, key, selection = ''):
 
 
 def getRunListRR3(minRun, datasetName, runClassName):
-
+    """
+    Get the run-list from RR3. In this case the datasetName and run-class can be passed as
+    input together with the min run #
+    """
     FULLADDRESS  = "http://runregistry.web.cern.ch/runregistry/"
 
     print "RunRegistry from: ",FULLADDRESS
