@@ -2,7 +2,7 @@
 # using: 
 # Revision: 1.372.2.4 
 # Source: /local/reps/CMSSW/CMSSW/Configuration/PyReleaseValidation/python/ConfigBuilder.py,v 
-# with command line options: MyAnalysis/Tau3Mu/MinBias_TuneZ2_DsPhiTo2MuPhi_2Mu_cff.py -s GEN,FASTSIM,HLT:GRun --geometry DB --datatier GEN-SIM-DIGI-RECO --conditions START52_V9::All -n 10000 --eventcontent AODSIM --beamspot Realistic8TeVCollision --pileup=2012_Startup_inTimeOnly --no_exec
+# with command line options: MyAnalysis/Tau3Mu/MinBias_TuneZ2_DsPhiTo2MuPhi_2Mu_cff.py -s GEN,FASTSIM,HLT:GRun --geometry DB --datatier GEN-SIM-DIGI-RECMyAnalysis/Tau3Mu/MinBias_TuneZ2_DsPhiTo2MuPhi_2Mu_cff.py -s GEN,FASTSIM,HLT:GRun --geometry DB --datatier GEN-SIM-DIGI-RECMyAnalysis/Tau3Mu/MinBias_TuneZ2_DsPhiTo2MuPhi_2Mu_cff.py -s GEN,FASTSIM,HLT:GRun --geometry DB --datatier GEN-SIM-DIGI-RECO --conditions START52_V9::All -n 10000 --eventcontent AODSIM --beamspot Realistic8TeVCollision --pileup=2012_Startup_inTimeOnly --no_exec
 import FWCore.ParameterSet.Config as cms
 
 process = cms.Process('HLT')
@@ -108,8 +108,7 @@ process.generator = cms.EDFilter("Pythia6GeneratorFilter",
             particle_property_file = cms.FileInPath('GeneratorInterface/ExternalDecays/data/evt.pdl'),
             user_decay_file = cms.FileInPath('MyAnalysis/Tau3Mu/data/Ds_phipi_mumupi.dec'),
             list_forced_decays = cms.vstring('MyD_s+', 
-                'MyD_s-', 
-                'MyPhi'),
+                'MyD_s-'),
             operates_on_particles = cms.vint32(0)
         ),
         parameterSets = cms.vstring('EvtGen')
@@ -117,7 +116,7 @@ process.generator = cms.EDFilter("Pythia6GeneratorFilter",
     pythiaPylistVerbosity = cms.untracked.int32(1),
     filterEfficiency = cms.untracked.double(1.0),
     pythiaHepMCVerbosity = cms.untracked.bool(False),
-    comEnergy = cms.double(7000.0),
+    comEnergy = cms.double(8000.0),
     crossSection = cms.untracked.double(71260000000.0),
     maxEventsToPrint = cms.untracked.int32(0),
     PythiaParameters = cms.PSet(
@@ -182,8 +181,3 @@ process.schedule.extend([process.reconstruction,process.AODSIMoutput_step])
 for path in process.paths:
 	getattr(process,path)._seq = process.ProductionFilterSequence * getattr(process,path)._seq 
 
-from IOMC.RandomEngine.RandomServiceHelper import  RandomNumberServiceHelper
-randHelper =  RandomNumberServiceHelper(process.RandomNumberGeneratorService)
-randHelper.populate()
-
-#print process.RandomNumberGeneratorService.generator.initialSeed

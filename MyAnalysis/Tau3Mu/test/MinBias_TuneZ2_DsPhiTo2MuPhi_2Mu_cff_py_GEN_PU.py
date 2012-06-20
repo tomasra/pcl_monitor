@@ -34,7 +34,7 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.3 $'),
+    version = cms.untracked.string('$Revision: 1.1 $'),
     name = cms.untracked.string('PyReleaseValidation'),
     annotation = cms.untracked.string('MinBias_TuneZ2_DsPhiTo2MuPhi_2Mu_cff.py nevts:1')
 )
@@ -177,3 +177,7 @@ from datetime import datetime
 seed = int(datetime.now().microsecond)
 print "Setting seed:",seed
 process.RandomNumberGeneratorService.generator.initialSeed = seed
+
+#from IOMC.RandomEngine.RandomServiceHelper import  RandomNumberServiceHelper
+#randHelper =  RandomNumberServiceHelper(process.RandomNumberGeneratorService)
+#randHelper.populate()

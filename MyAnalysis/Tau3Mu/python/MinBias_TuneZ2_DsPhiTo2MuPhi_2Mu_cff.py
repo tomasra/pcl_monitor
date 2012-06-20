@@ -6,7 +6,7 @@ generator = cms.EDFilter("Pythia6GeneratorFilter",
     pythiaPylistVerbosity = cms.untracked.int32(1),
     filterEfficiency = cms.untracked.double(1.0),
     pythiaHepMCVerbosity = cms.untracked.bool(False),
-    comEnergy = cms.double(7000.0),
+    comEnergy = cms.double(8000.0),
     crossSection = cms.untracked.double(71260000000.0),
     maxEventsToPrint = cms.untracked.int32(0),
    
@@ -45,7 +45,7 @@ generator = cms.EDFilter("Pythia6GeneratorFilter",
           particle_property_file = cms.FileInPath('GeneratorInterface/ExternalDecays/data/evt.pdl'),
           #user_decay_file = cms.FileInPath('GeneratorInterface/ExternalDecays/data/Ds_phipi_mumupi.dec'),
           user_decay_file = cms.FileInPath('MyAnalysis/Tau3Mu/data/Ds_phipi_mumupi.dec'),
-          list_forced_decays = cms.vstring('MyD_s+','MyD_s-','MyPhi')
+          list_forced_decays = cms.vstring('MyD_s+','MyD_s-')
           ),
         parameterSets = cms.vstring('EvtGen')
         )			 
@@ -103,7 +103,7 @@ twoMuonFilter = cms.EDFilter("CandViewCountFilter",
 
 # Production Info
 configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.2 $'),
+    version = cms.untracked.string('$Revision: 1.3 $'),
     annotation = cms.untracked.string('MinBias_TuneZ2_DsPhiTo2MuPhi_2Mu_cff.py nevts:1'),
     name = cms.untracked.string('PyReleaseValidation')
     )

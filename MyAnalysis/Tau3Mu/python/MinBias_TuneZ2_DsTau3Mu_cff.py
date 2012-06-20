@@ -85,12 +85,12 @@ muonParticlesInAcc = cms.EDFilter("GenParticleSelector",
 
 threeMuonFilter = cms.EDFilter("CandViewCountFilter",
 			       src = cms.InputTag("muonParticlesInAcc"),
-			       minNumber = cms.uint32(3))
+			       minNumber = cms.uint32(2))
 
 
 # Production Info
 configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.2 $'),
+    version = cms.untracked.string('$Revision: 1.3 $'),
     annotation = cms.untracked.string('MinBias_TuneZ2_7TeV_pythia6_cff.py nevts:1'),
     name = cms.untracked.string('PyReleaseValidation')
 )
