@@ -1,5 +1,5 @@
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_53_V6][GR_R_53_V6]] | %GREEN%53X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_53_V5 with the following updates:<br> - Fix for ECAL LocalContCorrParameters. |
-| [[%LINKTOGTLIST%/?GlobalTag=GR_R_53_V5][GR_R_53_V5]] | %GREEN%53X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_53_V2D with the following updates:<br> - new 2012 data JECs. |
+| [[%LINKTOGTLIST%/?GlobalTag=GR_R_53_V5][GR_R_53_V5]] | %GREEN%53X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_53_V2D with the following updates:<br> - new 2012 data JECs. <br> - beamspot updated for full run range |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_53_V4][GR_R_53_V4]] | %GREEN%53X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_53_V3 with the following updates:<br> - possibility to mask ECAL samples added. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_53_V3][GR_R_53_V3]] | %GREEN%53X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_53_V2 with the following updates:<br> - new 2012 data JECs. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_53_V2][GR_R_53_V2]] | %GREEN%53X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_53_V1 with the following updates:<br> - updated ECAL laser APD/PN<br> - updated ES intercalibrations<br> - new supercluster energy correction<br> - new Ecal laser alphas. |
