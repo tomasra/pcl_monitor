@@ -16,9 +16,13 @@ class MonitorStatus:
 
     def setUpdateTime(self, date):
         self._statusMap['update'] = str(date)
-
+        print date
+        print str(date)
+        print self._statusMap['update']
+        
     def writeJsonFile(self, filename):
         # get a string with JSON encoding the list
+        #dthandler = lambda obj: obj.isoformat() if isinstance(obj, datetime.datetime) else None
         dump = json.dumps(self._statusMap)
         file = open(filename, 'w')
         file.write(dump + "\n")
