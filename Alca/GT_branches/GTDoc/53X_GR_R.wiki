@@ -1,3 +1,4 @@
+| [[%LINKTOGTLIST%/?GlobalTag=GR_R_53_V7][GR_R_53_V7]] | %GREEN%53X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_53_V6 with the following updates:<br> - New btag and mistag Data/MC scale factors. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_53_V6][GR_R_53_V6]] | %GREEN%53X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_53_V5 with the following updates:<br> - Fix for ECAL LocalContCorrParameters. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_53_V5][GR_R_53_V5]] | %GREEN%53X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_53_V2D with the following updates:<br> - new 2012 data JECs. <br> - beamspot updated for full run range |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_53_V4][GR_R_53_V4]] | %GREEN%53X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_53_V3 with the following updates:<br> - possibility to mask ECAL samples added. |
