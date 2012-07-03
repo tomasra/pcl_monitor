@@ -47,13 +47,11 @@ def converttagdata(value):
     endbrack=value.find('}')
     metadatastr=value[startbrack+1:endbrack]
     mytagdata['tagname']=value[0:startbrack]
-    # print "metadatastr =", metadatastr
     replacementText="TEMPORARY_REPLACEMENT_TEXT"
     newmetadatastr = convertCommaInsideBraket(metadatastr, replacementText)
     metadatalist=newmetadatastr.split(',')
     for rawPair in metadatalist:
         pair = rawPair.replace(replacementText, ',')
-        # print "pair =", pair
         mydata=pair.split('=',1)
         mytagdata[mydata[0]]=mydata[1]
     return mytagdata
@@ -75,7 +73,6 @@ def converttagcollection(value):
     mytagcollection=[]
     taglist=cleanvalue.split(';')
     for tagdata in taglist:
-        # print "adding tagdata:", tagdata
         mytagcollection.append(converttagdata(tagdata))
     return mytagcollection
 def check_tagdata(option, opt, value):
@@ -112,7 +109,13 @@ def convertnodecollection(value):
 # python wrappers of cmscon commands
 
 def listIov(connect, tag, passwd):
+    """
+    Interface to cmscond_list_iov command
+    """
+
     listiovCommand = 'export TNS_ADMIN=/afs/cern.ch/cms/DB/conddb; cmscond_list_iov -c ' + connect + '  -t ' + tag
+    # listiovCommand = 'setenv TNS_ADMIN /afs/cern.ch/cms/DB/conddb; cmscond_list_iov -c ' + connect + '  -t ' + tag
+    # listiovCommand = 'cmscond_list_iov -c ' + connect + '  -t ' + tag
     if passwd != 'None' and passwd != '':
         listiovCommand = listiovCommand + ' -P ' + passwd
     statusAndOutput = commands.getstatusoutput(listiovCommand)
@@ -127,6 +130,10 @@ def listIov(connect, tag, passwd):
 
 
 def duplicateIovTag(connect, tag, newtag, passwd):
+    """
+    Interface to cmscond_load_iov. It lists the IOV and than load the txt file taking care of the cooking.
+    NOTE: check carefully before using
+    """
     statusAndOutput = listIov(connect,tag,passwd)
 
     if statusAndOutput[0] != 0:
@@ -160,6 +167,9 @@ def duplicateIovTag(connect, tag, newtag, passwd):
 
     
 def duplicateIov(connect, tag, run, passwd):
+    """
+    Interface to cmscond_duplicate_iov command.
+    """
     duplicateiovCommand = "cmscond_duplicate_iov -c " + connect + '  -t ' + tag + ' -f ' + run + ' -s ' + run
     if passwd != 'None':
         duplicateiovCommand = duplicateiovCommand + ' -P ' + passwd
@@ -172,6 +182,9 @@ def duplicateIov(connect, tag, run, passwd):
     return duplicateiovStatusAndOutput
           
 def truncateIov(connect, tag, passwd):
+    """
+    Interface to cmscond_truncate_iov command
+    """
     truncateiovCommand = "cmscond_truncate_iov -c " + connect + '  -t ' + tag 
     if passwd != 'None':
         truncateiovCommand = truncateiovCommand + ' -P ' + passwd
@@ -187,7 +200,10 @@ def truncateIov(connect, tag, passwd):
 
 
 def tagtreeList(globaltag, gtconnect, authpath):
-    command = "cmscond_tagtree_list -c " + gtconnect + " -T " + globaltag
+    """
+    Interface to cmscond_tagtree_list command
+    """
+    command = "export TNS_ADMIN=/afs/cern.ch/cms/DB/conddb; cmscond_tagtree_list -c " + gtconnect + " -T " + globaltag
     if authpath != "" and authpath != None:
          command += " -P " + authpath
     statusandoutput = commands.getstatusoutput(command)
@@ -195,12 +211,19 @@ def tagtreeList(globaltag, gtconnect, authpath):
 
 
 def gtExists(globaltag, gtconnect, authpath):
+    """
+    Given the GT name and connection string it checks for the existance of the GT table
+    """
     statusandoutput = tagtreeList(globaltag, gtconnect, authpath)
+    #print statusandoutput[1]
     if 'does not exist' in statusandoutput[1] or "identifier is too long" in statusandoutput[1]:
         return False
     return True
 
 class GTEntry:
+    """
+    Object representing every single entry of the GT configuration file. In practice each GTEntry corresponds to an IOV tag.
+    """
     def __init__(self):
         self._leafnode = ''
         self._parent = ''
@@ -216,12 +239,22 @@ class GTEntry:
         return
 
     def record(self):
+        """
+        Return the record
+        """
         return self._record
 
     def account(self):
+        """
+        Return the account
+        """
         return self._account
 
     def setUpdateType(self, typeCode):
+        """
+        Set the tag type according to o2o or manual categorization.
+        FIXME: this should be improved to the latest categorization by Marco...
+        """
         if typeCode == "o2o":
             self._updateType = 1
         elif typeCode == "manual":
@@ -230,19 +263,34 @@ class GTEntry:
             self._updateType = -1
 
     def updateType(self):
+        """
+        Access the tag category (o2o or manual)
+        """
         return self._updateType
 
     def tagName(self):
+        """
+        Return the tag name
+        """
         return self._tag
 
     def __eq__(self, other):
+        """
+        Check for identity of the most important parameters 
+        """
         return  self._leafnode == other._leafnode and self._parent == other._parent and self._tag == other._tag and self._object == other._object and self._pfn == other._pfn and self._account == other._account and self._record == other._record and self._connstring == other._connstring and self._label == other._label 
 
 
     def __str__(self):
+        """
+        Prints some minimal info about the tag
+        """
         return 'tag: \'' + self._tag + "\' " + str(self.rcdID())
 
     def setFromTagInventoryLine(self, line):
+        """
+        Fill the properties directly from each entry in the 'TagInventory' section of the GT conf. file
+        """
         self._tag = line['tagname']
         self._account = 'CMS_COND'+str(line['pfn']).split('/CMS_COND')[1]
         self._object = line['objectname']
@@ -254,6 +302,9 @@ class GTEntry:
         return
 
     def setFromTagTreeLine(self, line):
+        """
+        Fill the properties directly from each entry in the 'TagTree' section of the GT conf. file
+        """
         # check this is the right tag
         if line.has_key('tagname') is False:
             raise ValueError, "***Error: \'tagname\' is not specified for leaf node "+line['nodelabel']
@@ -311,6 +362,9 @@ class GTEntry:
         return outline
 
     def rcdID(self):
+        """
+        Retunrs a RcdId object 
+        """
         return RcdID([self._record,self._label])
 
     def setConnect(self, newconn):
@@ -342,6 +396,9 @@ class GTEntry:
 
     
     def getOraclePfn(self, online):
+        """
+        Converts the frontier connection strin to the oracle one
+        """
         if online == False:
             if self._connstring == 'frontier://FrontierPrep':
                 oracleConn =  'oracle://cms_orcoff_prep'
@@ -364,20 +421,32 @@ class GTEntry:
         return oracleConn + '/' + self._account
 
     def isInPrepAccount(self):
+        """
+        Check if the tag is in a Prep account
+        """
         if self._connstring == 'frontier://FrontierPrep' or self._connstring == 'frontier://FrontierInt' :
             return True
         return False
 
     def isOnlineConnect(self):
+        """
+        Check for online like connection strings
+        """
         if self._connstring == 'frontier://(proxyurl=http://localhost:3128)(serverurl=http://localhost:8000/FrontierOnProd)(serverurl=http://localhost:8000/FrontierOnProd)(retrieve-ziplevel=0)(failovertoserver=no)':
             return True
         return False
 
     def pfn(self):
+        """
+        Returns the full pfn (connection + account) string
+        """
         return  self._connstring + "/" + self._account
 
 
 class RcdID(tuple):
+    """
+    Tuple of Record + label used to index the GTEntries in the GT
+    """
     def __new__(cls, *args, **kw):
         return tuple.__new__(cls, *args, **kw)
 
@@ -540,7 +609,7 @@ class IOVTable:
                     self._containerName = linewords[1]
 
                     
-        # print self._tagName
+        print self._tagName
         for line in range(6, nLines-1):
             # print "listiovlines =", listiovlines[line]
             # if "Since" in listiovlines[line] or "------------" in listiovlines[line] or listiovlines[line] == "":
@@ -615,14 +684,18 @@ class IOVTable:
 
 
 class GTEntryCollection:
+    """This is a collection of globalTag entries ('GTEntries') and as such it represents an entire global tag.
+    It contains all the needed information and can be used to read a GT and loop over it.
+    See in gtCompare.py for an example on how to use it."""
     def __init__(self):
-        # the actual list of entries
+        # the actual list of GTEntries
         self._tagList = []
-        # mapping by tag
+        # mapping by tag: this is a dictionary of the actual idexes of _tagList organized by 'tag'
         self._tagByTag = dict()
-        # mapping by record-label
+        # mapping by record-label: this is a dictionary of the actual indexes of _tagList organized by 'rcdId'
         self._tagByRcdAndLabelId = dict()
         # keeps track of the order in the conf file
+        # FIXME: this is useless. I would actually change the whole phylosophy ordering all the entries by account before the .conf file is written....
         self._tagOrder = []
         # bookmarks account to create indexes for new insertions
         self._previousaccount = str()
@@ -640,28 +713,53 @@ class GTEntryCollection:
         return
 
     def size(self):
+        """
+        Returns the size (= # of entries) of the GT
+        """
         return len(self._tagOrder)
     
     def nodedata(self):
+        """
+        Returns the 'node' atribute of the TAGTREE. This is currently fixed for all GTs.
+        """
         return  self._node
 
     def root(self):
+        """
+        Returns the 'root' atribute of the TAGTREE. This is currently fixed for all GTs
+        """
         return self._root
 
     def parent(self):
+        """
+        Returns the 'parent' atribute of the TAGTREE. This is currently fixed for all GTs.
+        """
         return self._parent
 
     def setNodedata(self, node):
+        """
+        Set the 'node' atribute of the TAGTREE. This is currently fixed for all GTs.
+        """
         self._node = node
 
     def setRoot(self, root):
+        """
+        Set the 'root' atribute of the TAGTREE. This is currently fixed for all GTs
+        """
         self._root = root
 
     def setParent(self, parent):
+        """
+        Set the 'parent' atribute of the TAGTREE. This is currently fixed for all GTs.
+        """
         self._parent = parent
     
     def addEntry(self, tag):
-        # check if this is already in the collection
+        """
+        Insert a new GTEntry in the collection.
+        The ENTRY is not added if the same tag or the same RcdId are already in the GT.
+        """
+        # check that the tagname and/or the rcdId are not yet in the collection
         if tag._tag in self._tagByTag or tag.rcdID() in self._tagByRcdAndLabelId:
             print error("***Error"),"adding entry:", tag
             othertagid = -1
@@ -673,15 +771,18 @@ class GTEntryCollection:
             print "     same tag or Record for: ",self._tagList[othertagid]
             print ""
             raise ValueError, "***Error: entry has same tag or RcdId than another one in the collection!" 
-        # order is kept
+
+        # Actually add the GTEntry to the _tagList
         self._tagList.append(tag)
-        # add the entry to the maps
+        # Save the index to use it in the various dictionaries to retrieve the entry by tag/by Rcdid and to preserve the order
         index = len(self._tagList) - 1
         self._tagByTag[tag._tag] = index
         self._tagByRcdAndLabelId[tag.rcdID()] = index
         self._tagOrder.append(index)
+        # keep the list of tags in the prep-accounts
         if tag.isInPrepAccount():
             self._tagsInPrep.append(index)
+        # try to order by account. FIXME: can probably be removed to simplify
         # self._newTags.append(index)
         # check where to append the new records
         if tag._account != self._previousaccount:
@@ -695,9 +796,15 @@ class GTEntryCollection:
         return
 
     def getByTag(self, tag):
+        """
+        Returns the 'GTEntry' matching the 'tag' name in input
+        """
         return self._tagList[self._tagByTag[tag]]
 
     def getByRcdID(self, id):
+        """
+        Returns the 'GTEntry' matching the RcdId in input
+        """
         return self._tagList[self._tagByRcdAndLabelId[id]]
 
     def hasTag(self, tag):
@@ -715,6 +822,7 @@ class GTEntryCollection:
             print "   " + oldtag + ": " + newtag
             self._tagByTag[newtag] = index
             if not index in self._newTags:
+                # print "oldtag = " + oldtag + ", newtag = " + newtag + ", index =", index
                 self._newTags.append(index)
         else:
             print error("*** Warning") + " tag: " + oldtag + " not found!"
@@ -730,6 +838,7 @@ class GTEntryCollection:
                 self._tagsInPrep.remove(index)
 
             if not index in self._newTags:
+                # print "newtag = " + tag + ", index =", index
                 self._newTags.append(index)
             self.getByTag(tag).setConnect(connection)
             print "   " + tag + ": " + connection
@@ -744,6 +853,7 @@ class GTEntryCollection:
             index = self._tagByTag[tag]
 
             if not index in self._newTags:
+                # print "modifyEntry: newtag = " + tag + ", index =", index
                 self._newTags.append(index)
             print "   " + tag + ": " + account
         else:
@@ -775,20 +885,29 @@ class GTEntryCollection:
         self._tagByTag[entry._tag] = index
 
         if not index in self._newTags:
+            # print "replaceEntry tag = " + entry._tag + ", index =", index
             self._newTags.append(index)
 
         
         return
 
     def insertEntry(self, entry):
+        """
+        Given a 'GTEntry' it will add it to the collection if the rcdId is new or replace the needed attributes if the RcdId already exists.
+        """
+        # check if the RcdId is already in the GT
         if self.hasRcdID(entry.rcdID()) == True:
+            # only replace selected attributes
             self.replaceEntry(entry)
         else:
+            # this is a brand new RcdId: needs to be added to the _tagList
             index = len(self._tagList)
+            # print "tagList: " + str(index)
             if entry._account in self._accountindexes:
                 # append to the other tags of thsi account
                 index = self._accountindexes[entry._account]
-                #print "Account: "+ entry._account + " Index: " + str(index)
+                # print "Account: "+ entry._account + " Index: " + str(index)
+                # print "Account" + str(index)
             self._tagList.append(entry)
             listindx = len(self._tagList) - 1
             self._tagByTag[entry._tag] = listindx
@@ -796,15 +915,19 @@ class GTEntryCollection:
             self._tagOrder.insert(index+1, listindx)
 
             if entry.isInPrepAccount():
-                self._tagsInPrep.append(index)
-                
-            self._newTags.append(index)
-            print "   new entry -> " + str(entry)
+                # self._tagsInPrep.append(index)
+                self._tagsInPrep.append(listindx)
+
+            # print "index =", index
+            # print "listindx =", listindx
+            # self._newTags.append(index)
+            self._newTags.append(listindx)
+            print "   new entry -> " + str(entry) + ", index = " + str(index)
             # rearrange (=increment) the other account indexes if > index
             for accIndex in sorted(self._accountindexes.items(), key=itemgetter(1)):
                 if accIndex[1] >= index:
                     self._accountindexes[accIndex[0]] = accIndex[1]+1
-                    #print "           -> account: " + accIndex[0] + " moved to : " + str(self._accountindexes[accIndex[0]])
+                    # print "           -> account: " + accIndex[0] + " moved to : " + str(self._accountindexes[accIndex[0]])
         return
 
     def removeEntry(self, rcdId):
