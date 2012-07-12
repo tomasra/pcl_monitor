@@ -28,7 +28,7 @@ def modifyCfgs(wf, GT, local):
                         if localConnect:
                             line = "\n"
                         # Replace the globalTag name
-                        notHltStepGreaterThan1 = GT.startswith("GR_H") or (GT.startswith("GR_H") and file.find("HLT") != -1)
+                        notHltStepGreaterThan1 = (not GT.startswith("GR_H")) or (GT.startswith("GR_H") and file.find("HLT") != -1)
                         if notHltStepGreaterThan1:
                             if line.find("process.GlobalTag.globaltag") != -1:
                                 line = "process.GlobalTag.globaltag = '"+GT+"::All'\n"
