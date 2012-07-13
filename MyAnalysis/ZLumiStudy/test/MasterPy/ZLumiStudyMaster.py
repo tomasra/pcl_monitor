@@ -177,7 +177,7 @@ process.muonMatch = cms.EDProducer("MCMatcher", # cut on deltaR, deltaPt/Pt; pic
                                    resolveByMatchQuality = cms.bool(False), # False = just match input in order; True = pick lowest deltaR pair first
                                    )
 
-process.softMuons = cms.EDProducer("MuFiller",
+process.softMuons = cms.EDProducer("MuProperties",
     src = cms.InputTag("bareSoftMuons"),
     sampleType = cms.int32(SAMPLE_TYPE),                     
     setup = cms.int32(LEPTON_SETUP), # define the set of effective areas, rho corrections, etc.
@@ -185,7 +185,8 @@ process.softMuons = cms.EDProducer("MuFiller",
     cut = cms.string("userFloat('dxy')<0.5 && userFloat('dz')<1."),
     flags = cms.PSet(
         ID = cms.string("userFloat('isPFMuon')" ), # PF ID
-        isGood = cms.string(GOODLEPTON)
+        isGood = cms.string(GOODLEPTON),
+        isPFIso = cms.string("userFloat('combRelIsoPF')<0.4")
     )
 )
 
@@ -205,7 +206,8 @@ process.softMuons = cms.EDProducer("MuFiller",
 ### ----------------------------------------------------------------------
 
 TWOGOODLEPTONS = ("userFloat('d0.isGood') && userFloat('d1.isGood')") # Z made of 2 isGood leptons
-ZISO           = ("userFloat('d0.combRelIsoPFFSRCorr')<0.4 && userFloat('d1.combRelIsoPFFSRCorr')<0.4") #ISO after FSR
+#ZISO           = ("userFloat('d0.combRelIsoPFFSRCorr')<0.4 && userFloat('d1.combRelIsoPFFSRCorr')<0.4") #ISO after FSR
+ZISO           = ("userFloat('d0.isPFISO') && userFloat('d1.isPFISO')") #ISO after FSR
 
 ZLEPTONSEL     = TWOGOODLEPTONS + "&&" + ZISO
 
@@ -223,7 +225,7 @@ process.bareMMCand = cms.EDProducer("CandViewShallowCloneCombiner",
     cut = cms.string('mass > 0'), # protect against ghosts
     checkCharge = cms.bool(True)
 )
-process.MMCand = cms.EDProducer("ZCandidateFiller",
+process.MMCand = cms.EDProducer("ZCandidateProperties",
     src = cms.InputTag("bareMMCand"),
     sampleType = cms.int32(SAMPLE_TYPE),                     
     setup = cms.int32(LEPTON_SETUP), # define the set of effective areas, rho corrections, etc.
