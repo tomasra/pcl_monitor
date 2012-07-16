@@ -13,7 +13,7 @@
 //
 // Original Author:  Stefano Casasso,,,
 //         Created:  Tue Feb 28 14:33:03 CET 2012
-// $Id: ZTreeMaker.cc,v 1.44 2012/07/08 09:23:02 namapane Exp $
+// $Id: ZTreeMaker.cc,v 1.1 2012/07/13 10:46:06 cerminar Exp $
 //
 //
 
@@ -250,8 +250,8 @@ void ZTreeMaker::analyze(const edm::Event& event, const edm::EventSetup& eSetup)
 
   for( edm::View<pat::CompositeCandidate>::const_iterator cand = cands->begin(); cand != cands->end(); ++cand) {
     FillCandidate(*cand, evtPassTrigger&&evtPassSkim);
-
-    if(cand->userFloat("isBestCand")) NbestCand = CandCounter;
+    //if(cand->userFloat("isBestCand")) NbestCand = CandCounter;
+    if(cand->userFloat("isBestZmm")) NbestCand = CandCounter;
     else CandCounter++;
   }
 
@@ -344,7 +344,6 @@ void ZTreeMaker::FillCandidate(const pat::CompositeCandidate& cand, bool evtPass
   labels[0]=ZLpLabel;
   labels[1]=ZLnLabel;
   
-  cout << "A"<< endl;
   // Retrieve the userFloat of the leptons in vectors ordered in the same way.
   vector<float> SIP(2);
   vector<float> PFChargedHadIso(2);
@@ -362,8 +361,6 @@ void ZTreeMaker::FillCandidate(const pat::CompositeCandidate& cand, bool evtPass
     PFNeutralHadIso[i] = userdatahelpers::getUserFloat(leptons[i],"PFNeutralHadIso");
     PFPhotonIso[i]     = userdatahelpers::getUserFloat(leptons[i],"PFPhotonIso");
     isID[i]            = userdatahelpers::getUserFloat(leptons[i],"ID");
-    cout << "1" << endl;
-
     if (theChannel==ZL) {
       combRelIsoPF[i]    = userdatahelpers::getUserFloat(leptons[i],"combRelIsoPF");
       //FIXME cannot take labels[i]+"SIP", that info only attached to the Z!!
@@ -373,7 +370,6 @@ void ZTreeMaker::FillCandidate(const pat::CompositeCandidate& cand, bool evtPass
       assert(SIP[i] == cand.userFloat(labels[i]+"SIP"));
     }
 
-    cout << "2" << endl;
     //Fill the info on the lepton candidates  
     myTree->FillLepInfo(leptons[i]->pt(),
 			leptons[i]->eta(),
@@ -384,7 +380,6 @@ void ZTreeMaker::FillCandidate(const pat::CompositeCandidate& cand, bool evtPass
 			userdatahelpers::getUserFloat(leptons[i],"BDT"),
 			userdatahelpers::getUserFloat(leptons[i],"MCParentCode"));
 
-    cout << "3" << endl;
     //Isolation variables
     myTree->FillLepIsolInfo(PFChargedHadIso[i],
 			    PFNeutralHadIso[i],
@@ -392,7 +387,6 @@ void ZTreeMaker::FillCandidate(const pat::CompositeCandidate& cand, bool evtPass
 			    combRelIsoPF[i]);
   }
 
-  cout << "B"<< endl;
 }
 
 
