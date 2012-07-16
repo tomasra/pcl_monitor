@@ -122,6 +122,7 @@ private:
   TLorentzVector *_Mu1_4Mom,*_Mu2_4Mom,*_MuTrack_4Mom, *_DiMu4Mom, *_DiMuPlusTrack4Mom;
 
   int _Mu1Q,_Mu2Q,_Mu3Q;
+  int _Ds_Mom;
 
   TVector3 *_PV,*_SV;
   double _Lxy;
@@ -247,7 +248,8 @@ void GenAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup) {
       if (abs(cand.pdgId())!= 431) continue;
 
       //cout << " Ds Vtx " << cand.vx() << endl;
-
+      _Ds_Mom=cand.mother()->pdgId();
+      //cout << "Ds mom " << _Ds_Mom << endl;
       _DiMuPlusTrack4Mom->SetPtEtaPhiM(cand.pt(),cand.eta(),cand.phi(),cand.mass());
 
       _PV->SetXYZ(cand.vx(),cand.vy(),cand.vz());
@@ -300,12 +302,13 @@ void GenAnalysis::analyze(const edm::Event& ev, const edm::EventSetup& iSetup) {
 }
 
 void GenAnalysis::Initialize_TreeVars(){
+  debug=false;
 
   for (int k=0; k<10; k++){
     _TrigBit[k]=false;
   }
 
- 
+  _Ds_Mom=0;
   _DiMu4Mom->SetPtEtaPhiM(0.,0.,0.,0.);
   _DiMuPlusTrack4Mom->SetPtEtaPhiM(0.,0.,0.,0.);
 
@@ -359,6 +362,8 @@ void GenAnalysis::beginJob() {
 
   ExTree->Branch("PV","TVector3",&_PV); 
   ExTree->Branch("SV","TVector3",&_SV);
+
+  ExTree->Branch("Ds_Mother",&_Ds_Mom   , "_Ds_Mom/I");
 
   ExTree->Branch("Mu1Q",&_Mu1Q   , "_Mu1Q/I");
   ExTree->Branch("Mu2Q",&_Mu2Q   , "_Mu2Q/I");
