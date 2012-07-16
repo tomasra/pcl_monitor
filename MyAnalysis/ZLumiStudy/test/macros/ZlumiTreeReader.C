@@ -1,4 +1,4 @@
-#define ZlumiTreeRader_cxx
+#define ZlumiTreeReader_cxx
 // The class definition in ZlumiTreeRader.h has been generated automatically
 // by the ROOT utility TTree::MakeSelector(). This class is derived
 // from the ROOT class TSelector. For more information on the TSelector
@@ -23,7 +23,7 @@
 // Root > T->Process("ZlumiTreeRader.C+")
 //
 
-#include "ZlumiTreeRader.h"
+#include "ZlumiTreeReader.h"
 #include <TH2.h>
 #include <TStyle.h>
 #include <iostream>
@@ -50,7 +50,7 @@ TH2F* ptLeptons;
 
 TH1F* numZPerEvent;
 
-TH1F* CreateHist(string* name, string* xtitle, string* einheit, size_t nbinbs, float xmin, float xmax)
+TH1F* CreateHist(string name, string xtitle, string einheit, size_t nbinbs, float xmin, float xmax)
 {
 	TString title;
 
@@ -58,36 +58,36 @@ TH1F* CreateHist(string* name, string* xtitle, string* einheit, size_t nbinbs, f
 
 	// want to write 1 or nothing
 	if (binSize == 1) {
-		if (einheit == string("")) {
-			title.Form(";%s; Events", xtitle);
+		if (einheit.c_str() == string("")) {
+		  title.Form(";%s; Events", xtitle.c_str());
 		}
 		else {
-			title.Form(";%s [%s];Events / %2.0f %s", xtitle, einheit, binSize, einheit);
+			title.Form(";%s [%s];Events / %2.0f %s", xtitle.c_str(), einheit.c_str(), binSize, einheit.c_str());
 		}	
 	}
 
 	// want to write 0.??
 	else if (binSize < 1) {
-			if (einheit == string("")) {
-			title.Form(";%s; Events / %1.2f", xtitle, binSize);
+			if (einheit.c_str() == string("")) {
+			title.Form(";%s; Events / %1.2f", xtitle.c_str(), binSize);
 		}
 		else {
-			title.Form(";%s [%s];Events / %1.2f %s", xtitle, einheit, binSize, einheit);
+			title.Form(";%s [%s];Events / %1.2f %s", xtitle.c_str(), einheit.c_str(), binSize, einheit.c_str());
 		}	
 	}
 
 	// want to write ??
 	else {
-			if (einheit == std::string("")) {
-			title.Form(";%s; Events / %2.0f", xtitle, binSize);
+			if (einheit.c_str() == std::string("")) {
+			title.Form(";%s; Events / %2.0f", xtitle.c_str(), binSize);
 		}
 		else {
-			title.Form(";%s [%s];Events / %2.0f %s", xtitle, einheit, binSize, einheit);
+			title.Form(";%s [%s];Events / %2.0f %s", xtitle.c_str(), einheit.c_str(), binSize, einheit.c_str());
 		}	
 	}
 
 	
-	TH1F* a = new TH1F(name, title, nbinbs, xmin, xmax);
+	TH1F* a = new TH1F(name.c_str(), title, nbinbs, xmin, xmax);
 	a->SetFillColor(kAzure+2);
 	a->SetLineColor(1);
 	a->SetLineWidth(2);
@@ -95,7 +95,7 @@ TH1F* CreateHist(string* name, string* xtitle, string* einheit, size_t nbinbs, f
 }
 
 
-void ZlumiTreeRader::Begin(TTree* /*tree*/)
+void ZlumiTreeReader::Begin(TTree* /*tree*/)
 {
 	// The Begin() function is called at the start of the query.
 	// When running with PROOF Begin() is only called on the client.
@@ -123,7 +123,7 @@ void ZlumiTreeRader::Begin(TTree* /*tree*/)
 
 }
 
-void ZlumiTreeRader::SlaveBegin(TTree * /*tree*/)
+void ZlumiTreeReader::SlaveBegin(TTree * /*tree*/)
 {
    // The SlaveBegin() function is called after the Begin() function.
    // When running with PROOF SlaveBegin() is called on each slave server.
@@ -133,12 +133,12 @@ void ZlumiTreeRader::SlaveBegin(TTree * /*tree*/)
 
 }
 
-Bool_t ZlumiTreeRader::Process(Long64_t entry)
+Bool_t ZlumiTreeReader::Process(Long64_t entry)
 {
 	// The Process() function is called for each entry in the tree (or possibly
 	// keyed object in the case of PROOF) to be processed. The entry argument
 	// specifies which entry in the currently loaded tree is to be processed.
-	// It can be passed to either ZlumiTreeRader::GetEntry() or TBranch::GetEntry()
+	// It can be passed to either ZlumiTreeReader::GetEntry() or TBranch::GetEntry()
 	// to read either all or the required parts of the data. When processing
 	// keyed objects with PROOF, the object is already loaded and is available
 	// via the fObject pointer.
@@ -156,7 +156,7 @@ Bool_t ZlumiTreeRader::Process(Long64_t entry)
 
 	//cout << "Process: " << entry << endl;
 
-	ZlumiTreeRader::GetEntry(entry);
+	ZlumiTreeReader::GetEntry(entry);
 
 	numZPerEvent->Fill(ZMass->size());
 
@@ -186,7 +186,7 @@ Bool_t ZlumiTreeRader::Process(Long64_t entry)
 	return kTRUE;
 }
 
-void ZlumiTreeRader::SlaveTerminate()
+void ZlumiTreeReader::SlaveTerminate()
 {
    // The SlaveTerminate() function is called after all entries or objects
    // have been processed. When running with PROOF SlaveTerminate() is called
@@ -194,7 +194,7 @@ void ZlumiTreeRader::SlaveTerminate()
 
 }
 
-void ZlumiTreeRader::Terminate()
+void ZlumiTreeReader::Terminate()
 {
 	// The Terminate() function is the last function to be called during
 	// a query. It always runs on the client, it can be used to present
