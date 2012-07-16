@@ -186,7 +186,7 @@ process.softMuons = cms.EDProducer("MuProperties",
     flags = cms.PSet(
         ID = cms.string("userFloat('isPFMuon')" ), # PF ID
         isGood = cms.string(GOODLEPTON),
-        isPFIso = cms.string("userFloat('combRelIsoPF')<0.4")
+        isPFISO = cms.string("userFloat('combRelIsoPF')<0.4")
     )
 )
 
@@ -232,9 +232,9 @@ process.MMCand = cms.EDProducer("ZCandidateProperties",
     bestZAmong = cms.string(BESTZ_AMONG),
     flags = cms.PSet(
         GoodLeptons = cms.string(ZLEPTONSEL),
-        Z1Presel = cms.string(Z1PRESEL),
+        ZPresel = cms.string(Z1PRESEL),
+                                    )
     )
-)
 
  
 
