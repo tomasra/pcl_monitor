@@ -2,8 +2,8 @@
  *
  *  No description available.
  *
- *  $Date: 2012/06/10 17:40:09 $
- *  $Revision: 1.15 $
+ *  $Date: 2012/07/13 14:23:11 $
+ *  $Revision: 1.1 $
  */
 
 #include <FWCore/Framework/interface/Frameworkfwd.h>
@@ -184,7 +184,7 @@ MuProperties::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     //--- Embed flags (ie flags specified in the "flags" pset)
     for(CutSet<pat::Muon>::const_iterator flag = flags.begin(); flag != flags.end(); ++flag) {
-      l.addUserFloat(flag->first,int((*(flag->second))(l)));
+     l.addUserFloat(flag->first,int((*(flag->second))(l)));
     }
     
     result->push_back(l);
