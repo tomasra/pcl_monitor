@@ -43,7 +43,7 @@ process.generator = cms.EDFilter("Pythia6GeneratorFilter",
           use_default_decay = cms.untracked.bool(False),
           decay_table = cms.FileInPath('GeneratorInterface/ExternalDecays/data/DECAY_NOLONGLIFE.DEC'),
           particle_property_file = cms.FileInPath('GeneratorInterface/ExternalDecays/data/evt.pdl'),
-          user_decay_file = cms.FileInPath('MyAnalysis/Tau3Mu/data/Ds_phipi_mumupi_new.dec'),
+          user_decay_file = cms.FileInPath('MyAnalysis/Tau3Mu/data/Ds_phipi_mumupi.dec'),
           list_forced_decays = cms.vstring('MyD_s+','MyD_s-')
           ),
         parameterSets = cms.vstring('EvtGen')
@@ -53,7 +53,7 @@ process.generator = cms.EDFilter("Pythia6GeneratorFilter",
 
 
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.1 $'),
+    version = cms.untracked.string('$Revision: 1.2 $'),
     annotation = cms.untracked.string('MinBias_TuneZ2_7TeV_pythia6_cff.py nevts:1'),
     name = cms.untracked.string('PyReleaseValidation')
 )
