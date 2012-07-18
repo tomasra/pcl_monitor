@@ -43,10 +43,10 @@ public :
    vector<float>   *Lep1Pt;
    vector<float>   *Lep1Eta;
    vector<float>   *Lep1Phi;
-   vector<int>     *Lep1LepId;
+   vector<int>     *Lep1LepId; // -13
    vector<float>   *Lep1SIP;
-   vector<bool>    *Lep1isID;
-   vector<float>   *Lep1BDT;
+   vector<bool>    *Lep1isID; // 0 or 1 
+   vector<float>   *Lep1BDT; // 0
    vector<short>   *Lep1ParentId;
    vector<float>   *Lep2Pt;
    vector<float>   *Lep2Eta;
