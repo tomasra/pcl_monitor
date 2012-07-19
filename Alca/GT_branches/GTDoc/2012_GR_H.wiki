@@ -1,4 +1,4 @@
-| [[%LINKTOGTLIST%/?GlobalTag=GR_H_V30][GR_H_V30]] | %GREEN%52X%ENDCOLOR% | To be used for data taking with release >=50X. | As !GR_H_V29 with the following updates:. |
+| [[%LINKTOGTLIST%/?GlobalTag=GR_H_V30][GR_H_V30]] | %GREEN%52X%ENDCOLOR% | To be used for data taking with release >=50X. | As !GR_H_V29 with the following updates: New AK5PFHLT and AK5PFchsHLT JEC condtions. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_H_V29][GR_H_V29]] | %GREEN%52X%ENDCOLOR% | To be used for data taking with release >=50X. | As !GR_H_V28 with the following updates:<br> - btag mva added. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_H_V28][GR_H_V28]] | %GREEN%52X%ENDCOLOR% | To be used for data taking with release >=50X. | As !GR_H_V27 with the following updates:<br> - New payload containing parameters for the HF in HcalHitReconstructor. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_H_V27][GR_H_V27]] | %GREEN%50X%ENDCOLOR% | To be used for data taking with release >=50X. | As !GR_H_V26 with the following updates:<br> - new format for DT readout mapping. |
