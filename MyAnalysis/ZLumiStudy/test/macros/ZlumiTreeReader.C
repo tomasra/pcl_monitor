@@ -28,11 +28,15 @@
 #include <TStyle.h>
 #include <iostream>
 #include <string>
+#include <sstream>
+#include <string> 
 
 using namespace std;
 
+int run_number;
 
 TFile* myFile;
+TStyle* style;
 
 TH1F* massZ;
 TH1F* wholeMassZ;
@@ -65,13 +69,28 @@ int cutZMass;
 
 const double M_Z = 91.2;
 
+int to_int(string str)
+{
+    stringstream sstr(str);
+    int res = -1;
+    sstr >> res;
+    return res;
+} 
+
+string to_string(int i)
+{
+    stringstream sstr;
+    sstr << i;
+    return sstr.str();
+} 
+
 TH1F* CreateHist(string name, string xtitle, string unit, size_t nbins, float xmin, float xmax)
 {
 	TString title;
 
 	float binSize = (xmax-xmin) / nbins;
 
-	// want to write 1 or nothing
+	// want to write: 1 or nothing
 	if (binSize == 1) {
 		if (unit.c_str() == string("")) {
 		  title.Form(";%s; Events", xtitle.c_str());
@@ -81,7 +100,7 @@ TH1F* CreateHist(string name, string xtitle, string unit, size_t nbins, float xm
 		}	
 	}
 
-	// want to write 0.??
+	// want to write: 0.??
 	else if (binSize < 1) {
 			if (unit.c_str() == string("")) {
 			title.Form(";%s; Events / %1.2f", xtitle.c_str(), binSize);
@@ -91,7 +110,7 @@ TH1F* CreateHist(string name, string xtitle, string unit, size_t nbins, float xm
 		}	
 	}
 
-	// want to write ??
+	// want to write: ??
 	else {
 			if (unit.c_str() == std::string("")) {
 			title.Form(";%s; Events / %2.0f", xtitle.c_str(), binSize);
@@ -109,11 +128,6 @@ TH1F* CreateHist(string name, string xtitle, string unit, size_t nbins, float xm
 	return a;
 }
 
-void SetStyle()
-{
-	gStyle->SetOptStat("nemrou");
-}
-
 
 void ZlumiTreeReader::Begin(TTree* /*tree*/)
 {
@@ -121,11 +135,13 @@ void ZlumiTreeReader::Begin(TTree* /*tree*/)
 	// When running with PROOF Begin() is only called on the client.
 	// The tree argument is deprecated (on PROOF 0 is passed).
 
-	SetStyle();
+	string option = GetOption();
+	run_number = to_int(option);
 
-	TString option = GetOption();
-
-	myFile = new TFile("test.root", "RECREATE");
+	string file_name = "data/ZLumiStudy_RunNumber_" + to_string(run_number) + ".root";
+	cout << file_name << endl;
+	myFile = new TFile(file_name.c_str(), "RECREATE");
+	//myFile = new TFile("data/test.root", "RECREATE");
 
 	massZ = CreateHist("ZMass", "M_{Z}", "GeV", 60, 60, 120);
 	wholeMassZ = CreateHist("wholeMassRange", "M_{#mu#bar{#mu}}", "GeV", 100, 0, 200);
@@ -136,13 +152,13 @@ void ZlumiTreeReader::Begin(TTree* /*tree*/)
 	ptL1 = CreateHist("AntimuonPt", "P_{#bar{#mu}, T}", "GeV", 80, 0, 160);
 	etaL1 = CreateHist("AntimuonEta", "#eta_{#bar{#mu}}", "", 80, -3, 3);
 	phiL1 = CreateHist("AntimuonPhi", "#varphi_{#bar{#mu}}", "rad", 80, -3.3, 3.3);
-	isoL1 = CreateHist("AntimuonIsolation", "Isolation / P_{#bar{#mu}, T}", "GeV^{⁻1}", 20, -1.5, 20);
+	isoL1 = CreateHist("AntimuonIsolation", "Isolation / P_{#bar{#mu}, T}", "GeV^{-1}", 80, -1.5, 20);
 	sipL1 = CreateHist("AntimuonSIP", "SIP_{#bar{#mu}}", "", 60, -1.5, 60);
 	
 	ptL2 = CreateHist("MuonPt", "P_{#mu, T}", "GeV", 80, 0, 160);
 	etaL2 = CreateHist("MuonEta", "#eta_{#mu}", "", 80, -3, 3);
 	phiL2 = CreateHist("MuonPhi", "#varphi_{#mu}", "rad", 80, -3.3, 3.3);
-	isoL2 = CreateHist("MuonIsolation", "Isolation / P_{#mu, T}", "GeV^{-1}", 20, -1.5, 20);
+	isoL2 = CreateHist("MuonIsolation", "Isolation / P_{#mu, T}", "GeV^{-1}", 80, -1.5, 20);
 	sipL2 = CreateHist("MuonSIP", "SIP_{#mu}", "", 60, -1.5, 60);
 
 	numZPerEvent = CreateHist("ZCount", "#Z", "", 10, -0.5, 9.5);
@@ -185,7 +201,14 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 
 	//cout << "Process: " << entry << endl;
 
+
+	// chain fuer alle Trees, nach runnumber ueberpruefen, dass immer nur ein run verwendet wird
+
 	ZlumiTreeReader::GetEntry(entry);
+
+	if (run_number != RunNumber) {
+		return kTRUE;
+	}
 
 	numZPerEvent->Fill(ZMass->size());
 
@@ -216,7 +239,7 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 		sipL2->Fill(Lep2SIP->at(i));
 	}
 
-	// find the Z-paricle with least mass difference
+	// find the Z-particle with least mass difference
 	double m_diff = 1000;
 	int index_Z = 0;
 	for(size_t i=0; i < ZMass->size(); i++) {
