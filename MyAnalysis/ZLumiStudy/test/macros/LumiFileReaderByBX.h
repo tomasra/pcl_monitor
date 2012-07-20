@@ -1,7 +1,7 @@
 #ifndef LumiFileReaderByBX_H
 #define LumiFileReaderByBX_H
 
-#include "RunLumiIndex.h"
+// #include "RunLumiIndex.h"
 #include "RunLumiBXIndex.h"
 
 #include <map>
@@ -22,7 +22,7 @@
  *  double instLumi = lumiMap.getAvgInstLumi(runAndLumiAndBx); -> get the Instantaneous lumi (averaged on the LS)
  *
  *  
- *  $Date: 2012/03/05 21:43:17 $
+ *  $Date: 2012/07/19 15:10:55 $
  *  $Revision: 1.1 $
  *  \author G. Cerminara - CERN
  */
