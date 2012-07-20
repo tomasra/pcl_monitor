@@ -72,6 +72,9 @@ const double M_Z = 91.2;
 const double Cross_Section = 1.1; // nb
 const double Cross_Section_Error = 0.03; // nb  
 
+LumiFileReaderByBX lumiReader("./");
+//TH1F* testProgramm;
+
 int to_int(string str)
 {
     stringstream sstr(str);
@@ -174,6 +177,9 @@ void ZlumiTreeReader::Begin(TTree* /*tree*/)
 
 	cutflow = CreateHist("cutflow", "cut", "", 4, -0.5, 3.5);
 
+	lumiReader.readFileForRun(run_number);
+	//testProgramm =  lumiReader.getRecLumiBins(100, -50, 50);
+
 }
 
 void ZlumiTreeReader::SlaveBegin(TTree * /*tree*/)
@@ -212,6 +218,12 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 	// chain fuer alle Trees, nach runnumber ueberpruefen, dass immer nur ein run verwendet wird
 
 	ZlumiTreeReader::GetEntry(entry);
+
+	//cout << "vor Aufruf: " << RunNumber;
+	//RunLumiBXIndex lumiTest = RunLumiBXIndex(RunNumber, LumiNumber, BXNumber);
+	//int runTest = lumiTest.run();
+	//cout << " ---- nach Aufruf: " << runTest << endl;
+
 
 	if (run_number != -1 and run_number != RunNumber) {
 		return kTRUE;
@@ -323,6 +335,8 @@ void ZlumiTreeReader::Terminate()
 	cutflow->SetBinContent(4, cutZMass);
 	cutflow->GetXaxis()->SetBinLabel(4, "after Z Mass cut");
 	cutflow->Write();
+
+	//testProgramm->Write();
 
 	myFile->Close();
 
