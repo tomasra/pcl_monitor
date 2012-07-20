@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2012/07/19 15:10:55 $
- *  $Revision: 1.1 $
+ *  $Date: 2012/07/20 15:22:47 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -178,8 +178,8 @@ void LumiFileReaderByBX::readCSVFileNew(const TString& fileName, int runMin, int
   while (getline(file,line)) { // loop over lines
     if( line == "" || line[0] == '#' || line[0] == 'r'   ) continue; // Skip comments and empty lines
 
-    //if(debug) cout << line << endl;
-    
+
+    if(debug) cout << line << endl;
     // count the # of lines
     nLines ++;
 
@@ -216,13 +216,16 @@ void LumiFileReaderByBX::readCSVFileNew(const TString& fileName, int runMin, int
       cellstream << cell;
 
       if(cellCounter == 0) { // this is the "run" field
-       cellstream >> run;
-       if(debug) {
-         cout << "---------------------------------------------------" << endl;
-         cout << "run: " << run << endl;
-       }
-       if(!(runMin == -1 && runMax == -1 ) && !(run >= runMin && run <= runMax)) return;
-       theRun = run;
+
+	cellstream >> run;
+
+	// FIXME: split run:fill
+	if(debug) {
+	  cout << "---------------------------------------------------" << endl;
+	  cout << "run: " << run << endl;
+	}
+	if(!(runMin == -1 && runMax == -1 ) && !(run >= runMin && run <= runMax)) return;
+	theRun = run; 
 
       } else if(cellCounter == 1) { // LS field
        cellstream >> ls;
@@ -231,27 +234,29 @@ void LumiFileReaderByBX::readCSVFileNew(const TString& fileName, int runMin, int
          cout << "ls: " << ls << endl;
        }
 	// FIXME: there are many 0 in LumiCal2 files...
-       if(ls == 0) {
-         cout << "ERROR: lumi 0 found, skipping" << endl;
-         break;
-       }
+	if(ls == 0) {
+	  cout << "ERROR: lumi 0 found, skipping" << endl;
+	  break;
+	}
+	
+      } else if(cellCounter == 2) { // this is the date, we skip it for the moment
+	cout << "this is the date" << endl;
+      } else if(cellCounter == 3) { // delivered lumi in this LS
+	cellstream >> delLumi;
 
-      }  else if(cellCounter == 2) { // delivered lumi in this LS
-       cellstream >> delLumi;
-
-      } else if(cellCounter == 3) { // recorded lumi in this LS
-       cellstream >> recLumi;
+      } else if(cellCounter == 4) { // recorded lumi in this LS
+	cellstream >> recLumi;
 
 	// ratio of del/rec -> this is used to scale all the BX lumis
        ratioRecDel = recLumi/delLumi;
 	// store it in the first element of the vector
-       lumiByBx[0] = ratioRecDel;
-      } else if(cellCounter % 2 == 0) { // even -> BX #
-       cellstream >> bx;
-
+	lumiByBx[0] = ratioRecDel;
       } else if(cellCounter % 2 == 1) { // odd -> del lumi in this BX
-       cellstream >> bxDelLumi;
-       bxRecLumi = ratioRecDel*bxDelLumi;
+	cellstream >> bx;
+
+      } else if(cellCounter % 2 == 0) { // even -> BX #
+	cellstream >> bxDelLumi;
+	bxRecLumi = ratioRecDel*bxDelLumi;
 
 	// sum over all the BX in the LS
        sumBxDel += bxDelLumi;
