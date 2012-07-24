@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2012/07/20 15:46:49 $
- *  $Revision: 1.3 $
+ *  $Date: 2012/07/24 12:33:10 $
+ *  $Revision: 1.4 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -169,6 +169,7 @@ void LumiFileReaderByBX::readCSVFileNew(const TString& fileName, int runMin, int
 
   // container of vector of lumis by BX for each LS
   vector< vector<float> > lsContainer;
+  vector<float> lsRatioContainer;
 
   cout << "##Begin readCSVFileNew\n";
 
@@ -180,7 +181,7 @@ void LumiFileReaderByBX::readCSVFileNew(const TString& fileName, int runMin, int
 
 
     if(debug) {
-        cout << line << endl;
+      cout << line << endl;
     }
 
     // count the # of lines
@@ -215,120 +216,128 @@ void LumiFileReaderByBX::readCSVFileNew(const TString& fileName, int runMin, int
       stringstream cellstream;
       cellstream << cell;
 
-        if(cellCounter == 0) { // this is the "run" field
+      if(cellCounter == 0) { // this is the "run" field
 
-	       cellstream >> run;
+	cellstream >> run;
 
-            if(debug) {
-	           cout << "---------------------------------------------------" << endl;
-	           cout << "run: " << run << endl;
-	        }
-	        if(!(runMin == -1 && runMax == -1 ) && !(run >= runMin && run <= runMax)) {
-              return;
-            }
+	if(debug) {
+	  cout << "---------------------------------------------------" << endl;
+	  cout << "run: " << run << endl;
+	}
+	if(!(runMin == -1 && runMax == -1 ) && !(run >= runMin && run <= runMax)) {
+	  return;
+	}
 
-	       theRun = run; 
+	theRun = run; 
 
-        } 
+      } 
 
-        else if(cellCounter == 1) { // LS field
-            cellstream >> ls;
-            if(debug) {
-                cout << "---------" << endl;
-                cout << "ls: " << ls << endl;
-            }
+      else if(cellCounter == 1) { // LS field
+	cellstream >> ls;
+	if(debug) {
+	  cout << "---------" << endl;
+	  cout << "ls: " << ls << endl;
+	}
 
 
-	       // FIXME: there are many 0 in LumiCal2 files...
-	       if(ls == 0) {
-	           cout << "ERROR: lumi 0 found, skipping" << endl;
-	           break;
-            }
+	// FIXME: there are many 0 in LumiCal2 files...
+	if(ls == 0) {
+	  cout << "ERROR: lumi 0 found, skipping" << endl;
+	  break;
+	}
 	
-        }
+      }
 
-        else if(cellCounter == 2) { // this is the date, we skip it for the moment
-	       // do nothing
-        } 
+      else if(cellCounter == 2) { // this is the date, we skip it for the moment
+	// do nothing
+      } 
 
-        else if(cellCounter == 3) { // delivered lumi in this LS
-	       cellstream >> delLumi;
-        }
+      else if(cellCounter == 3) { // delivered lumi in this LS
+	cellstream >> delLumi;
+      }
 
-        else if(cellCounter == 4) { // recorded lumi in this LS
-	       cellstream >> recLumi;
+      else if(cellCounter == 4) { // recorded lumi in this LS
+	cellstream >> recLumi;
 
-	       // ratio of del/rec -> this is used to scale all the BX lumis
-            ratioRecDel = recLumi/delLumi;
-	       // store it in the first element of the vector
-	       lumiByBx[0] = ratioRecDel;
-        }
+	// ratio of del/rec -> this is used to scale all the BX lumis
+	ratioRecDel = recLumi/delLumi;
+      }
 
-        else if(cellCounter % 2 == 1) { // odd -> del lumi in this BX
-	       cellstream >> bx;
+      else if(cellCounter % 2 == 1) { // odd -> del lumi in this BX
+	cellstream >> bx;
 
-        }
+      }
 
-        else if(cellCounter % 2 == 0) { // even -> BX #
-	       cellstream >> bxDelLumi;
-	       bxRecLumi = ratioRecDel*bxDelLumi;
+      else if(cellCounter % 2 == 0) { // even -> BX #
+	cellstream >> bxDelLumi;
+	bxRecLumi = ratioRecDel*bxDelLumi;
 
-	       // sum over all the BX in the LS
-            sumBxDel += bxDelLumi;
-            sumBxRec += bxRecLumi;
+	// sum over all the BX in the LS
+	sumBxDel += bxDelLumi;
+	sumBxRec += bxRecLumi;
+	if(debug) cout << "BX: " << bx << " del luvi: " << bxDelLumi << " rec lumi: " << bxRecLumi << endl;
+	lumiByBx[bx] = bxRecLumi;
 
-            if(debug) cout << "BX: " << bx << " del luvi: " << bxDelLumi << " rec lumi: " << bxRecLumi << endl;
+      }
 
-	       // store it in the vector
-            if (bx > lumiByBx.size() || bx == 0) {
-                cout << "WARNING: Ignoring BX " << bx << ", to large!\n";
-                cout << "Lumisection: " << ls << endl;
-            }
-
-            else {
-                lumiByBx[bx] = bxRecLumi;
-            }   
-        }
-
-     cellCounter++;
-   }
+      cellCounter++;
+    }
 
 
-   if(ls == 0) {
-        cout << "skipping LS 0" << endl;
-    continue;
-  }
+    if(ls == 0) {
+      cout << "skipping LS 0" << endl;
+      continue;
+    }
     // now push back the vector with the BX lumis in the LS container
-  int lastLumi = lsContainer.size();
-  if(debug) cout << "last analyzed LS was: " << lastLumi << " now adding: " << ls << endl;
+    int lastLumi = lsContainer.size();
+    if(debug) cout << "last analyzed LS was: " << lastLumi << " now adding: " << ls << endl;
 
     // we fill also missing LSs with an empty vector
-  for(int nMiss = lastLumi + 1; nMiss <= ls; ++nMiss) {
-    if(debug) cout << "  add  empty LS: " << nMiss << endl;
-    vector<float> empty;
-    lsContainer.push_back(empty);
-  }
+    for(int nMiss = lastLumi + 1; nMiss <= ls; ++nMiss) {
+      if(debug) cout << "  add  empty LS: " << nMiss << endl;
+      vector<float> empty;
+      lsContainer.push_back(empty);
+      lsRatioContainer.push_back(-1);
+    }
 
     // sanity check: compare the sum of the BXs with the integral in the lumi
     // FIXME: is the integral taking into account ONLY the colliding BXs?? (check!)
-  if(fabs(sumBxRec*23. - recLumi)/recLumi > 0.05) {
-    cout << "WARNING: ls: " << ls
-    << " sum BX del: " << sumBxDel *23.<< " sumBxRec: " << sumBxRec*23.
-    << " total del: " << delLumi << " total rec: " << recLumi << endl;
+    // FIXME: lowering the threshold to 1% reveals many more problems: investigate
+    if(fabs(sumBxRec*23. - recLumi)/recLumi > 0.05) {
+      cout << "WARNING: ls: " << ls
+	   << " sum BX del: " << sumBxDel *23.<< " sumBxRec: " << sumBxRec*23.
+	   << " total del: " << delLumi << " total rec: " << recLumi << endl;
       // in this case we SKIP the LS so that it won'tbe used for the computation of the 
-  } else {
-    if(debug)  cout << "add filled LS: " << ls << " new size: " << lsContainer.size() << endl;
-    lsContainer[ls - 1] = lumiByBx;
+    } else {
+      if(debug)  cout << "add filled LS: " << ls << " new size: " << lsContainer.size() << endl;
+      lsContainer[ls - 1] = lumiByBx;
+      lsRatioContainer[ls - 1] = ratioRecDel;
+    }
+
   }
+  
+  cout << "##filling theRun=" << theRun << "\n";
+
+  theLumiTable[theRun] = lsContainer;
+  theLumiRatioByRunByLS[theRun] = lsRatioContainer;
+  cout << "    run: " << theRun << " # ls: " << lsContainer.size() << endl;
 
 }
 
-cout << "##filling theRun=" << theRun << "\n";
 
-theLumiTable[theRun] = lsContainer;
-cout << "    run: " << theRun << " # ls: " << lsContainer.size() << endl;
-
+int LumiFileReaderByBX::getNumberLSs(const int run) const {
+  map<int, vector< vector<float> > >::const_iterator lsContainer = theLumiTable.find(run);
+  if(lsContainer == theLumiTable.end()) {
+    cout << "Error: run: " << run << " not found" << endl;
+  }
+  return (int)(*lsContainer).second.size();
 }
+
+int LumiFileReaderByBX::getNumberBXes(const int run, const int ls) const {
+  // FIXME: implement this
+}
+
+
 
 
 bool LumiFileReaderByBX::readRootFile(const TString& fileName, int /*runMin*/, int /*runMax*/) {
@@ -516,23 +525,31 @@ float LumiFileReaderByBX::getAvgInstLumi(const RunLumiBXIndex& runAndLumiAndBx) 
 
 pair<float, float> LumiFileReaderByBX::getLumi(const RunLumiBXIndex& runAndLumiAndBx) const {
   map<int, vector< vector<float> > >::const_iterator lsContainer = theLumiTable.find(runAndLumiAndBx.run());
+  map<int, vector<float> >::const_iterator lsRatioContainer = theLumiRatioByRunByLS.find(runAndLumiAndBx.run());
 
-  if (lsContainer == theLumiTable.end()) // run does not exist
+
+  if (lsContainer == theLumiTable.end()) { // run does not exist
+    cout << "Warning: run " << runAndLumiAndBx.run() << " does not exists" << endl;
     return make_pair(-1.f, -1.f);
-
+  }
   const vector< vector<float> >& run = (*lsContainer).second;
-  if (runAndLumiAndBx.lumiSection() > run.size() || runAndLumiAndBx.lumiSection() <= 0) // run does not contain this LS
+  if (runAndLumiAndBx.lumiSection() > (int)run.size() || runAndLumiAndBx.lumiSection() <= 0) { // run does not contain this LS
+    cout << "Warning: run " << runAndLumiAndBx.run() << " does not contain LS " << runAndLumiAndBx.lumiSection() << endl;
     return make_pair(-1.f, -1.f);
+  }
 
   const vector<float>& lumiSection = run[runAndLumiAndBx.lumiSection() - 1];
-  if (runAndLumiAndBx.bx() >= lumiSection.size() || lumiSection.size() == 0) // the vector of lumis by BX is not filled
+  if (runAndLumiAndBx.bx() >= (int)lumiSection.size() || (int)lumiSection.size() == 0) { // the vector of lumis by BX is not filled
+    cout << "Warning: run " << runAndLumiAndBx.run() << " LS " << runAndLumiAndBx.lumiSection()
+	 << ": the vector of lumis by BX is not filled" << endl;
     return make_pair(-1.f, -1.f);
+  }
 
-  float ratio = lumiSection[0];
-  if (ratio == 0 || ratio == -1)
+  float ratio = (*lsRatioContainer).second[runAndLumiAndBx.lumiSection() - 1];
+  if (ratio == 0 || ratio == -1) {
+    cout << "Warning: run " << runAndLumiAndBx.run() << " LS " << runAndLumiAndBx.lumiSection() << " invalid del/rec ratio: " << ratio << endl;
     return make_pair(-1.f, -1.f);
-
-  cout << "Ratio: " << ratio << endl;
+  }
 
   float recLumi = lumiSection[runAndLumiAndBx.bx()];
   float delLumi = recLumi/ratio;
@@ -619,12 +636,18 @@ TH1F * LumiFileReaderByBX::getRecLumiBins(int nbins, float min, float max) const
   for(map<int, vector< vector<float> > >::const_iterator run = theLumiTable.begin();
       run != theLumiTable.end(); ++run) {
     vector< vector<float> > lsContainer = (*run).second;
+    vector<float> ratioContainer = (*theLumiRatioByRunByLS.find((*run).first)).second;
+
     for(vector< vector<float> >::const_iterator bxValues =  lsContainer.begin();
 	bxValues != lsContainer.end(); ++bxValues) {
+      int ls = bxValues - lsContainer.begin() + 1;
+
       vector<float> values = (*bxValues);
       if(values.size() != 0) {
-	float ratio = values[0];
-	for(unsigned int index = 1; index != values.size(); ++index) {
+
+	float ratio = ratioContainer[ls-1];
+
+	for(unsigned int index = 0; index != values.size(); ++index) {
 	  float recLumi = values[index];
 	  float delLumi = 0;
 	  if(ratio != 0) {
@@ -676,16 +699,17 @@ void LumiFileReaderByBX::convertToRootFile() const {
      
 
     vector< vector<float> > lsContainer = (*run).second;
+    map<int, vector<float> >::const_iterator lumiRatioByLS = theLumiRatioByRunByLS.find((*run).first);
+
+    vector<float> ratioContainer = lumiRatioByLS->second;
+
     for(vector< vector<float> >::const_iterator bxValues = lsContainer.begin(); bxValues != lsContainer.end(); ++bxValues) { // loop over LSs
       ls = bxValues - lsContainer.begin() + 1;
-      ratio = -1;
-      bxLumiValues[0] = -1;
+      ratio = ratioContainer[ls -1];
       vector<float> values = (*bxValues);
       //        cout << values.size() << endl;
       if(values.size() != 0) {
-        ratio = values[0];
-        bxLumiValues[0] = values[0];
-        for(unsigned int index = 1; index != values.size(); ++index) {
+        for(unsigned int index = 0; index != values.size(); ++index) {
           float recLumi = values[index];
           //	   float delLumi = recLumi/ratio;
           bxLumiValues[index] = recLumi;

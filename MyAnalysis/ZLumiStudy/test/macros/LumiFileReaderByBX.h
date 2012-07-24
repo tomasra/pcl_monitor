@@ -22,8 +22,8 @@
  *  double instLumi = lumiMap.getAvgInstLumi(runAndLumiAndBx); -> get the Instantaneous lumi (averaged on the LS)
  *
  *  
- *  $Date: 2012/07/19 15:10:55 $
- *  $Revision: 1.1 $
+ *  $Date: 2012/07/20 10:16:30 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - CERN
  */
 
@@ -79,6 +79,8 @@ public:
   // FIXME: should check that this is equivalent to the integral computed starting from the LS values in the CSV file
   TH1F * getRecLumiBins(int nbins, float min, float max) const;
 
+  int getNumberLSs(const int run) const;
+  int getNumberBXes(const int run, const int ls) const;
 
 
 protected:
@@ -113,6 +115,7 @@ private:
   //   The element '0' is the ratio recorded/delivered of the LS (assuming that dead times are evenly split
   // - the vector of LSs has one entry for each LS including those not actually in the CSVT file (containing an empty vector) 
   std::map<int, std::vector< std::vector<float> > > theLumiTable;
+  std::map<int, std::vector< float > > theLumiRatioByRunByLS;
   
 
 //   std::map<unsigned int, std::vector<unsigned int, std::vector<std::pair<float, float> > > > theRunLSBxLumi;
