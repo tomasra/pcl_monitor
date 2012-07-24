@@ -2,13 +2,14 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2012/07/24 13:56:35 $
- *  $Revision: 1.5 $
+ *  $Date: 2012/07/24 15:23:31 $
+ *  $Revision: 1.6 $
  *  \author G. Cerminara - INFN Torino
  */
 
 #include "TFile.h"
 #include "TTree.h"
+#include "TMath.h"
 #include "LumiFileReaderByBX.h"
 #include <iostream>
 #include <fstream>
@@ -260,7 +261,11 @@ void LumiFileReaderByBX::readCSVFileNew(const TString& fileName, int runMin, int
 	cellstream >> recLumi;
 
 	// ratio of del/rec -> this is used to scale all the BX lumis
-	ratioRecDel = recLumi/delLumi;
+	if(delLumi != 0) ratioRecDel = recLumi/delLumi;
+	else {
+	  ratioRecDel = 0; // FIXME: check that this is the right choice
+	  cout << "Warning: run " << run << " ls " << ls << " has delLumi " << delLumi << " and recLumi " << recLumi << endl;
+	}
       }
 
       else if(cellCounter % 2 == 1) { // odd -> del lumi in this BX
@@ -370,17 +375,15 @@ bool LumiFileReaderByBX::readRootFile(const TString& fileName, int /*runMin*/, i
   for(int entry = 0; entry != tree->GetEntries(); ++entry) {
     tree->GetEntry(entry);
     //cout << "Ratio after GetEntry: " << ratio << endl;
-    if(ratio != -1) {
+    if(ratio != -1 && !TMath::IsNaN(ratio)) {
       vector<float> lumiByBx(bxLumiValues,bxLumiValues+NBXMAX );
       lsContainer[ls -1] = lumiByBx;
-      lsRatioContainer[ls - 1] = ratio;
     } else {
-      cout << "Ratio " << ratio << " has a wrong value" << endl;
+      cout << "run: " << run << " ls " << ls << " ratio " << ratio << " has a wrong value" << endl;
       vector<float> lumiByBx;
       lsContainer[ls -1 ]  = lumiByBx ;
-      lsRatioContainer[ls - 1] = ratio;
     }
-
+    lsRatioContainer[ls - 1] = ratio;
   }
 
   cout << "Ratio in ReadRootFile: " << ratio << endl;
