@@ -63,8 +63,10 @@ int countZ;
 
 TH1F* cutflow;
 int beforeCuts;
-int cutL1;
-int cutL2;
+int cutPt;
+int cutEta;
+int cutSIP;
+int cutIsolation;
 int cutZMass;
 
 
@@ -73,7 +75,10 @@ const double Cross_Section = 1.1; // nb
 const double Cross_Section_Error = 0.03; // nb  
 
 LumiFileReaderByBX lumiReader("./");
-//TH1F* testProgramm;
+TH1F* testProgramm;
+TH2F* testPro2;
+
+int runTest = -1;
 
 int to_int(string str)
 {
@@ -178,7 +183,8 @@ void ZlumiTreeReader::Begin(TTree* /*tree*/)
 	cutflow = CreateHist("cutflow", "cut", "", 4, -0.5, 3.5);
 
 	lumiReader.readFileForRun(run_number);
-	//testProgramm =  lumiReader.getRecLumiBins(100, -50, 50);
+	testProgramm =  lumiReader.getRecLumiBins(100, 0, 100);
+	testPro2 = new TH2F("test", "", 20, 0, 30, 80, 0, 5);
 
 }
 
@@ -219,10 +225,21 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 
 	ZlumiTreeReader::GetEntry(entry);
 
+	//if (runTest == -1 or runTest != RunNumber) {
+	//	cout << RunNumber << endl;
+	//	runTest = RunNumber;
+	//}
+
 	//cout << "vor Aufruf: " << RunNumber;
-	//RunLumiBXIndex lumiTest = RunLumiBXIndex(RunNumber, LumiNumber, BXNumber);
-	//int runTest = lumiTest.run();
+	RunLumiBXIndex lumiIndex = RunLumiBXIndex(RunNumber, LumiNumber, BXNumber);
+	//int runTest = lumiIndex.run();
 	//cout << " ---- nach Aufruf: " << runTest << endl;
+	float delLumi = lumiReader.getDelLumi(lumiIndex);
+	//cout << "LumiNumber : BXNumber " << LumiNumber << " : " << BXNumber << endl;
+	//cout << "del Lumi: " << delLumi << endl;
+
+	pair<float,float> lumi = lumiReader.getLumi(lumiIndex);
+	cout << "Lumisection : BXNumber " << LumiNumber << " : " << BXNumber << endl << " --- del : rec lumi: " << lumi.first << " : " << lumi.second << endl;
 
 
 	if (run_number != -1 and run_number != RunNumber) {
@@ -275,18 +292,22 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 
 	// analyse cutflow with selected Z index
 	beforeCuts ++;
-	if (Lep1Pt->at(index_Z) > 25 and Lep1Eta->at(index_Z) < 2.1) {
-		cutL1 ++;
-		if (Lep2Pt->at(index_Z) > 25 and Lep2Eta->at(index_Z) < 2.1) {
-			cutL2 ++;
+	
+	if (Lep1SIP->at(index_Z) < 0.4 and Lep2SIP->at(index_Z) < 0.4) {
+		cutSIP ++;
+		if (Lep1combRelIsoPF->at(index_Z) < 0.4 and Lep2combRelIsoPF->at(index_Z) < 0.4) {
+			cutIsolation ++;
 			if (ZMass->at(index_Z) > 66 and ZMass->at(index_Z) < 116) {
 				cutZMass ++;
+				}
 			}
 		}
-	}
+
+	testPro2->Fill(Nvtx, lumiReader.getAvgInstLumi(lumiIndex));
 
 	return kTRUE;
 }
+
 
 void ZlumiTreeReader::SlaveTerminate()
 {
@@ -328,15 +349,16 @@ void ZlumiTreeReader::Terminate()
 
 	cutflow->SetBinContent(1, beforeCuts);
 	cutflow->GetXaxis()->SetBinLabel(1, "before Cuts");
-	cutflow->SetBinContent(2, cutL1);
-	cutflow->GetXaxis()->SetBinLabel(2, "after Lep1 cut");	
-	cutflow->SetBinContent(3, cutL2);
-	cutflow->GetXaxis()->SetBinLabel(3, "after Lep2 cut");
+	cutflow->SetBinContent(2, cutSIP);
+	cutflow->GetXaxis()->SetBinLabel(2, "after SIP cut");
+	cutflow->SetBinContent(3, cutIsolation);
+	cutflow->GetXaxis()->SetBinLabel(3, "after Isolation cut");
 	cutflow->SetBinContent(4, cutZMass);
 	cutflow->GetXaxis()->SetBinLabel(4, "after Z Mass cut");
 	cutflow->Write();
 
-	//testProgramm->Write();
+	testProgramm->Write();
+	testPro2->Write();
 
 	myFile->Close();
 
