@@ -134,7 +134,8 @@ if __name__     ==  "__main__":
     # check if GTTools are already here
     if not os.path.exists('Tools/MyCondTools/'):
         print "addpkg Tools/MyCondTools"
-        outandstat = commands.getstatusoutput('cvs co -d Tools/MyCondTools -r VTOOLS10 UserCode/cerminar/Tools/MyCondTools')
+        testGTPart = "cvs co UserCode/cerminar/Tools/MyCondTools/scripts/testGT.py ; mv UserCode/cerminar/Tools/MyCondTools/scripts/testGT.py . ; rm -rf UserCode/"
+        outandstat = commands.getstatusoutput('cvs co -d Tools/MyCondTools -r VTOOLS10 UserCode/cerminar/Tools/MyCondTools'+"; "+testGTPart)
         if outandstat[0] != 0:
             print outandstat[1]
 
