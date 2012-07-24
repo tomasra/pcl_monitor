@@ -4,6 +4,7 @@ import os
 import sys
 import fileinput
 from subprocess import Popen, PIPE
+import getpass
 
 def modifyCfgs(wf, GT, local):
     """ This function finds the directory created by runTheMatrix for the given workflow number assuming it starts by that number.
@@ -33,7 +34,13 @@ def modifyCfgs(wf, GT, local):
                             if line.find("process.GlobalTag.globaltag") != -1:
                                 line = "process.GlobalTag.globaltag = '"+GT+"::All'\n"
                                 if local:
-                                    line += 'process.GlobalTag.connect = "sqlite_file:/afs/cern.ch/user/a/alcaprod/public/Alca/GlobalTag/'+GT+'.db"\n'
+                                    userName = getpass.getuser()
+                                    if userName:
+                                        letter = userName[0]
+                                    else:
+                                        print "Error: empty user name"
+                                        sys.exit(1)
+                                    line += 'process.GlobalTag.connect = "sqlite_file:/afs/cern.ch/user/'+letter+'/'+userName+'/public/Alca/GlobalTag/'+GT+'.db"\n'
                         print line,
     return testDir, cfgList
 
@@ -142,7 +149,8 @@ if __name__ == '__main__':
     mail.write(exitCodeFile.read() + separator + stdoutFile.read() + separator + stderrFile.read())
     mail.close()
     # os.system("mail -s \"Global Tag test\" \"marco.de.mattia@cern.ch\" < \""+mailFileName+"\"")
-    os.system("mail -s \"Tagset validation\" \"cms-alca-globaltag@cern.ch\" < \""+mailFileName+"\"")
+    # os.system("mail -s \"Tagset validation\" \"cms-alca-globaltag@cern.ch\" < \""+mailFileName+"\"")
+    # os.system("mail -s \"Tagset validation\" \"cms-alca-globaltag@cern.ch\" < \""+mailFileName+"\"")
 
     stdoutFile.close()
     stderrFile.close()
