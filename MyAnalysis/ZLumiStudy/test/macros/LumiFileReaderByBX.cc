@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2012/07/24 12:33:10 $
- *  $Revision: 1.4 $
+ *  $Date: 2012/07/24 13:56:35 $
+ *  $Revision: 1.5 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -365,20 +365,29 @@ bool LumiFileReaderByBX::readRootFile(const TString& fileName, int /*runMin*/, i
   tree->SetBranchAddress("bxValues", bxLumiValues);
 
   vector< vector<float> > lsContainer(tree->GetEntries());
+  vector<float> lsRatioContainer(tree->GetEntries());
+
   for(int entry = 0; entry != tree->GetEntries(); ++entry) {
     tree->GetEntry(entry);
+    //cout << "Ratio after GetEntry: " << ratio << endl;
     if(ratio != -1) {
       vector<float> lumiByBx(bxLumiValues,bxLumiValues+NBXMAX );
       lsContainer[ls -1] = lumiByBx;
+      lsRatioContainer[ls - 1] = ratio;
     } else {
+      cout << "Ratio " << ratio << " has a wrong value" << endl;
       vector<float> lumiByBx;
       lsContainer[ls -1 ]  = lumiByBx ;
+      lsRatioContainer[ls - 1] = ratio;
     }
 
   }
 
+  cout << "Ratio in ReadRootFile: " << ratio << endl;
+
   cout << "   run: " << run << " # ls: " << lsContainer.size() << endl;
   theLumiTable[run] = lsContainer;
+  theLumiRatioByRunByLS[run] = lsRatioContainer;
   file->Close();
   return true;
 }
@@ -527,14 +536,15 @@ pair<float, float> LumiFileReaderByBX::getLumi(const RunLumiBXIndex& runAndLumiA
   map<int, vector< vector<float> > >::const_iterator lsContainer = theLumiTable.find(runAndLumiAndBx.run());
   map<int, vector<float> >::const_iterator lsRatioContainer = theLumiRatioByRunByLS.find(runAndLumiAndBx.run());
 
-
   if (lsContainer == theLumiTable.end()) { // run does not exist
     cout << "Warning: run " << runAndLumiAndBx.run() << " does not exists" << endl;
     return make_pair(-1.f, -1.f);
   }
+
   const vector< vector<float> >& run = (*lsContainer).second;
   if (runAndLumiAndBx.lumiSection() > (int)run.size() || runAndLumiAndBx.lumiSection() <= 0) { // run does not contain this LS
     cout << "Warning: run " << runAndLumiAndBx.run() << " does not contain LS " << runAndLumiAndBx.lumiSection() << endl;
+    // warning is written for: runAndLumiAndBx.lumiSection() > (int)run.size()
     return make_pair(-1.f, -1.f);
   }
 
@@ -543,6 +553,15 @@ pair<float, float> LumiFileReaderByBX::getLumi(const RunLumiBXIndex& runAndLumiA
     cout << "Warning: run " << runAndLumiAndBx.run() << " LS " << runAndLumiAndBx.lumiSection()
 	 << ": the vector of lumis by BX is not filled" << endl;
     return make_pair(-1.f, -1.f);
+  }
+
+  if (lsRatioContainer == theLumiRatioByRunByLS.end()) {
+      cout << "Warning ratio: run " << runAndLumiAndBx.run() << " does not exists" << endl;
+    return make_pair(-1.f, -1.f);
+  }
+
+  if (runAndLumiAndBx.lumiSection() >= (int)(*lsRatioContainer).second.size() || (int)(*lsRatioContainer).second.size() == 0) { // the vector of ratios by LS is not filled
+    cout << "Warning ratio: the vector of ratios by LS " << runAndLumiAndBx.lumiSection() << " is not filled" << endl;
   }
 
   float ratio = (*lsRatioContainer).second[runAndLumiAndBx.lumiSection() - 1];
