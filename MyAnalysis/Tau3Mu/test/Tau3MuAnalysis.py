@@ -8,9 +8,8 @@ process.load("Configuration.StandardSequences.Geometry_cff")
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 process.load("Configuration.StandardSequences.MagneticField_cff")
 process.GlobalTag.globaltag ="START52_V11::All"
-#'GR_P_V39::All'
 #"START52_V11::All"
-
+#'GR_P_V39::All'
 process.MessageLogger = cms.Service("MessageLogger",
      cout = cms.untracked.PSet(
          threshold = cms.untracked.string('WARNING')
@@ -69,8 +68,8 @@ fileNames = cms.untracked.vstring(
 #"/store/caf/user/guiducci/MinBias_TuneZ2_DsPhiTo2MuPhi_v1/MinBias_TuneZ2_DsPhiTo2MuPhi_v1/91497683f71fb3fd1629db65b303c81d/MinBias_TuneZ2_DsPhiTo2MuPhi_2Mu_cff_py_GEN_FASTSIM_HLT_PU_8_1_tf6.root",
 #"/store/caf/user/guiducci/MinBias_TuneZ2_DsPhiTo2MuPhi_v1/MinBias_TuneZ2_DsPhiTo2MuPhi_v1/91497683f71fb3fd1629db65b303c81d/MinBias_TuneZ2_DsPhiTo2MuPhi_2Mu_cff_py_GEN_FASTSIM_HLT_PU_9_1_kpZ.root",
 #"/store/caf/user/guiducci/MinBias_TuneZ2_DsPhiTo2MuPhi_v1/MinBias_TuneZ2_DsPhiTo2MuPhi_v1/91497683f71fb3fd1629db65b303c81d/MinBias_TuneZ2_DsPhiTo2MuPhi_2Mu_cff_py_GEN_FASTSIM_HLT_PU_9_1_sGe.root",
-"/store/caf/user/guiducci/MinBias_TuneZ2_DsPhiTo2MuPhi_v1/MinBias_TuneZ2_DsPhiTo2MuPhi_v1/91497683f71fb3fd1629db65b303c81d/MinBias_TuneZ2_DsPhiTo2MuPhi_2Mu_cff_py_GEN_FASTSIM_HLT_PU_9_1_wC3.root"
-#"/store/caf/user/fiori/Tau3Mu_RECO.root"
+#"/store/caf/user/guiducci/MinBias_TuneZ2_DsPhiTo2MuPhi_v1/MinBias_TuneZ2_DsPhiTo2MuPhi_v1/91497683f71fb3fd1629db65b303c81d/MinBias_TuneZ2_DsPhiTo2MuPhi_2Mu_cff_py_GEN_FASTSIM_HLT_PU_9_1_wC3.root"
+"/store/caf/user/fiori/Tau3Mu_RECO.root"
 #
 )
 )
@@ -84,12 +83,12 @@ process.source.duplicateCheckMode = cms.untracked.string('noDuplicateCheck')
 
 process.ana = cms.EDAnalyzer('Tau3MuAnalysis_V2',
 
-OutFileName=cms.string("OUT_DATA.root"),
+OutFileName=cms.string("OUT_MC.root"),
 
 Debug=cms.bool(False),
 
-IsMC=cms.bool(False),     #Be sure you run on MC otherwise you get a crash!
-isSignal=cms.bool(False), #If true the gen matching is done on Signal else on Norm. sample
+IsMC=cms.bool(True),     #Be sure you run on MC otherwise you get a crash!
+isSignal=cms.bool(True), #If true the gen matching is done on Signal else on Norm. sample
 isBackground=cms.bool(False),
 
 DiMuMassMin= cms.double(0.6),  # 
@@ -124,7 +123,7 @@ HLT_paths = cms.vstring( # noting means passtrough
 "HLT_Tau2Mu_ItTrack"
 ),
 
-HLT_process = cms.string("HLT")
+HLT_process = cms.string("HLTX")
 
 )
 
