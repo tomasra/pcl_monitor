@@ -181,6 +181,10 @@ private:
   int _pdg1,_pdg2,_pdg3;
   int _Mpdg1,_Mpdg2,_Mpdg3;
 
+  bool _isFSR; //there is final state radiation in the event?
+
+  double _cosp2G,_cosp3G;
+
   //4Mom and Vertices for gen matched Reco objects
   TLorentzVector* _Mu1_4MomR,*_Mu2_4MomR,*_MuTrack_4MomR, *_DiMu4MomR, *_DiMuPlusTrack4MomR;
 
@@ -205,6 +209,7 @@ private:
   bool _isTkR3, _isGlbR3, _isSAR3, _isTMOR3, _isTightR3, _isPFR3;
   int _npixR3, _nTkR3, _nMuR3, _qR3;
   double _chiTkR3, _chiMuR3;
+  double _DCA_SVR;
   //
 
   //Offline Reco variables
@@ -231,12 +236,11 @@ private:
   bool _isTk3, _isGlb3, _isSA3, _isTMO3, _isTight3, _isPF3;
   int _npix3, _nTk3, _nMu3, _q3;
   double _chiTk3, _chiMu3;
+  double _DCA_SV;
   //
  
   bool _IsMcMatched;
  
-
-  bool OnlyOppositeCharge;
   bool debug;
 
   //counters for efficiency histos
@@ -599,11 +603,15 @@ void Tau3MuAnalysis_V2::findGenMoms(const edm::Event& ev, std::vector<TLorentzVe
 
   int nmu=0;
 
+  TVector3 Dsvtx;
+
   if (isSignal){
     for(genPart=genParticleCollection->begin(); genPart!=genParticleCollection->end(); genPart++) {
       const reco::Candidate & cand = *genPart;
 
       if (abs(cand.pdgId())!=15) continue;
+      if (abs(cand.mother()->pdgId())!=431) continue;
+
       if (debug) cout << "Mom Id " << cand.pdgId() << endl;
 
       int ndau=cand.numberOfDaughters();
@@ -614,9 +622,17 @@ void Tau3MuAnalysis_V2::findGenMoms(const edm::Event& ev, std::vector<TLorentzVe
 	TLorentzVector gen4mom;
 	const Candidate * d = cand.daughter( k );
 	int dauId = d->pdgId();
+
 	if (debug) cout << "id " << dauId << endl;
+
+	if (abs(dauId)==22) _isFSR=true;
+
 	if (abs(dauId)==13) {
-	  nmu++; if (nmu==3) _GenSV->SetXYZ(d->vx(),d->vy(),d->vz());
+	  nmu++; 
+	  if (nmu==3){//fill vertices only when we know this is the right event
+	    _GenSV->SetXYZ(d->vx(),d->vy(),d->vz());
+	    Dsvtx.SetXYZ(cand.mother()->vx(),cand.mother()->vy(),cand.mother()->vz());
+	  }
 	  if (debug) cout << "gen mu status " << d->status() << endl;
 	  gen4mom.SetPtEtaPhiM(d->pt(),d->eta(),d->phi(),d->mass());
 	  TheGenMus.push_back(gen4mom);
@@ -641,7 +657,8 @@ void Tau3MuAnalysis_V2::findGenMoms(const edm::Event& ev, std::vector<TLorentzVe
 	TLorentzVector gen4mom;
 	const Candidate * d = cand.daughter( k );
 	int dauId = d->pdgId();
-
+	
+	if (abs(dauId)==22)_isFSR=true;
 	if (abs(dauId)!=333 && abs(dauId)!=211 ) continue;
 
 	if (dauId==333){
@@ -652,8 +669,14 @@ void Tau3MuAnalysis_V2::findGenMoms(const edm::Event& ev, std::vector<TLorentzVe
 	    const Candidate * d1 = d->daughter( k1 );
 	    int dauphiId = d1->pdgId();
 
+	    if (abs(dauphiId)==22)_isFSR=true;
+
 	    if (abs(dauphiId)==13) {
-	      nmu++; if (nmu==2) _GenSV->SetXYZ(d->vx(),d->vy(),d->vz());
+	      nmu++; 
+	      if (nmu==2){
+		_GenSV->SetXYZ(d->vx(),d->vy(),d->vz());
+		Dsvtx.SetXYZ(cand.vx(),cand.vy(),cand.vz());
+	      }
 	      gen4mom.SetPtEtaPhiM(d1->pt(),d1->eta(),d1->phi(),d1->mass());
 	      TheGenMus.push_back(gen4mom);
 	      genId.push_back(dauphiId);
@@ -695,7 +718,13 @@ void Tau3MuAnalysis_V2::findGenMoms(const edm::Event& ev, std::vector<TLorentzVe
   _DiMu4MomG->SetPtEtaPhiM(dimu.Pt(),dimu.Eta(),dimu.Phi(),dimu.M());
   _DiMuPlusTrack4MomG->SetPtEtaPhiM(trimu.Pt(),trimu.Eta(),trimu.Phi(),trimu.M());
 
+  TVector3 Displacement=TVector3(_GenSV->X()-Dsvtx.X(),_GenSV->Y()-Dsvtx.Y(),0.);
+
+  _cosp2G=(Displacement.X()*dimu.Px()+Displacement.Y()*dimu.Py())/(dimu.Mag()*Displacement.Mag());
+  _cosp3G=(Displacement.X()*trimu.Px()+Displacement.Y()*trimu.Py())/(trimu.Mag()*Displacement.Mag());
+
   if (debug) cout << "Gen object mass " << trimu.M() << endl;
+
 }
 
 bool Tau3MuAnalysis_V2::isMcMatched(const edm::Event& ev,TLorentzVector* recov,std::vector<TLorentzVector>& TheGenMus){
@@ -1250,6 +1279,17 @@ void Tau3MuAnalysis_V2::offlineReco(const edm::Event& ev, const edm::EventSetup&
 
   if (pitrack.Px() !=0 && pitrack.Py()!=0 ){  //just a way to say that pitrack has been found
 
+
+    edm::ESHandle<TransientTrackBuilder> Builder;
+    iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", Builder);
+
+    TransientTrack pitt=Builder->build(thetrack);
+    Vertex muvtx=Vertex(tv);
+
+    pair<double,double> d0sv=ComputeImpactParameterWrtPoint(pitt,muvtx);
+
+    _DCA_SV=d0sv.first;
+
     _svtValid=true;
 
     Offline++;
@@ -1259,7 +1299,7 @@ void Tau3MuAnalysis_V2::offlineReco(const edm::Event& ev, const edm::EventSetup&
     if (debug) cout << "eta " << pitrack.Eta() << " phi " << pitrack.Phi() << " pT " << pitrack.Pt() << endl;
 
     pitrack_Mu.SetPtEtaPhiM(pitrack.Pt(),pitrack.Eta(),pitrack.Phi(),0.1057);
-    pitrack_Pi.SetPtEtaPhiM(pitrack.Pt(),pitrack.Eta(),pitrack.Phi(),0.1369);
+    pitrack_Pi.SetPtEtaPhiM(pitrack.Pt(),pitrack.Eta(),pitrack.Phi(),0.1396);
 
     DiMuTrackMom_Mu = DiMuMom+pitrack_Mu;
     DiMuTrackMom_Pi = DiMuMom+pitrack_Pi;
@@ -1371,6 +1411,11 @@ void Tau3MuAnalysis_V2::Initialize_TreeVars(){
 
       _IsGenRecoMatched=false;
 
+      _isFSR=false;
+
+      _cosp2G=-2;
+      _cosp3G=-2;
+
       //reco gen-matched
       _DiMu4MomR->SetPtEtaPhiM(0.,0.,0.,0.);
       _DiMuPlusTrack4MomR->SetPtEtaPhiM(0.,0.,0.,0.);
@@ -1402,6 +1447,8 @@ void Tau3MuAnalysis_V2::Initialize_TreeVars(){
       _npixR3=-10; _nTkR3=-10; _nMuR3=-10; _qR3=-10;
    
       _chiTkR3=-10; _chiMuR3=-10;
+
+      _DCA_SVR=-1;
 
       //reco gen-matched vertices
       _PVR->SetXYZ(0.,0.,0.);
@@ -1468,7 +1515,9 @@ void Tau3MuAnalysis_V2::Initialize_TreeVars(){
    
   _chiTk3=-10; _chiMu3=-10;
 
-  //Offline vertices
+  _DCA_SV=-1;
+  
+    //Offline vertices
   _PV->SetXYZ(0.,0.,0.);
   _SV->SetXYZ(0.,0.,0.);
   _SVT->SetXYZ(0.,0.,0.);
@@ -1734,7 +1783,7 @@ void Tau3MuAnalysis_V2::fillRecoMatchedInfo(const edm::Event& event, const edm::
   TLorentzVector trimu=dimu+tr;
 
   if (isSignal) tr.SetPtEtaPhiM(matches[2].first->pt(),matches[2].first->eta(),matches[2].first->phi(),0.1057);
-  else tr.SetPtEtaPhiM(matches[2].first->pt(),matches[2].first->eta(),matches[2].first->phi(),0.1369);
+  else tr.SetPtEtaPhiM(matches[2].first->pt(),matches[2].first->eta(),matches[2].first->phi(),0.1396);
 
   ttv.push_back(tt1);
   ttv.push_back(tt2);
@@ -1746,6 +1795,11 @@ void Tau3MuAnalysis_V2::fillRecoMatchedInfo(const edm::Event& event, const edm::
   Vertex pvR;
 
   if (dimuvtx.isValid()){
+
+    Vertex tv=Vertex(dimuvtx);
+    pair<double,double> d0sv=ComputeImpactParameterWrtPoint(tt3,tv);
+
+    _DCA_SVR=d0sv.first;
 
     _svValidR=true;
 
@@ -1810,6 +1864,7 @@ void Tau3MuAnalysis_V2::beginJob() {
   thefile->cd();
 
   if (debug) cout << "Creating new tree" << endl;
+
   ExTree = new TTree("tree","tree");
 
   int Tsize=HLT_paths.size();
@@ -1883,6 +1938,11 @@ void Tau3MuAnalysis_V2::beginJob() {
 
       ExTree->Branch("SV_Gen","TVector3",&_GenSV); 
 
+      ExTree->Branch("CosPoint2_Gen",&_cosp2G   ,"_cosp2G/D");
+      ExTree->Branch("CosPoint3_Gen",&_cosp3G   ,"_cosp3G/D");
+
+      ExTree->Branch("IsFSR_Gen",&_isFSR   ,"_isFSR/b");
+
       if (debug) cout << "adding Reco MC matched branches" << endl;
 
       //Reco mc-matched branches
@@ -1942,6 +2002,7 @@ void Tau3MuAnalysis_V2::beginJob() {
 
       ExTree->Branch("chiTk_Reco_3",&_chiTkR3   ,"_chiTkR3/D");
       ExTree->Branch("chiMu_Reco_3",&_chiMuR3   ,"_chiMuR3/D");
+      ExTree->Branch("DCATrack_SV_Reco_3",&_DCA_SVR   ,"_DCA_SVR/D");
       //
 
       //Reco GEN matched vertices
@@ -2050,6 +2111,7 @@ void Tau3MuAnalysis_V2::beginJob() {
 
   ExTree->Branch("chiTk_Offline_3",&_chiTk3   ,"_chiTk3/D");
   ExTree->Branch("chiMu_Offline_3",&_chiMu3   ,"_chiMu3/D");
+  ExTree->Branch("DCATrack_SV_Offline_3",&_DCA_SV   ,"_DCA_SV/D");
  //
  //Offline vertices
 
