@@ -51,8 +51,8 @@ void sortTrees() {
     
     Int_t nentries = (Int_t)tree->GetEntries();
 
-    //Drawing variable pz with no graphics option.
-    //variable pz stored in array fV1 (see TTree::Draw)
+    //Drawing variable RunNumber with no graphics option.
+    //variable RunNumber stored in array fV1 (see TTree::Draw)
     tree->Draw("RunNumber","","goff");
     Int_t *index = new Int_t[nentries];
     //sort array containing run in decreasing order

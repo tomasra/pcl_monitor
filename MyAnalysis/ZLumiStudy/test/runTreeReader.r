@@ -1,9 +1,7 @@
 
-
-
 void runTreeReader() {
  
-  if (! TString(gSystem->GetLibraries()).Contains("ZlumiTreeReader")) {
+ if (! TString(gSystem->GetLibraries()).Contains("ZlumiTreeReader")) {
     gROOT->LoadMacro("$CMSSW_BASE/src/MyAnalysis/ZLumiStudy/test/macros/RunLumiBXIndex.cc+");
     gROOT->LoadMacro("$CMSSW_BASE/src/MyAnalysis/ZLumiStudy/test/macros/LumiFileReaderByBX.cc+");
     gROOT->LoadMacro("$CMSSW_BASE/src/MyAnalysis/ZLumiStudy/test/macros/ZlumiTreeReader.C+");
@@ -19,6 +17,6 @@ void runTreeReader() {
 
   TSelector *selector = TSelector::GetSelector("ZlumiTreeReader");
   //   selector->Select()
-  tree->Process(selector, "");
+  tree->Process(selector, "194210");
 
 }
