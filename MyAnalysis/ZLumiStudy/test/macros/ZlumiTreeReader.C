@@ -74,9 +74,11 @@ const double M_Z = 91.2;
 const double Cross_Section = 1.1; // nb
 const double Cross_Section_Error = 0.03; // nb  
 
-LumiFileReaderByBX lumiReader("./");
+//LumiFileReaderByBX lumiReader("./");
+LumiFileReaderByBX lumiReader("/data1/ZLumiStudy/CalcLumi/Version0/");
 TH1F* testProgramm;
-TH2F* testPro2;
+TH2F* pileUp_avgInstLumi;
+TH2F* pileUp_lumiPerBX;
 
 int runTest = -1;
 
@@ -160,18 +162,18 @@ void ZlumiTreeReader::Begin(TTree* /*tree*/)
 
 	massZ = CreateHist("ZMass", "M_{Z}", "GeV", 60, 60, 120);
 	wholeMassZ = CreateHist("wholeMassRange", "M_{#mu#bar{#mu}}", "GeV", 100, 0, 200);
-	ptZ = CreateHist("ZPt", "P_{Z, T}", "GeV", 50, 0, 200);
+	ptZ = CreateHist("ZPt", "P_{Z, T}", "GeV", 50, -1, 200);
 	massZ_selected = CreateHist("selectedZMass", "M_{Z}", "GeV", 60, 60, 120);
 	wholeMassZ_selected = CreateHist("selectedZ_wholeMassRange", "M_{#mu#bar{#mu}}", "GeV", 100, 0, 200);
 
 	ptL1 = CreateHist("AntimuonPt", "P_{#bar{#mu}, T}", "GeV", 80, 0, 160);
-	etaL1 = CreateHist("AntimuonEta", "#eta_{#bar{#mu}}", "", 80, -3, 3);
+	etaL1 = CreateHist("AntimuonEta", "#eta_{#bar{#mu}}", "", 80, -2.5, 2.5);
 	phiL1 = CreateHist("AntimuonPhi", "#varphi_{#bar{#mu}}", "rad", 80, -3.3, 3.3);
 	isoL1 = CreateHist("AntimuonIsolation", "Isolation / P_{#bar{#mu}, T}", "GeV^{-1}", 80, -0.5, 20);
 	sipL1 = CreateHist("AntimuonSIP", "SIP_{#bar{#mu}}", "", 60, -1.5, 60);
 	
 	ptL2 = CreateHist("MuonPt", "P_{#mu, T}", "GeV", 80, 0, 160);
-	etaL2 = CreateHist("MuonEta", "#eta_{#mu}", "", 80, -3, 3);
+	etaL2 = CreateHist("MuonEta", "#eta_{#mu}", "", 80, -2.5, 2.5);
 	phiL2 = CreateHist("MuonPhi", "#varphi_{#mu}", "rad", 80, -3.3, 3.3);
 	isoL2 = CreateHist("MuonIsolation", "Isolation / P_{#mu, T}", "GeV^{-1}", 80, -0.5, 20);
 	sipL2 = CreateHist("MuonSIP", "SIP_{#mu}", "", 60, -1.5, 60);
@@ -183,8 +185,9 @@ void ZlumiTreeReader::Begin(TTree* /*tree*/)
 	cutflow = CreateHist("cutflow", "cut", "", 4, -0.5, 3.5);
 
 	lumiReader.readFileForRun(run_number);
-	testProgramm =  lumiReader.getRecLumiBins(100, 0, 100);
-	testPro2 = new TH2F("test", "", 20, 0, 30, 80, 0, 5);
+	testProgramm =  lumiReader.getRecLumiBins(100, -1, 7);
+	pileUp_avgInstLumi = new TH2F("PileUp_avgInstLumi", "; PileUp; AvgInstLumi", 20, 0, 30, 50, 0, 7);
+	pileUp_lumiPerBX = new TH2F("PileUp_RecLumiPerBX", "; PileUp; rec lumi per BX", 20, 0, 30, 100, 30, 130);
 
 }
 
@@ -234,12 +237,12 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 	RunLumiBXIndex lumiIndex = RunLumiBXIndex(RunNumber, LumiNumber, BXNumber);
 	//int runTest = lumiIndex.run();
 	//cout << " ---- nach Aufruf: " << runTest << endl;
-	float delLumi = lumiReader.getDelLumi(lumiIndex);
+	//float delLumi = lumiReader.getDelLumi(lumiIndex);
 	//cout << "LumiNumber : BXNumber " << LumiNumber << " : " << BXNumber << endl;
 	//cout << "del Lumi: " << delLumi << endl;
 
-	pair<float,float> lumi = lumiReader.getLumi(lumiIndex);
-	cout << "Lumisection : BXNumber " << LumiNumber << " : " << BXNumber << endl << " --- del : rec lumi: " << lumi.first << " : " << lumi.second << endl;
+	//pair<float,float> lumi = lumiReader.getLumi(lumiIndex);
+	//cout << "Lumisection : BXNumber " << LumiNumber << " : " << BXNumber << endl << " --- del : rec lumi: " << lumi.first << " : " << lumi.second << endl;
 
 
 	if (run_number != -1 and run_number != RunNumber) {
@@ -303,7 +306,8 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 			}
 		}
 
-	testPro2->Fill(Nvtx, lumiReader.getAvgInstLumi(lumiIndex));
+	pileUp_avgInstLumi->Fill(Nvtx, lumiReader.getAvgInstLumi(lumiIndex));
+	pileUp_lumiPerBX->Fill(Nvtx, lumiReader.getRecLumi(lumiIndex));
 
 	return kTRUE;
 }
@@ -358,7 +362,8 @@ void ZlumiTreeReader::Terminate()
 	cutflow->Write();
 
 	testProgramm->Write();
-	testPro2->Write();
+	pileUp_avgInstLumi->Write();
+	pileUp_lumiPerBX->Write();
 
 	myFile->Close();
 

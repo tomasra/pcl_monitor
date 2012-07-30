@@ -1,7 +1,7 @@
 #ifndef LumiFileReaderByBX_H
 #define LumiFileReaderByBX_H
 
-// #include "RunLumiIndex.h"
+#include "RunLumiIndex.h"
 #include "RunLumiBXIndex.h"
 
 #include <map>
@@ -22,8 +22,8 @@
  *  double instLumi = lumiMap.getAvgInstLumi(runAndLumiAndBx); -> get the Instantaneous lumi (averaged on the LS)
  *
  *  
- *  $Date: 2012/07/20 10:16:30 $
- *  $Revision: 1.2 $
+ *  $Date: 2012/07/24 13:56:35 $
+ *  $Revision: 1.3 $
  *  \author G. Cerminara - CERN
  */
 
@@ -39,17 +39,18 @@ public:
   // read the file from disk unless it is already cached.
   // If the root file is already available for the run than it is used 
   // otherwise the root file is created
-  bool readFileForRun(const int run);
+  bool readFileForRun(const int run, bool shouldreadCSV = false);
 
   // if the run is alredy cached return "false" otherwise "true" (don't ask me the logic...I don't remember!!!)
   bool checkCache(int run) const;  
 
-  //   float getDelLumi(const RunLumiIndex& runAndLumi) const;
-  //   float getRecLumi(const RunLumiIndex& runAndLumi) const;
-  //   float getAvgInstLumi(const RunLumiIndex& runAndLumi) const;
-  //   float getDelIntegral(const RunLumiIndex& from, const RunLumiIndex& to) const;
-  //   float getRecIntegral(const RunLumiIndex& from, const RunLumiIndex& to) const;
-  //   std::pair<float, float> getLumi(const RunLumiIndex& runAndLumi) const;
+  float getDelLumi(const RunLumiIndex& runAndLumi) const;
+  float getRecLumi(const RunLumiIndex& runAndLumi) const;
+  float getAvgInstLumi(const RunLumiIndex& runAndLumi) const;
+  float getDelIntegral(const RunLumiIndex& from, const RunLumiIndex& to) const;
+  float getRecIntegral(const RunLumiIndex& from, const RunLumiIndex& to) const;
+  std::pair<float, float> getLumi(const RunLumiIndex& runAndLumi) const;
+  std::pair<float, float> getTotalLumi(const RunLumiIndex& runAndLumi) const;
 
 
   float getDelLumi(const RunLumiBXIndex& runAndLumiAndBx) const;
@@ -80,7 +81,7 @@ public:
   TH1F * getRecLumiBins(int nbins, float min, float max) const;
 
   int getNumberLSs(const int run) const;
-  int getNumberBXes(const int run, const int ls) const;
+  int getNumberBX(const int run, const int ls) const;
 
 
 protected:
@@ -116,7 +117,8 @@ private:
   // - the vector of LSs has one entry for each LS including those not actually in the CSVT file (containing an empty vector) 
   std::map<int, std::vector< std::vector<float> > > theLumiTable;
   std::map<int, std::vector< float > > theLumiRatioByRunByLS;
-  
+
+  std::map<int, std::vector< std::pair<float,float> > > theTotalLumiByRun;  
 
 //   std::map<unsigned int, std::vector<unsigned int, std::vector<std::pair<float, float> > > > theRunLSBxLumi;
 
