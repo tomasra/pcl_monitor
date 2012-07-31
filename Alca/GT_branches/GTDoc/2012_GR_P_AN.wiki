@@ -1,0 +1,1 @@
+| [[%LINKTOGTLIST%/?GlobalTag=GR_P_V40_AN1][GR_P_V40_AN1]] | %GREEN%52X%ENDCOLOR% | To be used for data reprocessing. | As !GR_P_V40 with the following updates:<br> - New btag and mistag Data/MC scale factors<br> - new 2012 data JECs. |
