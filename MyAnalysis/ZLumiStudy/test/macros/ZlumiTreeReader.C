@@ -82,6 +82,11 @@ TH2F* pileUp_lumiPerBX;
 
 int runTest = -1;
 
+float delLumiPerBX = -1;
+
+vector<TH1F* > histPerLumi;
+TH1F* lumiPerBX;
+
 int to_int(string str)
 {
     stringstream sstr(str);
@@ -141,6 +146,24 @@ TH1F* CreateHist(string name, string xtitle, string unit, size_t nbins, float xm
 	return a;
 }
 
+int getIndex(float lumi) { // look for lumi Per BX
+	if (lumi < 45) return 0;
+	if (lumi < 50) return 1;
+	if (lumi < 55) return 2;
+	if (lumi < 60) return 3;
+	if (lumi < 65) return 4;
+	return 5;
+}
+
+string getLumiPerBXRegion(int index) { 
+	if (index == 0) return "Lumi per BX is lower than 45";
+	if (index == 1) return "Lumi per BX is between 45 and 50";
+	if (index == 2) return "Lumi per BX is between 50 and 55";
+	if (index == 3) return "Lumi per BX is between 55 and 60";
+	if (index == 4) return "Lumi per BX is between 60 and 65";
+	return "Lumi per BX is higher than 65";
+}
+
 
 void ZlumiTreeReader::Begin(TTree* /*tree*/)
 {
@@ -189,6 +212,12 @@ void ZlumiTreeReader::Begin(TTree* /*tree*/)
 	pileUp_avgInstLumi = new TH2F("PileUp_avgInstLumi", "; PileUp; AvgInstLumi", 20, 0, 30, 50, 0, 7);
 	pileUp_lumiPerBX = new TH2F("PileUp_RecLumiPerBX", "; PileUp; rec lumi per BX", 20, 0, 30, 100, 30, 130);
 
+	for (size_t i = 0; i <= 5; i++) {
+		histPerLumi.push_back(CreateHist(getLumiPerBXRegion(i), "M_{Z}", "GeV", 60, 60, 120));
+	}
+
+	lumiPerBX = CreateHist("Luminosity", "Luminosity", "", 50, 30, 80);
+
 }
 
 void ZlumiTreeReader::SlaveBegin(TTree * /*tree*/)
@@ -228,7 +257,7 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 
 	ZlumiTreeReader::GetEntry(entry);
 
-	//if (runTest == -1 or runTest != RunNumber) {
+	//if (runTest == -1 || runTest != RunNumber) {
 	//	cout << RunNumber << endl;
 	//	runTest = RunNumber;
 	//}
@@ -296,7 +325,7 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 	// analyse cutflow with selected Z index
 	beforeCuts ++;
 	
-	if (Lep1SIP->at(index_Z) < 0.4 and Lep2SIP->at(index_Z) < 0.4) {
+	if (Lep1SIP->at(index_Z) < 2 and Lep2SIP->at(index_Z) < 2) { // when SIP < 0.4 most events are gone
 		cutSIP ++;
 		if (Lep1combRelIsoPF->at(index_Z) < 0.4 and Lep2combRelIsoPF->at(index_Z) < 0.4) {
 			cutIsolation ++;
@@ -306,8 +335,17 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 			}
 		}
 
-	pileUp_avgInstLumi->Fill(Nvtx, lumiReader.getAvgInstLumi(lumiIndex));
+	pileUp_avgInstLumi->Fill(Nvtx, lumiReader.getAvgInstLumi(lumiIndex)); //!
 	pileUp_lumiPerBX->Fill(Nvtx, lumiReader.getRecLumi(lumiIndex));
+
+
+	// get Lumi per Event, look in which range (between 45 and 65 (some bins)), do something
+	delLumiPerBX = lumiReader.getDelLumi(lumiIndex);
+	if (delLumiPerBX == -1) cout << "Problem in calculating delLumi" << endl;
+	else {
+		histPerLumi[getIndex(delLumiPerBX)]->Fill(ZMass->at(index_Z));
+	}
+	lumiPerBX->Fill(delLumiPerBX);
 
 	return kTRUE;
 }
@@ -364,6 +402,11 @@ void ZlumiTreeReader::Terminate()
 	testProgramm->Write();
 	pileUp_avgInstLumi->Write();
 	pileUp_lumiPerBX->Write();
+
+	for (size_t i = 0; i <= 5; i++) {
+		histPerLumi[i]->Write();
+	}
+	lumiPerBX->Write();
 
 	myFile->Close();
 

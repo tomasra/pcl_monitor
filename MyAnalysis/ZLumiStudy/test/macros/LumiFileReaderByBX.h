@@ -22,8 +22,8 @@
  *  double instLumi = lumiMap.getAvgInstLumi(runAndLumiAndBx); -> get the Instantaneous lumi (averaged on the LS)
  *
  *  
- *  $Date: 2012/07/24 13:56:35 $
- *  $Revision: 1.3 $
+ *  $Date: 2012/07/30 14:09:16 $
+ *  $Revision: 1.4 $
  *  \author G. Cerminara - CERN
  */
 
@@ -42,7 +42,11 @@ public:
   bool readFileForRun(const int run, bool shouldreadCSV = false);
 
   // if the run is alredy cached return "false" otherwise "true" (don't ask me the logic...I don't remember!!!)
-  bool checkCache(int run) const;  
+  bool checkCache(int run) const; 
+
+  bool check_RunFound(int run) const;
+  bool check_LSFound(const RunLumiIndex& runAndLumi) const;
+  bool check_BXFilled(const RunLumiBXIndex& runAndLumiAndBx) const; 
 
   float getDelLumi(const RunLumiIndex& runAndLumi) const;
   float getRecLumi(const RunLumiIndex& runAndLumi) const;

@@ -16,10 +16,8 @@ for line in read_file:
 	for i in range(len(lineparts)):
 		if lineparts[i][0] == "{":
 			runNumber, ls = get_RunNumber_LS(lineparts[i][1:])
-			#print runNumber, "\t", ls
 		else:
 			runNumber, ls = get_RunNumber_LS(lineparts[i])
-			#print runNumber, "\t", ls
 		dicty[runNumber] = ls
 
 read_file.close()
