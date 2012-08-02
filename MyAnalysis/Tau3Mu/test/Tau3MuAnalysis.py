@@ -83,11 +83,12 @@ process.source.duplicateCheckMode = cms.untracked.string('noDuplicateCheck')
 
 process.ana = cms.EDAnalyzer('Tau3MuAnalysis_V2',
 
-OutFileName=cms.string("OUT_MC.root"),
+OutFileName=cms.string("OUT_DATA.root"),
 
 Debug=cms.bool(False),
 
 IsMC=cms.bool(True),     #Be sure you run on MC otherwise you get a crash!
+
 isSignal=cms.bool(True), #If true the gen matching is done on Signal else on Norm. sample
 isBackground=cms.bool(False),
 

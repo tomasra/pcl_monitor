@@ -1,6 +1,16 @@
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDAnalyzer.h"
 
+#include "DataFormats/HLTReco/interface/TriggerFilterObjectWithRefs.h"
+#include "DataFormats/HLTReco/interface/TriggerRefsCollections.h"
+#include "DataFormats/HLTReco/interface/TriggerEventWithRefs.h"
+#include "DataFormats/RecoCandidate/interface/RecoChargedCandidate.h"
+#include "DataFormats/RecoCandidate/interface/RecoChargedCandidateFwd.h"
+
+#include "FWCore/Common/interface/TriggerNames.h"
+#include "FWCore/Common/interface/TriggerResultsByName.h"
+#include "DataFormats/HLTReco/interface/TriggerEvent.h"
+
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 
@@ -88,7 +98,6 @@ inline bool sortGenIndexCand(std::pair<const Candidate*,int> i1, std::pair<const
   return i1.second < i2.second;
 }
 
-
 inline bool sortGenIndex(std::pair<TLorentzVector,int> i1, std::pair<TLorentzVector,int> i2) {
 
   return i1.second < i2.second;
@@ -146,6 +155,8 @@ private:
   virtual void fillRecoMatchedInfo(const edm::Event&, const edm::EventSetup&, std::vector<pair<const Track*,int> >&);
   virtual void setMuIdToTrack(const edm::Event&, const Track*,bool&,bool&,bool&,bool&,bool&,bool&,int&,int&,int&,int&,double&,double&);
   virtual void setMuIdToMu(Muon &,bool&,bool&,bool&,bool&,bool&,bool&,int&,int&,int&,int&,double&,double&);
+  virtual void findTriggerObjects(const edm::Event&, const edm::EventSetup&, std::vector<TLorentzVector>&, int);
+
 
   string theVertexLabel;
 
@@ -168,14 +179,17 @@ private:
   TTree *ExTree;
  
   bool _IsGenRecoMatched,_IsOffline,_TrigBit[10];
+  bool _TriggerMatched, _DiMuFound, _TrackFound;
 
   std::vector<string> HLT_paths;
   std::string HLT_process;
 
   int _Run,_Evt,_Lum,_Nvtx, _Nmu, _Ntk;
 
+  std::string _TrigName;
+
   //Gen Level variables
-  TLorentzVector* _Mu1_4MomG,*_Mu2_4MomG,*_MuTrack_4MomG, *_DiMu4MomG, *_DiMuPlusTrack4MomG;
+  TLorentzVector* _Mu1_4MomG,*_Mu2_4MomG,*_MuTrack_4MomG, *_DiMu4MomG, *_DiMuPlusTrack4MomG, *_Ds_4MomG;
   TVector3 *_GenSV;
 
   int _pdg1,_pdg2,_pdg3;
@@ -337,6 +351,98 @@ bool Tau3MuAnalysis_V2::alreadyMatched(uint& ind,std::vector<int> vind){
   return alreadyMatched;
 }
 
+
+void  Tau3MuAnalysis_V2::findTriggerObjects(const edm::Event& iEvent, const edm::EventSetup& iSetup, std::vector<TLorentzVector> &triggeredObjects, int pdgId ){
+ 
+  using namespace std;
+  using namespace edm;
+  using namespace reco;
+  using namespace trigger;
+
+  if (HLT_process=="HLT"){
+    edm::Handle<edm::TriggerResults>   triggerResultsHandle_;
+    edm::Handle<trigger::TriggerEvent> triggerEventHandle_;
+
+    iEvent.getByLabel(InputTag("TriggerResults","",HLT_process),triggerResultsHandle_);
+    if (!triggerResultsHandle_.isValid()) {
+      cout << "Error in getting TriggerResults product from Event!" << endl;
+      return;
+    }
+
+    iEvent.getByLabel(InputTag("hltTriggerSummaryAOD","",HLT_process),triggerEventHandle_);
+    if (!triggerEventHandle_.isValid()) {
+      cout << "Error in getting TriggerEvent product from Event!" << endl;
+      return;
+    }
+
+    const unsigned int filterIndex(triggerEventHandle_->filterIndex(InputTag("hltTau3MuMuMuTkFilter","",HLT_process)));
+    if (debug) cout << "trigger index " << filterIndex << " size filters " << triggerEventHandle_->sizeFilters() << endl;
+    if (filterIndex < triggerEventHandle_->sizeFilters()) {
+      const Vids& VIDS (triggerEventHandle_->filterIds(filterIndex));
+      const Keys& KEYS(triggerEventHandle_->filterKeys(filterIndex));
+      const size_type nI(VIDS.size());
+      const size_type nK(KEYS.size());
+      size_type n;
+      if (nI>nK) n=nI;
+      else n=nK;
+      const TriggerObjectCollection& TOC(triggerEventHandle_->getObjects());
+      if (debug) cout << "Objects that fired the Trigger:" << endl;
+      for (size_type i=0; i!=n; ++i) {
+	const TriggerObject& TO(TOC[KEYS[i]]);
+	if (abs(TO.id())==pdgId){
+	  TLorentzVector tmu=TLorentzVector(0.,0.,0.,0.);
+	  if (pdgId==13) tmu.SetPtEtaPhiM(TO.pt(),TO.eta(),TO.phi(),0.1057);
+	  if (pdgId==211) tmu.SetPtEtaPhiM(TO.pt(),TO.eta(),TO.phi(),0.1396);
+	  triggeredObjects.push_back(tmu);
+	  if (debug) cout << "   " << i << " " << VIDS[i] << "/" << KEYS[i] << ": "
+			  << TO.id() << " " << TO.pt() << " " << TO.eta() << " " << TO.phi() << " " << TO.mass() << " "  << " " << TO.energy() 
+			  << endl;
+	}
+      }
+    }
+  
+    else
+      {
+	if (debug) cout << "Module index out of HLT modules index range ... i.e this event doesn't pass the trigger" << endl;
+	return;
+      }
+  }
+
+  if (HLT_process=="HLTX"){
+
+    edm::Handle<trigger::TriggerFilterObjectWithRefs> dimuAndTrackVtxCands;
+
+    iEvent.getByLabel(edm::InputTag("hltTau3MuMuMuTkFilter::HLTX"),dimuAndTrackVtxCands);
+
+    if (dimuAndTrackVtxCands.isValid()){
+
+      if (pdgId==13){
+	std::vector<RecoChargedCandidateRef> muons;
+	dimuAndTrackVtxCands->getObjects(trigger::TriggerMuon, muons);
+	int ms=muons.size();
+	if (ms<2) cout << "WARNING: triggered event with less than 2 muons!!!" << endl;
+	TLorentzVector mom;
+	for(int n = 0; n != ms; ++n) {
+	  mom.SetPtEtaPhiM(muons[n]->pt(), muons[n]->eta(), muons[n]->phi(),0.1057);
+	  triggeredObjects.push_back(mom);
+	}
+      }
+
+      if (pdgId==211){
+	std::vector<RecoChargedCandidateRef> tracks;
+	dimuAndTrackVtxCands->getObjects(trigger::TriggerTrack, tracks);
+	int ts=tracks.size();
+	if (ts<1) cout << "WARNING: triggered event with less than 1 track!!!" << endl;
+	TLorentzVector mom;
+	for(int n = 0; n != ts; ++n) {
+	  mom.SetPtEtaPhiM(tracks[n]->pt(), tracks[n]->eta(), tracks[n]->phi(),0.1396);
+	  triggeredObjects.push_back(mom);
+	}
+      }
+    }
+  }
+}
+
 Vertex Tau3MuAnalysis_V2::findClosestPV(const edm::Event& ev,TransientVertex& sv, bool& isPrimary){
   if (debug) cout << "Searching for the PV closest in z to given SV" << endl;
 
@@ -467,7 +573,12 @@ void Tau3MuAnalysis_V2::findBestPiCand(const edm::Event& ev, const edm::EventSet
 
   if (triggered) nt++;
 
+  std::vector<TLorentzVector> triggerTracks;
+  findTriggerObjects(ev,iSetup,triggerTracks,211);
+
+  int tcounter=0;
   for(TrackCollection::const_iterator it = tracks->begin();it != tracks->end(); ++it){
+    tcounter++;
 
     if ((it->pt()==dimu[0].innerTrack()->pt() && it->eta()==dimu[0].innerTrack()->eta()) || (it->pt()==dimu[1].innerTrack()->pt() && it->eta()==dimu[1].innerTrack()->eta())) continue;
     if (dimu[0].charge()==dimu[1].charge() && it->charge()==dimu[0].charge()) continue; //impossible to have a particle with charge +/- 3
@@ -484,6 +595,20 @@ void Tau3MuAnalysis_V2::findBestPiCand(const edm::Event& ev, const edm::EventSet
     TLorentzVector m2=TLorentzVector(dimu[1].px(),dimu[1].py(),dimu[1].pz(),dimu[1].energy());
     TLorentzVector p=TLorentzVector(it->px(),it->py(),it->pz(),sqrt(TrackMass*TrackMass+it->p()*it->p()));
     TLorentzVector tot=m1+m2+p;
+
+    double dRtrack=0.05;
+    bool isTriggerTrack=false;
+
+    for (uint s=0; s<triggerTracks.size(); s++){
+      if (triggerTracks[s].DeltaR(p) < dRtrack){
+	isTriggerTrack=true;
+	dRtrack=triggerTracks[s].DeltaR(p);
+      }
+    }
+
+    if (!isTriggerTrack) continue;
+
+    if (debug) cout << "distance reco-track trigger-track= " << dRtrack << endl;
 
     if (tot.M() < diMuTrackMassMin || tot.M()> diMuTrackMassMax) continue;
     if (passm && triggered){ ntm++;passm=false;}
@@ -632,6 +757,7 @@ void Tau3MuAnalysis_V2::findGenMoms(const edm::Event& ev, std::vector<TLorentzVe
 	  if (nmu==3){//fill vertices only when we know this is the right event
 	    _GenSV->SetXYZ(d->vx(),d->vy(),d->vz());
 	    Dsvtx.SetXYZ(cand.mother()->vx(),cand.mother()->vy(),cand.mother()->vz());
+	    _Ds_4MomG->SetPxPyPzE(cand.mother()->px(),cand.mother()->py(),cand.mother()->pz(),cand.mother()->energy());
 	  }
 	  if (debug) cout << "gen mu status " << d->status() << endl;
 	  gen4mom.SetPtEtaPhiM(d->pt(),d->eta(),d->phi(),d->mass());
@@ -676,6 +802,7 @@ void Tau3MuAnalysis_V2::findGenMoms(const edm::Event& ev, std::vector<TLorentzVe
 	      if (nmu==2){
 		_GenSV->SetXYZ(d->vx(),d->vy(),d->vz());
 		Dsvtx.SetXYZ(cand.vx(),cand.vy(),cand.vz());
+		_Ds_4MomG->SetPxPyPzE(cand.px(),cand.py(),cand.pz(),cand.energy());
 	      }
 	      gen4mom.SetPtEtaPhiM(d1->pt(),d1->eta(),d1->phi(),d1->mass());
 	      TheGenMus.push_back(gen4mom);
@@ -718,6 +845,7 @@ void Tau3MuAnalysis_V2::findGenMoms(const edm::Event& ev, std::vector<TLorentzVe
   _DiMu4MomG->SetPtEtaPhiM(dimu.Pt(),dimu.Eta(),dimu.Phi(),dimu.M());
   _DiMuPlusTrack4MomG->SetPtEtaPhiM(trimu.Pt(),trimu.Eta(),trimu.Phi(),trimu.M());
 
+
   TVector3 Displacement=TVector3(_GenSV->X()-Dsvtx.X(),_GenSV->Y()-Dsvtx.Y(),0.);
 
   _cosp2G=(Displacement.X()*dimu.Px()+Displacement.Y()*dimu.Py())/(dimu.Mag()*Displacement.Mag());
@@ -743,7 +871,7 @@ bool Tau3MuAnalysis_V2::isMcMatched(const edm::Event& ev,TLorentzVector* recov,s
 
   while (RunMatch){
 
-    double dRtmp=0.05;
+    double dRtmp=0.005;
 
     int indR,indG;
 
@@ -775,7 +903,7 @@ bool Tau3MuAnalysis_V2::isMcMatched(const edm::Event& ev,TLorentzVector* recov,s
       }
     }
 
-    if (dRtmp==0.05) RunMatch=false;
+    if (dRtmp==0.005) RunMatch=false;
 
     else{
       recoIndexes.push_back(indR);
@@ -876,19 +1004,19 @@ void Tau3MuAnalysis_V2::findBestDimuon(const edm::Event& event, const edm::Event
 
     TransientVertex tmpvtx;
 
+    if (!muIn[i].isTrackerMuon()) continue;
+
     reco::TrackRef inone = muIn[i].innerTrack();
 
     if (!(inone.isNonnull() && inone.isAvailable())) continue;
 
-    if (!muIn[i].isTrackerMuon()) continue;
-
     for (uint j=i+1; j<muIn.size(); ++j){
+
+      if (!muIn[j].isTrackerMuon()) continue;
 
       reco::TrackRef intwo = muIn[j].innerTrack();
 
       if (!(intwo.isNonnull() && intwo.isAvailable())) continue;
-     
-      if (!muIn[j].isTrackerMuon()) continue;
 
       if (passq && triggered) {ndmq++;passq=false;}
 
@@ -909,6 +1037,7 @@ void Tau3MuAnalysis_V2::findBestDimuon(const edm::Event& event, const edm::Event
       tmpvtx=avf.vertex(tt);
 
       if (!(tmpvtx.isValid())) continue;
+
       if (passvtx && triggered) {ndmv++;passvtx=false;}
 
       double vChi2 = tmpvtx.totalChiSquared();
@@ -1062,6 +1191,7 @@ bool Tau3MuAnalysis_V2::TriggerDecision(const edm::Event& ev){
       for (int i=0; i<min(Tsize,10); ++i){
 	if (debug) cout << "accepted " << trigName << endl; 
 	if (trigName.find(HLT_paths[i])!=string::npos) {
+	  _TrigName=string(trigName);
 	  passed=true;
 	  _TrigBit[i]=true;
 	}
@@ -1084,11 +1214,6 @@ bool Tau3MuAnalysis_V2::TriggerDecision(const edm::Event& ev){
 void Tau3MuAnalysis_V2::analyze(const edm::Event& ev, const edm::EventSetup& iSetup) {
 
   if (debug) cout << "//////////// NEW EVENT ///////////" << endl;
-  
-
-  _Run=ev.id().run();
-  _Evt=ev.id().event();
-  _Lum=ev.id().luminosityBlock();
 
   if (debug) cout << "run " << _Run << " lumi " << _Lum << " event " << _Evt << endl;
 
@@ -1106,6 +1231,10 @@ void Tau3MuAnalysis_V2::analyze(const edm::Event& ev, const edm::EventSetup& iSe
   }
 
   Initialize_TreeVars();
+
+  _Run=ev.id().run();
+  _Evt=ev.id().event();
+  _Lum=ev.id().luminosityBlock();
 
   //checking the validity of relevant collections
 
@@ -1131,6 +1260,7 @@ void Tau3MuAnalysis_V2::analyze(const edm::Event& ev, const edm::EventSetup& iSe
   else {cout << "Mu COLLECTION NOT VALID ... return" << endl;return;}
 
   triggered=TriggerDecision(ev);
+
   std::vector<TLorentzVector> TheGenMus;
 
   if (IsMC && !isBkg){   
@@ -1153,6 +1283,7 @@ void Tau3MuAnalysis_V2::analyze(const edm::Event& ev, const edm::EventSetup& iSe
 
       TLorentzVector dmu=matches[0].first+matches[1].first;
       _DiMu4MomR->SetPtEtaPhiM(dmu.Pt(),dmu.Eta(),dmu.Phi(),dmu.M());
+
       TLorentzVector tmu=matches[0].first + matches[1].first + matches[2].first;
       _DiMuPlusTrack4MomR->SetPtEtaPhiM(tmu.Pt(),tmu.Eta(),tmu.Phi(),tmu.M());
 
@@ -1175,6 +1306,8 @@ void Tau3MuAnalysis_V2::analyze(const edm::Event& ev, const edm::EventSetup& iSe
 
 void Tau3MuAnalysis_V2::offlineReco(const edm::Event& ev, const edm::EventSetup& iSetup, bool& isOffline,std::vector<TLorentzVector>& TheGenMus, bool& triggered){
 
+  if (!triggered) { if (debug) cout << "The event fail trigger selection and will be rejected" << endl; return;}
+
   if (debug) cout << "Starting offline selection" << endl;
 
   //Reconstruction on data
@@ -1192,10 +1325,14 @@ void Tau3MuAnalysis_V2::offlineReco(const edm::Event& ev, const edm::EventSetup&
   MuonCollection muSkim; // to be used to find the best dimuon
   nmuons=0;
    
+  std::vector<TLorentzVector> triggerMuons;
+
   // check the validity of the collection
   if(muons.isValid()){
 
-    for (MuonCollection::const_iterator recoMu = muons->begin(); recoMu!=muons->end(); ++recoMu){ // loop over all muons
+    findTriggerObjects(ev,iSetup,triggerMuons,13);
+
+     for (MuonCollection::const_iterator recoMu = muons->begin(); recoMu!=muons->end(); ++recoMu){ // loop over all muons to search those matched with the trigger objects
 	
       double eta = (*recoMu).eta();
       double phi = (*recoMu).phi();
@@ -1212,14 +1349,30 @@ void Tau3MuAnalysis_V2::offlineReco(const edm::Event& ev, const edm::EventSetup&
       if (debug) cout << "[MuonAnalysis] New Muon found:" << muonType << endl;
       if (debug) cout << "-- eta: " << eta << " phi: " << phi << " pt: " << pt << " q: " << q  << endl;       
       
-      if (recoMu->pt() < MinMuPt) continue;
-      if (fabs(recoMu->eta()) > 2.1) continue;
-      if (!isTight(&*recoMu)) continue;
-      
-      nmuons++;
-      
+      if (pt < MinMuPt) {
+	if (debug) cout << " pt of muon is " << pt << " < min pt = " << MinMuPt << " rejecting muon " <<  endl;  
+	continue;
+      }
+
+      bool isTriggerMatched=false;
+      std::vector<int> indexes;
+      for (uint s=0; s<triggerMuons.size(); s++){
+
+	if (alreadyMatched(s,indexes)) continue; // to avoid multiple matches with the same trigger muon
+
+	if (triggerMuons[s].DeltaR(mom) < 0.02) {
+	  isTriggerMatched=true;
+	  indexes.push_back(s);
+	  if (debug) cout << "Dr offlineMu-L3Mu " << mom.DeltaR(triggerMuons[s]) << endl;
+	  if (debug) cout << "pt offline " << pt << " pt L3 " << triggerMuons[s].Pt() << endl;
+	}
+      }
+
+      if (!isTriggerMatched) continue;     
+      nmuons++;      
       muSkim.push_back(*recoMu);
-    }
+
+     }
   }
 
   MuonCollection BestDiMu;
@@ -1241,11 +1394,15 @@ void Tau3MuAnalysis_V2::offlineReco(const edm::Event& ev, const edm::EventSetup&
 
   if (muSkim.size() < 2) return;
   
+  _TriggerMatched=true;  
+
   findBestDimuon(ev,iSetup, muSkim, BestDiMu, tv, primaryVertex);
   
-  if (debug) cout << "dimuons size " << BestDiMu.size() << endl;
+  if (debug) cout << " number of selected muons " << BestDiMu.size() << endl;
 
   if (BestDiMu.size()!=2) return; //only for control
+
+  _DiMuFound=true;
 
    FoundDiMu++;
    if (triggered) FoundDiMuTrig++;
@@ -1279,6 +1436,7 @@ void Tau3MuAnalysis_V2::offlineReco(const edm::Event& ev, const edm::EventSetup&
 
   if (pitrack.Px() !=0 && pitrack.Py()!=0 ){  //just a way to say that pitrack has been found
 
+    _TrackFound=true;
 
     edm::ESHandle<TransientTrackBuilder> Builder;
     iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", Builder);
@@ -1292,7 +1450,6 @@ void Tau3MuAnalysis_V2::offlineReco(const edm::Event& ev, const edm::EventSetup&
 
     _svtValid=true;
 
-    Offline++;
     if(triggered) OfflineTrig++;
 
     if (debug) cout << "track found" << endl;
@@ -1371,6 +1528,7 @@ void Tau3MuAnalysis_V2::offlineReco(const edm::Event& ev, const edm::EventSetup&
     _IsMcMatched=isEventMatched;
 
     isOffline=true;
+    Offline++;
 
     if (debug) cout << "Offline end, filling tree now ..." << endl;
   }
@@ -1381,6 +1539,10 @@ void Tau3MuAnalysis_V2::Initialize_TreeVars(){
   if (debug) cout << "Initializing vars for the TTree" << endl;
 
   triggered=false;
+
+  _TriggerMatched=false;
+  _DiMuFound=false;
+  _TrackFound=false;
 
   for (int k=0; k<10; k++){
     _TrigBit[k]=false;
@@ -1401,6 +1563,8 @@ void Tau3MuAnalysis_V2::Initialize_TreeVars(){
       _Mpdg1=-999;_Mpdg2=-999;_Mpdg3=-999;
     }
     else{
+
+      _Ds_4MomG->SetPtEtaPhiM(0.,0.,0.,0.);
       _DiMu4MomG->SetPtEtaPhiM(0.,0.,0.,0.);
       _DiMuPlusTrack4MomG->SetPtEtaPhiM(0.,0.,0.,0.);
 
@@ -1568,7 +1732,7 @@ bool Tau3MuAnalysis_V2::isBkgMatched(const edm::Event& ev,TLorentzVector* recov)
  
   while(runMatch){
 
-    double dRtmp=0.05;
+    double dRtmp=0.005;
     uint tcount=0;
     int gindex=-999,rindex=-999;
     const Candidate* cand;
@@ -1595,7 +1759,7 @@ bool Tau3MuAnalysis_V2::isBkgMatched(const edm::Event& ev,TLorentzVector* recov)
       }
     }
 
-    if (dRtmp==0.05) runMatch=false;
+    if (dRtmp==0.005) runMatch=false;
 
     else{
       genIndexes.push_back(gindex);
@@ -1638,8 +1802,8 @@ bool Tau3MuAnalysis_V2::matchGenReco(const edm::Event& ev,std::vector<TLorentzVe
   if (!tracks.isValid()) return isMatched;
 
   while(runMatch){
-
-    double dRtmp=0.05;
+    if (debug) cout << "new gen to match" << endl;
+    double dRtmp=0.005;
     uint tcount=0;
     int gindex=-999,tindex=-999;
     TLorentzVector tmpmatch;
@@ -1667,8 +1831,9 @@ bool Tau3MuAnalysis_V2::matchGenReco(const edm::Event& ev,std::vector<TLorentzVe
       }
     }
 
-    if (dRtmp==0.05) runMatch=false;
+    if (dRtmp==0.005) runMatch=false;
     else{
+      if (debug) cout << "matched gindex " << gindex << " with tk " << tindex << " with dR " << dRtmp << endl; 
       genIndexes.push_back(gindex);
       recoIndexes.push_back(tindex);
       matches.push_back(make_pair(tmpmatch,gindex));
@@ -1680,6 +1845,12 @@ bool Tau3MuAnalysis_V2::matchGenReco(const edm::Event& ev,std::vector<TLorentzVe
       isMatched=true;
       sort(matches.begin(),matches.end(),sortGenIndex);
       sort(tmatches.begin(),tmatches.end(),sortGenIndexTrack);
+      if (debug){
+	for (uint k=0; k< matches.size() ; ++k){
+	  cout << "Gen particle " << matches[k].second << " matched with reco track:" <<endl;
+	  cout << "Gen Pt " << genv[matches[k].second].Pt() << " reco Pt " << matches[k].first.Pt() << endl;
+	}
+      }
     }
   }
 
@@ -1900,6 +2071,7 @@ void Tau3MuAnalysis_V2::beginJob() {
 
     else {
       // gen variables
+      _Ds_4MomG= new TLorentzVector(0.,0.,0.,0.);
       _DiMu4MomG= new TLorentzVector(0.,0.,0.,0.);
       _DiMuPlusTrack4MomG= new TLorentzVector(0.,0.,0.,0.);
     
@@ -1929,6 +2101,7 @@ void Tau3MuAnalysis_V2::beginJob() {
       //
    
       //Gen variables
+      ExTree->Branch("Ds_4Mom_Gen","TLorentzVector",&_Ds_4MomG); 
       ExTree->Branch("DiMu4Mom_Gen","TLorentzVector",&_DiMu4MomG); 
       ExTree->Branch("DiMuPlusTrack4Mom_Gen","TLorentzVector",&_DiMuPlusTrack4MomG); 
       
@@ -2023,7 +2196,12 @@ void Tau3MuAnalysis_V2::beginJob() {
       ExTree->Branch("SVprob_Reco",&_SVprobR   ,"_SVprobR/D"); 
       ExTree->Branch("SVTchi_Reco",&_SVTchiR   ,"_SVTchiR/D"); 
       ExTree->Branch("SVTprob_Reco",&_SVTprobR   ,"_SVTprobR/D"); 
-      
+  
+      ExTree->Branch("Lxy_Reco",&_LxyR   ,"_LxyR/D");
+      ExTree->Branch("LxySig_Reco",&_LxySigR   ,"_LxySigR/D");
+      ExTree->Branch("LxyT_Reco",&_LxyTR   ,"_LxyTR/D");
+      ExTree->Branch("LxyTSig_Reco",&_LxyTSigR   ,"_LxyTSigR/D");
+    
       ExTree->Branch("CosPoint2_Reco",&_cosp2R   ,"_cosp2R/D");
       ExTree->Branch("CosPoint3_Reco",&_cosp3R   ,"_cosp3R/D");
       //
@@ -2033,9 +2211,15 @@ void Tau3MuAnalysis_V2::beginJob() {
   }
 
   if (debug) cout << "adding Offline branches" << endl;
+  
   //Offline variables
 
-  ExTree->Branch("IsOfflineReco",&_IsOffline,"_IsOffline/b");	
+  ExTree->Branch("IsOfflineReco",&_IsOffline,"_IsOffline/b");
+
+  ExTree->Branch("IsTrigMatched_Offline",&_TriggerMatched,"_TriggerMatched/b");
+  ExTree->Branch("IsDiMuFound_Offline",&_DiMuFound,"_DiMuFound/b");
+  ExTree->Branch("IsTrackFound_Offline",&_TrackFound,"_TrackFound/b");
+	
 
   _DiMu4Mom= new TLorentzVector(0.,0.,0.,0.);
   _DiMuPlusTrack4Mom_Mu= new TLorentzVector(0.,0.,0.,0.);
@@ -2062,6 +2246,7 @@ void Tau3MuAnalysis_V2::beginJob() {
   ExTree->Branch("Mu1_4Mom_Offline","TLorentzVector",&_Mu1_4Mom); 
   ExTree->Branch("Mu2_4Mom_Offline","TLorentzVector",&_Mu2_4Mom); 
   ExTree->Branch("MuTrack_4Mom_Pi_Offline","TLorentzVector",&_MuTrack_4Mom_Pi); 
+  ExTree->Branch("MuTrack_4Mom_Mu_Offline","TLorentzVector",&_MuTrack_4Mom_Mu); 
 
  //first offline mu   
   ExTree->Branch("IsTkMu_Offline_1",&_isTk1   ,"_isTk1/b");
@@ -2288,6 +2473,8 @@ Tau3MuAnalysis_V2::endJob() {
     delete _DiMuPlusTrack4MomR;
     delete _DiMu4MomR;
 
+    delete _Ds_4MomG;
+
     delete _MuTrack_4MomG;
     delete _Mu2_4MomG;
     delete _Mu1_4MomG;
@@ -2325,7 +2512,7 @@ Tau3MuAnalysis_V2::endJob() {
   std::cout << "DiMu Found " << FoundDiMu << std::endl;
   std::cout << "DiMu+Track Found " << Offline << std::endl;
   if (IsMC) std::cout << "Dropped Volunteers " << Nvolunteers << std::endl;
-  if (IsMC) std::cout << "Events MC Matched " << GenMatches  << std::endl;
+  if (IsMC) std::cout << "Events selected offline and MC matched " << GenMatches  << std::endl;
 }
 
 #include "FWCore/Framework/interface/MakerMacros.h"  
