@@ -1,3 +1,4 @@
+| [[%LINKTOGTLIST%/?GlobalTag=GR_P_V41][GR_P_V41]] | %GREEN%53X%ENDCOLOR% | To be used for prompt data processing @ Tier0. | As !GR_P_V40 with the following updates:<br> - omment. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_P_V40][GR_P_V40]] | %GREEN%53X%ENDCOLOR% | To be used for prompt data processing @ Tier0. | As !GR_P_V38 with the following updates:<br> - Decoupling pixel templates from HLT<br> - Fix for ECAL LocalContCorrParameters. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_P_V39][GR_P_V39]] | %GREEN%52X%ENDCOLOR% | To be used for prompt data processing @ Tier0. | As !GR_P_V37 with the following updates:<br> - Decoupling pixel templates from HLT. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_P_V38][GR_P_V38]] | %GREEN%53X%ENDCOLOR% | To be used for prompt data processing @ Tier0. | As !GR_P_V37 with the following updates:<br> moving to 53X: <br> - new PF cluster corrections<br> - updated ECAL local containment corrections<br> - new supercluster energy correction. |
