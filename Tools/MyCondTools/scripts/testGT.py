@@ -149,7 +149,7 @@ if __name__ == '__main__':
     mail.write(exitCodeFile.read() + separator + stdoutFile.read() + separator + stderrFile.read())
     mail.close()
     # os.system("mail -s \"Global Tag test\" \"marco.de.mattia@cern.ch\" < \""+mailFileName+"\"")
-    # os.system("mail -s \"Tagset validation\" \"cms-alca-globaltag@cern.ch\" < \""+mailFileName+"\"")
+    os.system("mail -s \"Tagset validation\" \"cms-alca-globaltag@cern.ch\" < \""+mailFileName+"\"")
     # os.system("mail -s \"Tagset validation\" \"cms-alca-globaltag@cern.ch\" < \""+mailFileName+"\"")
 
     stdoutFile.close()
