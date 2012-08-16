@@ -64,7 +64,7 @@ TH1F* numZPerEvent;
 
 int countZ;
 
-bool survive_cut;
+
 TH1F* cutflow;
 int beforeCuts;
 int cutPt;
@@ -272,6 +272,13 @@ string getLumiPerBXRegion(int index) {
 	return "Luminosity per BX is higher than " + lexical_cast<string>(calcLumi(80) / pow(10., 33)) + " #times10^{33} cm^{-2}s^{-1}";
 }
 
+// FIXME: move them somewhere else
+HistoZ *hAll = 0;
+vector<HistoZ *> hByBin;
+TH1F *hLumiIntegralsByBin;
+int nBins = 100;
+float minBin = -1;
+float maxBin = 10;
 
 void ZlumiTreeReader::Begin(TTree* /*tree*/)
 {
@@ -316,8 +323,30 @@ void ZlumiTreeReader::Begin(TTree* /*tree*/)
 
 	cutflow = CreateHist("cutflow", "cut", "", 9, -0.5, 8.5);
 
+
+	// Read the lumi CSVT/Root files and store the number by BX
 	lumiReader.readFileForRun(run_number);
-	testProgramm =  lumiReader.getRecLumiBins(100, -1, 7);
+
+	hLumiIntegralsByBin = lumiReader.getRecLumiBins(nBins, minBin, maxBin);
+
+	hAll = new HistoZ("All");
+
+
+	float stepBin = (maxBin - minBin)/nBins;
+	for(int bin = 0; bin != nBins; ++bin) {
+	  stringstream histoName;
+	  float binLowEdge = minBin + bin*stepBin;
+	  float binUpEdge = binLowEdge + stepBin;
+
+	  histoName << "bin" << binLowEdge << "_" << binUpEdge;
+	  string histoNameStr = histoName.str();
+	  HistoZ *hBin = new HistoZ(histoNameStr);
+	  hByBin.push_back(hBin);
+	}
+
+	
+
+
 	pileUp_delLumi = new TProfile("PileUp_delLumi", "; PileUp; delivered luminosity per BX [cm^{-2}s^{-1}]", 15, 0, 30);
 	pileUp_lumiPerBX = new TProfile("PileUp_RecLumiPerBX", "; PileUp; recorded luminosity per BX [cm^{-2}s^{-1}]", 15, 0, 30);
 	ls_delLumi = new TProfile("ls_delLumi", "; lumisection; delivered luminosity per BX [cm^{-2}s^{-1}]", 40, 0, 1600);
@@ -378,6 +407,7 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 	//}
 
 	//cout << "vor Aufruf: " << RunNumber;
+	float weight = 1.;
 	RunLumiBXIndex lumiBXIndex = RunLumiBXIndex(RunNumber, LumiNumber, BXNumber);
 	//int runTest = lumiBXIndex.run();
 	//cout << " ---- nach Aufruf: " << runTest << endl;
@@ -391,6 +421,36 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 	if (run_number != -1 and run_number != RunNumber) {
 		return kTRUE;
 	}
+
+
+	// get the instLumi for the BX -> this defines the bin
+	// find the Z-particle with least mass difference
+	double m_diff = 1000;
+	int index_Z = -1;
+	for(size_t i=0; i < ZMass->size(); i++) {
+		double m_temp = fabs(ZMass->at(i) - M_Z);
+		if (m_temp <= m_diff) {
+			m_diff = m_temp;
+			index_Z = i;
+		}
+	}
+	
+	float bestZMass = ZMass->at(index_Z);
+	bool survive_cut = ZlumiTreeReader::analyseCut(/*SIP*/ 0.4, /*eta*/ 5, /*Iso*/ 0.4, /*ZMass*/ 66, 116, index_Z);
+
+	if(!survive_cut) return;
+	hAll->Fill(bestZMass, weight);
+
+	
+	
+
+
+
+
+
+
+
+
 	numZPerEvent->Fill(ZMass->size());
 
 	countZ ++;
@@ -436,7 +496,7 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 	wholeMassZ_selected->Fill(ZMass->at(index_Z));
 
 	// analyse cutflow with selected Z index
-	survive_cut = ZlumiTreeReader::analyseCut(/*SIP*/ 0.4, /*eta*/ 5, /*Iso*/ 0.4, /*ZMass*/ 66, 116, index_Z);
+	bool survive_cut = ZlumiTreeReader::analyseCut(/*SIP*/ 0.4, /*eta*/ 5, /*Iso*/ 0.4, /*ZMass*/ 66, 116, index_Z);
 	if (survive_cut) massZ_selected->Fill(ZMass->at(index_Z));
 
 

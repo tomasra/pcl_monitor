@@ -24,8 +24,8 @@ extern const float LENGTH_LS;
  *  double instLumi = lumiMap.getAvgInstLumi(runAndLumiAndBx); -> get the Instantaneous lumi (averaged on the LS)
  *
  *  
- *  $Date: 2012/07/31 16:14:20 $
- *  $Revision: 1.5 $
+ *  $Date: 2012/08/16 14:21:36 $
+ *  $Revision: 1.6 $
  *  \author G. Cerminara - CERN
  */
 
@@ -84,7 +84,7 @@ public:
   // Returns an histogram with the integrated luminosity for each of the "instantaneus" luminosity bins
   // defined using the 3 input parameters.
   // The integrals are computed starting from the "theLumiTable" content: therefore summing all the BX values
-  // FIXME: should check that this is equivalent to the integral computed starting from the LS values in the CSV file
+  // NOTE: we studied that the integrals computed the BX values of the recorded lumi are equivalenty to those returned forFIXME: should check that this is equivalent to the integral computed starting from the LS values in the CSV file
   TH1F * getRecLumiBins(int nbins, float min, float max) const;
 
   int getNumberLSs(const int run) const;

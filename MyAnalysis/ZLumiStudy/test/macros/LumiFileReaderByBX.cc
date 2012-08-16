@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2012/07/31 16:14:20 $
- *  $Revision: 1.9 $
+ *  $Date: 2012/08/16 14:21:36 $
+ *  $Revision: 1.10 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -248,6 +248,9 @@ void LumiFileReaderByBX::readCSVFileNew(const TString& fileName, int runMin, int
       }
 
       else if(cellCounter % 2 == 0) { // even -> BX #
+	// check that the BX is an active one otherwise it
+	if(!theFillingScheme[bx-1]) continue;
+
 	cellstream >> bxDelLumi;
 	bxRecLumi = ratioRecDel*bxDelLumi;
 
@@ -264,7 +267,7 @@ void LumiFileReaderByBX::readCSVFileNew(const TString& fileName, int runMin, int
 
 
     if(ls == 0) {
-      cout << "skipping LS 0" << endl;
+      cout << "Warning skipping LS 0" << endl;
       continue;
     }
     // now push back the vector with the BX lumis in the LS container
@@ -284,7 +287,7 @@ void LumiFileReaderByBX::readCSVFileNew(const TString& fileName, int runMin, int
     // FIXME: is the integral taking into account ONLY the colliding BXs?? (check!)
     // FIXME: lowering the threshold to 1% reveals many more problems: investigate
 
-    if(fabs(sumBxRec*LENGTH_LS - recLumi)/recLumi > 0.05) {
+    if(fabs(sumBxRec*LENGTH_LS - recLumi)/recLumi > 0.005) {
        if(debug) cout << "WARNING: ls: " << ls
 	   << " sum BX del: " << sumBxDel *LENGTH_LS<< " sumBxRec: " << sumBxRec*LENGTH_LS
 	   << " total del: " << delLumi << " total rec: " << recLumi << endl;
