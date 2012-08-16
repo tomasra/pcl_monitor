@@ -145,7 +145,12 @@ public :
    virtual void    SlaveTerminate();
    virtual void    Terminate();
 
+   std::map<int,int> ls_Zcount;
+
    ClassDef(ZlumiTreeReader,0);
+
+   bool analyseCut(/*SIP*/ float sip, /*eta*/ float eta, /*Iso*/ float iso, /*ZMass*/ float massZ_min, float massZ_max, int index_Z);
+
 };
 
 #endif
@@ -256,5 +261,6 @@ Bool_t ZlumiTreeReader::Notify()
 
    return kTRUE;
 }
+
 
 #endif // #ifdef ZlumiTreeReader_cxx

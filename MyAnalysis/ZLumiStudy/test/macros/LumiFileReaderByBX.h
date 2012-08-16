@@ -8,6 +8,8 @@
 #include <TString.h>
 #include <TH1F.h>
 
+extern const float LENGTH_LS;
+
 /** \class LumiFileReaderByBX
  *  This class reads the csv lumi files produced by lumiCalc2.py, convert them in root files (smaller and faster for the access) 
  *  and serves all the lumi information necessary for analysis.
@@ -22,10 +24,11 @@
  *  double instLumi = lumiMap.getAvgInstLumi(runAndLumiAndBx); -> get the Instantaneous lumi (averaged on the LS)
  *
  *  
- *  $Date: 2012/07/30 14:09:16 $
- *  $Revision: 1.4 $
+ *  $Date: 2012/07/31 16:14:20 $
+ *  $Revision: 1.5 $
  *  \author G. Cerminara - CERN
  */
+
 
 class LumiFileReaderByBX {
 public:
@@ -51,8 +54,8 @@ public:
   float getDelLumi(const RunLumiIndex& runAndLumi) const;
   float getRecLumi(const RunLumiIndex& runAndLumi) const;
   float getAvgInstLumi(const RunLumiIndex& runAndLumi) const;
-  float getDelIntegral(const RunLumiIndex& from, const RunLumiIndex& to) const;
-  float getRecIntegral(const RunLumiIndex& from, const RunLumiIndex& to) const;
+  float getDelIntegral(const RunLumiIndex& from) const;
+  float getRecIntegral(const RunLumiIndex& from) const;
   std::pair<float, float> getLumi(const RunLumiIndex& runAndLumi) const;
   std::pair<float, float> getTotalLumi(const RunLumiIndex& runAndLumi) const;
 
@@ -99,6 +102,10 @@ private:
   // FIXME: find out what changed....I don't remember anymore...
   void readCSVFileNew(const TString& fileName, int runMin = -1, int runMax = -1);
 
+  // call the get_filling_scheme.py program to get the filling scheme for a run
+  void getFillingScheme(int run);
+  void createFillingSchemeFile(int run, const std::string& fileName);
+
   // read a root file from disk. The file name will be 1234.root where 1234 is the run #
   // in case the file is not found the function returns 'false'
   bool readRootFile(const TString& fileName, int runMin = -1, int runMax = -1);
@@ -122,7 +129,9 @@ private:
   std::map<int, std::vector< std::vector<float> > > theLumiTable;
   std::map<int, std::vector< float > > theLumiRatioByRunByLS;
 
-  std::map<int, std::vector< std::pair<float,float> > > theTotalLumiByRun;  
+  std::map<int, std::vector< std::pair<float,float> > > theTotalLumiByRun;
+
+  std::vector<bool> theFillingScheme;
 
 //   std::map<unsigned int, std::vector<unsigned int, std::vector<std::pair<float, float> > > > theRunLSBxLumi;
 
