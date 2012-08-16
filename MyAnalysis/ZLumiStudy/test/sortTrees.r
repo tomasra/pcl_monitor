@@ -31,7 +31,29 @@ void sortTrees() {
   vector<TString> fileBaseNames;
   //  fileBaseNames.push_back("/data/Analysis/42X_BX_v0/DoubleMu-May10ReReco");
   
+    //fileBaseNames.push_back("/afs/cern.ch/user/d/dboerner/workspace/Zlumi/CMSSW_5_2_6/src/MyAnalysis/ZLumiStudy/test/files/ZLumiStudy");
   fileBaseNames.push_back("/data1/ZLumiStudy/PROD120716_v0/DoubleMuB1/ZLumiStudy");
+  fileBaseNames.push_back("/data1/ZLumiStudy/PROD120716_v0/DoubleMuB2/ZLumiStudy");
+  fileBaseNames.push_back("/data1/ZLumiStudy/PROD120716_v0/DoubleMuB3/ZLumiStudy");
+  fileBaseNames.push_back("/data1/ZLumiStudy/PROD120716_v0/DoubleMuB4/ZLumiStudy");
+  fileBaseNames.push_back("/data1/ZLumiStudy/PROD120716_v0/DoubleMuB5/ZLumiStudy");
+  fileBaseNames.push_back("/data1/ZLumiStudy/PROD120716_v0/DoubleMuB6/ZLumiStudy");
+  fileBaseNames.push_back("/data1/ZLumiStudy/PROD120716_v0/DoubleMuB7/ZLumiStudy");
+  fileBaseNames.push_back("/data1/ZLumiStudy/PROD120716_v0/DoubleMuB8/ZLumiStudy");
+  fileBaseNames.push_back("/data1/ZLumiStudy/PROD120716_v0/DoubleMuB9/ZLumiStudy");
+
+  fileBaseNames.push_back("/data1/ZLumiStudy/PROD120716_v0/DoubleMuA/ZLumiStudy");
+  fileBaseNames.push_back("/data1/ZLumiStudy/PROD120716_v0/DY10_NoB/ZLumiStudy");
+  fileBaseNames.push_back("/data1/ZLumiStudy/PROD120716_v0/DY50_NoB/ZLumiStudy");
+  fileBaseNames.push_back("/data1/ZLumiStudy/PROD120716_v0/WJetsToLNu/ZLumiStudy");
+  fileBaseNames.push_back("/data1/ZLumiStudy/PROD120716_v0/WZ/ZLumiStudy");
+  fileBaseNames.push_back("/data1/ZLumiStudy/PROD120716_v0/ZZ2e2mu/ZLumiStudy");
+  fileBaseNames.push_back("/data1/ZLumiStudy/PROD120716_v0/ZZ2e2tau/ZLumiStudy");
+  fileBaseNames.push_back("/data1/ZLumiStudy/PROD120716_v0/ZZ2mu2tau/ZLumiStudy");
+  fileBaseNames.push_back("/data1/ZLumiStudy/PROD120716_v0/ZZ4mu/ZLumiStudy");
+
+
+
 //   fileBaseNames.push_back("/data/Analysis/42X_BX_v0/DoubleMu-05Aug2011");
 //   fileBaseNames.push_back("/data/Analysis/42X_BX_v0/DoubleMu-PromptReco-v6");
 //   fileBaseNames.push_back("/data/Analysis/42X_BX_v0/SingleMu-05Aug2011");
@@ -47,7 +69,8 @@ void sortTrees() {
     TString oldName = (*basename) + ".root";
     TString newName = (*basename) + "_sorted.root";
     TFile oldFile(oldName.Data());
-    TTree *tree = (TTree*) oldFile.Get("Z2muTree/candTree"); 
+    TTree *tree = (TTree*) oldFile.Get("Z2muTree/candTree");
+    tree->SetEstimate(tree->GetEntries()+1);  // very important!!!
     
     Int_t nentries = (Int_t)tree->GetEntries();
 
