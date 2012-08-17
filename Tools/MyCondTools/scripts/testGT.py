@@ -96,7 +96,7 @@ def getWfList(GT):
         return [4.17]
     elif GT.startswith("GR_P"):
         return [1000, 4.17]
-    elif GT.startswith("GR"):
+    elif GT.startswith("GR") or GT.startswith("FT"):
         return [4.17]
     else:
         print "Error: unknonwn GT type for ", GT
