@@ -601,6 +601,20 @@ void ZlumiTreeReader::Terminate()
 	ls_crossSection->Write();
 	lumi_crossSection->Write();
 
+	TH1F *hXSection = new TH1F("hXSection", "X-section; inst. lumi (1/ub); x-section (ub)", nBins, minBin, maxBin);
+
+	// actually compute the Xsection
+	for (size_t bin = 0; bin < hByBin.size(); bin++) {
+	  double nZInBin = hByBin[bin]->hMass->Integral();
+	  double lumiInBin = hLumiIntegralsByBin->GetBinContent(bin);
+	  double xSectionInBin = 0.;
+	  if(lumiInBin != 0) {
+	    xSectionInBin = nZInBin/lumiInBin;
+	  }
+	  hXSection->SetBinContent(bin, xSectionInBin);
+	}
+	hXSection->Write();
+
 	hAll->Write();
 	hLumiIntegralsByBin->Write();
 	for (size_t bin = 0; bin < hByBin.size(); bin++) {
@@ -608,9 +622,9 @@ void ZlumiTreeReader::Terminate()
 	}
 
 
-	ZPeakFit fit_hAll(hAll->hMass);
-	RooPlot* frame_hAll = fit_hAll.fitVExpo();
-	fit_hAll.save(frame_hAll);
+// 	ZPeakFit fit_hAll(hAll->hMass);
+// 	RooPlot* frame_hAll = fit_hAll.fitVExpo();
+// 	fit_hAll.save(frame_hAll);
 
 	myFile->Close();
 
