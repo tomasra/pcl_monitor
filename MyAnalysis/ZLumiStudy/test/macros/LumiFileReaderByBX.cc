@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2012/08/16 14:21:36 $
- *  $Revision: 1.10 $
+ *  $Date: 2012/08/16 15:34:41 $
+ *  $Revision: 1.11 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -249,10 +249,13 @@ void LumiFileReaderByBX::readCSVFileNew(const TString& fileName, int runMin, int
 
       else if(cellCounter % 2 == 0) { // even -> BX #
 	// check that the BX is an active one otherwise it
-	if(!theFillingScheme[bx-1]) continue;
+        if (bx == 0) {// no information for bx == 0, so don't use it
+      }
+        else if (theFillingScheme[bx-1]) {
+          cellstream >> bxDelLumi;
+          bxRecLumi = ratioRecDel*bxDelLumi;
+        }
 
-	cellstream >> bxDelLumi;
-	bxRecLumi = ratioRecDel*bxDelLumi;
 
 	// sum over all the BX in the LS
 	sumBxDel += bxDelLumi;
@@ -676,8 +679,10 @@ float LumiFileReaderByBX::getRecIntegral(const RunLumiBXIndex& from, const RunLu
       return -1;
       }
 
+      sum += lumiSection[bx];
+
       //cout << bx << " : " << lumiSection[bx];
-      if (bx == 0) { // no information for bx == 0, so don't use it
+  /*    if (bx == 0) { // no information for bx == 0, so don't use it
         //cout << endl;
       }
       else if (theFillingScheme[bx-1]) { // start with bx 1
@@ -686,7 +691,7 @@ float LumiFileReaderByBX::getRecIntegral(const RunLumiBXIndex& from, const RunLu
       }
       else {
         //cout << endl;
-      }
+      } */
     }
  
   return sum * LENGTH_LS;
@@ -730,7 +735,7 @@ TH1F * LumiFileReaderByBX::getRecLumiBins(int nbins, float min, float max) const
   cout << "Fill the integrated lumi for run " << cachedRun << endl;
   //cout << "     # bins: " << nbins << " min: " << min << " max: " << max << endl;
   Long_t runN = cachedRun;
-  TString hName = TString("hRec_") + runN;
+  TString hName = TString("hRec");// + runN;
   TH1F *histo = new TH1F(hName.Data(), "test", nbins, min, max);
   
 //   // old format: here for compatibility...
@@ -759,6 +764,8 @@ TH1F * LumiFileReaderByBX::getRecLumiBins(int nbins, float min, float max) const
 	float ratio = ratioContainer[ls-1];
 
 	for(unsigned int index = 0; index != values.size(); ++index) {
+    RunLumiBXIndex runAndLumiAndBx(runN, ls, index);
+    if (check_BXFilled(runAndLumiAndBx)) {
 	  float recLumi = values[index];
 	  float delLumi = 0;
 	  if(ratio != 0) {
@@ -767,22 +774,16 @@ TH1F * LumiFileReaderByBX::getRecLumiBins(int nbins, float min, float max) const
 	    cout << "Warning ls : BX : " << ls << ": " << index << " del: " << delLumi << " rec: " << recLumi << endl;
 	  }
 	  //cout << "BX: " << index << " del: " << delLumi << " rec: " << recLumi << endl;
-    if (index == 0) { // no information for bx == 0, so don't use it
-        //cout << endl;
-      }
-      else if (theFillingScheme[index-1]) { // start with bx 1
+
         histo->Fill(delLumi, recLumi*LENGTH_LS);
-        //cout << " = " << sum << endl;
-      }
-      else {
-        //cout << endl;
-      }
+       
 
 	    // del Lumi per BX, weight with rec Lumi
 	}
       }
     }
   }
+}
 
   return histo;
   

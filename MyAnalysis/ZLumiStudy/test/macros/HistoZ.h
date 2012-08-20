@@ -14,18 +14,14 @@ public:
 
   
   HistoZ(std::string name) : theName(name) {
-    hMass = new TH1F(theName+"_hMass","Mass (GeV)",100,60,120);
+    hMass = new TH1F(theName+"_hMass","Mass [GeV]",100,60,120);
     hMass->Sumw2();
   }
-
-
-
 
 
   HistoZ() : theName("") {
     hMass = 0;
   }
-
 
 
   HistoZ(std::string name, std::string dir, TFile *file) : theName(name) {
@@ -37,7 +33,7 @@ public:
   }
 
 
-  HistoZ * Clone(std::string name) {
+ /* HistoZ * Clone(std::string name) {
     HistoZ *ret = new HistoZ();
     ret->theName = name;
 
@@ -51,7 +47,7 @@ public:
   void Add(const HistoZ* histSet) {
     if(hMass != 0) hPhi->Add(histSet->hMass);
   }
-
+*/
 
 
   void Scale(double scaleFact) {
@@ -60,7 +56,8 @@ public:
 
 
   void Write() {
-    if(hMass != 0) hMass->Write();
+    //if(hMass != 0) 
+      hMass->Write();
   }
   
   void Fill(double mass, double weight) {

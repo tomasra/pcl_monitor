@@ -13,6 +13,7 @@
 #include <TFile.h>
 #include <TSelector.h>
 #include "LumiFileReaderByBX.h"
+#include "ZPeakFit.h"
 
 // Header file for the classes stored in the TTree if any.
 #include <vector>
@@ -149,7 +150,7 @@ public :
 
    ClassDef(ZlumiTreeReader,0);
 
-   bool analyseCut(/*SIP*/ float sip, /*eta*/ float eta, /*Iso*/ float iso, /*ZMass*/ float massZ_min, float massZ_max, int index_Z);
+   bool analyseCut(/*SIP*/ float sip, /*Pt*/ float pt, /*eta*/ float eta, /*Iso*/ float iso, /*ZMass*/ float massZ_min, float massZ_max, int index_Z);
 
 };
 

@@ -24,6 +24,7 @@
 //
 
 #include "ZlumiTreeReader.h"
+#include "HistoZ.h"
 #include <TH2.h>
 #include <TProfile.h>
 #include <TCanvas.h>
@@ -39,6 +40,14 @@ using namespace std;
 int run_number;
 
 TFile* myFile;
+
+HistoZ* hAll = 0;
+vector<HistoZ *> hByBin;
+TH1F* hLumiIntegralsByBin;
+int nBins = 100;
+float minBin = -1;
+float maxBin = 10;
+vector<pair<float,float> > hByBinLimits;
 
 TH1F* massZ;
 TH1F* wholeMassZ;
@@ -82,20 +91,12 @@ int eta_withoutIso;
 bool survive_eta_withIso;
 int eta_withIso;
 
-/*float tagSIP;
-float tagcombRelIsoPF;
-float probeSIP;
-float probecombRelIsoPF;
-int count_tag = 0;
-int count_probe = 0; */
-
 const double M_Z = 91.2;
 const double Cross_Section = 1.1; // nb
 const double Cross_Section_Error = 0.03; // nb  
 
 //LumiFileReaderByBX lumiReader("./");
 LumiFileReaderByBX lumiReader("/data1/ZLumiStudy/CalcLumi/Version0/");
-TH1F* testProgramm;
 TProfile* pileUp_delLumi;
 TProfile* pileUp_lumiPerBX;
 
@@ -199,48 +200,29 @@ float calcLumi_avgInst(float lumiBarn) {
 
 
 
-bool ZlumiTreeReader::analyseCut(/*SIP*/ float sip, /*eta*/ float eta, /*Iso*/ float iso, /*ZMass*/ float massZ_min, float massZ_max, int index_Z) {
+bool ZlumiTreeReader::analyseCut(/*SIP*/ float sip, /*pt*/ float pt, /*eta*/ float eta, /*Iso*/ float iso, /*ZMass*/ float massZ_min, float massZ_max, int index_Z) {
 
 	beforeCuts ++;
 	
 	if (Lep1SIP->at(index_Z) < sip && Lep2SIP->at(index_Z) < sip) { 
 		cutSIP ++;
-		if (abs(Lep1Eta->at(index_Z)) < eta && abs(Lep2Eta->at(index_Z)) < eta) {
-			cutEta ++;
-			if ((Lep1chargedHadIso->at(index_Z) + Lep1neutralHadIso->at(index_Z) + Lep1photonIso->at(index_Z)) / Lep1Pt->at(index_Z) < iso && (Lep2chargedHadIso->at(index_Z) + Lep2neutralHadIso->at(index_Z) + Lep2photonIso->at(index_Z)) / Lep2Pt->at(index_Z) < iso) {
-				cutIsolation ++;
+		if (Lep1Pt->at(index_Z) > pt && Lep2Pt->at(index_Z) > pt) {
+			cutPt ++;
+			if (abs(Lep1Eta->at(index_Z)) < eta && abs(Lep2Eta->at(index_Z)) < eta) {
+				cutEta ++;
+				if ((Lep1chargedHadIso->at(index_Z) + Lep1neutralHadIso->at(index_Z) + Lep1photonIso->at(index_Z)) / Lep1Pt->at(index_Z) < iso && (Lep2chargedHadIso->at(index_Z) + Lep2neutralHadIso->at(index_Z) + Lep2photonIso->at(index_Z)) / Lep2Pt->at(index_Z) < iso) {
+					cutIsolation ++;
 
-				if (ZMass->at(index_Z) > massZ_min && ZMass->at(index_Z) < massZ_max) {
-					cutZMass ++;
-					ls_Zcount[LumiNumber] ++;
-					return true;
+					if (ZMass->at(index_Z) > massZ_min && ZMass->at(index_Z) < massZ_max) {
+						cutZMass ++;
+						ls_Zcount[LumiNumber] ++;
+						return true;
 					}
 				}
 			}
 		}
+	}
 	return false;
-
-/*	// tag and probe
-	// as tag: Muon with highest Pt
-	if (Lep1Pt->at(index_Z) > Lep2Pt->at(index_Z)) {
-		tagSIP = Lep1SIP->at(index_Z);
-		tagcombRelIsoPF = Lep1combRelIsoPF->at(index_Z);
-		probeSIP = Lep2SIP->at(index_Z);
-		probecombRelIsoPF = Lep2combRelIsoPF->at(index_Z);
-
-	}
-	else {
-		tagSIP = Lep2SIP->at(index_Z);
-		tagcombRelIsoPF = Lep2combRelIsoPF->at(index_Z);
-		probeSIP = Lep1SIP->at(index_Z);
-		probecombRelIsoPF = Lep1combRelIsoPF->at(index_Z);
-	}
-	if (tagSIP < 2 && tagcombRelIsoPF < 0.4) {
-		count_tag ++;
-		if (probeSIP < 2 && probecombRelIsoPF < 0.4) {
-			count_probe ++;
-		}
-	} */
 }
 
 
@@ -272,13 +254,6 @@ string getLumiPerBXRegion(int index) {
 	return "Luminosity per BX is higher than " + lexical_cast<string>(calcLumi(80) / pow(10., 33)) + " #times10^{33} cm^{-2}s^{-1}";
 }
 
-// FIXME: move them somewhere else
-HistoZ *hAll = 0;
-vector<HistoZ *> hByBin;
-TH1F *hLumiIntegralsByBin;
-int nBins = 100;
-float minBin = -1;
-float maxBin = 10;
 
 void ZlumiTreeReader::Begin(TTree* /*tree*/)
 {
@@ -321,7 +296,7 @@ void ZlumiTreeReader::Begin(TTree* /*tree*/)
 
 	ptLeptons = new TH2F("PtLepton", "; P_{#mu, T} [GeV]; P_{#bar{#mu}, T} [GeV]", 80, 0, 160, 80, 0, 160);
 
-	cutflow = CreateHist("cutflow", "cut", "", 9, -0.5, 8.5);
+	cutflow = CreateHist("cutflow", "cut", "", 10, -0.5, 9.5);
 
 
 	// Read the lumi CSVT/Root files and store the number by BX
@@ -331,17 +306,16 @@ void ZlumiTreeReader::Begin(TTree* /*tree*/)
 
 	hAll = new HistoZ("All");
 
-
 	float stepBin = (maxBin - minBin)/nBins;
-	for(int bin = 0; bin != nBins; ++bin) {
+	for(int bin = 0; bin <= nBins; ++bin) {
 	  stringstream histoName;
 	  float binLowEdge = minBin + bin*stepBin;
 	  float binUpEdge = binLowEdge + stepBin;
+	  hByBinLimits.push_back(make_pair(binLowEdge, binUpEdge));
 
 	  histoName << "bin" << binLowEdge << "_" << binUpEdge;
 	  string histoNameStr = histoName.str();
-	  HistoZ *hBin = new HistoZ(histoNameStr);
-	  hByBin.push_back(hBin);
+	  hByBin.push_back(new HistoZ(histoNameStr));
 	}
 
 	
@@ -434,22 +408,36 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 			index_Z = i;
 		}
 	}
+
+	if (index_Z == -1) {
+		return kTRUE;
+	}
+
+	wholeMassZ_selected->Fill(ZMass->at(index_Z));
 	
 	float bestZMass = ZMass->at(index_Z);
-	bool survive_cut = ZlumiTreeReader::analyseCut(/*SIP*/ 0.4, /*eta*/ 5, /*Iso*/ 0.4, /*ZMass*/ 66, 116, index_Z);
+	bool survive_cut = ZlumiTreeReader::analyseCut(/*SIP*/ 0.4, /*pt*/ 20, /*eta*/ 5, /*Iso*/ 0.4, /*ZMass*/ 66, 116, index_Z);
 
-	if(!survive_cut) return;
-	hAll->Fill(bestZMass, weight);
+	if(survive_cut) {
+		hAll->Fill(bestZMass, weight);
+		massZ_selected->Fill(ZMass->at(index_Z));
+
+		float avgLumi = lumiReader.getAvgInstLumi(lumiBXIndex);
+
+		for (size_t bin = 0; bin < hByBinLimits.size(); bin++) {
+			if (avgLumi >= hByBinLimits[bin].first && hByBinLimits[bin].second > avgLumi) {
+				hByBin[bin]->Fill(bestZMass, weight);
+				break;
+			}
+
+		}
+
+	}
+
+
 
 	
 	
-
-
-
-
-
-
-
 
 	numZPerEvent->Fill(ZMass->size());
 
@@ -482,29 +470,12 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 		sipL2->Fill(Lep2SIP->at(i));
 	}
 
-	// find the Z-particle with least mass difference
-	double m_diff = 1000;
-	int index_Z = 0;
-	for(size_t i=0; i < ZMass->size(); i++) {
-		double m_temp = fabs(ZMass->at(i) - M_Z);
-		if (m_temp <= m_diff) {
-			m_diff = m_temp;
-			index_Z = i;
-		}
-	}
-	
-	wholeMassZ_selected->Fill(ZMass->at(index_Z));
-
-	// analyse cutflow with selected Z index
-	bool survive_cut = ZlumiTreeReader::analyseCut(/*SIP*/ 0.4, /*eta*/ 5, /*Iso*/ 0.4, /*ZMass*/ 66, 116, index_Z);
-	if (survive_cut) massZ_selected->Fill(ZMass->at(index_Z));
-
 
 	// check different cut possibilities
-	survive_withoutIso = ZlumiTreeReader::analyseCut(0.4, 10, 400, 66, 116, index_Z);
-	survive_withIso = ZlumiTreeReader::analyseCut(0.4, 10, 0.4, 66, 116, index_Z);
-	survive_eta_withoutIso = ZlumiTreeReader::analyseCut(0.4, 1.2, 400, 66, 116, index_Z);
-	survive_eta_withIso = ZlumiTreeReader::analyseCut(0.4, 1.2, 0.4, 66, 116, index_Z);
+	survive_withoutIso = ZlumiTreeReader::analyseCut(0.4, 20, 10, 400, 66, 116, index_Z);
+	survive_withIso = ZlumiTreeReader::analyseCut(0.4, 20, 10, 0.4, 66, 116, index_Z);
+	survive_eta_withoutIso = ZlumiTreeReader::analyseCut(0.4, 20, 1.2, 400, 66, 116, index_Z);
+	survive_eta_withIso = ZlumiTreeReader::analyseCut(0.4, 20, 1.2, 0.4, 66, 116, index_Z);
 
 	if (survive_withoutIso) withoutIso++;
 	if (survive_withIso) withIso++;
@@ -577,25 +548,26 @@ void ZlumiTreeReader::Terminate()
 	cutflow->GetXaxis()->SetBinLabel(1, "before cuts");
 	cutflow->SetBinContent(2, cutSIP);
 	cutflow->GetXaxis()->SetBinLabel(2, "after SIP cut");
-	cutflow->SetBinContent(3, cutIsolation);
-	cutflow->GetXaxis()->SetBinLabel(3, "after isolation cut");
-	cutflow->SetBinContent(4, cutZMass);
-	cutflow->GetXaxis()->SetBinLabel(4, "after Z mass cut");
+	cutflow->SetBinContent(3, cutPt);
+	cutflow->GetXaxis()->SetBinLabel(3, "after Pt cut");
+	cutflow->SetBinContent(4, cutIsolation);
+	cutflow->GetXaxis()->SetBinLabel(4, "after isolation cut");
+	cutflow->SetBinContent(5, cutZMass);
+	cutflow->GetXaxis()->SetBinLabel(5, "after Z mass cut");
 
-	cutflow->GetXaxis()->SetBinLabel(5, "-> SIP cut, written cut, Z mass cut");
-	cutflow->SetBinContent(6, withoutIso);
-	cutflow->GetXaxis()->SetBinLabel(6, "without isolation cut");
-	cutflow->SetBinContent(7, withIso);
-	cutflow->GetXaxis()->SetBinLabel(7, "with isolation cut");
-	cutflow->SetBinContent(8, eta_withoutIso);
-	cutflow->GetXaxis()->SetBinLabel(8, "with |#eta| < 2.1 and without isolation cut");
-	cutflow->SetBinContent(9, eta_withIso);
-	cutflow->GetXaxis()->SetBinLabel(9, "with |#eta| < 2.1 and with isolation cut");
+	cutflow->GetXaxis()->SetBinLabel(6, "-> SIP cut, written cut, Z mass cut");
+	cutflow->SetBinContent(7, withoutIso);
+	cutflow->GetXaxis()->SetBinLabel(7, "without isolation cut");
+	cutflow->SetBinContent(8, withIso);
+	cutflow->GetXaxis()->SetBinLabel(8, "with isolation cut");
+	cutflow->SetBinContent(9, eta_withoutIso);
+	cutflow->GetXaxis()->SetBinLabel(9, "with |#eta| < 2.1 and without isolation cut");
+	cutflow->SetBinContent(10, eta_withIso);
+	cutflow->GetXaxis()->SetBinLabel(10, "with |#eta| < 2.1 and with isolation cut");
 
 
 	cutflow->Write();
 
-	testProgramm->Write();
 	pileUp_delLumi->Write();
 	pileUp_lumiPerBX->Write();
 	ls_delLumi->Write();
@@ -617,14 +589,9 @@ void ZlumiTreeReader::Terminate()
     	}
 
     	float lumi = lumiReader.getRecIntegral(li);
-    	pair<float,float> totalLumi = lumiReader.getTotalLumi(li);
-
-    	//lumi = totalLumi.second;
 
     	float xs = nZ/lumi * 1000;
-    	float xs_err = sqrt(nZ) / lumi * 1000;
-
-
+  
     	ls_crossSection->Fill(lsec, xs);
     	lumi_crossSection->Fill(lumi, xs);
 
@@ -633,6 +600,17 @@ void ZlumiTreeReader::Terminate()
 
 	ls_crossSection->Write();
 	lumi_crossSection->Write();
+
+	hAll->Write();
+	hLumiIntegralsByBin->Write();
+	for (size_t bin = 0; bin < hByBin.size(); bin++) {
+		hByBin[bin]->Write();
+	}
+
+
+	ZPeakFit fit_hAll(hAll->hMass);
+	RooPlot* frame_hAll = fit_hAll.fitVExpo();
+	fit_hAll.save(frame_hAll);
 
 	myFile->Close();
 

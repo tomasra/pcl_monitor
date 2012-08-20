@@ -8,11 +8,17 @@ string to_string(int i)
 
 
 void runTreeReader() {
- 
+  gSystem->AddIncludePath("-I$ROOFITSYS/include");
  if (! TString(gSystem->GetLibraries()).Contains("ZlumiTreeReader")) {
+    
+
+    gSystem->Load("libRooFit");
+  
     gROOT->LoadMacro("$CMSSW_BASE/src/MyAnalysis/ZLumiStudy/test/macros/RunLumiIndex.cc+g");
     gROOT->LoadMacro("$CMSSW_BASE/src/MyAnalysis/ZLumiStudy/test/macros/RunLumiBXIndex.cc+g");
     gROOT->LoadMacro("$CMSSW_BASE/src/MyAnalysis/ZLumiStudy/test/macros/LumiFileReaderByBX.cc+g");
+
+    gROOT->LoadMacro("$CMSSW_BASE/src/MyAnalysis/ZLumiStudy/test/macros/ZPeakFit.C+g");
     gROOT->LoadMacro("$CMSSW_BASE/src/MyAnalysis/ZLumiStudy/test/macros/ZlumiTreeReader.C+g");
   }
   
@@ -51,7 +57,7 @@ void runTreeReader() {
 
 // run over special runs
   for (size_t i = 0; i < 23 ; i++) {
-    TSelector* selector = TSelector::GetSelector("ZlumiTreeReader.C");
+ //   TSelector* selector = TSelector::GetSelector("ZlumiTreeReader.C+");
     cout << runs[i] << endl;
     chain->Process(selector, to_string(runs[i]).c_str());
   } 
