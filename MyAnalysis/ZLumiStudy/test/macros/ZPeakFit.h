@@ -43,7 +43,8 @@ private:
 	RooRealVar mass;
 	RooDataHist data;
 	RooFitResult* result;
+	RooWorkspace w;
 
-	RooPlot* fit(RooWorkspace w);
+	RooPlot* fit();
 };
 #endif

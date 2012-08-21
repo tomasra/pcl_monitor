@@ -13,7 +13,6 @@
 #include <TFile.h>
 #include <TSelector.h>
 #include "LumiFileReaderByBX.h"
-#include "ZPeakFit.h"
 
 // Header file for the classes stored in the TTree if any.
 #include <vector>

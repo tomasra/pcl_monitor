@@ -25,6 +25,7 @@
 
 #include "ZlumiTreeReader.h"
 #include "HistoZ.h"
+#include "ZPeakFit.h"
 #include <TH2.h>
 #include <TProfile.h>
 #include <TCanvas.h>
@@ -44,10 +45,11 @@ TFile* myFile;
 HistoZ* hAll = 0;
 vector<HistoZ *> hByBin;
 TH1F* hLumiIntegralsByBin;
-int nBins = 100;
-float minBin = -1;
+int nBins = 50;
+float minBin = 0;
 float maxBin = 10;
 vector<pair<float,float> > hByBinLimits;
+TH1F* xSection;
 
 TH1F* massZ;
 TH1F* wholeMassZ;
@@ -95,24 +97,16 @@ const double M_Z = 91.2;
 const double Cross_Section = 1.1; // nb
 const double Cross_Section_Error = 0.03; // nb  
 
-//LumiFileReaderByBX lumiReader("./");
+
 LumiFileReaderByBX lumiReader("/data1/ZLumiStudy/CalcLumi/Version0/");
 TProfile* pileUp_delLumi;
-TProfile* pileUp_lumiPerBX;
+
 
 int runTest = -1;
 
 float delLumiPerBX = -1;
 
-vector<TH1F* > histPerLumi;
-TH1F* lumiPerBX;
-
 TProfile* ls_delLumi;
-TProfile* lumi_crossSection;
-TProfile* ls_crossSection;
-
-
-map<int,int> ls_Zcount;
 
 template <typename A, typename B>
 static A lexical_cast(const B& b)
@@ -184,6 +178,11 @@ TH1F* CreateHist(string name, string xtitle, string unit, size_t nbins, float xm
 	return a;
 }
 
+void writeAndDeleteHist(TH1* hist) {
+	hist->Write();
+	delete hist;
+}
+
 float calcLumi(float lumiBarn) {
 	float my_barn = pow(10.0, -30);
 	int bunch = 1440;
@@ -223,35 +222,6 @@ bool ZlumiTreeReader::analyseCut(/*SIP*/ float sip, /*pt*/ float pt, /*eta*/ flo
 		}
 	}
 	return false;
-}
-
-
-
-
-int getIndex(float lumi) { // look for lumi Per BX
-	if (lumi < 40) return 0;
-	if (lumi < 45) return 1;
-	if (lumi < 50) return 2;
-	if (lumi < 55) return 3;
-	if (lumi < 60) return 4;
-	if (lumi < 65) return 5;
-	if (lumi < 70) return 6;
-	if (lumi < 75) return 7;
-	if (lumi < 80) return 8;
-	return 9;
-}
-
-string getLumiPerBXRegion(int index) {
-	if (index == 0) return "Luminosity per BX is lower than " + lexical_cast<string>(calcLumi(40) / pow(10., 33)) + " #times10^{33} cm^{-2}s^{-1}";
-	if (index == 1) return "Luminosity per BX is between " + lexical_cast<string>(calcLumi(40) / pow(10., 33)) + " #times10^{33} cm^{-2}s^{-1} and " + lexical_cast<string>(calcLumi(45) / pow(10., 33)) + " #times10^{33} cm^{-2}s^{-1}";
-	if (index == 2) return "Luminosity per BX is between " + lexical_cast<string>(calcLumi(45) / pow(10., 33)) + " #times10^{33} cm^{-2}s^{-1} and " + lexical_cast<string>(calcLumi(50) / pow(10., 33)) + " #times10^{33} cm^{-2}s^{-1}";
-	if (index == 3) return "Luminosity per BX is between " + lexical_cast<string>(calcLumi(50) / pow(10., 33)) + " #times10^{33} cm^{-2}s^{-1} and " + lexical_cast<string>(calcLumi(55) / pow(10., 33)) + " #times10^{33} cm^{-2}s^{-1}";
-	if (index == 4) return "Luminosity per BX is between " + lexical_cast<string>(calcLumi(55) / pow(10., 33)) + " #times10^{33} cm^{-2}s^{-1} and " + lexical_cast<string>(calcLumi(60) / pow(10., 33)) + " #times10^{33} cm^{-2}s^{-1}";
-	if (index == 5) return "Luminosity per BX is between " + lexical_cast<string>(calcLumi(60) / pow(10., 33)) + " #times10^{33} cm^{-2}s^{-1} and " + lexical_cast<string>(calcLumi(65) / pow(10., 33)) + " #times10^{33} cm^{-2}s^{-1}";
-	if (index == 6) return "Luminosity per BX is between " + lexical_cast<string>(calcLumi(65) / pow(10., 33)) + " #times10^{33} cm^{-2}s^{-1} and " + lexical_cast<string>(calcLumi(70) / pow(10., 33)) + " #times10^{33} cm^{-2}s^{-1}";
-	if (index == 7) return "Luminosity per BX is between " + lexical_cast<string>(calcLumi(70) / pow(10., 33)) + " #times10^{33} cm^{-2}s^{-1} and " + lexical_cast<string>(calcLumi(75) / pow(10., 33)) + " #times10^{33} cm^{-2}s^{-1}";
-	if (index == 8) return "Luminosity per BX is between " + lexical_cast<string>(calcLumi(75) / pow(10., 33)) + " #times10^{33} cm^{-2}s^{-1} and " + lexical_cast<string>(calcLumi(80) / pow(10., 33)) + " #times10^{33} cm^{-2}s^{-1}";
-	return "Luminosity per BX is higher than " + lexical_cast<string>(calcLumi(80) / pow(10., 33)) + " #times10^{33} cm^{-2}s^{-1}";
 }
 
 
@@ -304,7 +274,7 @@ void ZlumiTreeReader::Begin(TTree* /*tree*/)
 
 	hLumiIntegralsByBin = lumiReader.getRecLumiBins(nBins, minBin, maxBin);
 
-	hAll = new HistoZ("All");
+	hAll = new HistoZ("all");
 
 	float stepBin = (maxBin - minBin)/nBins;
 	for(int bin = 0; bin <= nBins; ++bin) {
@@ -313,28 +283,15 @@ void ZlumiTreeReader::Begin(TTree* /*tree*/)
 	  float binUpEdge = binLowEdge + stepBin;
 	  hByBinLimits.push_back(make_pair(binLowEdge, binUpEdge));
 
-	  histoName << "bin" << binLowEdge << "_" << binUpEdge;
+	  histoName << "bin_" << binLowEdge << "_" << binUpEdge;
 	  string histoNameStr = histoName.str();
 	  hByBin.push_back(new HistoZ(histoNameStr));
 	}
 
-	
+	xSection = new TH1F("XSection", "; inst. luminosity [#mub^{-1}]; x-section [nb]", nBins, minBin, maxBin);
 
-
-	pileUp_delLumi = new TProfile("PileUp_delLumi", "; PileUp; delivered luminosity per BX [cm^{-2}s^{-1}]", 15, 0, 30);
-	pileUp_lumiPerBX = new TProfile("PileUp_RecLumiPerBX", "; PileUp; recorded luminosity per BX [cm^{-2}s^{-1}]", 15, 0, 30);
-	ls_delLumi = new TProfile("ls_delLumi", "; lumisection; delivered luminosity per BX [cm^{-2}s^{-1}]", 40, 0, 1600);
-
-	for (size_t i = 0; i < 10; i++) {
-		histPerLumi.push_back(new TH1F(("Luminosity" + to_string(i)).c_str(), (getLumiPerBXRegion(i) + "; M_{Z} [GeV]; Events").c_str(), 60, 60, 120));
-	}
-
-	lumiPerBX = CreateHist("Luminosity", "Luminosity per BX", "cm^{-2}s^{-1}", 100, pow(10., 33), 8*pow(10.,33));
-
-	lumi_crossSection = new TProfile("lumi_crossSection", "; luminosity [#mub^{-1}]; crossSection [nb]", 60, 35000, 125000);
-	ls_crossSection = new TProfile("ls_crossSection", "; lumisection; crossSection [nb]", 40 , 0, 1600);
-	
-	ls_Zcount.clear();
+	pileUp_delLumi = new TProfile("PileUp_delLumi", "; #vertices; luminosity per BX [cm^{-2}s^{-1}]", 15, 0, 30);
+	ls_delLumi = new TProfile("ls_delLumi", "; lumisection; luminosity per BX [cm^{-2}s^{-1}]", 40, 0, 1600);
 
 	cout << " all histograms are created" << endl;
 
@@ -370,27 +327,10 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 	//
 	// The return value is currently not used.
 
-
-	//cout << "Process: " << entry << endl;
-
 	ZlumiTreeReader::GetEntry(entry);
 
-	//if (runTest == -1 || runTest != RunNumber) {
-	//	cout << RunNumber << endl;
-	//	runTest = RunNumber;
-	//}
-
-	//cout << "vor Aufruf: " << RunNumber;
 	float weight = 1.;
 	RunLumiBXIndex lumiBXIndex = RunLumiBXIndex(RunNumber, LumiNumber, BXNumber);
-	//int runTest = lumiBXIndex.run();
-	//cout << " ---- nach Aufruf: " << runTest << endl;
-	//float delLumi = lumiReader.getDelLumi(lumiBXIndex);
-	//cout << "LumiNumber : BXNumber " << LumiNumber << " : " << BXNumber << endl;
-	//cout << "del Lumi: " << delLumi << endl;
-
-	//pair<float,float> lumi = lumiReader.getLumi(lumiBXIndex);
-	//cout << "Lumisection : BXNumber " << LumiNumber << " : " << BXNumber << endl << " --- del : rec lumi: " << lumi.first << " : " << lumi.second << endl;
 
 	if (run_number != -1 and run_number != RunNumber) {
 		return kTRUE;
@@ -433,11 +373,6 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 		}
 
 	}
-
-
-
-	
-	
 
 	numZPerEvent->Fill(ZMass->size());
 
@@ -486,17 +421,7 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 	delLumiPerBX = lumiReader.getDelLumi(lumiBXIndex);
 
 	pileUp_delLumi->Fill(Nvtx, calcLumi(delLumiPerBX));
-	pileUp_lumiPerBX->Fill(Nvtx, calcLumi(lumiReader.getRecLumi(lumiBXIndex)));
 	ls_delLumi->Fill(LumiNumber, calcLumi(delLumiPerBX));
-
-
-	// get Lumi per Event, look in which range (between 45 and 65 (some bins)), do something
-	
-	if (delLumiPerBX == -1) cout << "Problem in calculating delLumi" << endl;
-	else {
-		histPerLumi[getIndex(delLumiPerBX)]->Fill(ZMass->at(index_Z));
-	}
-	lumiPerBX->Fill(calcLumi(delLumiPerBX));
 
 	//cout << delLumiPerBX << " : " << lumiReader.getRecLumi(lumiBXIndex) << endl << "end process "<< endl;
 
@@ -522,27 +447,27 @@ void ZlumiTreeReader::Terminate()
 
 	myFile->cd();
 
-	massZ->Write();
-	wholeMassZ->Write();
-	ptZ->Write();
-	massZ_selected->Write();
-	wholeMassZ_selected->Write();
+	writeAndDeleteHist(massZ);
+	writeAndDeleteHist(wholeMassZ);
+	writeAndDeleteHist(ptZ);
+	writeAndDeleteHist(massZ_selected);
+	writeAndDeleteHist(wholeMassZ_selected);
 
-	ptL1->Write();
-	etaL1->Write();
-	phiL1->Write();
-	isoL1->Write();
-	sipL1->Write();
+	writeAndDeleteHist(ptL1);
+	writeAndDeleteHist(etaL1);
+	writeAndDeleteHist(phiL1);
+	writeAndDeleteHist(isoL1);
+	writeAndDeleteHist(sipL1);
 
-	ptL2->Write();
-	etaL2->Write();
-	phiL2->Write();
-	isoL2->Write();
-	sipL2->Write();
+	writeAndDeleteHist(ptL2);
+	writeAndDeleteHist(etaL2);
+	writeAndDeleteHist(phiL2);
+	writeAndDeleteHist(isoL2);
+	writeAndDeleteHist(sipL2);
 
-	numZPerEvent->Write();
+	writeAndDeleteHist(numZPerEvent);
 
-	ptLeptons->Write();
+	writeAndDeleteHist(ptLeptons);
 
 	cutflow->SetBinContent(1, beforeCuts);
 	cutflow->GetXaxis()->SetBinLabel(1, "before cuts");
@@ -566,79 +491,38 @@ void ZlumiTreeReader::Terminate()
 	cutflow->GetXaxis()->SetBinLabel(10, "with |#eta| < 2.1 and with isolation cut");
 
 
-	cutflow->Write();
+	writeAndDeleteHist(cutflow);
 
-	pileUp_delLumi->Write();
-	pileUp_lumiPerBX->Write();
-	ls_delLumi->Write();
-
-	for (size_t i = 0; i < 10; i++) {
-		histPerLumi[i]->Write();
-	}
-	lumiPerBX->Write();
-
-	map<int,int>::iterator it = ls_Zcount.begin();
-	for (; it != ls_Zcount.end(); ++it) {
-		int lsec = it->first;
-		int nZ = it->second;
-
-		RunLumiIndex li(run_number, lsec);
-		if (!lumiReader.check_LSFound(li)) {
-        	cout << "LS " << lsec << " for run " << run_number << " not found" << endl;
-        	continue;
-    	}
-
-    	float lumi = lumiReader.getRecIntegral(li);
-
-    	float xs = nZ/lumi * 1000;
-  
-    	ls_crossSection->Fill(lsec, xs);
-    	lumi_crossSection->Fill(lumi, xs);
-
-		//cout << "ls " << lsec << ": sigma_Z = " << xs << " +/- " << xs_err << " nb" << endl;
-	}
-
-	ls_crossSection->Write();
-	lumi_crossSection->Write();
-
-	TH1F *hXSection = new TH1F("hXSection", "X-section; inst. lumi (1/ub); x-section (ub)", nBins, minBin, maxBin);
+	writeAndDeleteHist(pileUp_delLumi);
+	writeAndDeleteHist(ls_delLumi);
 
 	// actually compute the Xsection
 	for (size_t bin = 0; bin < hByBin.size(); bin++) {
 	  double nZInBin = hByBin[bin]->hMass->Integral();
 	  double lumiInBin = hLumiIntegralsByBin->GetBinContent(bin);
 	  double xSectionInBin = 0.;
+	  double xSecErrorInBin = 0;
 	  if(lumiInBin != 0) {
-	    xSectionInBin = nZInBin/lumiInBin;
+	    xSectionInBin = nZInBin/lumiInBin * 1000;
+	    xSecErrorInBin = sqrt(nZInBin) / lumiInBin * 1000;
 	  }
-	  hXSection->SetBinContent(bin, xSectionInBin);
+	  xSection->SetBinContent(bin, xSectionInBin);
+	  xSection->SetBinError(bin, xSecErrorInBin);
 	}
-	hXSection->Write();
+	writeAndDeleteHist(xSection);
 
-	hAll->Write();
-	hLumiIntegralsByBin->Write();
+	ZPeakFit fit_hAll(hAll->hMass);
+	RooPlot* frame_hAll = fit_hAll.fitVExpo();
+ 	fit_hAll.save(frame_hAll);
+
+	writeAndDeleteHist(hAll->hMass);
+	writeAndDeleteHist(hLumiIntegralsByBin);
 	for (size_t bin = 0; bin < hByBin.size(); bin++) {
-		hByBin[bin]->Write();
+		writeAndDeleteHist(hByBin[bin]->hMass);
 	}
-
-
-// 	ZPeakFit fit_hAll(hAll->hMass);
-// 	RooPlot* frame_hAll = fit_hAll.fitVExpo();
-// 	fit_hAll.save(frame_hAll);
+	hByBin.clear();
 
 	myFile->Close();
 
-	//gROOT->Reset("a");
-	delete pileUp_delLumi;
-	delete pileUp_lumiPerBX;
-	delete ls_delLumi;
-	delete lumiPerBX;
-	delete ls_crossSection;
-	delete lumi_crossSection;
-
-	for (size_t i = 0; i < 10; i++) {
-		delete histPerLumi[i];
-	}
-	histPerLumi.clear();
 
 }

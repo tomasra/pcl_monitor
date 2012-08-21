@@ -14,7 +14,7 @@ public:
 
   
   HistoZ(std::string name) : theName(name) {
-    hMass = new TH1F(theName+"_hMass","Mass [GeV]",100,60,120);
+    hMass = new TH1F("Mass_" + theName,";Mass [GeV]; Events",100,60,120);
     hMass->Sumw2();
   }
 
