@@ -26,7 +26,6 @@ read_file.close()
 for key in dicty:
 	write_file = open("/data1/ZLumiStudy/CalcLumi/JsonFiles/" + key + ".json", "w")
 	write_file.write("{\"" + key + "\":" + dicty[key] + "]]}")
-	print "{\"" + key + "\":" + dicty[key] + "]]}"
 	write_file.close()
 
 

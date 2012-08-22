@@ -13,11 +13,54 @@
 #include <TFile.h>
 #include <TSelector.h>
 #include "LumiFileReaderByBX.h"
+#include "HistoZ.h"
 
 // Header file for the classes stored in the TTree if any.
 #include <vector>
+#include <set>
 
 // Fixed size dimensions of array or collections stored in the TTree if any.
+
+// define struct so that we have same histograms for different cuts
+struct PerCutHistograms
+{
+   HistoZ* hAll;
+   vector<HistoZ*> hByBin; 
+  
+   TH1F* xSection;
+
+   TH1F* ptZ;
+   TH1F* massZ_selected;
+   TH1F* numZPerEvent;
+
+   TH1F* ptL1;
+   TH1F* etaL1;
+   TH1F* phiL1;
+   TH1F* isoL1;
+   TH1F* sipL1;
+
+   TH1F* ptL2;
+   TH1F* etaL2;
+   TH1F* phiL2;
+   TH1F* isoL2;
+   TH1F* sipL2;
+
+   TProfile* nVtx_delLumi;
+   TProfile* ls_delLumi;
+}; 
+
+
+#define NUM_CUTS 6
+
+#define NO_CUT 0
+#define FIRST_CUT 1
+#define ISOLATION_CUT 2
+#define NO_ISOLATION_CUT 3
+#define ETA_AND_ISOLATION_CUT 4
+#define ETA_AND_NO_ISOLATION_CUT 5
+
+
+
 
 class ZlumiTreeReader : public TSelector {
 public :
@@ -151,6 +194,31 @@ public :
 
    bool analyseCut(/*SIP*/ float sip, /*Pt*/ float pt, /*eta*/ float eta, /*Iso*/ float iso, /*ZMass*/ float massZ_min, float massZ_max, int index_Z);
 
+   PerCutHistograms histsPerCut[NUM_CUTS];
+
+   void CreatePerCutHists();
+   void FillPerCutHist(size_t index, int index_Z, RunLumiBXIndex lumiBXIndex);
+   void DrawPerCutHists();
+   void DeletePerCutHists();
+
+   void ParseOption(const std::string& opt);
+
+   bool useSingleRun;
+   int  singleRun;
+   std::set<int> runsToUse;
+   std::string processName;
+
+   std::map<int, LumiFileReaderByBX> lumiReader;
+
+   TFile* myFile;
+
+   TH1F* hLumiIntegralsByBin;
+
+   vector<pair<float,float> > hByBinLimits;
+
+   TH1F* wholeMassZ_selected;
+
+   TH1F* cutflow;
 };
 
 #endif

@@ -24,8 +24,8 @@ extern const float LENGTH_LS;
  *  double instLumi = lumiMap.getAvgInstLumi(runAndLumiAndBx); -> get the Instantaneous lumi (averaged on the LS)
  *
  *  
- *  $Date: 2012/08/16 14:21:36 $
- *  $Revision: 1.6 $
+ *  $Date: 2012/08/16 15:34:41 $
+ *  $Revision: 1.7 $
  *  \author G. Cerminara - CERN
  */
 
@@ -34,10 +34,12 @@ class LumiFileReaderByBX {
 public:
   /// Constructor
   /// The input parameter is the directory containing the csv/root luminosity files
-  LumiFileReaderByBX(const TString& dirBaseName);
+  LumiFileReaderByBX(const TString& dirBaseName = "");
 
   /// Destructor
   virtual ~LumiFileReaderByBX();
+
+  void setDirBaseName(const TString& dirBaseName);
 
   // read the file from disk unless it is already cached.
   // If the root file is already available for the run than it is used 

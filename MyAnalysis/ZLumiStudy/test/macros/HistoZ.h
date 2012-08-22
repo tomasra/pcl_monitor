@@ -13,8 +13,8 @@ class HistoZ {
 public:
 
   
-  HistoZ(std::string name) : theName(name) {
-    hMass = new TH1F("Mass_" + theName,";Mass [GeV]; Events",100,60,120);
+  HistoZ(std::string name, std::string title) : theName(name), theTitle(title) {
+    hMass = new TH1F("Mass_" + theName, theTitle + ";Mass [GeV]; Events", 75,50,125);
     hMass->Sumw2();
   }
 
@@ -69,6 +69,7 @@ public:
 
   // Operations
   TString theName;
+  TString theTitle;
 
   TH1F *hMass;
 

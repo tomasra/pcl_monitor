@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2012/08/16 15:34:41 $
- *  $Revision: 1.11 $
+ *  $Date: 2012/08/20 07:30:29 $
+ *  $Revision: 1.12 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -38,6 +38,10 @@ A lexical_cast(const B& b)
 LumiFileReaderByBX::LumiFileReaderByBX(const TString& dirBaseName) : theDirBaseName(dirBaseName), cachedRun(-1) {}
 
 LumiFileReaderByBX::~LumiFileReaderByBX(){}
+
+void LumiFileReaderByBX::setDirBaseName(const TString& dirBaseName) {
+  theDirBaseName = dirBaseName;
+}
 
 // read the file from disk unless it is already cached.
 // If the root file is already available for the run than it is used 

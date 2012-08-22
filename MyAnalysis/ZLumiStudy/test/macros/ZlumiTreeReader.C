@@ -24,90 +24,45 @@
 //
 
 #include "ZlumiTreeReader.h"
-#include "HistoZ.h"
 #include "ZPeakFit.h"
 #include <TH2.h>
 #include <TProfile.h>
 #include <TCanvas.h>
 #include <TGraphErrors.h>
 #include <TStyle.h>
+#include <TROOT.h>
 #include <iostream>
 #include <string>
 #include <sstream>
-#include <string> 
+#include <string>
 
 using namespace std;
 
-int run_number;
-
-TFile* myFile;
-
-HistoZ* hAll = 0;
-vector<HistoZ *> hByBin;
-TH1F* hLumiIntegralsByBin;
-int nBins = 50;
-float minBin = 0;
-float maxBin = 10;
-vector<pair<float,float> > hByBinLimits;
-TH1F* xSection;
-
-TH1F* massZ;
-TH1F* wholeMassZ;
-TH1F* ptZ;
-TH1F* massZ_selected;
-TH1F* wholeMassZ_selected;
-
-TH1F* ptL1;
-TH1F* etaL1;
-TH1F* phiL1;
-TH1F* isoL1;
-TH1F* sipL1;
-
-TH1F* ptL2;
-TH1F* etaL2;
-TH1F* phiL2;
-TH1F* isoL2;
-TH1F* sipL2;
-
-TH2F* ptLeptons;
-
-TH1F* numZPerEvent;
-
-int countZ;
-
-
-TH1F* cutflow;
-int beforeCuts;
-int cutPt;
-int cutEta;
-int cutSIP;
-int cutIsolation;
-int cutZMass;
-
-bool survive_withoutIso;
-int withoutIso;
-bool survive_withIso;
-int withIso;
-bool survive_eta_withoutIso;
-int eta_withoutIso;
-bool survive_eta_withIso;
-int eta_withIso;
+int nBins = 12;
+float minBin = 0.5;
+float maxBin = 5.5;
 
 const double M_Z = 91.2;
 const double Cross_Section = 1.1; // nb
-const double Cross_Section_Error = 0.03; // nb  
+const double Cross_Section_Error = 0.03; // nb 
 
+int beforeCuts = 0;
+int cutPt = 0;
+int cutEta = 0;
+int cutSIP = 0;
+int cutIsolation = 0;
+int cutZMass = 0;
 
-LumiFileReaderByBX lumiReader("/data1/ZLumiStudy/CalcLumi/Version0/");
-TProfile* pileUp_delLumi;
+//bool survive_withoutIso;
+int withoutIso = 0;
+//bool survive_withIso;
+int withIso = 0;
+//bool survive_eta_withoutIso ;
+int eta_withoutIso = 0;
+//bool survive_eta_withIso;
+int eta_withIso = 0;
 
-
-int runTest = -1;
-
-float delLumiPerBX = -1;
-
-TProfile* ls_delLumi;
-
+// functions to convert into other types
 template <typename A, typename B>
 static A lexical_cast(const B& b)
 {
@@ -133,56 +88,7 @@ string to_string(int i)
     return sstr.str();
 } 
 
-TH1F* CreateHist(string name, string xtitle, string unit, size_t nbins, float xmin, float xmax)
-{
-	TString title;
-
-	float binSize = (xmax-xmin) / nbins;
-
-	// want to write: 1 or nothing
-	if (binSize == 1) {
-		if (unit.c_str() == string("")) {
-		  title.Form(";%s; Events", xtitle.c_str());
-		}
-		else {
-			title.Form(";%s [%s];Events / %2.0f %s", xtitle.c_str(), unit.c_str(), binSize, unit.c_str());
-		}	
-	}
-
-	// want to write: 0.??
-	else if (binSize < 1) {
-			if (unit.c_str() == string("")) {
-			title.Form(";%s; Events / %1.2f", xtitle.c_str(), binSize);
-		}
-		else {
-			title.Form(";%s [%s];Events / %1.2f %s", xtitle.c_str(), unit.c_str(), binSize, unit.c_str());
-		}	
-	}
-
-	// want to write: ??
-	else {
-		if (unit.c_str() == std::string("")) {
-			title.Form(";%s; Events / %2.0f", xtitle.c_str(), binSize);
-			}
-		else if (unit.c_str() == std::string("cm^{-2}s^{-1}")) {
-			binSize = binSize / pow(10., 33);
-			title.Form("; %s; Events / %g #times 10^{33} %s", xtitle.c_str(), binSize, unit.c_str());
-		}
-		else {
-			title.Form(";%s [%s];Events / %2.0f %s", xtitle.c_str(), unit.c_str(), binSize, unit.c_str());
-		}	
-	}
-
-	
-	TH1F* a = new TH1F(name.c_str(), title, nbins, xmin, xmax);
-	return a;
-}
-
-void writeAndDeleteHist(TH1* hist) {
-	hist->Write();
-	delete hist;
-}
-
+// function to calculate the luminosity in other units
 float calcLumi(float lumiBarn) {
 	float my_barn = pow(10.0, -30);
 	int bunch = 1440;
@@ -197,24 +103,214 @@ float calcLumi_avgInst(float lumiBarn) {
 	return lumiBarn / (my_barn) * bunch;
 }
 
+// function which generate the histograms
+TH1F* CreateHist(string name, string htitle, string xtitle, string unit, size_t nbins, float xmin, float xmax)
+{
+	TString title;
 
+	float binSize = (xmax-xmin) / nbins;
 
-bool ZlumiTreeReader::analyseCut(/*SIP*/ float sip, /*pt*/ float pt, /*eta*/ float eta, /*Iso*/ float iso, /*ZMass*/ float massZ_min, float massZ_max, int index_Z) {
+	// want to write: 1 or nothing
+	if (binSize == 1) {
+		if (unit.c_str() == string("")) {
+		  title.Form("%s;%s; Events", htitle.c_str(), xtitle.c_str());
+		}
+		else {
+			title.Form("%s;%s [%s];Events / %2.0f %s", htitle.c_str(), xtitle.c_str(), unit.c_str(), binSize, unit.c_str());
+		}	
+	}
 
-	beforeCuts ++;
+	// want to write: 0.??
+	else if (binSize < 1) {
+			if (unit.c_str() == string("")) {
+			title.Form("%s;%s; Events / %1.2f", htitle.c_str(), xtitle.c_str(), binSize);
+		}
+		else {
+			title.Form("%s;%s [%s];Events / %1.2f %s", htitle.c_str(), xtitle.c_str(), unit.c_str(), binSize, unit.c_str());
+		}	
+	}
+
+	// want to write: ??
+	else {
+		if (unit.c_str() == std::string("")) {
+			title.Form("%s;%s; Events / %2.0f", htitle.c_str(), xtitle.c_str(), binSize);
+			}
+		else if (unit.c_str() == std::string("cm^{-2}s^{-1}")) {
+			binSize = binSize / pow(10., 33);
+			title.Form("%s; %s; Events / %g #times 10^{33} %s", htitle.c_str(), xtitle.c_str(), binSize, unit.c_str());
+		}
+		else {
+			title.Form("%s;%s [%s];Events / %2.0f %s", htitle.c_str(), xtitle.c_str(), unit.c_str(), binSize, unit.c_str());
+		}	
+	}
+
 	
-	if (Lep1SIP->at(index_Z) < sip && Lep2SIP->at(index_Z) < sip) { 
-		cutSIP ++;
-		if (Lep1Pt->at(index_Z) > pt && Lep2Pt->at(index_Z) > pt) {
-			cutPt ++;
-			if (abs(Lep1Eta->at(index_Z)) < eta && abs(Lep2Eta->at(index_Z)) < eta) {
-				cutEta ++;
-				if ((Lep1chargedHadIso->at(index_Z) + Lep1neutralHadIso->at(index_Z) + Lep1photonIso->at(index_Z)) / Lep1Pt->at(index_Z) < iso && (Lep2chargedHadIso->at(index_Z) + Lep2neutralHadIso->at(index_Z) + Lep2photonIso->at(index_Z)) / Lep2Pt->at(index_Z) < iso) {
-					cutIsolation ++;
+	TH1F* a = new TH1F(name.c_str(), title, nbins, xmin, xmax);
+	a->Sumw2();
+	return a;
+}
 
+// different cut possibilities
+static std::string PER_CUT_TITLE[] = {
+	"no cut",
+    "standard cut",
+    "isolation cut",
+    "no isolation cut",
+    "eta and isolation cut",
+    "eta and no isolation cut",
+};
+
+void ZlumiTreeReader::CreatePerCutHists()
+{
+    for (size_t i=0; i < NUM_CUTS; ++i) {
+        string index_str = "_cut_" + to_string(i);
+
+        histsPerCut[i].ptZ = CreateHist("ZPt" + index_str, "Z Pt (" + PER_CUT_TITLE[i] + ")", "P_{Z, T}", "GeV", 50, -1, 200);
+        histsPerCut[i].massZ_selected = CreateHist("selectedZMass" + index_str, "Z Mass (" + PER_CUT_TITLE[i] + ")", "M_{Z}", "GeV", 60, 60, 120);
+        histsPerCut[i].numZPerEvent = CreateHist("ZCount" + index_str, "#Z (" + PER_CUT_TITLE[i] + ")", "#Z", "", 10, -0.5, 9.5);
+
+        histsPerCut[i].ptL1 = CreateHist("AntimuonPt" + index_str, "Antimuon Pt (" + PER_CUT_TITLE[i] + ")", "P_{#bar{#mu}, T}", "GeV", 80, 0, 160);
+        histsPerCut[i].etaL1 = CreateHist("AntimuonEta" + index_str, "Antimuon Eta (" + PER_CUT_TITLE[i] + ")", "#eta_{#bar{#mu}}", "", 80, -2.5, 2.5);
+        histsPerCut[i].phiL1 = CreateHist("AntimuonPhi" + index_str, "Antimuon Phi (" + PER_CUT_TITLE[i] + ")", "#varphi_{#bar{#mu}}", "rad", 80, -3.3, 3.3);
+        histsPerCut[i].isoL1 = CreateHist("AntimuonIsolation" + index_str, "Antimuon Isolation (" + PER_CUT_TITLE[i] + ")", "Isolation / P_{#bar{#mu}, T}", "GeV^{-1}", 80, -0.5, 20);
+        histsPerCut[i].sipL1 = CreateHist("AntimuonSIP" + index_str, "Antimuon SIP (" + PER_CUT_TITLE[i] + ")", "SIP_{#bar{#mu}}", "", 60, -1.5, 60);
+
+        histsPerCut[i].ptL2 = CreateHist("MuonPt" + index_str, "Muon Pt (" + PER_CUT_TITLE[i] + ")", "P_{#mu, T}", "GeV", 80, 0, 160);
+        histsPerCut[i].etaL2 = CreateHist("MuonEta" + index_str, "Muon Eta (" + PER_CUT_TITLE[i] + ")", "#eta_{#mu}", "", 80, -2.5, 2.5);
+        histsPerCut[i].phiL2 = CreateHist("MuonPhi" + index_str, "Muon Phi (" + PER_CUT_TITLE[i] + ")", "#varphi_{#mu}", "rad", 80, -3.3, 3.3);
+        histsPerCut[i].isoL2 = CreateHist("MuonIsolation" + index_str, "Muon Isolation (" + PER_CUT_TITLE[i] + ")", "Isolation / P_{#mu, T}", "GeV^{-1}", 80, -0.5, 20);
+        histsPerCut[i].sipL2 = CreateHist("MuonSIP" + index_str, "Muon SIP (" + PER_CUT_TITLE[i] + ")", "SIP_{#mu}", "", 60, -1.5, 60);  
+
+    	histsPerCut[i].hAll = new HistoZ("all" + index_str, "Z Mass (" + PER_CUT_TITLE[i] + ")");
+    	float stepBin = (maxBin - minBin) / nBins;
+    	for (int bin = 0; bin < nBins; ++bin) {
+			stringstream histoName;
+			float binLowEdge = minBin + bin * stepBin;
+			float binUpEdge = binLowEdge + stepBin;
+			hByBinLimits.push_back(make_pair(binLowEdge, binUpEdge));
+
+			histoName << "bin " << binLowEdge << " to " << binUpEdge;
+			string histoNameStr = histoName.str();
+			histsPerCut[i].hByBin.push_back(new HistoZ(to_string(bin).c_str() + index_str, "Z Mass (" + PER_CUT_TITLE[i] + ") for " + histoNameStr));
+		}
+
+		histsPerCut[i].xSection = new TH1F(("XSection" + index_str).c_str(), ("XSection (" + PER_CUT_TITLE[i] + "); inst. luminosity [#mub^{-1}]; x-section [nb]").c_str(), nBins, minBin, maxBin);
+
+		histsPerCut[i].nVtx_delLumi = new TProfile(("NVtx_delLumi" + index_str).c_str(), ("#vertices vs. luminosity (" + PER_CUT_TITLE[i] + "); #vertices; luminosity per BX [cm^{-2}s^{-1}]").c_str(), 15, 0, 30);
+		histsPerCut[i].ls_delLumi = new TProfile(("ls_delLumi" + index_str).c_str(), ("lumisection vs. luminosity (" + PER_CUT_TITLE[i] + "); lumisection; luminosity per BX [cm^{-2}s^{-1}]").c_str(), 40, 0, 1600);
+    
+	}
+}
+
+void ZlumiTreeReader::FillPerCutHist(size_t index, int index_Z, RunLumiBXIndex lumiBXIndex)
+{
+	histsPerCut[index].ptZ->Fill(ZPt->at(index_Z));
+	histsPerCut[index].massZ_selected->Fill(ZMass->at(index_Z));
+	histsPerCut[index].numZPerEvent->Fill(ZMass->size());
+
+	histsPerCut[index].ptL1->Fill(Lep1Pt->at(index_Z));
+	histsPerCut[index].etaL1->Fill(Lep1Eta->at(index_Z));
+	histsPerCut[index].phiL1->Fill(Lep1Phi->at(index_Z));
+	histsPerCut[index].isoL1->Fill((Lep1chargedHadIso->at(index_Z) + Lep1neutralHadIso->at(index_Z) + Lep1photonIso->at(index_Z)) / Lep1Pt->at(index_Z));
+	histsPerCut[index].sipL1->Fill(Lep1SIP->at(index_Z));
+
+	histsPerCut[index].ptL2->Fill(Lep2Pt->at(index_Z));
+	histsPerCut[index].etaL2->Fill(Lep2Eta->at(index_Z));
+	histsPerCut[index].phiL2->Fill(Lep2Phi->at(index_Z));
+	histsPerCut[index].isoL2->Fill((Lep2chargedHadIso->at(index_Z) + Lep2neutralHadIso->at(index_Z) + Lep2photonIso->at(index_Z)) / Lep2Pt->at(index_Z));
+	histsPerCut[index].sipL2->Fill(Lep2SIP->at(index_Z));
+
+	float weight = 1.;
+	float bestZMass = ZMass->at(index_Z);
+	histsPerCut[index].hAll->Fill(bestZMass, weight);
+
+	float avgLumi = lumiReader[RunNumber].getAvgInstLumi(lumiBXIndex);
+
+	for (int bin = 0; bin < nBins; bin++) {
+		if (avgLumi >= hByBinLimits[bin].first && hByBinLimits[bin].second > avgLumi) {
+			histsPerCut[index].hByBin[bin]->Fill(bestZMass, weight);
+			break;
+		}
+
+	}
+	float delLumiPerBX = lumiReader[RunNumber].getDelLumi(lumiBXIndex);
+
+	histsPerCut[index].nVtx_delLumi->Fill(Nvtx, calcLumi(delLumiPerBX));
+	histsPerCut[index].ls_delLumi->Fill(LumiNumber, calcLumi(delLumiPerBX));
+
+}
+
+
+void ZlumiTreeReader::DrawPerCutHists()
+{
+	for (size_t i = 0; i < NUM_CUTS; i++) {
+		histsPerCut[i].ptZ->Write();
+		histsPerCut[i].massZ_selected->Write();
+		histsPerCut[i].numZPerEvent->Write();
+
+		histsPerCut[i].ptL1->Write();
+		histsPerCut[i].etaL1->Write();
+		histsPerCut[i].phiL1->Write();
+		histsPerCut[i].isoL1->Write();
+		histsPerCut[i].sipL1->Write();
+
+		histsPerCut[i].ptL2->Write();
+		histsPerCut[i].etaL2->Write();
+		histsPerCut[i].phiL2->Write();
+		histsPerCut[i].isoL2->Write();
+		histsPerCut[i].sipL2->Write();
+
+		histsPerCut[i].hAll->hMass->Write();
+		for (int bin = 0; bin < nBins; bin++) {
+			histsPerCut[i].hByBin[bin]->hMass->Write();
+		}
+		histsPerCut[i].xSection->Write();
+
+		histsPerCut[i].nVtx_delLumi->Write();
+		histsPerCut[i].ls_delLumi->Write();
+	}
+} 
+
+// TODO: try to get this stuff work, add all histograms
+void ZlumiTreeReader::DeletePerCutHists()
+{
+	for (int i = 0; i < NUM_CUTS; i++) {
+		delete histsPerCut[i].ptZ;
+		delete histsPerCut[i].massZ_selected;
+
+		delete histsPerCut[i].ptL1;
+		delete histsPerCut[i].etaL1;
+		delete histsPerCut[i].phiL1;
+		delete histsPerCut[i].isoL1;
+		delete histsPerCut[i].sipL1;
+
+		delete histsPerCut[i].ptL2;
+		delete histsPerCut[i].etaL2;
+		delete histsPerCut[i].phiL2;
+		delete histsPerCut[i].isoL2;
+		delete histsPerCut[i].sipL2;
+	}
+}
+
+// write and delete one hist
+void writeAndDeleteHist(TH1* hist) {
+	hist->Write();
+	delete hist;
+}
+
+// looks whether one event survive the cut or not
+bool ZlumiTreeReader::analyseCut(/*SIP*/ float sip, /*pt*/ float pt, /*eta*/ float eta, /*Iso*/ float iso, /*ZMass*/ float massZ_min, float massZ_max, int index_Z) {
+	// TODO: if (!cut)
+	//       	return false;
+	//		 if (!cut2)
+	//          return false;
+    //       return true;
+
+	if (Lep1SIP->at(index_Z) < sip && Lep2SIP->at(index_Z) < sip) { 
+		if (Lep1Pt->at(index_Z) > pt && Lep2Pt->at(index_Z) > pt) {
+			if (abs(Lep1Eta->at(index_Z)) < eta && abs(Lep2Eta->at(index_Z)) < eta) {
+				if ((Lep1chargedHadIso->at(index_Z) + Lep1neutralHadIso->at(index_Z) + Lep1photonIso->at(index_Z)) / Lep1Pt->at(index_Z) < iso && (Lep2chargedHadIso->at(index_Z) + Lep2neutralHadIso->at(index_Z) + Lep2photonIso->at(index_Z)) / Lep2Pt->at(index_Z) < iso) {
 					if (ZMass->at(index_Z) > massZ_min && ZMass->at(index_Z) < massZ_max) {
-						cutZMass ++;
-						ls_Zcount[LumiNumber] ++;
 						return true;
 					}
 				}
@@ -224,6 +320,40 @@ bool ZlumiTreeReader::analyseCut(/*SIP*/ float sip, /*pt*/ float pt, /*eta*/ flo
 	return false;
 }
 
+void ZlumiTreeReader::ParseOption(const std::string& opt)
+{
+	if (opt.find(':') != opt.npos) {
+		size_t pos = opt.find(':');
+
+		useSingleRun = false;
+		processName = opt.substr(0, pos);
+		std::string runList = opt.substr(pos+1);
+
+		size_t cpos = runList.find(',');
+		while (cpos != runList.npos) {
+			std::string thisPart = runList.substr(0, cpos);
+			int thisRun = to_int(thisPart);
+			runsToUse.insert(thisRun);
+
+			runList = runList.substr(cpos+1);
+			cpos = runList.find(',');
+		}
+		int lastRun = to_int(runList);
+		runsToUse.insert(lastRun);
+
+		std::cout << "Process: " << processName << " for runs:" << std::endl;
+		for (std::set<int>::iterator it = runsToUse.begin(); it != runsToUse.end(); it++) {
+			std::cout << " " << *it;
+		}
+		std::cout << endl;
+	}
+	else {
+		useSingleRun = true;
+		singleRun = to_int(opt);
+		processName = opt;
+		runsToUse.insert(singleRun);
+	}
+}
 
 void ZlumiTreeReader::Begin(TTree* /*tree*/)
 {
@@ -232,69 +362,40 @@ void ZlumiTreeReader::Begin(TTree* /*tree*/)
 	// The tree argument is deprecated (on PROOF 0 is passed).
 
 	string option = GetOption();
-	run_number = to_int(option);
-	cout << "start the Begin-function for Run " << run_number << endl;
+	ParseOption(option);
 
-	if (run_number == -1) {
-		myFile = new TFile("data/test.root", "RECREATE");
-	}
-	else {
-		string file_name = "data/ZLumiStudy_RunNumber_" + to_string(run_number) + ".root";
-		cout << file_name << endl;
-		myFile = new TFile(file_name.c_str(), "RECREATE");
-	}
+	cout << "start the Begin-function for process " << processName << endl;
 
-	massZ = CreateHist("ZMass", "M_{Z}", "GeV", 60, 60, 120);
-	wholeMassZ = CreateHist("wholeMassRange", "M_{#mu#bar{#mu}}", "GeV", 100, 0, 200);
-	ptZ = CreateHist("ZPt", "P_{Z, T}", "GeV", 50, -1, 200);
-	massZ_selected = CreateHist("selectedZMass", "M_{Z}", "GeV", 60, 60, 120);
-	wholeMassZ_selected = CreateHist("selectedZ_wholeMassRange", "M_{#mu#bar{#mu}}", "GeV", 100, 0, 200);
+	string file_name = "data/ZLumiStudy_" + processName + ".root";
+	cout << file_name << endl;
+	myFile = new TFile(file_name.c_str(), "RECREATE");
 
-	ptL1 = CreateHist("AntimuonPt", "P_{#bar{#mu}, T}", "GeV", 80, 0, 160);
-	etaL1 = CreateHist("AntimuonEta", "#eta_{#bar{#mu}}", "", 80, -2.5, 2.5);
-	phiL1 = CreateHist("AntimuonPhi", "#varphi_{#bar{#mu}}", "rad", 80, -3.3, 3.3);
-	isoL1 = CreateHist("AntimuonIsolation", "Isolation / P_{#bar{#mu}, T}", "GeV^{-1}", 80, -0.5, 20);
-	sipL1 = CreateHist("AntimuonSIP", "SIP_{#bar{#mu}}", "", 60, -1.5, 60);
-	
-	ptL2 = CreateHist("MuonPt", "P_{#mu, T}", "GeV", 80, 0, 160);
-	etaL2 = CreateHist("MuonEta", "#eta_{#mu}", "", 80, -2.5, 2.5);
-	phiL2 = CreateHist("MuonPhi", "#varphi_{#mu}", "rad", 80, -3.3, 3.3);
-	isoL2 = CreateHist("MuonIsolation", "Isolation / P_{#mu, T}", "GeV^{-1}", 80, -0.5, 20);
-	sipL2 = CreateHist("MuonSIP", "SIP_{#mu}", "", 60, -1.5, 60);
+	CreatePerCutHists();
 
-	numZPerEvent = CreateHist("ZCount", "#Z", "", 10, -0.5, 9.5);
+	wholeMassZ_selected = CreateHist("selectedZ_wholeMassRange", "", "M_{#mu#bar{#mu}}", "GeV", 100, 0, 200);
 
-	ptLeptons = new TH2F("PtLepton", "; P_{#mu, T} [GeV]; P_{#bar{#mu}, T} [GeV]", 80, 0, 160, 80, 0, 160);
+	cutflow = CreateHist("cutflow", "", "", "", 9, -0.5, 8.5);
 
-	cutflow = CreateHist("cutflow", "cut", "", 10, -0.5, 9.5);
+	bool first = true;
+	for (std::set<int>::iterator it = runsToUse.begin(); it != runsToUse.end(); it++) {
+		int run = *it;
 
+		lumiReader.insert(make_pair(run, LumiFileReaderByBX("/data1/ZLumiStudy/CalcLumi/Version0/")));
+		lumiReader[run].readFileForRun(run);
 
-	// Read the lumi CSVT/Root files and store the number by BX
-	lumiReader.readFileForRun(run_number);
+		if (first) {
+			hLumiIntegralsByBin = lumiReader[run].getRecLumiBins(nBins, minBin, maxBin);
+		}
+		else {
+			// TODO: run uebergeben und hist name anpassen -> kein memory leak
+			TH1F *tmp = lumiReader[run].getRecLumiBins(nBins, minBin, maxBin);
+			hLumiIntegralsByBin->Add(tmp);
+		}
 
-	hLumiIntegralsByBin = lumiReader.getRecLumiBins(nBins, minBin, maxBin);
-
-	hAll = new HistoZ("all");
-
-	float stepBin = (maxBin - minBin)/nBins;
-	for(int bin = 0; bin <= nBins; ++bin) {
-	  stringstream histoName;
-	  float binLowEdge = minBin + bin*stepBin;
-	  float binUpEdge = binLowEdge + stepBin;
-	  hByBinLimits.push_back(make_pair(binLowEdge, binUpEdge));
-
-	  histoName << "bin_" << binLowEdge << "_" << binUpEdge;
-	  string histoNameStr = histoName.str();
-	  hByBin.push_back(new HistoZ(histoNameStr));
-	}
-
-	xSection = new TH1F("XSection", "; inst. luminosity [#mub^{-1}]; x-section [nb]", nBins, minBin, maxBin);
-
-	pileUp_delLumi = new TProfile("PileUp_delLumi", "; #vertices; luminosity per BX [cm^{-2}s^{-1}]", 15, 0, 30);
-	ls_delLumi = new TProfile("ls_delLumi", "; lumisection; luminosity per BX [cm^{-2}s^{-1}]", 40, 0, 1600);
+		first = false;
+	}	
 
 	cout << " all histograms are created" << endl;
-
 }
 
 void ZlumiTreeReader::SlaveBegin(TTree * /*tree*/)
@@ -329,15 +430,11 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 
 	ZlumiTreeReader::GetEntry(entry);
 
-	float weight = 1.;
 	RunLumiBXIndex lumiBXIndex = RunLumiBXIndex(RunNumber, LumiNumber, BXNumber);
 
-	if (run_number != -1 and run_number != RunNumber) {
+	if (runsToUse.count(RunNumber) == 0)
 		return kTRUE;
-	}
 
-
-	// get the instLumi for the BX -> this defines the bin
 	// find the Z-particle with least mass difference
 	double m_diff = 1000;
 	int index_Z = -1;
@@ -348,82 +445,56 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 			index_Z = i;
 		}
 	}
-
 	if (index_Z == -1) {
 		return kTRUE;
 	}
 
 	wholeMassZ_selected->Fill(ZMass->at(index_Z));
-	
-	float bestZMass = ZMass->at(index_Z);
-	bool survive_cut = ZlumiTreeReader::analyseCut(/*SIP*/ 0.4, /*pt*/ 20, /*eta*/ 5, /*Iso*/ 0.4, /*ZMass*/ 66, 116, index_Z);
 
-	if(survive_cut) {
-		hAll->Fill(bestZMass, weight);
-		massZ_selected->Fill(ZMass->at(index_Z));
+	// no cut
+	FillPerCutHist(NO_CUT, index_Z, lumiBXIndex);
 
-		float avgLumi = lumiReader.getAvgInstLumi(lumiBXIndex);
-
-		for (size_t bin = 0; bin < hByBinLimits.size(); bin++) {
-			if (avgLumi >= hByBinLimits[bin].first && hByBinLimits[bin].second > avgLumi) {
-				hByBin[bin]->Fill(bestZMass, weight);
-				break;
+	// analyse cutflow
+	beforeCuts++;
+	bool survive_sip = analyseCut(0.4, 0, 10, 400, 0, 200, index_Z);
+	if (survive_sip) {
+		cutSIP++;
+		bool survive_pt = analyseCut(0.4, 20, 10, 400, 0, 200, index_Z);
+		if (survive_pt) {
+			cutPt++;
+			bool survive_ZMass = analyseCut(0.4, 20, 10, 400, 55, 120, index_Z);
+			if (survive_ZMass) {
+				cutZMass++;
 			}
-
 		}
-
 	}
-
-	numZPerEvent->Fill(ZMass->size());
-
-	countZ ++;
-
-	// goes through the Z-vector and fill the histograms
-	for(size_t i=0; i < ZMass->size(); i++) {
-		//cout << "Z Mass: " << ZMass->at(i) << endl;
-		massZ->Fill(ZMass->at(i));
-		wholeMassZ->Fill(ZMass->at(i));
-		ptZ->Fill(ZPt->at(i));
-	}
-
-	// goes through the L1-vector and fill the histograms
-	for(size_t i=0; i < Lep1Pt->size(); i++) {
-		ptL1->Fill(Lep1Pt->at(i));
-		etaL1->Fill(Lep1Eta->at(i));
-		phiL1->Fill(Lep1Phi->at(i));
-		isoL1->Fill((Lep1chargedHadIso->at(i) + Lep1neutralHadIso->at(i) + Lep1photonIso->at(i)) / Lep1Pt->at(i));
-		sipL1->Fill(Lep1SIP->at(i));
-	}
-
-	// goes through the L2-vector and fill the histograms
-	for(size_t i=0; i < Lep2Pt->size(); i++) {
-		ptL2->Fill(Lep2Pt->at(i));
-		etaL2->Fill(Lep2Eta->at(i));
-		phiL2->Fill(Lep2Phi->at(i));
-		ptLeptons->Fill(Lep1Pt->at(i), Lep2Pt->at(i));
-		isoL2->Fill((Lep2chargedHadIso->at(i) + Lep2neutralHadIso->at(i) + Lep2photonIso->at(i)) / Lep2Pt->at(i));
-		sipL2->Fill(Lep2SIP->at(i));
-	}
-
-
+	
 	// check different cut possibilities
-	survive_withoutIso = ZlumiTreeReader::analyseCut(0.4, 20, 10, 400, 66, 116, index_Z);
-	survive_withIso = ZlumiTreeReader::analyseCut(0.4, 20, 10, 0.4, 66, 116, index_Z);
-	survive_eta_withoutIso = ZlumiTreeReader::analyseCut(0.4, 20, 1.2, 400, 66, 116, index_Z);
-	survive_eta_withIso = ZlumiTreeReader::analyseCut(0.4, 20, 1.2, 0.4, 66, 116, index_Z);
+	bool survive_cut = analyseCut(/*SIP*/ 0.4, /*pt*/ 20, /*eta*/ 10, /*Iso*/ 0.4, /*ZMass*/ 55, 120, index_Z);
+	if(survive_cut) {
+		FillPerCutHist(FIRST_CUT, index_Z, lumiBXIndex);
+	}
+	bool survive_withoutIso = analyseCut(0.4, 20, 10, 400, 55, 120, index_Z);
+	bool survive_withIso = analyseCut(0.4, 20, 10, 0.4, 55, 120, index_Z);
+	bool survive_eta_withoutIso = analyseCut(0.4, 20, 1.2, 400, 55, 120, index_Z);
+	bool survive_eta_withIso = analyseCut(0.4, 20, 1.2, 0.4, 55, 120, index_Z);
 
-	if (survive_withoutIso) withoutIso++;
-	if (survive_withIso) withIso++;
-	if (survive_eta_withoutIso) eta_withoutIso++;
-	if (survive_eta_withIso) eta_withIso++;
-
-
-	delLumiPerBX = lumiReader.getDelLumi(lumiBXIndex);
-
-	pileUp_delLumi->Fill(Nvtx, calcLumi(delLumiPerBX));
-	ls_delLumi->Fill(LumiNumber, calcLumi(delLumiPerBX));
-
-	//cout << delLumiPerBX << " : " << lumiReader.getRecLumi(lumiBXIndex) << endl << "end process "<< endl;
+	if (survive_withoutIso) {
+		withoutIso++;
+		FillPerCutHist(NO_ISOLATION_CUT, index_Z, lumiBXIndex);
+	}
+	if (survive_withIso) {
+		withIso++;
+		FillPerCutHist(ISOLATION_CUT, index_Z, lumiBXIndex);
+	}
+	if (survive_eta_withoutIso) {
+		eta_withoutIso++;
+		FillPerCutHist(ETA_AND_NO_ISOLATION_CUT, index_Z, lumiBXIndex);
+	}
+	if (survive_eta_withIso) {
+		eta_withIso++;
+		FillPerCutHist(ETA_AND_ISOLATION_CUT, index_Z, lumiBXIndex);
+	}
 
 	return kTRUE;
 }
@@ -447,27 +518,7 @@ void ZlumiTreeReader::Terminate()
 
 	myFile->cd();
 
-	writeAndDeleteHist(massZ);
-	writeAndDeleteHist(wholeMassZ);
-	writeAndDeleteHist(ptZ);
-	writeAndDeleteHist(massZ_selected);
 	writeAndDeleteHist(wholeMassZ_selected);
-
-	writeAndDeleteHist(ptL1);
-	writeAndDeleteHist(etaL1);
-	writeAndDeleteHist(phiL1);
-	writeAndDeleteHist(isoL1);
-	writeAndDeleteHist(sipL1);
-
-	writeAndDeleteHist(ptL2);
-	writeAndDeleteHist(etaL2);
-	writeAndDeleteHist(phiL2);
-	writeAndDeleteHist(isoL2);
-	writeAndDeleteHist(sipL2);
-
-	writeAndDeleteHist(numZPerEvent);
-
-	writeAndDeleteHist(ptLeptons);
 
 	cutflow->SetBinContent(1, beforeCuts);
 	cutflow->GetXaxis()->SetBinLabel(1, "before cuts");
@@ -475,54 +526,53 @@ void ZlumiTreeReader::Terminate()
 	cutflow->GetXaxis()->SetBinLabel(2, "after SIP cut");
 	cutflow->SetBinContent(3, cutPt);
 	cutflow->GetXaxis()->SetBinLabel(3, "after Pt cut");
-	cutflow->SetBinContent(4, cutIsolation);
-	cutflow->GetXaxis()->SetBinLabel(4, "after isolation cut");
-	cutflow->SetBinContent(5, cutZMass);
-	cutflow->GetXaxis()->SetBinLabel(5, "after Z mass cut");
+	cutflow->SetBinContent(4, cutZMass);
+	cutflow->GetXaxis()->SetBinLabel(4, "after Z mass cut");
 
-	cutflow->GetXaxis()->SetBinLabel(6, "-> SIP cut, written cut, Z mass cut");
-	cutflow->SetBinContent(7, withoutIso);
-	cutflow->GetXaxis()->SetBinLabel(7, "without isolation cut");
-	cutflow->SetBinContent(8, withIso);
-	cutflow->GetXaxis()->SetBinLabel(8, "with isolation cut");
-	cutflow->SetBinContent(9, eta_withoutIso);
-	cutflow->GetXaxis()->SetBinLabel(9, "with |#eta| < 2.1 and without isolation cut");
-	cutflow->SetBinContent(10, eta_withIso);
-	cutflow->GetXaxis()->SetBinLabel(10, "with |#eta| < 2.1 and with isolation cut");
+	//cutflow->GetXaxis()->SetBinLabel(5, "-> SIP cut, written cut, Z mass cut");
+	cutflow->SetBinContent(6, withoutIso);
+	cutflow->GetXaxis()->SetBinLabel(6, "without isolation cut");
+	cutflow->SetBinContent(7, withIso);
+	cutflow->GetXaxis()->SetBinLabel(7, "with isolation cut");
+	cutflow->SetBinContent(8, eta_withoutIso);
+	cutflow->GetXaxis()->SetBinLabel(8, "with |#eta| < 1.2 and without isolation cut");
+	cutflow->SetBinContent(9, eta_withIso);
+	cutflow->GetXaxis()->SetBinLabel(9, "with |#eta| < 1.2 and with isolation cut");
 
 
 	writeAndDeleteHist(cutflow);
 
-	writeAndDeleteHist(pileUp_delLumi);
-	writeAndDeleteHist(ls_delLumi);
 
-	// actually compute the Xsection
-	for (size_t bin = 0; bin < hByBin.size(); bin++) {
-	  double nZInBin = hByBin[bin]->hMass->Integral();
-	  double lumiInBin = hLumiIntegralsByBin->GetBinContent(bin);
-	  double xSectionInBin = 0.;
-	  double xSecErrorInBin = 0;
-	  if(lumiInBin != 0) {
-	    xSectionInBin = nZInBin/lumiInBin * 1000;
-	    xSecErrorInBin = sqrt(nZInBin) / lumiInBin * 1000;
-	  }
-	  xSection->SetBinContent(bin, xSectionInBin);
-	  xSection->SetBinError(bin, xSecErrorInBin);
+	vector<ZPeakFit> fit;
+	vector<RooPlot*> frame;
+	for (size_t i = 0; i < NUM_CUTS; i++) {
+		// actually compute the Xsection
+		for (int bin = 0; bin < nBins; bin++) {
+			double nZInBin = histsPerCut[i].hByBin[bin]->hMass->Integral();
+			double lumiInBin = hLumiIntegralsByBin->GetBinContent(bin);
+			double xSectionInBin = 0;
+			double xSecErrorInBin = 0;
+
+			if (lumiInBin != 0) {
+				xSectionInBin = nZInBin * 1000 / lumiInBin;
+				xSecErrorInBin = sqrt(nZInBin) * 1000 / lumiInBin;
+			}
+			histsPerCut[i].xSection->SetBinContent(bin, xSectionInBin);
+			histsPerCut[i].xSection->SetBinError(bin, xSecErrorInBin);
+		}
+		// fit the ZPeak
+		ZPeakFit fit_hAll(histsPerCut[i].hAll->hMass);
+		fit.push_back(fit_hAll);
+		RooPlot* frame_hAll = fit_hAll.fitVExpo();
+		frame.push_back(frame_hAll);
+		fit_hAll.save(frame_hAll);
 	}
-	writeAndDeleteHist(xSection);
 
-	ZPeakFit fit_hAll(hAll->hMass);
-	RooPlot* frame_hAll = fit_hAll.fitVExpo();
- 	fit_hAll.save(frame_hAll);
-
-	writeAndDeleteHist(hAll->hMass);
 	writeAndDeleteHist(hLumiIntegralsByBin);
-	for (size_t bin = 0; bin < hByBin.size(); bin++) {
-		writeAndDeleteHist(hByBin[bin]->hMass);
-	}
-	hByBin.clear();
 
+	DrawPerCutHists();
+	DeletePerCutHists();
+
+	// do not close the file before deleting all objects, otherwise it will crash!
 	myFile->Close();
-
-
 }

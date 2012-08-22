@@ -10,7 +10,7 @@ ZPeakFit::ZPeakFit(TH1* h)
 	
 }
 
-
+// TODO: Namen uebergeben
 RooPlot* ZPeakFit::fitVExpo() {
 	w.import(data);
 
@@ -42,7 +42,7 @@ RooPlot* ZPeakFit::fit2VExpoMin70() {
 	return fit();
 }
 
-RooPlot* ZPeakFit::fit(){
+RooPlot* ZPeakFit::fit() {
 	w.factory("expr::nSignal('fSigAll*numTot', fSigAll[.9,0,1],numTot[1,0,1e10])");
 	w.factory("expr::nBkg('(1-fSigAll)*numTot', fSigAll,numTot)");
 	w.factory("SUM::pdfSigPlusBackg(nSignal*signal, nBkg*background)");
@@ -54,8 +54,9 @@ RooPlot* ZPeakFit::fit(){
 	result = w.pdf("pdfSigPlusBackg")->fitTo(data, Save());
 	//w.import(result);
 
-	RooPlot* massframe = mass.frame(Bins(100),Title("Mass")) ;
-	data.plotOn(massframe);
+	RooPlot* massframe = mass.frame(Bins(100),Title("Mass"));
+	massframe->SetName("test");
+	data.plotOn(massframe, DataError(RooAbsData::SumW2));
 	w.pdf("pdfSigPlusBackg")->plotOn(massframe);
 
 	return massframe;
@@ -72,6 +73,5 @@ void ZPeakFit::getResult() {
 
 void ZPeakFit::save(RooPlot* frame) {
 	frame->Write();
-	
-	//result->Write();
+	result->Write();
 }

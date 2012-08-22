@@ -56,16 +56,16 @@ void runTreeReader() {
   } */
 
 // run over special runs
-  for (size_t i = 0; i < 23 ; i++) {
+/*  for (size_t i = 0; i < 23 ; i++) {
  //   TSelector* selector = TSelector::GetSelector("ZlumiTreeReader.C+");
     cout << runs[i] << endl;
     chain->Process(selector, to_string(runs[i]).c_str());
-  } 
+  } */
   
 
 
 // run over one run
- // chain->Process(selector, "194210");
+  chain->Process(selector, "test:194210,194050");
 
 
 }
