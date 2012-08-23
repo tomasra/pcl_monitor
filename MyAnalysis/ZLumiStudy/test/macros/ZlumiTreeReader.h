@@ -25,9 +25,10 @@
 struct PerCutHistograms
 {
    HistoZ* hAll;
-   vector<HistoZ*> hByBin; 
-  
-   TH1F* xSection;
+   vector<HistoZ*> hByBin;
+
+   TH1F* xSection_fit;
+   TH1F* xSection_count;
 
    TH1F* ptZ;
    TH1F* massZ_selected;

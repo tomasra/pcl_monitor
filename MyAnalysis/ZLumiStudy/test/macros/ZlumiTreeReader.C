@@ -38,9 +38,9 @@
 
 using namespace std;
 
-int nBins = 12;
-float minBin = 0.5;
-float maxBin = 5.5;
+int nBins = 16;
+float minBin = 1.;
+float maxBin = 5.;
 
 const double M_Z = 91.2;
 const double Cross_Section = 1.1; // nb
@@ -53,13 +53,9 @@ int cutSIP = 0;
 int cutIsolation = 0;
 int cutZMass = 0;
 
-//bool survive_withoutIso;
 int withoutIso = 0;
-//bool survive_withIso;
 int withIso = 0;
-//bool survive_eta_withoutIso ;
 int eta_withoutIso = 0;
-//bool survive_eta_withIso;
 int eta_withIso = 0;
 
 // functions to convert into other types
@@ -150,6 +146,7 @@ TH1F* CreateHist(string name, string htitle, string xtitle, string unit, size_t 
 	return a;
 }
 
+
 // different cut possibilities
 static std::string PER_CUT_TITLE[] = {
 	"no cut",
@@ -191,10 +188,12 @@ void ZlumiTreeReader::CreatePerCutHists()
 
 			histoName << "bin " << binLowEdge << " to " << binUpEdge;
 			string histoNameStr = histoName.str();
+
 			histsPerCut[i].hByBin.push_back(new HistoZ(to_string(bin).c_str() + index_str, "Z Mass (" + PER_CUT_TITLE[i] + ") for " + histoNameStr));
 		}
 
-		histsPerCut[i].xSection = new TH1F(("XSection" + index_str).c_str(), ("XSection (" + PER_CUT_TITLE[i] + "); inst. luminosity [#mub^{-1}]; x-section [nb]").c_str(), nBins, minBin, maxBin);
+		histsPerCut[i].xSection_fit = new TH1F(("XSection_fit" + index_str).c_str(), ("XSection calculated by fitting (" + PER_CUT_TITLE[i] + "); inst. luminosity [#mub^{-1}]; x-section [nb]").c_str(), nBins, minBin, maxBin);
+		histsPerCut[i].xSection_count = new TH1F(("XSection_count" + index_str).c_str(), ("XSection calculated by counting (" + PER_CUT_TITLE[i] + "); inst. luminosity [#mub^{-1}]; x-section [nb]").c_str(), nBins, minBin, maxBin);
 
 		histsPerCut[i].nVtx_delLumi = new TProfile(("NVtx_delLumi" + index_str).c_str(), ("#vertices vs. luminosity (" + PER_CUT_TITLE[i] + "); #vertices; luminosity per BX [cm^{-2}s^{-1}]").c_str(), 15, 0, 30);
 		histsPerCut[i].ls_delLumi = new TProfile(("ls_delLumi" + index_str).c_str(), ("lumisection vs. luminosity (" + PER_CUT_TITLE[i] + "); lumisection; luminosity per BX [cm^{-2}s^{-1}]").c_str(), 40, 0, 1600);
@@ -264,19 +263,20 @@ void ZlumiTreeReader::DrawPerCutHists()
 		for (int bin = 0; bin < nBins; bin++) {
 			histsPerCut[i].hByBin[bin]->hMass->Write();
 		}
-		histsPerCut[i].xSection->Write();
+		histsPerCut[i].xSection_fit->Write();
+		histsPerCut[i].xSection_count->Write();
 
 		histsPerCut[i].nVtx_delLumi->Write();
 		histsPerCut[i].ls_delLumi->Write();
 	}
 } 
 
-// TODO: try to get this stuff work, add all histograms
 void ZlumiTreeReader::DeletePerCutHists()
 {
 	for (int i = 0; i < NUM_CUTS; i++) {
 		delete histsPerCut[i].ptZ;
 		delete histsPerCut[i].massZ_selected;
+		delete histsPerCut[i].numZPerEvent;
 
 		delete histsPerCut[i].ptL1;
 		delete histsPerCut[i].etaL1;
@@ -289,6 +289,16 @@ void ZlumiTreeReader::DeletePerCutHists()
 		delete histsPerCut[i].phiL2;
 		delete histsPerCut[i].isoL2;
 		delete histsPerCut[i].sipL2;
+
+		delete histsPerCut[i].nVtx_delLumi;
+		delete histsPerCut[i].ls_delLumi;
+
+		delete histsPerCut[i].hAll->hMass;
+		for (int bin = 0; bin < nBins; bin++) {
+			delete histsPerCut[i].hByBin[bin]->hMass;
+		}
+		delete histsPerCut[i].xSection_fit;
+		delete histsPerCut[i].xSection_count;
 	}
 }
 
@@ -300,24 +310,18 @@ void writeAndDeleteHist(TH1* hist) {
 
 // looks whether one event survive the cut or not
 bool ZlumiTreeReader::analyseCut(/*SIP*/ float sip, /*pt*/ float pt, /*eta*/ float eta, /*Iso*/ float iso, /*ZMass*/ float massZ_min, float massZ_max, int index_Z) {
-	// TODO: if (!cut)
-	//       	return false;
-	//		 if (!cut2)
-	//          return false;
-    //       return true;
-
-	if (Lep1SIP->at(index_Z) < sip && Lep2SIP->at(index_Z) < sip) { 
-		if (Lep1Pt->at(index_Z) > pt && Lep2Pt->at(index_Z) > pt) {
-			if (abs(Lep1Eta->at(index_Z)) < eta && abs(Lep2Eta->at(index_Z)) < eta) {
-				if ((Lep1chargedHadIso->at(index_Z) + Lep1neutralHadIso->at(index_Z) + Lep1photonIso->at(index_Z)) / Lep1Pt->at(index_Z) < iso && (Lep2chargedHadIso->at(index_Z) + Lep2neutralHadIso->at(index_Z) + Lep2photonIso->at(index_Z)) / Lep2Pt->at(index_Z) < iso) {
-					if (ZMass->at(index_Z) > massZ_min && ZMass->at(index_Z) < massZ_max) {
-						return true;
-					}
-				}
-			}
-		}
-	}
-	return false;
+	if (!(Lep1SIP->at(index_Z) < sip && Lep2SIP->at(index_Z) < sip))
+		return false;
+	if (!(Lep1Pt->at(index_Z) > pt && Lep2Pt->at(index_Z) > pt))
+		return false;
+	if (!(abs(Lep1Eta->at(index_Z)) < eta && abs(Lep2Eta->at(index_Z)) < eta))
+		return false;
+	if (!((Lep1chargedHadIso->at(index_Z) + Lep1neutralHadIso->at(index_Z) + Lep1photonIso->at(index_Z)) / Lep1Pt->at(index_Z) < iso && (Lep2chargedHadIso->at(index_Z) + Lep2neutralHadIso->at(index_Z) + Lep2photonIso->at(index_Z)) / Lep2Pt->at(index_Z) < iso))
+		return false;
+	if (!(ZMass->at(index_Z) > massZ_min && ZMass->at(index_Z) < massZ_max))
+		return false;
+	// all values are correct
+	return true;
 }
 
 void ZlumiTreeReader::ParseOption(const std::string& opt)
@@ -387,10 +391,10 @@ void ZlumiTreeReader::Begin(TTree* /*tree*/)
 			hLumiIntegralsByBin = lumiReader[run].getRecLumiBins(nBins, minBin, maxBin);
 		}
 		else {
-			// TODO: run uebergeben und hist name anpassen -> kein memory leak
 			TH1F *tmp = lumiReader[run].getRecLumiBins(nBins, minBin, maxBin);
 			hLumiIntegralsByBin->Add(tmp);
 		}
+		hLumiIntegralsByBin->SetName("hRec");
 
 		first = false;
 	}	
@@ -545,28 +549,53 @@ void ZlumiTreeReader::Terminate()
 
 	vector<ZPeakFit> fit;
 	vector<RooPlot*> frame;
+
+	
 	for (size_t i = 0; i < NUM_CUTS; i++) {
 		// actually compute the Xsection
 		for (int bin = 0; bin < nBins; bin++) {
-			double nZInBin = histsPerCut[i].hByBin[bin]->hMass->Integral();
+			ZPeakFit fit_ZMass(histsPerCut[i].hByBin[bin]->hMass);
+			fit.push_back(fit_ZMass);
+			RooPlot* frame_ZMass = fit_ZMass.fitVExpo("Mass_bin" + to_string(bin) + "_" + to_string(i));
+			frame.push_back(frame_ZMass);
+			fit_ZMass.save(frame_ZMass);
+
+			RooFitResult* result = fit_ZMass.getResult();
+			RooRealVar* par1 = (RooRealVar*) result->floatParsFinal().find("numTot");
+			double value = par1->getVal();
+			RooRealVar* par2 = (RooRealVar*) result->floatParsFinal().find("fSigAll");
+			double value2 = par2->getVal();
+
+			double nZInBin_count = histsPerCut[i].hByBin[bin]->hMass->Integral(histsPerCut[i].hByBin[bin]->hMass->GetXaxis()->FindBin(70.), histsPerCut[i].hByBin[bin]->hMass->GetXaxis()->FindBin(110.));
+			cout << nZInBin_count << endl;
+			double nZInBin_fit = value * value2;
 			double lumiInBin = hLumiIntegralsByBin->GetBinContent(bin);
-			double xSectionInBin = 0;
-			double xSecErrorInBin = 0;
+
+			double xSectionInBin_count = 0;
+			double xSecErrorInBin_count = 0;
+			double xSectionInBin_fit = 0;
+			double xSecErrorInBin_fit = 0;
 
 			if (lumiInBin != 0) {
-				xSectionInBin = nZInBin * 1000 / lumiInBin;
-				xSecErrorInBin = sqrt(nZInBin) * 1000 / lumiInBin;
+				xSectionInBin_fit = nZInBin_fit * 1000 / lumiInBin;
+				xSecErrorInBin_fit = sqrt(nZInBin_fit) * 1000 / lumiInBin;
+				xSectionInBin_count = nZInBin_count * 1000 / lumiInBin;
+				xSecErrorInBin_count = sqrt(nZInBin_count) * 1000 / lumiInBin;
 			}
-			histsPerCut[i].xSection->SetBinContent(bin, xSectionInBin);
-			histsPerCut[i].xSection->SetBinError(bin, xSecErrorInBin);
+			histsPerCut[i].xSection_fit->SetBinContent(bin, xSectionInBin_fit);
+			histsPerCut[i].xSection_fit->SetBinError(bin, xSecErrorInBin_fit);
+			histsPerCut[i].xSection_count->SetBinContent(bin, xSectionInBin_count);
+			histsPerCut[i].xSection_count->SetBinError(bin, xSecErrorInBin_count);
 		}
 		// fit the ZPeak
 		ZPeakFit fit_hAll(histsPerCut[i].hAll->hMass);
 		fit.push_back(fit_hAll);
-		RooPlot* frame_hAll = fit_hAll.fitVExpo();
+		RooPlot* frame_hAll = fit_hAll.fitVExpo("all_Mass" + to_string(i));
 		frame.push_back(frame_hAll);
 		fit_hAll.save(frame_hAll);
 	}
+
+
 
 	writeAndDeleteHist(hLumiIntegralsByBin);
 

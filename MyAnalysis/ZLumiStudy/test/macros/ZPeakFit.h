@@ -30,11 +30,11 @@ public:
 	ZPeakFit(TH1* h);
 
 
-	RooPlot* fitVExpo();
-	RooPlot* fit2VExpo();
-	RooPlot* fit2VExpoMin70();
+	RooPlot* fitVExpo(std::string title);
+	RooPlot* fit2VExpo(std::string title);
+	RooPlot* fit2VExpoMin70(std::string title);
 	
-	void getResult();
+	RooFitResult* getResult();
 
 
 	void save(RooPlot* frame);
@@ -45,6 +45,6 @@ private:
 	RooFitResult* result;
 	RooWorkspace w;
 
-	RooPlot* fit();
+	RooPlot* fit(std::string title);
 };
 #endif

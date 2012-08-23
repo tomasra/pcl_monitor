@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2012/08/20 07:30:29 $
- *  $Revision: 1.12 $
+ *  $Date: 2012/08/22 19:54:22 $
+ *  $Revision: 1.13 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -739,8 +739,8 @@ TH1F * LumiFileReaderByBX::getRecLumiBins(int nbins, float min, float max) const
   cout << "Fill the integrated lumi for run " << cachedRun << endl;
   //cout << "     # bins: " << nbins << " min: " << min << " max: " << max << endl;
   Long_t runN = cachedRun;
-  TString hName = TString("hRec");// + runN;
-  TH1F *histo = new TH1F(hName.Data(), "test", nbins, min, max);
+  TString hName = TString("hRec_") + runN;
+  TH1F *histo = new TH1F(hName.Data(), "; inst. luminosity per BX [#mub^{-1}]; Events", nbins, min, max);
   
 //   // old format: here for compatibility...
 //   // FIXME: remove
