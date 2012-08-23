@@ -36,17 +36,105 @@ class JobEntry:
             if index != self.maxIndex:
                 print "rfrm " + self.fileNames[index]
             
-    
+
+def findJobNumber(fileName, isCrab):
+    nUnderscores = len(fileName.split("_"))
+    jobNumberIndex = 0
+    if isCrab:
+        jobNumberIndex = nUnderscores - 3
+    jobNumber = int(fileName.split("_")[jobNumberIndex])        
+    return jobNumber
+
 
 if __name__     ==  "__main__":
 
+    # define the command line options
     parser = OptionParser()
-    (options, args) = parser.parse_args()
-    
 
     
+    # this tell to the script if we read from castor or eos
+    parser.add_option("-s", "--store-type", dest="storage",
+                      help="type of storage: castor - eos", type="str", metavar="<storage type>",default="eos")
+
+    # this defines the file name forma blabla_#Job_#file_bla.root
+    crabMode = True
+
+    (options, args) = parser.parse_args()
+
     outdir = args[0]
-    rfdir_cmd = "rfdir " + outdir
+    
+    print "reading from " + options.storage
+    print "output dir: " + outdir
+
+    # list of files to be checked
+    filenames = []
+
+
+    if options.storage == "castor":
+        rfdir_cmd = "rfdir " + outdir        
+        outCastorDir_out = commands.getstatusoutput(rfdir_cmd)
+        if outCastorDir_out[0] == 0:
+            castorLines = outCastorDir_out[1].split("\n")
+            if len(castorLines) != 0:
+                for castorFileLine in castorLines:
+                    #print castorFileLine
+                    if "root" in castorFileLine:
+                        fileName = castorFileLine.split()[8]
+                        filenames.append(fileName)
+        else:
+            print outCastorDir_out[1]
+            sys.exit(1)
+    elif options.storage == "eos":
+        ls_cmd = "cmsLs " + outdir
+        ls_out = commands.getstatusoutput(ls_cmd)
+        if ls_out[0] == 0:
+            eosLines = ls_out[1].split('\n')
+            if len(eosLines) != 0:
+                for eosLine in eosLines:
+                    if 'root' in eosLine:
+                        fileName = eosLine.split()[4]
+                        baseName =  os.path.basename(fileName)
+                        filenames.append(baseName)
+        else:
+            print ls_out[1]
+            sys.exit(1)
+    else:
+        "***Error: storage-type: " + options.storage + " not supported!"
+        sys.exit(1)
+
+    #print filenames
+
+
+
+    jobNumbers = []
+    duplicatedJobs = []
+
+
+
+    for fileName in filenames:
+        jobNumber = findJobNumber(fileName, crabMode)
+        if jobNumber in jobNumbers:
+            print "Warning duplicated file for job #: " + str(jobNumber)
+            if not jobNumber in duplicatedJobs:
+                duplicatedJobs.append(jobNumber)
+        else:
+            jobNumbers.append(jobNumber)
+
+
+    for fileName in filenames:
+        jobNumber = findJobNumber(fileName, crabMode)
+        if jobNumber in duplicatedJobs:
+            print "Duplicated Job # " + str(jobNumber)
+            print " file: " + outdir + "/" + fileName
+                    
+
+    print "# of jobs: " + str(len(jobNumbers))
+    print "# of files: " + str(len(filenames))
+    sys.exit(0)
+
+
+
+
     nOutFile = 0
     outCastorDir_out = commands.getstatusoutput(rfdir_cmd)
     jobNumbers = []
@@ -58,7 +146,7 @@ if __name__     ==  "__main__":
                 if "root" in castorFileLine:
                     fileName = castorFileLine.split()[8]
                     # print "        - " + fileName
-                    jobNumber = int(fileName.split("_")[1])
+
                     if jobNumber in jobNumbers:
                         print "   warning duplicated file for job #: " + str(jobNumber)
                         if not jobNumber in duplicatedJobs:
