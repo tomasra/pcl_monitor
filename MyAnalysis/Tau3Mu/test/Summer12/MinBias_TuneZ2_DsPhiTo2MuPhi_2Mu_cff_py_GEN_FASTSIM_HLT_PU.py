@@ -1,8 +1,8 @@
 # Auto generated configuration file
 # using: 
-# Revision: 1.372.2.4 
+# Revision: 1.372.2.14 
 # Source: /local/reps/CMSSW/CMSSW/Configuration/PyReleaseValidation/python/ConfigBuilder.py,v 
-# with command line options: MyAnalysis/Tau3Mu/MinBias_TuneZ2_DsPhiTo2MuPhi_2Mu_cff.py -s GEN,FASTSIM,HLT:GRun --geometry DB --datatier GEN-SIM-DIGI-RECMyAnalysis/Tau3Mu/MinBias_TuneZ2_DsPhiTo2MuPhi_2Mu_cff.py -s GEN,FASTSIM,HLT:GRun --geometry DB --datatier GEN-SIM-DIGI-RECMyAnalysis/Tau3Mu/MinBias_TuneZ2_DsPhiTo2MuPhi_2Mu_cff.py -s GEN,FASTSIM,HLT:GRun --geometry DB --datatier GEN-SIM-DIGI-RECO --conditions START52_V9::All -n 10000 --eventcontent AODSIM --beamspot Realistic8TeVCollision --pileup=2012_Startup_inTimeOnly --no_exec
+# with command line options: MyAnalysis/Tau3Mu/MinBias_TuneZ2_DsPhiTo2MuPhi_2Mu_cff.py -s GEN,FASTSIM,HLT:7E33v2 --geometry DB --datatier GEN-SIM-DIGI-RECO --conditions START52_V9::All -n 10000 --eventcontent AODSIM --beamspot Realistic8TeVCollision --pileup=2012_Startup_inTimeOnly --no_exec
 import FWCore.ParameterSet.Config as cms
 
 process = cms.Process('HLT')
@@ -19,11 +19,11 @@ process.load('Configuration.StandardSequences.Generator_cff')
 process.load('GeneratorInterface.Core.genFilterSummary_cff')
 process.load('FastSimulation.Configuration.FamosSequences_cff')
 process.load('IOMC.EventVertexGenerators.VtxSmearedParameters_cfi')
-process.load('HLTrigger.Configuration.HLT_GRun_Famos_cff')
+process.load('HLTrigger.Configuration.HLT_7E33v2_Famos_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(100000)
+    input = cms.untracked.int32(10000)
 )
 
 # Input source
@@ -35,7 +35,7 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.2 $'),
+    version = cms.untracked.string('$Revision: 1.4 $'),
     name = cms.untracked.string('PyReleaseValidation'),
     annotation = cms.untracked.string('MinBias_TuneZ2_DsPhiTo2MuPhi_2Mu_cff.py nevts:1')
 )
@@ -65,6 +65,10 @@ process.HLTEndSequence = cms.Sequence(process.reconstructionWithFamos)
 process.Realistic8TeVCollisionVtxSmearingParameters.type = cms.string("BetaFunc")
 process.famosSimHits.VertexGenerator = process.Realistic8TeVCollisionVtxSmearingParameters
 process.famosPileUp.VertexGenerator = process.Realistic8TeVCollisionVtxSmearingParameters
+# customise the HLT menu for running on MC
+from HLTrigger.Configuration.customizeHLTforMC import customizeHLTforMC
+process = customizeHLTforMC(process)
+
 process.GlobalTag.globaltag = 'START52_V9::All'
 
 process.phifromDfilter = cms.EDFilter("PythiaFilter",
@@ -184,4 +188,3 @@ for path in process.paths:
 from IOMC.RandomEngine.RandomServiceHelper import  RandomNumberServiceHelper
 randHelper =  RandomNumberServiceHelper(process.RandomNumberGeneratorService)
 randHelper.populate()
- 
