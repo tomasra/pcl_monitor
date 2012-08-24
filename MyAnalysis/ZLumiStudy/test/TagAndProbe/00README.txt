@@ -100,9 +100,10 @@ The last set of trees is the one to be used to fit the efficiencies
 
 ### 3. Fitting the efficiencies
 
-Note: setup the area as described in Point (1) on the top of the area
-that you already have
-
+Note: 
+to run this you just need:
+cvs co -r V04-04-00 PhysicsTools/TagAndProbe
+cvs co -r V08-03-15 PhysicsTools/Utilities
 - Tag muon definition:
 
 
