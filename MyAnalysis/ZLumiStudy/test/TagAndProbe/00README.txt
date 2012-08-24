@@ -104,6 +104,12 @@ Note:
 to run this you just need:
 cvs co -r V04-04-00 PhysicsTools/TagAndProbe
 cvs co -r V08-03-15 PhysicsTools/Utilities
+
+The best documnenbtation for this step is:
+
+https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideTagProbeFitTreeAnalyzer?redirectedfrom=CMS.SWGuideTagProbeFitTreeAnalyzer
+
+
 - Tag muon definition:
 
 
