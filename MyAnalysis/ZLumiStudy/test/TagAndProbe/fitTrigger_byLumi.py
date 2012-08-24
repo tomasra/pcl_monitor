@@ -50,6 +50,7 @@ process.TnP_Trigger = cms.EDAnalyzer("TagProbeFitTreeAnalyzer",
         pt     = cms.vstring("Probe p_{T}", "0", "1000", "GeV/c"),
         eta    = cms.vstring("Probe |#eta|", "-2.5", "2.5", ""),
         abseta = cms.vstring("Probe |#eta|", "0", "2.5", ""),
+        bxInstLumi = cms.vstring("Inst. Lumi. by BX","0","7", "1/ub"),
         tag_pt = cms.vstring("Tag p_{T}", "2.6", "1000", "GeV/c"),
     ),
 
@@ -68,14 +69,31 @@ process.TnP_Trigger = cms.EDAnalyzer("TagProbeFitTreeAnalyzer",
             "Exponential::backgroundFail(mass, lf[0,-5,5])",
             "efficiency[0.9,0,1]",
             "signalFractionInPassing[0.9]"
-        )
-    ),
+        ),
+        voigtPlusExpo = cms.vstring(
+            "Voigtian::signal(mass, mean[90,80,100], width[2.495], sigma[3,1,20])",
+            "Exponential::backgroundPass(mass, lp[0,-5,5])",
+            "Exponential::backgroundFail(mass, lf[0,-5,5])",
+            "efficiency[0.9,0,1]",
+            "signalFractionInPassing[0.9]"
+        ),
+        vpvPlusExpo = cms.vstring(
+            "Voigtian::signal1(mass, mean1[90,80,100], width[2.495], sigma1[2,1,3])",
+            "Voigtian::signal2(mass, mean2[90,80,100], width,        sigma2[4,2,10])",
+            "SUM::signal(vFrac[0.8,0,1]*signal1, signal2)",
+            "Exponential::backgroundPass(mass, lp[-0.1,-1,0.1])",
+            "Exponential::backgroundFail(mass, lf[-0.1,-1,0.1])",
+            "efficiency[0.9,0,1]",
+            "signalFractionInPassing[0.9]"
+        ),
 
+    ),
+    #Cuts = cms.PSet(),
     Efficiencies = cms.PSet(), # will be filled later
 )
 
 
-#DoubleMu17Mu8_Mu17
+# === SETTINGS
 # ==================================================================================================
 # Here I define the different categories (or BINS) for wich I want to compute the efficiency
 # NOTE: when inclusive, I consider min pt > 25 GeV -> this should match what is used in the analysis
@@ -84,7 +102,7 @@ minPtCut = 25.
 instLumiBins = cms.vdouble()
 
 
-BARREL_ONLY = cms.PSet(
+BARREL = cms.PSet(
     pt = cms.vdouble(minPtCut, 100),
     abseta = cms.vdouble( 0, 1.2)
     )
@@ -101,7 +119,15 @@ ALL2P4 = cms.PSet(
 
 PT_BINS_ALL2P1 = ALL2P1.clone(pt = cms.vdouble(15, 25, 35, 100))
 ETA_BINS_ALL2P1 = ALL2P1.clone(abseta = cms.vdouble(0, 1.2, 2.1))
-
+# NOTE: this should match what uised in the analysis
+LUMI_BINS_BARREL = BARREL.clone(bxInstLumi = cms.vdouble(1,2,3,4,5,6))
+RUNS = "run == 194315"
+#process.TnP_Trigger.Cuts = cms.PSet(
+#    run194315 = cms.vstring("runSel", "run", "194315")
+#    )
+# FIXME: add the run selections to match what is used in the analysis
+# FIXME: get the complete list of InputFileNames directly out of the directory
+#==== END SETTINGS
 
 if scenario == "data_all":
     process.TnP_Trigger.binsForMassPlots = cms.uint32(20)
@@ -110,8 +136,8 @@ if scenario == "datalike_mc":
     process.TnP_Trigger.InputFileNames = [ "tnpZ_MC.root", ]
 
 
-ALLBINS=[("all2p1",ALL2P1)]
-for (T,M) in [ ("DoubleMu17Mu8_Mu17","Track")]:
+ALLBINS=[("all2p1",ALL2P1),("barr_lumi",LUMI_BINS_BARREL)]
+for (T,M) in [ ("DoubleMu17Mu8_Mu17","Track"),("DoubleMu17Mu8_Mu17","OurMuonID")]:
         print "--------------"
         print "Trigger: " + T
         print "From: " + M
@@ -119,6 +145,9 @@ for (T,M) in [ ("DoubleMu17Mu8_Mu17","Track")]:
             print "   Bin Name: " + BN
             print "   Bins: " + str(BV)
             BINNEDVARS = BV.clone()
+            if M == 'OurMuonID':
+                # here we should reimplement exactly our Muon ID
+                setattr(BINNEDVARS, "VBTF", cms.vstring("pass"))
             if M == "VBTF_Isol":
                 setattr(BINNEDVARS, "VBTF", cms.vstring("pass"))
                 setattr(BINNEDVARS, "Isol", cms.vstring("pass"))
