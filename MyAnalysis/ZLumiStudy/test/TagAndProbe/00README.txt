@@ -118,8 +118,49 @@ cmsRun fitTrigger_byLumi.py
 
 To edit the selections please have a look at the section "SETTINGS"
 
+In particular check the binning of the lumi
+and the minPtCut should that should match what is used in your analysis
+
+BinToPDFmap controls the pdf which is used
+
+
 Note for convenience it also produces a dump.py of the py each time it is
 run so that you can read it easily
 
+Note also the selection of the Tag muon needs to be checked looking at
+the results that we get for the failing probes.
+
 
 - fit of the ID efficiency:
+
+* How to translate the ID defintion in the Tag and probe flags:
+
+The variables in the tree are all defined in:
+http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/MuonAnalysis/TagAndProbe/python/common_variables_cff.py?revision=1.40&view=markup
+
+Here I list those that you need to use to implement the MuonID the we
+are using:
+
+
+global-muon || (tracker-muon && # matches > 0) -> corresponds to the
+'GlbOrTMwMatch' Category
+
+pt>5GeV -> actually use the threshold on the variable "pt" that you
+use in the analyis
+
+|eta|<2.4 or |eta| < 1.2 for the barrel only bin -> 'abseta" variable
+
+dxy (from PV) < 0.5 cm -> corresponds to 'dxyPVdzmin'
+dz < 1 cm -> corresponds to 'dzPV'
+
+In the tree we save the following flags for further selection:
+
+ID = PF muon (PF = particle flow) ID -> Corresponds to the 'PF' category
+SIP = 3D significance dell'Impact Parameter -> require SIP < 0.4 ->
+use the 'SIP' variable
+
+Forget about the isolation for the moment....
+
+To actually run the fit:
+cmsRun fitMuonID_lumi.py
+
