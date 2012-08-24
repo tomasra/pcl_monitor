@@ -165,6 +165,9 @@ ID = PF muon (PF = particle flow) ID -> Corresponds to the 'PF' category
 SIP = 3D significance dell'Impact Parameter -> require SIP < 0.4 ->
 use the 'SIP' variable
 
+The variable defining the lumiByBx is: bxInstLumi
+
+
 Forget about the isolation for the moment....
 
 To actually run the fit:
