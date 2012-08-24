@@ -1,6 +1,11 @@
 ##############################################################################
 ### Documentation of the procedure used to run the T&P code.
 
+### 0. Documentation:
+
+https://twiki.cern.ch/twiki/bin/view/CMS/MuonTagAndProbe
+https://twiki.cern.ch/twiki/bin/view/CMS/TagAndProbeForHIG
+
 ### 1.Generation of the T&P trees
 
 I setup a 52X area following the instructions in:
@@ -8,16 +13,17 @@ I setup a 52X area following the instructions in:
 https://twiki.cern.ch/twiki/bin/view/CMS/TagAndProbeForHIG
 
 recipe 4a:
-
-cmsrel CMSSW_5_3_2_patch2
-cd CMSSW_5_3_2_patch2/src
+cmsrel CMSSW_5_2_4_patch4 
+cd CMSSW_5_2_4_patch4/src
 cmsenv
 cvs co -r V04-04-00 PhysicsTools/TagAndProbe
-rm PhysicsTools/TagAndProbe/plugins/PileupWeightProducer.cc
-cvs co -r V02-01-01 MuonAnalysis/MuonAssociators
-cvs co -r V08-01-00 MuonAnalysis/TagAndProbe
+cvs co -r V02-00-03 MuonAnalysis/MuonAssociators
+cvs co -r V08-00-06 MuonAnalysis/TagAndProbe
+cvs co -r V06-04-34 DataFormats/PatCandidates 
 scramv1 b
 cd MuonAnalysis/TagAndProbe/test/zmumu/
+
+
 
 On the top of this I modified the follwing thisngs:
 
@@ -70,7 +76,9 @@ in the file to point at the correct input list and outputDir
 
 
 - the lumi inst information for the BX needs to be added to the tree
-.x addLumiInfoToTPTrees.r
+.x addLumiInfoToTPTrees.r+
+
+NOTE: for some reason needs to be run 2 times after each compilation....
 
 Also in this case you need to generate the list of files using
 python buildinputlist.py -s local -n TPV0_SingleMu_Run2012B-PromptReco-v1_sorted.h
@@ -85,9 +93,32 @@ At the moment the files sit on lxcms136
 - file with lumi info by BX
 /data1/ZLumiStudy/TagAndProbe/TPV0/SingleMu_Run2012B-PromptReco-v1_lumi/
 
+I only produced the _lumi.root for Run2012B, Daniela can you try to reproduce the for Run2012A?
+
 
 The last set of trees is the one to be used to fit the efficiencies
 
 ### 3. Fitting the efficiencies
 
+Note: setup the area as described in Point (1) on the top of the area
+that you already have
 
+- Tag muon definition:
+
+
+process.tagMuons = cms.EDFilter("PATMuonSelector",
+    src = cms.InputTag("patMuonsWithTrigger"),
+    cut = cms.string("pt > 15 && isPFMuon && numberOfMatchedStations > 1 && muonID(\'GlobalMuonPromptTight\') && abs(dB) < 0.2 && track.hitPattern.trackerLayersWithMeasurement > 5 && track.hitPattern.numberOfValidPixelHits > 0 && !triggerObjectMatchesByCollection(\'hltL3MuonCandidates\').empty()")
+)
+
+
+- the fit of the trigger efficiency is:
+cmsRun fitTrigger_byLumi.py
+
+To edit the selections please have a look at the section "SETTINGS"
+
+Note for convenience it also produces a dump.py of the py each time it is
+run so that you can read it easily
+
+
+- fit of the ID efficiency:
