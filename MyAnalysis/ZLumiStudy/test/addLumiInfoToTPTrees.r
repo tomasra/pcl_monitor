@@ -32,8 +32,8 @@ void addLumiInfoToTPTrees() {
   LumiFileReaderByBX lumiReader("/data1/ZLumiStudy/CalcLumi/Version0/");
 
   // ----- SETTINGS ------------------------------------
-  gROOT->Macro("TPV0_SingleMu_Run2012B-PromptReco-v1_sorted.h");
-  outDir = TString("/data1/ZLumiStudy/TagAndProbe/TPV0/SingleMu_Run2012B-PromptReco-v1_lumi/");
+  gROOT->Macro("TPV0_SingleMu_Run2012A-PromptReco-v1_sorted.h");
+  outDir = TString("/data1/ZLumiStudy/TagProbe/SingleMu_Run2012A-PromptReco-v1_lumi/");
   // ----- END SETTINGS ------------------------------------
 
 

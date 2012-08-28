@@ -39,9 +39,13 @@ TString inputDir = "";
 
 void sortTPTrees() {
 
-
-  gROOT->Macro("TPV0_SingleMu_Run2012B-PromptReco-v1.h");
-  outDir = TString("/data1/ZLumiStudy/TagAndProbe/TPV0/Test1/");
+// 2012A
+ // gROOT->Macro("TPV0_SingleMu_Run2012A-PromptReco-v1.h");
+ // outDir = TString("/data1/ZLumiStudy/TagProbe/SingleMu_Run2012A-PromptReco-v1/");
+// 2012B
+    gROOT->Macro("TPV0_SingleMu_Run2012B-PromptReco-v1.h");
+    outDir = TString("/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1/");
+  
   cout << "Input dir: " << inputDir << endl;
   cout << "Output dir: " << outDir << endl;
   cout << "# of files to be sorted: " << fileBaseNames.size() << endl;

@@ -29,6 +29,7 @@ if __name__     ==  "__main__":
     (options, args) = parser.parse_args()
 
     outdir = args[0]
+    print outdir
     
     print "reading from " + options.storage
     print "output dir: " + outdir
@@ -51,20 +52,26 @@ if __name__     ==  "__main__":
         else:
             print outCastorDir_out[1]
             sys.exit(1)
+
     elif options.storage == "eos":
         ls_cmd = "cmsLs " + outdir
         ls_out = commands.getstatusoutput(ls_cmd)
+        print ls_out
         if ls_out[0] == 0:
             eosLines = ls_out[1].split('\n')
+            print eosLines
             if len(eosLines) != 0:
                 for eosLine in eosLines:
                     if 'root' in eosLine:
                         fileName = eosLine.split()[4]
                         baseName =  os.path.basename(fileName)
                         filenames.append(baseName)
+                    else:
+                        print "root is not in eosLine"
         else:
             print ls_out[1]
             sys.exit(1)
+
     elif options.storage == "local":
         ls_cmd = "ls -1 " + outdir
         ls_out = commands.getstatusoutput(ls_cmd)
