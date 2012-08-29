@@ -26,7 +26,7 @@ process.TnP_Trigger = cms.EDAnalyzer("TagProbeFitTreeAnalyzer",
     NumCPU = cms.uint32(1),
     SaveWorkspace = cms.bool(False),
 
-    InputFileNames = cms.vstring('/data1/ZLumiStudy/TagAndProbe/TPV0/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_9_1_1Iu_sorted_lumi.root',
+    InputFileNames = cms.vstring('/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_9_1_1Iu_sorted_lumi.root',
 '/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_82_2_eSg_sorted_lumi.root',
 '/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_84_2_jrg_sorted_lumi.root',
 '/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_85_2_Yoi_sorted_lumi.root',
@@ -62,6 +62,12 @@ process.TnP_Trigger = cms.EDAnalyzer("TagProbeFitTreeAnalyzer",
         VBTF = cms.vstring("VBTFLike", "dummy[pass=1,fail=0]"),
         Isol = cms.vstring("MC true",  "dummy[pass=1,fail=0]"),
         DoubleMu17Mu8_Mu17  = cms.vstring("DoubleMu17Mu8_Mu17",  "dummy[pass=1,fail=0]"),
+    ),
+
+    Cuts = cms.PSet(
+        eta1P2 = cms.vstring("abseta < 1.2", "abseta", "1.2"),
+        eta2P1 = cms.vstring("abseta < 2.1", "abseta", "2.1"),
+        eta2P4 = cms.vstring("abseta < 2.4", "abseta", "2.4"),
     ),
 
     PDFs = cms.PSet(
@@ -117,27 +123,6 @@ ALL2P4 = cms.PSet(
     abseta = cms.vdouble( 0, 2.4)
     )
 
-# cuts used in ZlumiTreeReader
-SURVIVE_WITHOUT_ISO = cms.PSet(
-    pt = cms.vdouble(minPtCut, 100),
-    SIP = cms.vdouble(0, 0.4),
-    )
-SURVIVE_WITH_ISO = cms.PSet(
-    pt = cms.vdouble(minPtCut, 100),
-    SIP = cms.vdouble(0, 0.4),
-    combRelIso = cms.vdouble(0, 0.4),
-    )
-SURVIVE_ETA_WITHOUT_ISO = cms.PSet(
-    pt = cms.vdouble(minPtCut, 100),
-    SIP = cms.vdouble(0, 0.4),
-    abseta = cms.vdouble(0, 1.2),
-    )
-SURVIVE_ETA_WITH_ISO = cms.PSet(
-    pt = cms.vdouble(minPtCut, 100),
-    SIP = cms.vdouble(0, 0.4),
-    abseta = cms.vdouble(0, 1.2),
-    combRelIso = cms.vdouble(0, 0.4),
-    )
 
 
 PT_BINS_ALL2P1 = ALL2P1.clone(pt = cms.vdouble(15, 25, 35, 100))
@@ -166,30 +151,57 @@ ALLBINS = [
 
 
 
-for (T,M) in [ ("DoubleMu17Mu8_Mu17","Track"),("DoubleMu17Mu8_Mu17","OurMuonID")]:
-        print "--------------"
-        print "Trigger: " + T
-        print "From: " + M
+#for (T,M) in [ ("DoubleMu17Mu8_Mu17","Track"),("DoubleMu17Mu8_Mu17","OurMuonID")]:
+#        print "--------------"
+#        print "Trigger: " + T
+#        print "From: " + M
+#
+#        for BN,BV in ALLBINS:
+#            print "   Bin Name: " + BN
+#            print "   Bins: " + str(BV)
+#            BINNEDVARS = BV.clone()
+#            if M == 'OurMuonID':
+#                # here we should reimplement exactly our Muon ID
+#                setattr(BINNEDVARS, "VBTF", cms.vstring("pass"))
+#            # orig: if M == "VBTF_Isol":
+#            elif M == "VBTF_Isol":
+#                setattr(BINNEDVARS, "VBTF", cms.vstring("pass"))
+#                setattr(BINNEDVARS, "Isol", cms.vstring("pass"))
+#            elif M != "Track": 
+#                setattr(BINNEDVARS, M, cms.vstring("pass"))
+#
+#            setattr(process.TnP_Trigger.Efficiencies, M+"_To_"+T+"_"+BN, cms.PSet(
+#                    EfficiencyCategoryAndState = cms.vstring(T,"pass"),
+#                    UnbinnedVariables = cms.vstring("mass"),
+#                    BinnedVariables = BINNEDVARS,
+#                    BinToPDFmap = cms.vstring("vpvPlusExpo")
+#                ))
 
-        for BN,BV in ALLBINS:
-            print "   Bin Name: " + BN
-            print "   Bins: " + str(BV)
-            BINNEDVARS = BV.clone()
-            if M == 'OurMuonID':
-                # here we should reimplement exactly our Muon ID
-                setattr(BINNEDVARS, "VBTF", cms.vstring("pass"))
-            # orig: if M == "VBTF_Isol":
-            elif M == "VBTF_Isol":
-                setattr(BINNEDVARS, "VBTF", cms.vstring("pass"))
-                setattr(BINNEDVARS, "Isol", cms.vstring("pass"))
-            elif M != "Track": 
-                setattr(BINNEDVARS, M, cms.vstring("pass"))
-            setattr(process.TnP_Trigger.Efficiencies, M+"_To_"+T+"_"+BN, cms.PSet(
-                    EfficiencyCategoryAndState = cms.vstring(T,"pass"),
-                    UnbinnedVariables = cms.vstring("mass"),
-                    BinnedVariables = BINNEDVARS,
-                    BinToPDFmap = cms.vstring("vpvPlusExpo")
-                ))
+for (T,M) in [ ("DoubleMu17Mu8_Mu17","Track"),("DoubleMu17Mu8_Mu17","OurMuonID")]:
+    print "--------------"
+    print "Trigger: " + T
+    print "From: " + M
+
+    if M == 'OurMuonID':
+        setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_lumi", cms.PSet(
+            EfficiencyCategoryAndState = cms.vstring(T, "pass", "VBTF", "pass", "eta2P1", "below"),
+            UnbinnedVariables = cms.vstring("mass"),
+            BinnedVariables = cms.PSet(
+                bxInstLumi = cms.vdouble(1.0, 1.25, 1.5, 1.75, 2., 2.25, 2.5, 2.75, 3., 3.25, 3.5, 3.75, 4., 4.25, 4.5, 4.75, 5)
+                ),
+            BinToPDFmap = cms.vstring("vpvPlusExpo")
+            ))
+
+    elif M == "Track":
+        setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_lumi", cms.PSet(
+            EfficiencyCategoryAndState = cms.vstring(T, "pass"),
+            UnbinnedVariables = cms.vstring("mass"),
+            BinnedVariables = cms.PSet(
+                bxInstLumi = cms.vdouble(1.0, 1.25, 1.5, 1.75, 2., 2.25, 2.5, 2.75, 3., 3.25, 3.5, 3.75, 4., 4.25, 4.5, 4.75, 5)
+                ),
+            BinToPDFmap = cms.vstring("vpvPlusExpo")
+            ))
+
 # for  X,B in ALLBINS:
 #     setattr(process.TnP_Trigger.Efficiencies, "Track_To_VBTF_Mu9_"+X, cms.PSet(
 #         EfficiencyCategoryAndState = cms.vstring("VBTF","pass","Mu9","pass"),
