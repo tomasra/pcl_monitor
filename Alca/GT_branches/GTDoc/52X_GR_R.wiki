@@ -1,3 +1,4 @@
+| [[%LINKTOGTLIST%/?GlobalTag=GR_R_52_V10][GR_R_52_V10]] | %GREEN%52X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_52_V9D with the following updates:<br> - updated JECs (Aug 2012). |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_52_V9D][GR_R_52_V9D]] | %GREEN%52X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_52_V9 with the following updates:<br> - New btag and mistag Data/MC scale factors. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_52_V9B][GR_R_52_V9B]] | %GREEN%52X%ENDCOLOR% | %RED%This GT is broken. Do not use it.%ENDCOLOR% | As !GR_R_52_V9 with the following updates:<br> - New btag and mistag Data/MC scale factors. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_52_V9][GR_R_52_V9]] | %GREEN%52X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_52_V8 with the following updates:<br> - new 2012 data JECs. |
