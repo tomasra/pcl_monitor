@@ -80,20 +80,20 @@ int cond::ListIOVUtilities::execute(){
     {
       bool verbose = hasOptionValue("verbose");
       bool details = hasOptionValue("summary");
-      cond::IOVProxy iov( session, token, false, true);
+      cond::IOVProxy iov( session, token);
       
       since = std::max(since, cond::timeTypeSpecs[iov.timetype()].beginValue);
       till  = std::min(till,  cond::timeTypeSpecs[iov.timetype()].endValue);
-      iov.setRange(since,till);
+      iov.range(since,till);
  
       unsigned int counter=0;
-      std::string payloadContainer=iov.payloadContainerName();
+      // std::string payloadContainer=iov.payloadContainerName();
       std::cout<<"Tag "<<tag;
       if (verbose) std::cout << "\nStamp: " << iov.iov().comment()
                              << "; time " <<  cond::time::to_boost(iov.iov().timestamp())
                              << "; revision " << iov.iov().revision();
       std::cout <<"\nTimeType " << cond::timeTypeSpecs[iov.timetype()].name
-                <<"\nPayloadContainerName "<<payloadContainer<<"\n"
+	// <<"\nPayloadContainerName "<<payloadContainer<<"\n"
                 <<"since \t till \t payloadToken"<<std::endl;
 
       static const unsigned int nIOVS = std::distance(iov.begin(), iov.end());
@@ -123,7 +123,7 @@ int cond::ListIOVUtilities::execute(){
       RunNumber_t theRun = 0;
 
       for (cond::IOVProxy::const_iterator ioviterator=iov.begin(); ioviterator!=iov.end(); ioviterator++) {
-        std::cout<<ioviterator->since() << " \t "<<ioviterator->till() <<" \t "<<ioviterator->wrapperToken();
+        std::cout<<ioviterator->since() << " \t "<<ioviterator->till() <<" \t "<<ioviterator->token();
 
 
 
@@ -147,7 +147,7 @@ int cond::ListIOVUtilities::execute(){
           //  session.getTypedObject<BeamSpotObjects>(ioviterator->wrapperToken());
 
 	  boost::shared_ptr<BeamSpotObjects> bs =
-            session.getTypedObject<BeamSpotObjects>(ioviterator->wrapperToken());
+            session.getTypedObject<BeamSpotObjects>(ioviterator->token());
 
  	  if (bs) {
 	    const BeamSpotObjects mybs = *bs;
