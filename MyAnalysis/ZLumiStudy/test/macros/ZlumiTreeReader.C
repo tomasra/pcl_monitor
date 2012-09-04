@@ -58,6 +58,9 @@ int withIso = 0;
 int eta_withoutIso = 0;
 int eta_withIso = 0;
 
+// eff (at the moment -1 TODO)
+vector<vector<double> > eff (NUM_CUTS,vector<double> (nBins, -1));
+
 // functions to convert into other types
 template <typename A, typename B>
 static A lexical_cast(const B& b)
@@ -84,15 +87,15 @@ string to_string(int i)
     return sstr.str();
 } 
 
-// function to calculate the luminosity in other units
-float calcLumi(float lumiBarn) {
+// function to calculate the luminosity in other units 
+float calcLumi(float lumiBarn) { // ub^-1 -> cm^-2 * s^-1
 	float my_barn = pow(10.0, -30);
 	int bunch = 1440;
 
 	return lumiBarn / (my_barn * LENGTH_LS) * bunch;
 }
 
-float calcLumi_avgInst(float lumiBarn) {
+float calcLumi_avgInst(float lumiBarn) { // Hz * ub^-1 -> cm^-2 * s^-1
 	float my_barn = pow(10.0, -30);
 	int bunch = 1440;
 
@@ -146,16 +149,90 @@ TH1F* CreateHist(string name, string htitle, string xtitle, string unit, size_t 
 	return a;
 }
 
+vector<pair<double, double> > getEntries(TFile* eff_File, string folder)
+{
+	vector<pair<double, double> > entries (nBins, make_pair(-1, -1));
+	TObject* obj = eff_File->Get(("tpTree/" + folder + "/fit_eff_plots/bxInstLumi_PLOT").c_str()); // use both triggers and save the product
+
+	TCanvas* canv = dynamic_cast<TCanvas*>(obj);
+	if (canv) {
+		TList* list = canv->GetListOfPrimitives();
+		for (int i = 0; i < list->GetSize(); i++) {
+			TGraph* graph = dynamic_cast<TGraph*>(list->At(i));
+			if (graph) {
+				for (int bin = 0; bin < graph->GetN(); ++bin) {
+    				double x, y;
+    				graph->GetPoint(bin, x, y); // maybe sort them in x
+    				entries[bin] = make_pair(x,y);
+				}
+				break;
+			}
+		}
+	}
+	return entries;
+}
+
+vector<pair<double, double> > getEntries(TFile* eff_File, string folder_Mu17, string folder_Mu8)
+{
+	vector<pair<double, double> > entries(nBins, make_pair(-1, -1));
+	vector<pair<double, double> > entries_Mu17 (nBins, make_pair(-1,-1));
+	vector<pair<double, double> > entries_Mu8 (nBins, make_pair(-1, -1));
+
+	entries_Mu17 = getEntries(eff_File, folder_Mu17);
+	entries_Mu8 = getEntries(eff_File, folder_Mu8);
+
+	for (int i = 0; i < nBins; i++) {
+		if (entries_Mu17[i].second == -1 || entries_Mu8[i].second == -1) {
+			entries[i].first = -1;
+			entries[i].second = -1;
+		}
+		else {
+			entries[i].first = entries_Mu17[i].first;
+			entries[i].second = entries_Mu17[i].second * entries_Mu8[i].second;
+		}
+	}
+	return entries;
+}
+
+vector<double> saveEff(vector<pair<double, double> > entries)
+{
+	vector<double> effPerCut (nBins, -1);
+	for (size_t bin = 0; bin < entries.size(); bin++) {
+		if (entries[bin].second == 0)
+			effPerCut[bin] = -1;
+		else
+			effPerCut[bin] = entries[bin].second;
+	}
+	return effPerCut;
+}
+
 
 // different cut possibilities
 static std::string PER_CUT_TITLE[] = {
 	"no cut",
-    "standard cut",
     "isolation cut",
     "no isolation cut",
     "eta and isolation cut",
     "eta and no isolation cut",
 };
+
+// different eff folder per cut
+static string PER_CUT_FOLDER_Mu17[] = {
+	"Track_To_DoubleMu17Mu8_Mu17_lumi_for_Run2012A", 
+	"OurMuonID_To_DoubleMu17Mu8_Mu17_lumi_Eta2P4_for_Run2012A",
+	"OurMuonID_To_DoubleMu17Mu8_Mu17_lumi_Eta2P4_for_Run2012A", 
+	"OurMuonID_To_DoubleMu17Mu8_Mu17_lumi_Eta1P2_for_Run2012A", 
+	"OurMuonID_To_DoubleMu17Mu8_Mu17_lumi_Eta1P2_for_Run2012A", 
+// FIXME: chose right folder
+};
+static string PER_CUT_FOLDER_Mu8[] = {
+	"Track_To_DoubleMu17Mu8_Mu8_lumi_for_Run2012A",
+	"OurMuonID_To_DoubleMu17Mu8_Mu8_lumi_Eta2P4_for_Run2012A",
+	"OurMuonID_To_DoubleMu17Mu8_Mu8_lumi_Eta2P4_for_Run2012A",
+	"OurMuonID_To_DoubleMu17Mu8_Mu17_lumi_Eta1P2_for_Run2012A",
+	"OurMuonID_To_DoubleMu17Mu8_Mu17_lumi_Eta1P2_for_Run2012A",
+};
+
 
 void ZlumiTreeReader::CreatePerCutHists()
 {
@@ -170,13 +247,13 @@ void ZlumiTreeReader::CreatePerCutHists()
         histsPerCut[i].etaL1 = CreateHist("AntimuonEta" + index_str, "Antimuon Eta (" + PER_CUT_TITLE[i] + ")", "#eta_{#bar{#mu}}", "", 80, -2.5, 2.5);
         histsPerCut[i].phiL1 = CreateHist("AntimuonPhi" + index_str, "Antimuon Phi (" + PER_CUT_TITLE[i] + ")", "#varphi_{#bar{#mu}}", "rad", 80, -3.3, 3.3);
         histsPerCut[i].isoL1 = CreateHist("AntimuonIsolation" + index_str, "Antimuon Isolation (" + PER_CUT_TITLE[i] + ")", "Isolation / P_{#bar{#mu}, T}", "GeV^{-1}", 80, -0.5, 20);
-        histsPerCut[i].sipL1 = CreateHist("AntimuonSIP" + index_str, "Antimuon SIP (" + PER_CUT_TITLE[i] + ")", "SIP_{#bar{#mu}}", "", 60, -1.5, 60);
+        histsPerCut[i].sipL1 = CreateHist("AntimuonSIP" + index_str, "Antimuon SIP (" + PER_CUT_TITLE[i] + ")", "SIP_{#bar{#mu}}", "", 60, -0.5, 20);
 
         histsPerCut[i].ptL2 = CreateHist("MuonPt" + index_str, "Muon Pt (" + PER_CUT_TITLE[i] + ")", "P_{#mu, T}", "GeV", 80, 0, 160);
         histsPerCut[i].etaL2 = CreateHist("MuonEta" + index_str, "Muon Eta (" + PER_CUT_TITLE[i] + ")", "#eta_{#mu}", "", 80, -2.5, 2.5);
         histsPerCut[i].phiL2 = CreateHist("MuonPhi" + index_str, "Muon Phi (" + PER_CUT_TITLE[i] + ")", "#varphi_{#mu}", "rad", 80, -3.3, 3.3);
         histsPerCut[i].isoL2 = CreateHist("MuonIsolation" + index_str, "Muon Isolation (" + PER_CUT_TITLE[i] + ")", "Isolation / P_{#mu, T}", "GeV^{-1}", 80, -0.5, 20);
-        histsPerCut[i].sipL2 = CreateHist("MuonSIP" + index_str, "Muon SIP (" + PER_CUT_TITLE[i] + ")", "SIP_{#mu}", "", 60, -1.5, 60);  
+        histsPerCut[i].sipL2 = CreateHist("MuonSIP" + index_str, "Muon SIP (" + PER_CUT_TITLE[i] + ")", "SIP_{#mu}", "", 60, -0.5, 20);  
 
     	histsPerCut[i].hAll = new HistoZ("all" + index_str, "Z Mass (" + PER_CUT_TITLE[i] + ")");
     	float stepBin = (maxBin - minBin) / nBins;
@@ -192,7 +269,9 @@ void ZlumiTreeReader::CreatePerCutHists()
 			histsPerCut[i].hByBin.push_back(new HistoZ(to_string(bin).c_str() + index_str, "Z Mass (" + PER_CUT_TITLE[i] + ") for " + histoNameStr));
 		}
 
-		histsPerCut[i].xSection_fit = new TH1F(("XSection_fit" + index_str).c_str(), ("XSection calculated by fitting (" + PER_CUT_TITLE[i] + "); inst. luminosity [#mub^{-1}]; x-section [nb]").c_str(), nBins, minBin, maxBin);
+		histsPerCut[i].xSection_fitVExpo = new TH1F(("XSection_fit_VExpo" + index_str).c_str(), ("XSection calculated by fitting with VExpo (" + PER_CUT_TITLE[i] + "); inst. luminosity [#mub^{-1}]; x-section [nb]").c_str(), nBins, minBin, maxBin);
+		histsPerCut[i].xSection_fit2VExpo = new TH1F(("XSection_fit_2VExpo" + index_str).c_str(), ("XSection calculated by fitting with 2VExpo (" + PER_CUT_TITLE[i] + "); inst. luminosity [#mub^{-1}]; x-section [nb]").c_str(), nBins, minBin, maxBin);
+		histsPerCut[i].xSection_fit2VExpoMin70 = new TH1F(("XSection_fit_2VExpoMin70" + index_str).c_str(), ("XSection calculated by fitting with 2VExpoMin70 (" + PER_CUT_TITLE[i] + "); inst. luminosity [#mub^{-1}]; x-section [nb]").c_str(), nBins, minBin, maxBin);
 		histsPerCut[i].xSection_count = new TH1F(("XSection_count" + index_str).c_str(), ("XSection calculated by counting (" + PER_CUT_TITLE[i] + "); inst. luminosity [#mub^{-1}]; x-section [nb]").c_str(), nBins, minBin, maxBin);
 
 		histsPerCut[i].nVtx_delLumi = new TProfile(("NVtx_delLumi" + index_str).c_str(), ("#vertices vs. luminosity (" + PER_CUT_TITLE[i] + "); #vertices; luminosity per BX [cm^{-2}s^{-1}]").c_str(), 15, 0, 30);
@@ -263,7 +342,9 @@ void ZlumiTreeReader::DrawPerCutHists()
 		for (int bin = 0; bin < nBins; bin++) {
 			histsPerCut[i].hByBin[bin]->hMass->Write();
 		}
-		histsPerCut[i].xSection_fit->Write();
+		histsPerCut[i].xSection_fitVExpo->Write();
+		histsPerCut[i].xSection_fit2VExpo->Write();
+		histsPerCut[i].xSection_fit2VExpoMin70->Write();
 		histsPerCut[i].xSection_count->Write();
 
 		histsPerCut[i].nVtx_delLumi->Write();
@@ -297,7 +378,9 @@ void ZlumiTreeReader::DeletePerCutHists()
 		for (int bin = 0; bin < nBins; bin++) {
 			delete histsPerCut[i].hByBin[bin]->hMass;
 		}
-		delete histsPerCut[i].xSection_fit;
+		delete histsPerCut[i].xSection_fitVExpo;
+		delete histsPerCut[i].xSection_fit2VExpo;
+		delete histsPerCut[i].xSection_fit2VExpoMin70;
 		delete histsPerCut[i].xSection_count;
 	}
 }
@@ -310,20 +393,22 @@ void writeAndDeleteHist(TH1* hist) {
 
 // looks whether one event survive the cut or not
 bool ZlumiTreeReader::analyseCut(/*SIP*/ float sip, /*pt*/ float pt, /*eta*/ float eta, /*Iso*/ float iso, /*ZMass*/ float massZ_min, float massZ_max, int index_Z) {
-	if (!(Lep1SIP->at(index_Z) < sip && Lep2SIP->at(index_Z) < sip))
+	if (!(ZMass->at(index_Z) > massZ_min && ZMass->at(index_Z) < massZ_max))
 		return false;
 	if (!(Lep1Pt->at(index_Z) > pt && Lep2Pt->at(index_Z) > pt))
+		return false;
+	if (!(Lep1SIP->at(index_Z) < sip && Lep2SIP->at(index_Z) < sip))
 		return false;
 	if (!(abs(Lep1Eta->at(index_Z)) < eta && abs(Lep2Eta->at(index_Z)) < eta))
 		return false;
 	if (!((Lep1chargedHadIso->at(index_Z) + Lep1neutralHadIso->at(index_Z) + Lep1photonIso->at(index_Z)) / Lep1Pt->at(index_Z) < iso && (Lep2chargedHadIso->at(index_Z) + Lep2neutralHadIso->at(index_Z) + Lep2photonIso->at(index_Z)) / Lep2Pt->at(index_Z) < iso))
 		return false;
-	if (!(ZMass->at(index_Z) > massZ_min && ZMass->at(index_Z) < massZ_max))
-		return false;
+	
 	// all values are correct
 	return true;
 }
 
+// convert the given string into the filename and the run number list
 void ZlumiTreeReader::ParseOption(const std::string& opt)
 {
 	if (opt.find(':') != opt.npos) {
@@ -397,7 +482,7 @@ void ZlumiTreeReader::Begin(TTree* /*tree*/)
 		hLumiIntegralsByBin->SetName("hRec");
 
 		first = false;
-	}	
+	}
 
 	cout << " all histograms are created" << endl;
 }
@@ -460,28 +545,25 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 
 	// analyse cutflow
 	beforeCuts++;
-	bool survive_sip = analyseCut(0.4, 0, 10, 400, 0, 200, index_Z);
-	if (survive_sip) {
-		cutSIP++;
-		bool survive_pt = analyseCut(0.4, 20, 10, 400, 0, 200, index_Z);
+	bool survive_ZMass = analyseCut(400, 0, 10, 400, 55, 120, index_Z);
+	if (survive_ZMass) {
+		cutZMass++;
+		bool survive_pt = analyseCut(400, 20, 10, 400, 55, 120, index_Z);
 		if (survive_pt) {
 			cutPt++;
-			bool survive_ZMass = analyseCut(0.4, 20, 10, 400, 55, 120, index_Z);
-			if (survive_ZMass) {
-				cutZMass++;
+			bool survive_sip = analyseCut(5, 20, 10, 400, 55, 120, index_Z);
+			if (survive_sip) {
+				cutSIP++;
 			}
 		}
 	}
+
 	
 	// check different cut possibilities
-	bool survive_cut = analyseCut(/*SIP*/ 0.4, /*pt*/ 20, /*eta*/ 10, /*Iso*/ 0.4, /*ZMass*/ 55, 120, index_Z);
-	if(survive_cut) {
-		FillPerCutHist(FIRST_CUT, index_Z, lumiBXIndex);
-	}
-	bool survive_withoutIso = analyseCut(0.4, 20, 10, 400, 55, 120, index_Z);
-	bool survive_withIso = analyseCut(0.4, 20, 10, 0.4, 55, 120, index_Z);
-	bool survive_eta_withoutIso = analyseCut(0.4, 20, 1.2, 400, 55, 120, index_Z);
-	bool survive_eta_withIso = analyseCut(0.4, 20, 1.2, 0.4, 55, 120, index_Z);
+	bool survive_withoutIso = analyseCut(5, 20, 10, 400, 55, 120, index_Z);
+	bool survive_withIso = analyseCut(5, 20, 10, 0.4, 55, 120, index_Z);
+	bool survive_eta_withoutIso = analyseCut(5, 20, 1.2, 400, 55, 120, index_Z);
+	bool survive_eta_withIso = analyseCut(5, 20, 1.2, 0.4, 55, 120, index_Z);
 
 	if (survive_withoutIso) {
 		withoutIso++;
@@ -520,20 +602,34 @@ void ZlumiTreeReader::Terminate()
 
 	cout << " write the histograms in the root-file and calculate the crossSection" << endl;
 
+	// load the eff root files and remember eff for every cut
+	vector<pair<double, double> > graphEntries (nBins, make_pair(-1, -1));
+	TFile* eff_File = new TFile("../TagAndProbe/Run2012A_save.root");
+	for (size_t cut = 0; cut < NUM_CUTS; cut++) {
+		if (eff_File->IsZombie())
+			cout << "could not open file " << eff_File << endl;
+		else {
+			// get TGraph, save them for eff
+		 	graphEntries = getEntries(eff_File, PER_CUT_FOLDER_Mu17[cut], PER_CUT_FOLDER_Mu8[cut]);
+		}
+		eff[cut] = saveEff(graphEntries);
+	}
+
+
 	myFile->cd();
 
 	writeAndDeleteHist(wholeMassZ_selected);
 
 	cutflow->SetBinContent(1, beforeCuts);
 	cutflow->GetXaxis()->SetBinLabel(1, "before cuts");
-	cutflow->SetBinContent(2, cutSIP);
-	cutflow->GetXaxis()->SetBinLabel(2, "after SIP cut");
+	cutflow->SetBinContent(2, cutZMass);
+	cutflow->GetXaxis()->SetBinLabel(2, "after Z mass cut");
 	cutflow->SetBinContent(3, cutPt);
 	cutflow->GetXaxis()->SetBinLabel(3, "after Pt cut");
-	cutflow->SetBinContent(4, cutZMass);
-	cutflow->GetXaxis()->SetBinLabel(4, "after Z mass cut");
+	cutflow->SetBinContent(4, cutSIP);
+	cutflow->GetXaxis()->SetBinLabel(4, "after SIP cut");
 
-	//cutflow->GetXaxis()->SetBinLabel(5, "-> SIP cut, written cut, Z mass cut");
+	//cutflow->GetXaxis()->SetBinLabel(5, "-> Z Mass cut, Pt cut, SIP cut, written cut");
 	cutflow->SetBinContent(6, withoutIso);
 	cutflow->GetXaxis()->SetBinLabel(6, "without isolation cut");
 	cutflow->SetBinContent(7, withIso);
@@ -554,53 +650,91 @@ void ZlumiTreeReader::Terminate()
 	for (size_t i = 0; i < NUM_CUTS; i++) {
 		// actually compute the Xsection
 		for (int bin = 0; bin < nBins; bin++) {
-			ZPeakFit fit_ZMass(histsPerCut[i].hByBin[bin]->hMass);
+			string fit_name = "Mass_bin" + to_string(bin) + " (" + PER_CUT_TITLE[i] + ")";
+			ZPeakFit fit_ZMass(histsPerCut[i].hByBin[bin]->hMass, fit_name);
 			fit.push_back(fit_ZMass);
-			RooPlot* frame_ZMass = fit_ZMass.fitVExpo("Mass_bin" + to_string(bin) + "_" + to_string(i));
-			frame.push_back(frame_ZMass);
+			fit_ZMass.fitVExpo(fit_name);
+			fit_ZMass.fit2VExpo(fit_name);
+			fit_ZMass.fit2VExpoMin70(fit_name);
+
+			RooPlot* frame_ZMass = fit_ZMass.plot();
 			fit_ZMass.save(frame_ZMass);
 
-			RooFitResult* result = fit_ZMass.getResult();
-			RooRealVar* par1 = (RooRealVar*) result->floatParsFinal().find("numTot");
-			double value = par1->getVal();
-			RooRealVar* par2 = (RooRealVar*) result->floatParsFinal().find("fSigAll");
-			double value2 = par2->getVal();
+			// get the fit results for the different fits
+			RooFitResult* result_VExpo = fit_ZMass.getResult("VExpo");
+			RooRealVar* par1_VExpo = (RooRealVar*) result_VExpo->floatParsFinal().find("numTot_VExpo");
+			double numTot_VExpo = par1_VExpo->getVal();
+			RooRealVar* par2_VExpo = (RooRealVar*) result_VExpo->floatParsFinal().find("fSigAll_VExpo");
+			double fSigAll_VExpo = par2_VExpo->getVal();
 
-			double nZInBin_count = histsPerCut[i].hByBin[bin]->hMass->Integral(histsPerCut[i].hByBin[bin]->hMass->GetXaxis()->FindBin(70.), histsPerCut[i].hByBin[bin]->hMass->GetXaxis()->FindBin(110.));
-			cout << nZInBin_count << endl;
-			double nZInBin_fit = value * value2;
+			RooFitResult* result_2VExpo = fit_ZMass.getResult("2VExpo");
+			RooRealVar* par1_2VExpo = (RooRealVar*) result_2VExpo->floatParsFinal().find("numTot_2VExpo");
+			double numTot_2VExpo = par1_2VExpo->getVal();
+			RooRealVar* par2_2VExpo = (RooRealVar*) result_2VExpo->floatParsFinal().find("fSigAll_2VExpo");
+			double fSigAll_2VExpo = par2_2VExpo->getVal();
+
+			RooFitResult* result_2VExpoMin70 = fit_ZMass.getResult("2VExpoMin70");
+			RooRealVar* par1_2VExpoMin70 = (RooRealVar*) result_2VExpoMin70->floatParsFinal().find("numTot_2VExpoMin70");
+			double numTot_2VExpoMin70 = par1_2VExpoMin70->getVal();
+			RooRealVar* par2_2VExpoMin70 = (RooRealVar*) result_2VExpoMin70->floatParsFinal().find("fSigAll_2VExpoMin70");
+			double fSigAll_2VExpoMin70 = par2_2VExpoMin70->getVal();
+
+
+			// get luminosity and Z counts
 			double lumiInBin = hLumiIntegralsByBin->GetBinContent(bin);
-
+			// TODO: get eff per lumi
+			double nZInBin_count = histsPerCut[i].hByBin[bin]->hMass->Integral(histsPerCut[i].hByBin[bin]->hMass->GetXaxis()->FindBin(70.), histsPerCut[i].hByBin[bin]->hMass->GetXaxis()->FindBin(110.));
+			double nZInBin_fit_VExpo = numTot_VExpo * fSigAll_VExpo;
+			double nZInBin_fit_2VExpo = numTot_2VExpo * fSigAll_2VExpo;
+			double nZInBin_fit_2VExpoMin70 = numTot_2VExpoMin70 * fSigAll_2VExpoMin70;
+			
+			// calculate cross section
 			double xSectionInBin_count = 0;
 			double xSecErrorInBin_count = 0;
-			double xSectionInBin_fit = 0;
-			double xSecErrorInBin_fit = 0;
+			double xSectionInBin_fitVExpo = 0;
+			double xSecErrorInBin_fitVExpo = 0;
+			double xSectionInBin_fit2VExpo = 0;
+			double xSecErrorInBin_fit2VExpo = 0;
+			double xSectionInBin_fit2VExpoMin70 = 0;
+			double xSecErrorInBin_fit2VExpoMin70 = 0;
 
 			if (lumiInBin != 0) {
-				xSectionInBin_fit = nZInBin_fit * 1000 / lumiInBin;
-				xSecErrorInBin_fit = sqrt(nZInBin_fit) * 1000 / lumiInBin;
-				xSectionInBin_count = nZInBin_count * 1000 / lumiInBin;
-				xSecErrorInBin_count = sqrt(nZInBin_count) * 1000 / lumiInBin;
+				xSectionInBin_fitVExpo = nZInBin_fit_VExpo * 1000 / (lumiInBin * eff[i][bin]);
+				xSecErrorInBin_fitVExpo = sqrt(nZInBin_fit_VExpo) * 1000 / (lumiInBin * eff[i][bin]);
+				xSectionInBin_fit2VExpo = nZInBin_fit_2VExpo * 1000 / (lumiInBin * eff[i][bin]);
+				xSecErrorInBin_fit2VExpo = sqrt(nZInBin_fit_2VExpo) * 1000 / (lumiInBin * eff[i][bin]);
+				xSectionInBin_fit2VExpoMin70 = nZInBin_fit_2VExpoMin70 * 1000 / (lumiInBin * eff[i][bin]);
+				xSecErrorInBin_fit2VExpoMin70 = sqrt(nZInBin_fit_2VExpoMin70) * 1000 / (lumiInBin * eff[i][bin]);
+				xSectionInBin_count = nZInBin_count * 1000 / (lumiInBin * eff[i][bin]);
+				xSecErrorInBin_count = sqrt(nZInBin_count) * 1000 / (lumiInBin * eff[i][bin]);
 			}
-			histsPerCut[i].xSection_fit->SetBinContent(bin, xSectionInBin_fit);
-			histsPerCut[i].xSection_fit->SetBinError(bin, xSecErrorInBin_fit);
+			histsPerCut[i].xSection_fitVExpo->SetBinContent(bin, xSectionInBin_fitVExpo);
+			histsPerCut[i].xSection_fitVExpo->SetBinError(bin, xSecErrorInBin_fitVExpo);
+			histsPerCut[i].xSection_fit2VExpo->SetBinContent(bin, xSectionInBin_fit2VExpo);
+			histsPerCut[i].xSection_fit2VExpo->SetBinError(bin, xSecErrorInBin_fit2VExpo);
+			histsPerCut[i].xSection_fit2VExpoMin70->SetBinContent(bin, xSectionInBin_fit2VExpoMin70);
+			histsPerCut[i].xSection_fit2VExpoMin70->SetBinError(bin, xSecErrorInBin_fit2VExpoMin70);
 			histsPerCut[i].xSection_count->SetBinContent(bin, xSectionInBin_count);
-			histsPerCut[i].xSection_count->SetBinError(bin, xSecErrorInBin_count);
+			histsPerCut[i].xSection_count->SetBinError(bin, xSecErrorInBin_count); 
 		}
 		// fit the ZPeak
-		ZPeakFit fit_hAll(histsPerCut[i].hAll->hMass);
+		string fit_name_hAll = "all_Mass (" + PER_CUT_TITLE[i] + ")";
+		ZPeakFit fit_hAll(histsPerCut[i].hAll->hMass, fit_name_hAll);
 		fit.push_back(fit_hAll);
-		RooPlot* frame_hAll = fit_hAll.fitVExpo("all_Mass" + to_string(i));
+		fit_hAll.fitVExpo(fit_name_hAll);
+		fit_hAll.fit2VExpo(fit_name_hAll);
+		fit_hAll.fit2VExpoMin70(fit_name_hAll);
+
+		RooPlot* frame_hAll = fit_hAll.plot();
 		frame.push_back(frame_hAll);
 		fit_hAll.save(frame_hAll);
 	}
-
-
 
 	writeAndDeleteHist(hLumiIntegralsByBin);
 
 	DrawPerCutHists();
 	DeletePerCutHists();
+
 
 	// do not close the file before deleting all objects, otherwise it will crash!
 	myFile->Close();

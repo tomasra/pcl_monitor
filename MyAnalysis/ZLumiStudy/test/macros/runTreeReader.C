@@ -65,7 +65,7 @@ void runTreeReader() {
 
 
 // select one special <runnumber>, pres.c_str() or all.c_str()
-  chain->Process(selector, "194210");
+  chain->Process(selector, pres.c_str());
 
 
 }

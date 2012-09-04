@@ -27,24 +27,34 @@
 
 class ZPeakFit {
 public:
-	ZPeakFit(TH1* h);
+	ZPeakFit(TH1* h, std::string title);
 
 
-	RooPlot* fitVExpo(std::string title);
-	RooPlot* fit2VExpo(std::string title);
-	RooPlot* fit2VExpoMin70(std::string title);
+	void fitVExpo(std::string title);
+	void fit2VExpo(std::string title);
+	void fit2VExpoMin70(std::string title);
 	
-	RooFitResult* getResult();
-
+	RooFitResult* getResult(std::string fit);
+	RooPlot* plot();
 
 	void save(RooPlot* frame);
 
 private:
 	RooRealVar mass;
 	RooDataHist data;
-	RooFitResult* result;
+	RooFitResult* result_VExpo;
+	RooFitResult* result_2VExpo;
+	RooFitResult* result_2VExpoMin70;
 	RooWorkspace w;
+	RooPlot* massframe;
 
-	RooPlot* fit(std::string title);
+	RooAbsPdf* pdf_VExpo;
+	RooAbsPdf* pdf_2VExpo;
+	RooAbsPdf* pdf_2VExpoMin70;
+
+	bool fit_VExpo;
+	bool fit_2VExpo;
+	bool fit_2VExpoMin70;
+
 };
 #endif

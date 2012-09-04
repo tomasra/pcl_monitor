@@ -33,23 +33,6 @@ public:
   }
 
 
- /* HistoZ * Clone(std::string name) {
-    HistoZ *ret = new HistoZ();
-    ret->theName = name;
-
-    if(hMass != 0) hPhi->Clone((ret->theName+"_hMass").Data());
-
-    return ret;
-  }
-
-
-
-  void Add(const HistoZ* histSet) {
-    if(hMass != 0) hPhi->Add(histSet->hMass);
-  }
-*/
-
-
   void Scale(double scaleFact) {
     if(hMass != 0) hMass->Scale(scaleFact);
   }

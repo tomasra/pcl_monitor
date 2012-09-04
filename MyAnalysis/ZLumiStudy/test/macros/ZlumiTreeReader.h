@@ -27,7 +27,9 @@ struct PerCutHistograms
    HistoZ* hAll;
    vector<HistoZ*> hByBin;
 
-   TH1F* xSection_fit;
+   TH1F* xSection_fitVExpo;
+   TH1F* xSection_fit2VExpo;
+   TH1F* xSection_fit2VExpoMin70;
    TH1F* xSection_count;
 
    TH1F* ptZ;
@@ -51,14 +53,13 @@ struct PerCutHistograms
 }; 
 
 
-#define NUM_CUTS 6
+#define NUM_CUTS 5
 
 #define NO_CUT 0
-#define FIRST_CUT 1
-#define ISOLATION_CUT 2
-#define NO_ISOLATION_CUT 3
-#define ETA_AND_ISOLATION_CUT 4
-#define ETA_AND_NO_ISOLATION_CUT 5
+#define ISOLATION_CUT 1
+#define NO_ISOLATION_CUT 2
+#define ETA_AND_ISOLATION_CUT 3
+#define ETA_AND_NO_ISOLATION_CUT 4
 
 
 
@@ -196,6 +197,7 @@ public :
    bool analyseCut(/*SIP*/ float sip, /*Pt*/ float pt, /*eta*/ float eta, /*Iso*/ float iso, /*ZMass*/ float massZ_min, float massZ_max, int index_Z);
 
    PerCutHistograms histsPerCut[NUM_CUTS];
+
 
    void CreatePerCutHists();
    void FillPerCutHist(size_t index, int index_Z, RunLumiBXIndex lumiBXIndex);

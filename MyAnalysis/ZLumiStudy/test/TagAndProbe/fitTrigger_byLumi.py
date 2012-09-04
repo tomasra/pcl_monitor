@@ -12,7 +12,13 @@ args = sys.argv[1:]
 if (sys.argv[0] == "cmsRun"): args =sys.argv[2:]
 scenario = "data_all"
 if len(args) > 0: scenario = args[0]
-print "Will run scenario ", scenario 
+print "Will run scenario ", scenario
+
+run_files = "Run2012B"
+print "Will use files for ", run_files
+
+outputName = run_files + "_TnP_Z_Trigger_" + scenario + ".root"
+
 
 process = cms.Process("TagProbe")
 
@@ -26,24 +32,26 @@ process.TnP_Trigger = cms.EDAnalyzer("TagProbeFitTreeAnalyzer",
     NumCPU = cms.uint32(1),
     SaveWorkspace = cms.bool(False),
 
-    InputFileNames = cms.vstring('/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_9_1_1Iu_sorted_lumi.root',
-'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_82_2_eSg_sorted_lumi.root',
-'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_84_2_jrg_sorted_lumi.root',
-'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_85_2_Yoi_sorted_lumi.root',
-'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_86_2_spN_sorted_lumi.root',
-'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_87_1_7Nl_sorted_lumi.root',
-'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_88_1_ll4_sorted_lumi.root',
-'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_89_1_RMZ_sorted_lumi.root',
-'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_8_1_NYr_sorted_lumi.root',
-'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_90_1_Wym_sorted_lumi.root',
-'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_91_1_ZsV_sorted_lumi.root',
-'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_92_1_F88_sorted_lumi.root',
-'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_93_1_oox_sorted_lumi.root',
-'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_94_1_pKE_sorted_lumi.root',
-                                 ),
+    InputFileNames = cms.vstring(),
+
+#    InputFileNames = cms.vstring('/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_9_1_1Iu_sorted_lumi.root',
+#'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_82_2_eSg_sorted_lumi.root',
+#'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_84_2_jrg_sorted_lumi.root',
+#'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_85_2_Yoi_sorted_lumi.root',
+#'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_86_2_spN_sorted_lumi.root',
+#'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_87_1_7Nl_sorted_lumi.root',
+#'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_88_1_ll4_sorted_lumi.root',
+#'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_89_1_RMZ_sorted_lumi.root',
+#'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_8_1_NYr_sorted_lumi.root',
+#'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_90_1_Wym_sorted_lumi.root',
+#'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_91_1_ZsV_sorted_lumi.root',
+#'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_92_1_F88_sorted_lumi.root',
+#'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_93_1_oox_sorted_lumi.root',
+#'/data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1_lumi/tnpZ_Data_94_1_pKE_sorted_lumi.root',
+#                                 ),
     InputTreeName = cms.string("fitter_tree"),
     InputDirectoryName = cms.string("tpTree"),
-    OutputFileName = cms.string("TnP_Z_Trigger_%s.root" % scenario),
+    OutputFileName = cms.string(outputName),
 
     Variables = cms.PSet(
         mass = cms.vstring("Tag-Probe Mass", "70", "110", "GeV/c^{2}"),
@@ -54,6 +62,8 @@ process.TnP_Trigger = cms.EDAnalyzer("TagProbeFitTreeAnalyzer",
         bxInstLumi = cms.vstring("Inst. Lumi. by BX","0","7", "1/ub"),
         tag_pt = cms.vstring("Tag p_{T}", "2.6", "1000", "GeV/c"),
         combRelIso = cms.vstring("Iso", "0", "6", ""),
+        dxyPVdzmin = cms.vstring("dxyPVdzmin", "0", "10","cm"),
+        dzPV = cms.vstring("dzPV", "0", "10", "cm"),
     ),
 
     Categories = cms.PSet(
@@ -62,12 +72,18 @@ process.TnP_Trigger = cms.EDAnalyzer("TagProbeFitTreeAnalyzer",
         VBTF = cms.vstring("VBTFLike", "dummy[pass=1,fail=0]"),
         Isol = cms.vstring("MC true",  "dummy[pass=1,fail=0]"),
         DoubleMu17Mu8_Mu17  = cms.vstring("DoubleMu17Mu8_Mu17",  "dummy[pass=1,fail=0]"),
+        DoubleMu17Mu8_Mu8  = cms.vstring("DoubleMu17Mu8_Mu8",  "dummy[pass=1,fail=0]"),
+        GlbOrTMwMatch = cms.vstring("GlbOrTMwMatch", "dummy[pass=1,fail=0]"),
+        PF = cms.vstring("PF", "dummy[pass=1,fail=0]"),
     ),
 
     Cuts = cms.PSet(
         eta1P2 = cms.vstring("abseta < 1.2", "abseta", "1.2"),
-        eta2P1 = cms.vstring("abseta < 2.1", "abseta", "2.1"),
         eta2P4 = cms.vstring("abseta < 2.4", "abseta", "2.4"),
+        pt20 = cms.vstring("pt > 20", "pt", "20"),
+        dxyPV0P5 = cms.vstring("dxy (from PV) < 0.5", "dxyPVdzmin", "0.5"),
+        dz1 = cms.vstring("dz < 1", "dzPV", "1"),
+        SIP0P4 = cms.vstring("SIP < 0.4", "SIP", "0.4"),
     ),
 
     PDFs = cms.PSet(
@@ -99,6 +115,26 @@ process.TnP_Trigger = cms.EDAnalyzer("TagProbeFitTreeAnalyzer",
     Efficiencies = cms.PSet(), # will be filled later
 )
 
+
+# load file for root-files
+files = []
+read_file = open(run_files + ".txt", "r")
+
+# change nth_lines or lines_to_use
+lines_to_use = 2
+nth_line = 3
+
+for ln, line in enumerate(read_file):
+    if ln%nth_line == lines_to_use:
+        lineparts = line.split('\n')
+        if lineparts[0] != "":
+            files.append(lineparts[0])
+read_file.close()
+
+for i in range(len(files)):
+    print files[i]
+
+process.TnP_Trigger.InputFileNames += files
 
 # === SETTINGS
 # ==================================================================================================
@@ -177,14 +213,39 @@ ALLBINS = [
 #                    BinToPDFmap = cms.vstring("vpvPlusExpo")
 #                ))
 
-for (T,M) in [ ("DoubleMu17Mu8_Mu17","Track"),("DoubleMu17Mu8_Mu17","OurMuonID")]:
+def GetOurMuonId(trigger, extraCuts):
+    result = cms.vstring(trigger, 'pass',
+                "GlbOrTMwMatch", "pass",
+                "VBTF", "pass",
+                "pt20", "above",  # eff vs pt
+                "dxyPV0P5", "below",
+                "dz1", "below",
+                "PF", "pass", # check
+                "SIP0P4", "below"
+                # isolation
+            )
+    result += extraCuts
+    return result
+
+#bxInstLumi = cms.vdouble([1+0.25*x for x in range(0,17)])  
+
+for (T,M) in [ ("DoubleMu17Mu8_Mu17","Track"),("DoubleMu17Mu8_Mu17","OurMuonID"),("DoubleMu17Mu8_Mu8","Track"),("DoubleMu17Mu8_Mu8","OurMuonID")]:
     print "--------------"
     print "Trigger: " + T
     print "From: " + M
 
     if M == 'OurMuonID':
-        setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_lumi", cms.PSet(
-            EfficiencyCategoryAndState = cms.vstring(T, "pass", "VBTF", "pass", "eta2P1", "below"),
+        setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_lumi_Eta2P4_for_" + run_files, cms.PSet(
+            EfficiencyCategoryAndState = GetOurMuonId(T, ["eta2P4", "below"]),
+            UnbinnedVariables = cms.vstring("mass"),
+            BinnedVariables = cms.PSet(  # eta cut here
+                bxInstLumi = cms.vdouble(1.0, 1.25, 1.5, 1.75, 2., 2.25, 2.5, 2.75, 3., 3.25, 3.5, 3.75, 4., 4.25, 4.5, 4.75, 5)
+                ),
+            BinToPDFmap = cms.vstring("vpvPlusExpo")
+            ))
+    
+        setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_lumi_Eta1P2_for_" + run_files, cms.PSet(
+            EfficiencyCategoryAndState = GetOurMuonId(T, ["eta1P2", "below"]),
             UnbinnedVariables = cms.vstring("mass"),
             BinnedVariables = cms.PSet(
                 bxInstLumi = cms.vdouble(1.0, 1.25, 1.5, 1.75, 2., 2.25, 2.5, 2.75, 3., 3.25, 3.5, 3.75, 4., 4.25, 4.5, 4.75, 5)
@@ -193,7 +254,7 @@ for (T,M) in [ ("DoubleMu17Mu8_Mu17","Track"),("DoubleMu17Mu8_Mu17","OurMuonID")
             ))
 
     elif M == "Track":
-        setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_lumi", cms.PSet(
+        setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_lumi_for_" + run_files, cms.PSet(
             EfficiencyCategoryAndState = cms.vstring(T, "pass"),
             UnbinnedVariables = cms.vstring("mass"),
             BinnedVariables = cms.PSet(
