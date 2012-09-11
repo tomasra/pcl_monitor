@@ -34,7 +34,11 @@ if __name__     ==  "__main__":
     parser.add_option("-f", "--file", dest="file",
                       help="file with tags for addpkg", type="str", metavar="<filename>",default="None")
     parser.add_option("--auto", action="store_true",dest="auto",default=False, help="guess the global-tag type from the name")
-    
+    parser.add_option("--gtsqlitestore", dest="gtsqlitestore", type="str", default=GTSQLITESTORE,
+                      help="directory where the sqlite of the Global-Tag are stored and read from after creation")
+    parser.add_option("--gtcreationarea", dest="gtcreationarea", type="str", default=GTCREATIONAREA,
+        help="directory where the sqlite of the Global-Tags are created")
+
     (options, args) = parser.parse_args()
     #print "OPTIONS: ", options
     #print "ARGS: ", args
@@ -89,17 +93,17 @@ if __name__     ==  "__main__":
 
     # copy the sqlite file in the public if not already there
     for gt in args:
-        newsqlite = GTCREATIONAREA+'/'+gt+'.db'
-        sqlitefile = GTSQLITESTORE+'/'+gt+'.db'
+        newsqlite = options.gtsqlitestore +'/'+gt+'.db'
+        sqlitefile = options.gtsqlitestore +'/'+gt+'.db'
         if os.path.exists(newsqlite):
             shutil.move(newsqlite, sqlitefile)
-            print 'move sql file: ' + newsqlite + ' to ' + GTSQLITESTORE
+            print 'move sql file: ' + newsqlite + ' to ' + options.gtsqlitestore
         else:
             if not os.path.exists(sqlitefile):            
                 print '***Error: no sqlite file for GT: ' + gt
                 if not options.force:
                     args.remove(gt)
-            newsqlite = GTCREATIONAREA+'/'+gt+'.db'
+            newsqlite = options.gtcreationarea +'/'+gt+'.db'
 #             if not os.path.exists(newsqlite):
 #                 print '***Error: no sqlite file for GT: ' + gt
 #                 args.remove(gt) # FIXME: really needed?
@@ -156,7 +160,7 @@ if __name__     ==  "__main__":
 
 
         # reaqd from sqlite file
-        loadallcommand_local = "cmsRun loadall_from_gt_cfg.py globalTag=" + gt + " connect=sqlite_file:" + GTSQLITESTORE + "/" + gt + ".db"
+        loadallcommand_local = "cmsRun loadall_from_gt_cfg.py globalTag=" + gt + " connect=sqlite_file:" + options.gtsqlitestore + "/" + gt + ".db"
         if isMc:
             loadallcommand_local = loadallcommand_local + " runNumber=2"
         if isOnline:
@@ -308,3 +312,4 @@ if __name__     ==  "__main__":
         
 
     
+  
