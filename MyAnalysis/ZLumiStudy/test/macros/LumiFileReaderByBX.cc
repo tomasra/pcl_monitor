@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2012/08/23 14:55:15 $
- *  $Revision: 1.14 $
+ *  $Date: 2012/09/04 13:43:07 $
+ *  $Revision: 1.15 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -35,7 +35,7 @@ A lexical_cast(const B& b)
 }
 
 
-LumiFileReaderByBX::LumiFileReaderByBX(const TString& dirBaseName) : theDirBaseName(dirBaseName), cachedRun(-1) {}
+LumiFileReaderByBX::LumiFileReaderByBX(const TString& dirBaseName) : theDirBaseName(dirBaseName), cachedRun(-1), foundRun(true) {}
 
 LumiFileReaderByBX::~LumiFileReaderByBX(){}
 
@@ -61,7 +61,8 @@ bool LumiFileReaderByBX::readFileForRun(const int run, bool shouldreadCSV /*=fal
     // read the file
     if (shouldreadCSV || !readRootFile(rootFileName,run, run+1)) {
       readCSVFileNew(fileName, run, run+1);
-      convertToRootFile();
+      if (foundRun)
+        convertToRootFile();
     }
 
     // add to the bins and total integrals
@@ -118,6 +119,10 @@ bool LumiFileReaderByBX::check_BXFilled(const RunLumiBXIndex& runAndLumiAndBX) c
     return false;
   }
   return true;
+}
+
+bool LumiFileReaderByBX::isGood() {
+  return foundRun;
 }
 
 
@@ -305,6 +310,10 @@ void LumiFileReaderByBX::readCSVFileNew(const TString& fileName, int runMin, int
   theTotalLumiByRun[theRun] = lsTotalLumiContainer;
   cout << "    run: " << theRun << " # ls: " << lsContainer.size() << endl;
 
+  // look whether the run is found or not
+  if (theRun == -1)
+    foundRun = false;
+
 }
 
 void LumiFileReaderByBX::getFillingScheme(int run) {
@@ -317,6 +326,7 @@ void LumiFileReaderByBX::getFillingScheme(int run) {
     inf.open(fileName);
     if (!inf.good()) {
       cout << "WARNING: Failed to create filling scheme file: " << fileName.Data() << "\n";
+      foundRun = false;
       return;
     }
   }
@@ -382,7 +392,6 @@ bool LumiFileReaderByBX::readRootFile(const TString& fileName, int /*runMin*/, i
   TFile *file = new TFile(fileName.Data());
 
   if(file->IsZombie()) return false;
-
 
   cout << "  ROOT file: " << fileName << endl;
 

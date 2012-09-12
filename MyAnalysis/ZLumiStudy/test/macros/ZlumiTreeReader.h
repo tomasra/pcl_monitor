@@ -50,6 +50,8 @@ struct PerCutHistograms
 
    TProfile* nVtx_delLumi;
    TProfile* ls_delLumi;
+
+   TH1F* eff;
 }; 
 
 
@@ -209,6 +211,7 @@ public :
    bool useSingleRun;
    int  singleRun;
    std::set<int> runsToUse;
+   std::set<int> runNotFound;
    std::string processName;
 
    std::map<int, LumiFileReaderByBX> lumiReader;

@@ -24,8 +24,8 @@ extern const float LENGTH_LS;
  *  double instLumi = lumiMap.getAvgInstLumi(runAndLumiAndBx); -> get the Instantaneous lumi (averaged on the LS)
  *
  *  
- *  $Date: 2012/08/16 15:34:41 $
- *  $Revision: 1.7 $
+ *  $Date: 2012/08/22 19:54:23 $
+ *  $Revision: 1.8 $
  *  \author G. Cerminara - CERN
  */
 
@@ -51,7 +51,8 @@ public:
 
   bool check_RunFound(int run) const;
   bool check_LSFound(const RunLumiIndex& runAndLumi) const;
-  bool check_BXFilled(const RunLumiBXIndex& runAndLumiAndBx) const; 
+  bool check_BXFilled(const RunLumiBXIndex& runAndLumiAndBx) const;
+  bool isGood();
 
   float getDelLumi(const RunLumiIndex& runAndLumi) const;
   float getRecLumi(const RunLumiIndex& runAndLumi) const;
@@ -118,6 +119,7 @@ private:
   
   TString theDirBaseName;
   int cachedRun;
+  bool foundRun;
 
   //   std::map<RunLumiIndex, std::pair<float, float> > theLumiMap;
   //   std::map<RunLumiBXIndex, std::pair<float, float> > theLumiByBXMap;

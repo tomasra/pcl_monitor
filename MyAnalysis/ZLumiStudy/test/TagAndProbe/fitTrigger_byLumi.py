@@ -83,7 +83,8 @@ process.TnP_Trigger = cms.EDAnalyzer("TagProbeFitTreeAnalyzer",
         pt20 = cms.vstring("pt > 20", "pt", "20"),
         dxyPV0P5 = cms.vstring("dxy (from PV) < 0.5", "dxyPVdzmin", "0.5"),
         dz1 = cms.vstring("dz < 1", "dzPV", "1"),
-        SIP0P4 = cms.vstring("SIP < 0.4", "SIP", "0.4"),
+        SIP3 = cms.vstring("SIP < 3", "SIP", "3"),
+        combRelIso0P4 = cms.vstring("Isolation < 0.4", "combRelIso", "0.4",)
     ),
 
     PDFs = cms.PSet(
@@ -121,8 +122,8 @@ files = []
 read_file = open(run_files + ".txt", "r")
 
 # change nth_lines or lines_to_use
-lines_to_use = 2
-nth_line = 3
+lines_to_use = 0
+nth_line = 1
 
 for ln, line in enumerate(read_file):
     if ln%nth_line == lines_to_use:
@@ -149,22 +150,37 @@ BARREL = cms.PSet(
     abseta = cms.vdouble( 0, 1.2)
     )
 
-ALL2P1 = cms.PSet(
-    pt = cms.vdouble(minPtCut, 100),
-    abseta = cms.vdouble( 0, 2.1)
+
+
+ALL1P2 = cms.PSet(
+    #pt = cms.vdouble(minPtCut, 100),
+    abseta = cms.vdouble( 0, 1.2)
     )
 
 ALL2P4 = cms.PSet(
-    pt = cms.vdouble(minPtCut, 100),
+    #pt = cms.vdouble(minPtCut, 100),
     abseta = cms.vdouble( 0, 2.4)
     )
+ALL1P2_ISO = cms.PSet(
+    abseta = cms.vdouble(0, 1.2),
+    combRelIso = cms.vdouble(0, 0.4)
+    )
+ALL2P4_ISO = cms.PSet(
+    abseta = cms.vdouble(0, 2.4),
+    combRelIso = cms.vdouble(0, 0.4)
+    )
+
+LUMI_ETA1P2 = ALL1P2.clone(bxInstLumi = cms.vdouble([1+0.25*x for x in range(0,17)]))
+LUMI_ETA2P4 = ALL2P4.clone(bxInstLumi = cms.vdouble([1+0.25*x for x in range(0,17)]))
+LUMI_ETA1P2_ISO = ALL1P2_ISO.clone(bxInstLumi = cms.vdouble([1+0.25*x for x in range(0,17)]))
+LUMI_ETA2P4_ISO = ALL2P4_ISO.clone(bxInstLumi = cms.vdouble([1+0.25*x for x in range(0,17)]))
+ 
 
 
-
-PT_BINS_ALL2P1 = ALL2P1.clone(pt = cms.vdouble(15, 25, 35, 100))
-ETA_BINS_ALL2P1 = ALL2P1.clone(abseta = cms.vdouble(0, 1.2, 2.1))
+#PT_BINS_ALL2P1 = ALL2P1.clone(pt = cms.vdouble(15, 25, 35, 100))
+#ETA_BINS_ALL2P1 = ALL2P1.clone(abseta = cms.vdouble(0, 1.2, 2.1))
 # lumi bins between 1 and 5 (16 bins)
-LUMI_BINS_BARREL = BARREL.clone(bxInstLumi = cms.vdouble(1.0, 1.25, 1.5, 1.75, 2., 2.25, 2.5, 2.75, 3., 3.25, 3.5, 3.75, 4., 4.25, 4.5, 4.75, 5))
+LUMI_BINS_BARREL = BARREL.clone(bxInstLumi = cms.vdouble([1+0.25*x for x in range(0,17)]))
 RUNS = "run == 194315"
 #process.TnP_Trigger.Cuts = cms.PSet(
 #    run194315 = cms.vstring("runSel", "run", "194315")
@@ -217,17 +233,14 @@ def GetOurMuonId(trigger, extraCuts):
     result = cms.vstring(trigger, 'pass',
                 "GlbOrTMwMatch", "pass",
                 "VBTF", "pass",
-                "pt20", "above",  # eff vs pt
+                "pt20", "above",
                 "dxyPV0P5", "below",
                 "dz1", "below",
-                "PF", "pass", # check
-                "SIP0P4", "below"
-                # isolation
+                #"PF", "pass",
+                "SIP3", "below"
             )
     result += extraCuts
-    return result
-
-#bxInstLumi = cms.vdouble([1+0.25*x for x in range(0,17)])  
+    return result  
 
 for (T,M) in [ ("DoubleMu17Mu8_Mu17","Track"),("DoubleMu17Mu8_Mu17","OurMuonID"),("DoubleMu17Mu8_Mu8","Track"),("DoubleMu17Mu8_Mu8","OurMuonID")]:
     print "--------------"
@@ -238,18 +251,28 @@ for (T,M) in [ ("DoubleMu17Mu8_Mu17","Track"),("DoubleMu17Mu8_Mu17","OurMuonID")
         setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_lumi_Eta2P4_for_" + run_files, cms.PSet(
             EfficiencyCategoryAndState = GetOurMuonId(T, ["eta2P4", "below"]),
             UnbinnedVariables = cms.vstring("mass"),
-            BinnedVariables = cms.PSet(  # eta cut here
-                bxInstLumi = cms.vdouble(1.0, 1.25, 1.5, 1.75, 2., 2.25, 2.5, 2.75, 3., 3.25, 3.5, 3.75, 4., 4.25, 4.5, 4.75, 5)
-                ),
+            BinnedVariables = LUMI_ETA2P4,
             BinToPDFmap = cms.vstring("vpvPlusExpo")
             ))
     
         setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_lumi_Eta1P2_for_" + run_files, cms.PSet(
             EfficiencyCategoryAndState = GetOurMuonId(T, ["eta1P2", "below"]),
             UnbinnedVariables = cms.vstring("mass"),
-            BinnedVariables = cms.PSet(
-                bxInstLumi = cms.vdouble(1.0, 1.25, 1.5, 1.75, 2., 2.25, 2.5, 2.75, 3., 3.25, 3.5, 3.75, 4., 4.25, 4.5, 4.75, 5)
-                ),
+            BinnedVariables = LUMI_ETA1P2,
+            BinToPDFmap = cms.vstring("vpvPlusExpo")
+            ))
+
+        setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_lumi_Eta2P4_Iso_for_" + run_files, cms.PSet(
+            EfficiencyCategoryAndState = GetOurMuonId(T, ["eta2P4", "below", "combRelIso0P4", "below"]),
+            UnbinnedVariables = cms.vstring("mass"),
+            BinnedVariables = LUMI_ETA2P4_ISO,
+            BinToPDFmap = cms.vstring("vpvPlusExpo")
+            ))
+    
+        setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_lumi_Eta1P2_Iso_for_" + run_files, cms.PSet(
+            EfficiencyCategoryAndState = GetOurMuonId(T, ["eta1P2", "below", "combRelIso0P4", "below"]),
+            UnbinnedVariables = cms.vstring("mass"),
+            BinnedVariables = LUMI_ETA1P2_ISO,
             BinToPDFmap = cms.vstring("vpvPlusExpo")
             ))
 
@@ -258,7 +281,18 @@ for (T,M) in [ ("DoubleMu17Mu8_Mu17","Track"),("DoubleMu17Mu8_Mu17","OurMuonID")
             EfficiencyCategoryAndState = cms.vstring(T, "pass"),
             UnbinnedVariables = cms.vstring("mass"),
             BinnedVariables = cms.PSet(
-                bxInstLumi = cms.vdouble(1.0, 1.25, 1.5, 1.75, 2., 2.25, 2.5, 2.75, 3., 3.25, 3.5, 3.75, 4., 4.25, 4.5, 4.75, 5)
+                bxInstLumi = cms.vdouble([1+0.25*x for x in range(0,17)])
+                ),
+            BinToPDFmap = cms.vstring("vpvPlusExpo")
+            ))
+
+        # check eff vs pt (using no cuts)
+        setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_Pt_for_" + run_files, cms.PSet(
+            EfficiencyCategoryAndState = cms.vstring(T, "pass"),
+            UnbinnedVariables = cms.vstring("mass"),
+            BinnedVariables = cms.PSet(
+                pt = cms.vdouble(15, 25, 35, 100),
+                bxInstLumi = cms.vdouble([1+0.25*x for x in range(0,17)])
                 ),
             BinToPDFmap = cms.vstring("vpvPlusExpo")
             ))
