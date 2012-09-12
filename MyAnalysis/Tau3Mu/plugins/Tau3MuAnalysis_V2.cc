@@ -1,6 +1,8 @@
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDAnalyzer.h"
 
+#include "RecoVertex/KalmanVertexFit/interface/SingleTrackVertexConstraint.h"
+
 #include "DataFormats/HLTReco/interface/TriggerFilterObjectWithRefs.h"
 #include "DataFormats/HLTReco/interface/TriggerRefsCollections.h"
 #include "DataFormats/HLTReco/interface/TriggerEventWithRefs.h"
@@ -133,14 +135,14 @@ private:
   virtual void Initialize_TreeVars();
   virtual void offlineReco(const edm::Event&, const edm::EventSetup&,bool&,std::vector<TLorentzVector>&, bool&);
   virtual Vertex findClosestPV(const edm::Event&, TransientVertex&, bool&);
-  virtual void vtx(std::vector<TransientTrack>&, GlobalPoint &, GlobalError &);
+  virtual void vtx(std::vector<TransientTrack>&, TVector3*, TVector3*, bool &, double &, double &);
   virtual pair<double,double> Compute_Lxy_and_Significance(Vertex &, TransientVertex &, TLorentzVector&);
   virtual void findBestDimuon(const edm::Event&, const edm::EventSetup&, MuonCollection&, MuonCollection&, TransientVertex&, Vertex&);
   virtual void findBestPiCand(const edm::Event&, const edm::EventSetup&, MuonCollection&, TransientVertex&, Vertex&, TransientVertex&,TLorentzVector&,Track&);
   virtual bool isTight(const reco::Muon*);
   virtual bool TriggerDecision(const edm::Event&);
   virtual pair<bool,bool> isMu(const edm::Event&, const Track*, bool&, bool&, bool&);
-  virtual int countTracksAround(const edm::Event&, const edm::EventSetup&, TLorentzVector*, double&, TransientVertex&);
+  virtual int countTracksAround(const edm::Event&, const edm::EventSetup&, TLorentzVector*, double&, TransientVertex&, int);
   virtual pair<double,double> ComputeImpactParameterWrtPoint(TransientTrack& tt, Vertex&);
   virtual bool isMcMatched(const edm::Event&,TLorentzVector*,std::vector<TLorentzVector>&);
   virtual bool isBkgMatched(const edm::Event&,TLorentzVector*);
@@ -184,7 +186,7 @@ private:
   std::vector<string> HLT_paths;
   std::string HLT_process;
 
-  int _Run,_Evt,_Lum,_Nvtx, _Nmu, _Ntk;
+  int _Run,_Evt,_Lum,_Nvtx, _Nmu, _Ntk, _NTrigMu,_NTrigTk;
 
   std::string _TrigName;
 
@@ -195,61 +197,78 @@ private:
   int _pdg1,_pdg2,_pdg3;
   int _Mpdg1,_Mpdg2,_Mpdg3;
 
-  bool _isFSR; //there is final state radiation in the event?
+  bool _isFSR; //is there final state radiation in the event?
 
   double _cosp2G,_cosp3G;
 
   //4Mom and Vertices for gen matched Reco objects
   TLorentzVector* _Mu1_4MomR,*_Mu2_4MomR,*_MuTrack_4MomR, *_DiMu4MomR, *_DiMuPlusTrack4MomR;
 
+  TLorentzVector* _Mu1_4MomR_Refit,*_Mu2_4MomR_Refit,*_MuTrack_4MomR_Refit;
+
   TVector3 *_PVR,*_SVR,*_SVTR,*_PVeR,*_SVeR,*_SVTeR;
+
+  TVector3 *_SV_Mu1TR, *_SVe_Mu1TR,*_SV_Mu2TR,*_SVe_Mu2TR;
 
   bool _svValidR,_svtValidR, _isPVLeadingR;
 
-  double _SVchiR,_SVprobR, _SVTchiR,_SVTprobR;
+  bool _sv1tValidR, _sv2tValidR;
+
+  double _SVchiR,_SVprobR, _SVTchiR,_SVTprobR,_SV1chiR,_SV1probR,_SV2chiR,_SV2probR;
   double _LxyR,_LxySigR,_LxyTR,_LxyTSigR;
 
   double _cosp2R,_cosp3R;
 
+  int _Ntracks_Mu1_R,_Ntracks_Mu2_R;
+  double _DZ1R,_DZ2R,_DZ3R;
+
   //mu id variables for the gen matched Reco objects
   bool _isTkR1, _isGlbR1, _isSAR1, _isTMOR1, _isTightR1, _isPFR1;
   int _npixR1, _nTkR1, _nMuR1, _qR1;
-  double _chiTkR1, _chiMuR1;
+  double _chiTkR1, _chiMuR1,_chiTkR1_Refit;
 
   bool _isTkR2, _isGlbR2, _isSAR2, _isTMOR2, _isTightR2, _isPFR2;
   int _npixR2, _nTkR2, _nMuR2, _qR2;
-  double _chiTkR2, _chiMuR2;
+  double _chiTkR2, _chiMuR2,_chiTkR2_Refit;
 
   bool _isTkR3, _isGlbR3, _isSAR3, _isTMOR3, _isTightR3, _isPFR3;
   int _npixR3, _nTkR3, _nMuR3, _qR3;
-  double _chiTkR3, _chiMuR3;
+  double _chiTkR3, _chiMuR3,_chiTkR3_Refit;
   double _DCA_SVR;
   //
 
   //Offline Reco variables
   TLorentzVector* _Mu1_4Mom,*_Mu2_4Mom,*_MuTrack_4Mom_Mu,*_MuTrack_4Mom_Pi, *_DiMu4Mom, *_DiMuPlusTrack4Mom_Mu,*_DiMuPlusTrack4Mom_Pi; //4mom both for the pi and mu track guess
+  TLorentzVector* _Mu1_4Mom_Refit,*_Mu2_4Mom_Refit,*_MuTrack_4Mom_Mu_Refit,*_MuTrack_4Mom_Pi_Refit;
+
   TVector3 *_PV,*_SV,*_SVT,*_PVe,*_SVe,*_SVTe;
 
-  double _SVchi,_SVprob, _SVTchi,_SVTprob;
+  TVector3 *_SV_Mu1T, *_SVe_Mu1T,*_SV_Mu2T,*_SVe_Mu2T;
+
+  bool _sv1tValid, _sv2tValid;
+
+  double _SVchi,_SVprob, _SVTchi,_SVTprob,_SV1chi,_SV1prob,_SV2chi,_SV2prob;
   double _Lxy,_LxySig,_LxyT,_LxyTSig;
 
   bool _svValid,_svtValid, _isPVLeading;
 
   double _cosp2,_cosp3;
 
+  int _Ntracks_Mu1,_Ntracks_Mu2;
+  double _DZ1,_DZ2,_DZ3;
   //mu id variables for the Offline objects
 
   bool _isTk1, _isGlb1, _isSA1, _isTMO1, _isTight1, _isPF1;
   int _npix1, _nTk1, _nMu1, _q1;
-  double _chiTk1, _chiMu1;
+  double _chiTk1, _chiMu1,_chiTk1_Refit;
 
   bool _isTk2, _isGlb2, _isSA2, _isTMO2, _isTight2, _isPF2;
   int _npix2, _nTk2, _nMu2, _q2;
-  double _chiTk2, _chiMu2;
+  double _chiTk2, _chiMu2,_chiTk2_Refit;
 
   bool _isTk3, _isGlb3, _isSA3, _isTMO3, _isTight3, _isPF3;
   int _npix3, _nTk3, _nMu3, _q3;
-  double _chiTk3, _chiMu3;
+  double _chiTk3, _chiMu3,_chiTk3_Refit;
   double _DCA_SV;
   //
  
@@ -515,7 +534,6 @@ bool Tau3MuAnalysis_V2::isClose(TransientTrack& t, TransientVertex& tvtx){
   double tez=t.trajectoryStateClosestToPoint(vtx.position()).perigeeError().longitudinalImpactParameterError();
   double tet=t.trajectoryStateClosestToPoint(vtx.position()).perigeeError().transverseImpactParameterError();
  
- 
   //cout << "diffx " << diffx << " tet " << tet << endl;
 
   double diffz=fabs(tz-vtx.position().z());
@@ -530,8 +548,6 @@ bool Tau3MuAnalysis_V2::isClose(TransientTrack& t, TransientVertex& tvtx){
   vyerr=2*sqrt(vyerr*vyerr+tet*tet);
   vzerr=2*sqrt(vzerr*vzerr+tez*tez);
   
-  
-
   if (debug){
   cout << "SV distance to track:" << endl; 
   cout << "diffz " << diffz <<  " verrz " << vzerr << endl;
@@ -541,13 +557,13 @@ bool Tau3MuAnalysis_V2::isClose(TransientTrack& t, TransientVertex& tvtx){
 
   if (diffz < vzerr && diffx < vxerr && diffy < vyerr) ok=true;
   */
+
   double dz=t.track().dz(vtx.position());
   double verrz=vtx.zError();
 
   if (dz<0.03 && dz < verrz) ok=true;
 
   return ok;
-
 
 }
 
@@ -566,7 +582,7 @@ void Tau3MuAnalysis_V2::findBestPiCand(const edm::Event& ev, const edm::EventSet
 
   if (!tracks.isValid()) return;
 
-  KalmanVertexFitter avf;
+  KalmanVertexFitter avf(true);
 
   double tmpProb=diMuTrackVprobMin;
   double Vp0=diMuTrackVprobMin;
@@ -575,7 +591,9 @@ void Tau3MuAnalysis_V2::findBestPiCand(const edm::Event& ev, const edm::EventSet
 
   std::vector<TLorentzVector> triggerTracks;
   findTriggerObjects(ev,iSetup,triggerTracks,211);
+  _NTrigTk=triggerTracks.size();
 
+  
   int tcounter=0;
   for(TrackCollection::const_iterator it = tracks->begin();it != tracks->end(); ++it){
     tcounter++;
@@ -829,6 +847,7 @@ void Tau3MuAnalysis_V2::findGenMoms(const edm::Event& ev, std::vector<TLorentzVe
 
   if (TheGenMus.size()!=3){
     cout << "This is not Signal nor Normalization sample!!" << endl;
+    cout << " event " << ev.id().event() << " run " << ev.id().run() << " lumi " << ev.id().luminosityBlock() << " has not the needed gen content " << endl;
     return;
   }
   else{
@@ -860,6 +879,8 @@ bool Tau3MuAnalysis_V2::isMcMatched(const edm::Event& ev,TLorentzVector* recov,s
   if (debug) cout << "Offline-Gen Matching ...." << endl;
 
   bool ThreeMatches=false;
+
+  if (TheGenMus.size()!=3) return false;
 
   //see if they match reco muons
   bool RunMatch=true;
@@ -953,31 +974,29 @@ std::pair<bool,bool> Tau3MuAnalysis_V2::isMu(const edm::Event& ev,const Track* p
   return make_pair(ItIs,isGood);
 }
 
-int Tau3MuAnalysis_V2::countTracksAround(const edm::Event& ev, const edm::EventSetup& iSetup,TLorentzVector* vec, double& dR, TransientVertex& sv ){
+int Tau3MuAnalysis_V2::countTracksAround(const edm::Event& ev, const edm::EventSetup& iSetup,TLorentzVector* vec, double& dR, TransientVertex& sv, int oneORtwo ){
 
-
-  edm::ESHandle<TransientTrackBuilder> Builder;
-  iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", Builder);
+  if (debug) cout << "counting tracks around mu" << oneORtwo << endl;
 
   int N=0;
   Handle<TrackCollection> tracks;
   ev.getByLabel("generalTracks", tracks);
-  TLorentzVector TotMom= vec[0]+vec[1]+vec[2];
+  TLorentzVector Mom= vec[oneORtwo];
+  Vertex Vtx=Vertex(sv);
 
   for(TrackCollection::const_iterator it = tracks->begin();it != tracks->end(); ++it){
     bool isIn=false;
+     
+    double dz=it->dz(Vtx.position());
 
-    TransientTrack ttpi=Builder->build(*it);
-    Vertex diMuVtx=Vertex(sv);
-    pair<double,double> d0tracktmp=ComputeImpactParameterWrtPoint(ttpi,diMuVtx);
-    if (d0tracktmp.first > 0.2) continue; //The track is not close to SV
+    if (dz > 0.1) continue; //The track is not close to SV
 
     TLorentzVector tvec=TLorentzVector(it->px(),it->py(),it->pz(),sqrt(TrackMass*TrackMass+it->p()*it->p()));
     for (int k=0; k<3; k++){
       if (tvec.Px()==vec[k].Px() && tvec.Py()==vec[k].Py() && tvec.Pz()==vec[k].Pz()) isIn=true;
     }
     if (isIn) continue;
-    if (TotMom.DeltaR(tvec) < dR) N++;
+    if (Mom.DeltaR(tvec) < dR) N++;
   }
   return N;
 }
@@ -1132,16 +1151,24 @@ pair<double,double> Tau3MuAnalysis_V2::Compute_Lxy_and_Significance(Vertex & pri
 
 }
 
-void Tau3MuAnalysis_V2::vtx(std::vector<TransientTrack>& tt, GlobalPoint & p, GlobalError & ep){
+void Tau3MuAnalysis_V2::vtx(std::vector<TransientTrack>& tt, TVector3* p, TVector3* ep, bool & valid, double & chi2, double & prob){
 
-  if (debug) cout << "finding the 2mu vertex" << endl;
+  if (debug) cout << "finding the single mu + track vertex" << endl;
 
   KalmanVertexFitter avf;
   TransientVertex tv=avf.vertex(tt);
 
   if (tv.isValid()){
-    p=tv.position();
-    ep=tv.positionError();
+
+    valid=true;
+
+    p->SetXYZ(tv.position().x(),tv.position().y(),tv.position().z());
+    ep->SetXYZ(tv.positionError().cxx(),tv.positionError().cyy(),tv.positionError().czz());
+    double vChi2 = tv.totalChiSquared();
+    double vNDF  = tv.degreesOfFreedom();
+    chi2=vChi2/vNDF;
+    prob= TMath::Prob(vChi2,(int)vNDF);
+
   }
 
 }
@@ -1271,7 +1298,9 @@ void Tau3MuAnalysis_V2::analyze(const edm::Event& ev, const edm::EventSetup& iSe
     std::vector<pair<const Track*,int> > tmatches;
 
     findGenMoms(ev,TheGenMus);
-    
+
+    if (TheGenMus.size()!=3) return;    
+
     bool matched=false;
     matched=matchGenReco(ev,TheGenMus,matches,tmatches);
 
@@ -1331,6 +1360,7 @@ void Tau3MuAnalysis_V2::offlineReco(const edm::Event& ev, const edm::EventSetup&
   if(muons.isValid()){
 
     findTriggerObjects(ev,iSetup,triggerMuons,13);
+    _NTrigMu=triggerMuons.size();
 
      for (MuonCollection::const_iterator recoMu = muons->begin(); recoMu!=muons->end(); ++recoMu){ // loop over all muons to search those matched with the trigger objects
 	
@@ -1438,10 +1468,41 @@ void Tau3MuAnalysis_V2::offlineReco(const edm::Event& ev, const edm::EventSetup&
 
     _TrackFound=true;
 
+    if (tv3.hasRefittedTracks()){
+      std::vector<TransientTrack> vtt= tv3.refittedTracks();
+     
+      if (vtt.size()==3){
+
+	_Mu1_4Mom_Refit->SetPtEtaPhiM(vtt[0].track().pt(),vtt[0].track().eta(),vtt[0].track().phi(),0.1057);
+	_Mu2_4Mom_Refit->SetPtEtaPhiM(vtt[1].track().pt(),vtt[1].track().eta(),vtt[1].track().phi(),0.1057);
+	_MuTrack_4Mom_Mu_Refit->SetPtEtaPhiM(vtt[2].track().pt(),vtt[2].track().eta(),vtt[2].track().phi(),0.1057);
+	_MuTrack_4Mom_Pi_Refit->SetPtEtaPhiM(vtt[2].track().pt(),vtt[2].track().eta(),vtt[2].track().phi(),0.1396);
+
+	_chiTk1_Refit=vtt[0].track().normalizedChi2();
+	_chiTk2_Refit=vtt[1].track().normalizedChi2();
+	_chiTk3_Refit=vtt[2].track().normalizedChi2();
+      }
+    }
+
     edm::ESHandle<TransientTrackBuilder> Builder;
     iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", Builder);
 
+    TransientTrack mu1tt=Builder->build(BestDiMu[0].innerTrack());
+    TransientTrack mu2tt=Builder->build(BestDiMu[1].innerTrack());
     TransientTrack pitt=Builder->build(thetrack);
+
+    vector<TransientTrack> vtt13;
+    vector<TransientTrack> vtt23;
+
+    vtt13.push_back(mu1tt);
+    vtt13.push_back(pitt);
+
+    vtt23.push_back(mu2tt);
+    vtt23.push_back(pitt);
+
+    vtx(vtt13,_SV_Mu1T,_SVe_Mu1T,_sv1tValid,_SV1chi,_SV1prob); //fill the vertex of track with single muons
+    vtx(vtt23,_SV_Mu2T,_SVe_Mu2T,_sv2tValid,_SV2chi,_SV2prob);
+
     Vertex muvtx=Vertex(tv);
 
     pair<double,double> d0sv=ComputeImpactParameterWrtPoint(pitt,muvtx);
@@ -1449,6 +1510,10 @@ void Tau3MuAnalysis_V2::offlineReco(const edm::Event& ev, const edm::EventSetup&
     _DCA_SV=d0sv.first;
 
     _svtValid=true;
+
+    _DZ1=BestDiMu[0].innerTrack()->dz(Vertex(tv3).position());
+    _DZ2=BestDiMu[1].innerTrack()->dz(Vertex(tv3).position());
+    _DZ3=thetrack.dz(Vertex(tv3).position());
 
     if(triggered) OfflineTrig++;
 
@@ -1465,6 +1530,11 @@ void Tau3MuAnalysis_V2::offlineReco(const edm::Event& ev, const edm::EventSetup&
 
     TLorentzVector TotMomArray[3]={Mu1Mom, Mu2Mom, pitrack};
 
+    double dRcount=0.2;
+
+    _Ntracks_Mu1=countTracksAround(ev,iSetup,TotMomArray,dRcount,tv,1);
+    _Ntracks_Mu2=countTracksAround(ev,iSetup,TotMomArray,dRcount,tv,2);
+
     bool isEventMatched=false;
 
     if (IsMC){
@@ -1472,8 +1542,6 @@ void Tau3MuAnalysis_V2::offlineReco(const edm::Event& ev, const edm::EventSetup&
       else isEventMatched=isBkgMatched(ev,TotMomArray);
       if (isEventMatched) GenMatches++;
     }
-
-    Vertex tvv=Vertex(tv);
     
     double cos2=Compute_CosPointingAngle(primaryVertex,tv,DiMuMom);
     double cos3=Compute_CosPointingAngle(primaryVertex,tv3,DiMuTrackMom_Mu);
@@ -1556,6 +1624,9 @@ void Tau3MuAnalysis_V2::Initialize_TreeVars(){
   _Nmu=-1;
   _Ntk=-1;
 
+  _NTrigTk=-1;
+  _NTrigMu=-1;
+
   if (IsMC){
 
     if (isBkg){
@@ -1570,6 +1641,8 @@ void Tau3MuAnalysis_V2::Initialize_TreeVars(){
 
       _Mu1_4MomG->SetPtEtaPhiM(0.,0.,0.,0.);
       _Mu2_4MomG->SetPtEtaPhiM(0.,0.,0.,0.);
+
+      _MuTrack_4MomG->SetPtEtaPhiM(0.,0.,0.,0.);
 
       _GenSV->SetXYZ(0.,0.,0.);
 
@@ -1589,28 +1662,30 @@ void Tau3MuAnalysis_V2::Initialize_TreeVars(){
       
       _MuTrack_4MomR->SetPtEtaPhiM(0.,0.,0.,0.);
 
-      _MuTrack_4MomG->SetPtEtaPhiM(0.,0.,0.,0.);
-
+      _Mu1_4MomR_Refit->SetPtEtaPhiM(0.,0.,0.,0.);
+      _Mu2_4MomR_Refit->SetPtEtaPhiM(0.,0.,0.,0.);
+      
+      _MuTrack_4MomR_Refit->SetPtEtaPhiM(0.,0.,0.,0.);
 
       _isTkR1=false; _isGlbR1=false; _isSAR1=false; _isTMOR1=false; _isTightR1=false; _isPFR1=false;
       
       _npixR1=-10; _nTkR1=-10; _nMuR1=-10; _qR1=-10;
    
-      _chiTkR1=-10; _chiMuR1=-10;
+      _chiTkR1=-10; _chiMuR1=-10;_chiTkR1_Refit=-10;
 
 
       _isTkR2=false; _isGlbR2=false; _isSAR2=false; _isTMOR2=false; _isTightR2=false; _isPFR2=false;
 
       _npixR2=-10; _nTkR2=-10; _nMuR2=-10; _qR2=-10;
    
-      _chiTkR2=-10; _chiMuR2=-10;
+      _chiTkR2=-10; _chiMuR2=-10; _chiTkR2_Refit=-10;
 
 
       _isTkR3=false; _isGlbR3=false; _isSAR3=false; _isTMOR3=false; _isTightR3=false; _isPFR3=false;
 
       _npixR3=-10; _nTkR3=-10; _nMuR3=-10; _qR3=-10;
    
-      _chiTkR3=-10; _chiMuR3=-10;
+      _chiTkR3=-10; _chiMuR3=-10; _chiTkR3_Refit=-10;
 
       _DCA_SVR=-1;
 
@@ -1623,12 +1698,27 @@ void Tau3MuAnalysis_V2::Initialize_TreeVars(){
       _SVeR->SetXYZ(0.,0.,0.);
       _SVTeR->SetXYZ(0.,0.,0.);
 
+      _SV_Mu1TR->SetXYZ(0.,0.,0.); 
+      _SVe_Mu1TR->SetXYZ(0.,0.,0.);
+      _SV_Mu2TR->SetXYZ(0.,0.,0.);
+      _SVe_Mu2TR->SetXYZ(0.,0.,0.);
+
       _svValidR=false;
       _svtValidR=false;
       _isPVLeadingR=false;
 
+      _sv1tValidR=false;
+      _sv2tValidR=false;
+
       _SVchiR=-1;
       _SVprobR=-1;
+
+      _SV1chiR=-1;
+      _SV1probR=-1;
+
+      _SV2chiR=-1;
+      _SV2probR=-1;
+
       _SVTchiR=-1;
       _SVTprobR=-1;
       
@@ -1640,6 +1730,12 @@ void Tau3MuAnalysis_V2::Initialize_TreeVars(){
       _cosp2R=-2;
       _cosp3R=-2;
 
+      _Ntracks_Mu1_R=-1;
+      _Ntracks_Mu2_R=-1;
+
+      _DZ1R=-1;
+      _DZ2R=-1;
+      _DZ3R=-1;
       //
     }
 
@@ -1658,26 +1754,36 @@ void Tau3MuAnalysis_V2::Initialize_TreeVars(){
   _MuTrack_4Mom_Mu->SetPtEtaPhiM(0.,0.,0.,0.);
   _MuTrack_4Mom_Pi->SetPtEtaPhiM(0.,0.,0.,0.);
 
+  _Mu1_4Mom_Refit->SetPtEtaPhiM(0.,0.,0.,0.);
+  _Mu2_4Mom_Refit->SetPtEtaPhiM(0.,0.,0.,0.);
+  
+  _MuTrack_4Mom_Mu_Refit->SetPtEtaPhiM(0.,0.,0.,0.);
+  _MuTrack_4Mom_Pi_Refit->SetPtEtaPhiM(0.,0.,0.,0.);
+
+  _Ntracks_Mu1=-1;
+  _Ntracks_Mu2=-1;
+
+  _DZ1=-1;
+  _DZ2=-1;
+  _DZ3=-1;
 
   _isTk1=false; _isGlb1=false; _isSA1=false; _isTMO1=false; _isTight1=false; _isPF1=false;
 
   _npix1=-10; _nTk1=-10; _nMu1=-10; _q1=-10;
   
-  _chiTk1=-10; _chiMu1=-10;
-
+  _chiTk1=-10; _chiMu1=-10;_chiTk1_Refit=-10;
 
   _isTk2=false; _isGlb2=false; _isSA2=false; _isTMO2=false; _isTight2=false; _isPF2=false;
 
   _npix2=-10; _nTk2=-10; _nMu2=-10; _q2=-10;
   
-  _chiTk2=-10; _chiMu2=-10;
-
+  _chiTk2=-10; _chiMu2=-10;_chiTk2_Refit=-10;
 
   _isTk3=false; _isGlb3=false; _isSA3=false; _isTMO3=false; _isTight3=false; _isPF3=false;
 
   _npix3=-10; _nTk3=-10; _nMu3=-10; _q3=-10;
    
-  _chiTk3=-10; _chiMu3=-10;
+  _chiTk3=-10; _chiMu3=-10;_chiTk3_Refit=-10;
 
   _DCA_SV=-1;
   
@@ -1690,17 +1796,32 @@ void Tau3MuAnalysis_V2::Initialize_TreeVars(){
   _SVe->SetXYZ(0.,0.,0.);
   _SVTe->SetXYZ(0.,0.,0.);
 
+  _SV_Mu1T->SetXYZ(0.,0.,0.);
+  _SVe_Mu1T->SetXYZ(0.,0.,0.);
+  _SV_Mu2T->SetXYZ(0.,0.,0.);
+  _SVe_Mu2T->SetXYZ(0.,0.,0.);
+
+  _sv1tValid=false;
+  _sv2tValid=false;
   _svValid=false;
   _svtValid=false;
   _isPVLeading=false;
 
+  _SV1chi=-1;
+  _SV1prob=-1;
+
+  _SV2chi=-1;
+  _SV2prob=-1;
+
   _SVchi=-1;
   _SVprob=-1;
+
   _SVTchi=-1;
   _SVTprob=-1;
 
   _Lxy=-1;
   _LxySig=-1;
+
   _LxyT=-1;
   _LxyTSig=-1;
 
@@ -1951,21 +2072,28 @@ void Tau3MuAnalysis_V2::fillRecoMatchedInfo(const edm::Event& event, const edm::
   m2.SetPtEtaPhiM(matches[1].first->pt(),matches[1].first->eta(),matches[1].first->phi(),0.1057);
 
   TLorentzVector dimu=m1+m2;
-  TLorentzVector trimu=dimu+tr;
-
+ 
   if (isSignal) tr.SetPtEtaPhiM(matches[2].first->pt(),matches[2].first->eta(),matches[2].first->phi(),0.1057);
   else tr.SetPtEtaPhiM(matches[2].first->pt(),matches[2].first->eta(),matches[2].first->phi(),0.1396);
+
+  TLorentzVector trimu=dimu+tr;
+
+  TLorentzVector TotMomArray[3]={m1, m2, tr};
+  double dRcount=0.2;
 
   ttv.push_back(tt1);
   ttv.push_back(tt2);
 
-  KalmanVertexFitter avf;
+  KalmanVertexFitter avf(true);
 
   TransientVertex dimuvtx=avf.vertex(ttv);
 
   Vertex pvR;
 
   if (dimuvtx.isValid()){
+
+    _Ntracks_Mu1_R=countTracksAround(event,iSetup,TotMomArray,dRcount,dimuvtx,1);
+    _Ntracks_Mu2_R=countTracksAround(event,iSetup,TotMomArray,dRcount,dimuvtx,2);
 
     Vertex tv=Vertex(dimuvtx);
     pair<double,double> d0sv=ComputeImpactParameterWrtPoint(tt3,tv);
@@ -2003,11 +2131,34 @@ void Tau3MuAnalysis_V2::fillRecoMatchedInfo(const edm::Event& event, const edm::
 
     if (debug) cout << " found valid Reco matched dimu+track vtx " << endl;
 
+    if (trimuvtx.hasRefittedTracks()){
+
+      if (debug) cout << "filling Reco Gen matched infos after vertex refit " << endl;
+     
+      TransientTrack t1=trimuvtx.refittedTrack(ttv[0]);
+      TransientTrack t2=trimuvtx.refittedTrack(ttv[1]);
+      TransientTrack t3=trimuvtx.refittedTrack(ttv[2]);
+
+      _Mu1_4MomR_Refit->SetPtEtaPhiM(t1.track().pt(),t1.track().eta(),t1.track().phi(),0.1057);
+      _Mu2_4MomR_Refit->SetPtEtaPhiM(t2.track().pt(),t2.track().eta(),t2.track().phi(),0.1057);
+      if (isSignal) _MuTrack_4MomR_Refit->SetPtEtaPhiM(t3.track().pt(),t3.track().eta(),t3.track().phi(),0.1057);
+      else _MuTrack_4MomR_Refit->SetPtEtaPhiM(t3.track().pt(),t3.track().eta(),t3.track().phi(),0.1396);
+
+      _chiTkR1_Refit=t1.track().normalizedChi2();
+      _chiTkR2_Refit=t2.track().normalizedChi2();
+      _chiTkR3_Refit=t3.track().normalizedChi2();
+      
+    }
+
     _SVTR->SetXYZ(trimuvtx.position().x(),trimuvtx.position().y(),trimuvtx.position().z());
     _SVTeR->SetXYZ(trimuvtx.positionError().cxx(),trimuvtx.positionError().cyy(),trimuvtx.positionError().czz());
 
     _SVTchiR=trimuvtx.normalisedChiSquared();
     _SVTprobR=TMath::Prob(trimuvtx.totalChiSquared(),trimuvtx.degreesOfFreedom());
+
+    _DZ1R=matches[0].first->dz(Vertex(trimuvtx).position());
+    _DZ2R=matches[1].first->dz(Vertex(trimuvtx).position());
+    _DZ3R=matches[2].first->dz(Vertex(trimuvtx).position());
 
     if (!_svValidR)  pvR=findClosestPV(event,trimuvtx,_isPVLeadingR);
 
@@ -2020,13 +2171,54 @@ void Tau3MuAnalysis_V2::fillRecoMatchedInfo(const edm::Event& event, const edm::
 
   }
 
+  if (debug) cout << "Computing SV between the track and single muons" << endl;
+  //vertices of track with single muons
+  vector<TransientTrack> ttv1T;
+
+  ttv1T.push_back(tt1);
+  ttv1T.push_back(tt3);
+
+  TransientVertex vtx1T=avf.vertex(ttv1T);
+
+  if (vtx1T.isValid()){
+
+    _sv1tValidR=true;
+
+    _SV_Mu1TR->SetXYZ(vtx1T.position().x(),vtx1T.position().y(),vtx1T.position().z());
+    _SVe_Mu1TR->SetXYZ(vtx1T.positionError().cxx(),vtx1T.positionError().cyy(),vtx1T.positionError().czz());
+
+    _SV1chiR=vtx1T.normalisedChiSquared();
+    _SV1probR=TMath::Prob(vtx1T.totalChiSquared(),vtx1T.degreesOfFreedom());
+
+  }
+
+
+  vector<TransientTrack> ttv2T;
+
+  ttv2T.push_back(tt2);
+  ttv2T.push_back(tt3);
+
+  TransientVertex vtx2T=avf.vertex(ttv2T);
+
+  if (vtx2T.isValid()){
+
+    _sv2tValidR=true;
+
+    _SV_Mu2TR->SetXYZ(vtx2T.position().x(),vtx2T.position().y(),vtx2T.position().z());
+    _SVe_Mu2TR->SetXYZ(vtx2T.positionError().cxx(),vtx2T.positionError().cyy(),vtx2T.positionError().czz());
+
+    _SV2chiR=vtx2T.normalisedChiSquared();
+    _SV2probR=TMath::Prob(vtx2T.totalChiSquared(),vtx2T.degreesOfFreedom());
+
+  }
+
   return;
 
 }
 
 
-
 // ------------ method called once each job just before starting event loop  ------------
+
 void Tau3MuAnalysis_V2::beginJob() {
 
   if (debug) cout << "begin job" << endl;
@@ -2041,7 +2233,7 @@ void Tau3MuAnalysis_V2::beginJob() {
   int Tsize=HLT_paths.size();
 
   for (int i=0; i< min(Tsize,10); ++i){
-    ExTree->Branch(HLT_paths[i].c_str(), &_TrigBit[i],"_TrigBit/b");
+    ExTree->Branch(HLT_paths[i].c_str(), &_TrigBit[i],"_TrigBit/O");
   }
 
   if (debug) cout << "adding event branches" << endl;
@@ -2053,7 +2245,8 @@ void Tau3MuAnalysis_V2::beginJob() {
   ExTree->Branch("NumberOfVertices",&_Nvtx   , "_Nvtx/I");
   ExTree->Branch("NumberOfMuons",&_Nmu   , "_Nmu/I");
   ExTree->Branch("NumberOfTracks",&_Ntk   , "_Ntk/I");
-
+  ExTree->Branch("NumberOfTriggerTracks",&_NTrigTk   , "_NTrigTk/I");
+  ExTree->Branch("NumberOfTriggerMuons",&_NTrigMu   , "_NTrigMu/I");
   
   if (IsMC){
 
@@ -2089,6 +2282,10 @@ void Tau3MuAnalysis_V2::beginJob() {
       _Mu2_4MomR= new TLorentzVector(0.,0.,0.,0.);
       _MuTrack_4MomR= new TLorentzVector(0.,0.,0.,0.);
 
+      _Mu1_4MomR_Refit= new TLorentzVector(0.,0.,0.,0.);
+      _Mu2_4MomR_Refit= new TLorentzVector(0.,0.,0.,0.);
+      _MuTrack_4MomR_Refit= new TLorentzVector(0.,0.,0.,0.);
+
       //reco gen-matched vertices
       _PVR= new TVector3(0.,0.,0.);
       _SVR=new TVector3(0.,0.,0.);
@@ -2097,6 +2294,11 @@ void Tau3MuAnalysis_V2::beginJob() {
       _PVeR= new TVector3(0.,0.,0.);
       _SVeR=new TVector3(0.,0.,0.);
       _SVTeR=new TVector3(0.,0.,0.);
+
+      _SV_Mu1TR= new TVector3(0.,0.,0.);
+      _SVe_Mu1TR= new TVector3(0.,0.,0.);
+      _SV_Mu2TR= new TVector3(0.,0.,0.);
+      _SVe_Mu2TR= new TVector3(0.,0.,0.);
 
       //
    
@@ -2114,12 +2316,12 @@ void Tau3MuAnalysis_V2::beginJob() {
       ExTree->Branch("CosPoint2_Gen",&_cosp2G   ,"_cosp2G/D");
       ExTree->Branch("CosPoint3_Gen",&_cosp3G   ,"_cosp3G/D");
 
-      ExTree->Branch("IsFSR_Gen",&_isFSR   ,"_isFSR/b");
+      ExTree->Branch("IsFSR_Gen",&_isFSR   ,"_isFSR/O");
 
       if (debug) cout << "adding Reco MC matched branches" << endl;
 
       //Reco mc-matched branches
-      ExTree->Branch("IsGenRecoMatched",&_IsGenRecoMatched   ,"_IsGenRecoMatched/b");
+      ExTree->Branch("IsGenRecoMatched",&_IsGenRecoMatched   ,"_IsGenRecoMatched/O");
 
       ExTree->Branch("DiMu4Mom_Reco","TLorentzVector",&_DiMu4MomR); 
       ExTree->Branch("DiMuPlusTrack4Mom_Reco","TLorentzVector",&_DiMuPlusTrack4MomR); 
@@ -2127,14 +2329,18 @@ void Tau3MuAnalysis_V2::beginJob() {
       ExTree->Branch("Mu1_4Mom_Reco","TLorentzVector",&_Mu1_4MomR); 
       ExTree->Branch("Mu2_4Mom_Reco","TLorentzVector",&_Mu2_4MomR); 
       ExTree->Branch("MuTrack_4Mom_Reco","TLorentzVector",&_MuTrack_4MomR);   
+
+      ExTree->Branch("Mu1_4Mom_Refit_Reco","TLorentzVector",&_Mu1_4MomR_Refit); 
+      ExTree->Branch("Mu2_4Mom_Refit_Reco","TLorentzVector",&_Mu2_4MomR_Refit); 
+      ExTree->Branch("MuTrack_4Mom_Refit_Reco","TLorentzVector",&_MuTrack_4MomR_Refit);   
       
       //first muon
-      ExTree->Branch("IsTkMu_Reco_1",&_isTkR1   ,"_isTkR1/b");
-      ExTree->Branch("IsGlbMu_Reco_1",&_isGlbR1   ,"_isGlbR1/b");
-      ExTree->Branch("IsSAMu_Reco_1",&_isSAR1   ,"_isSAR1/b");
-      ExTree->Branch("IsTMOMu_Reco_1",&_isTMOR1   ,"_isTMOR1/b");
-      ExTree->Branch("IsTightMu_Reco_1",&_isTightR1   ,"_isTightR1/b");
-      ExTree->Branch("IsPFMu_Reco_1",&_isPFR1   ,"_isPFR1/b");
+      ExTree->Branch("IsTkMu_Reco_1",&_isTkR1   ,"_isTkR1/O");
+      ExTree->Branch("IsGlbMu_Reco_1",&_isGlbR1   ,"_isGlbR1/O");
+      ExTree->Branch("IsSAMu_Reco_1",&_isSAR1   ,"_isSAR1/O");
+      ExTree->Branch("IsTMOMu_Reco_1",&_isTMOR1   ,"_isTMOR1/O");
+      ExTree->Branch("IsTightMu_Reco_1",&_isTightR1   ,"_isTightR1/O");
+      ExTree->Branch("IsPFMu_Reco_1",&_isPFR1   ,"_isPFR1/O");
       
       ExTree->Branch("nPixHits_Reco_1",&_npixR1   ,"_npixR1/I");
       ExTree->Branch("nTkHits_Reco_1",&_nTkR1   ,"_nTkR1/I");
@@ -2142,15 +2348,16 @@ void Tau3MuAnalysis_V2::beginJob() {
       ExTree->Branch("Q_Reco_1",&_qR1   ,"_qR1/I");
 
       ExTree->Branch("chiTk_Reco_1",&_chiTkR1   ,"_chiTkR1/D");
+      //ExTree->Branch("chiTk_Refit_Reco_1",&_chiTkR1_Refit   ,"_chiTkR1_Refit/D");
       ExTree->Branch("chiMu_Reco_1",&_chiMuR1   ,"_chiMuR1/D");
 
       //second muon
-      ExTree->Branch("IsTkMu_Reco_2",&_isTkR2   ,"_isTkR2/b");
-      ExTree->Branch("IsGlbMu_Reco_2",&_isGlbR2   ,"_isGlbR2/b");
-      ExTree->Branch("IsSAMu_Reco_2",&_isSAR2   ,"_isSAR2/b");
-      ExTree->Branch("IsTMOMu_Reco_2",&_isTMOR2   ,"_isTMOR2/b");
-      ExTree->Branch("IsTightMu_Reco_2",&_isTightR2   ,"_isTightR2/b");
-      ExTree->Branch("IsPFMu_Reco_2",&_isPFR2   ,"_isPFR2/b");
+      ExTree->Branch("IsTkMu_Reco_2",&_isTkR2   ,"_isTkR2/O");
+      ExTree->Branch("IsGlbMu_Reco_2",&_isGlbR2   ,"_isGlbR2/O");
+      ExTree->Branch("IsSAMu_Reco_2",&_isSAR2   ,"_isSAR2/O");
+      ExTree->Branch("IsTMOMu_Reco_2",&_isTMOR2   ,"_isTMOR2/O");
+      ExTree->Branch("IsTightMu_Reco_2",&_isTightR2   ,"_isTightR2/O");
+      ExTree->Branch("IsPFMu_Reco_2",&_isPFR2   ,"_isPFR2/O");
 
       ExTree->Branch("nPixHits_Reco_2",&_npixR2   ,"_npixR2/I");
       ExTree->Branch("nTkHits_Reco_2",&_nTkR2   ,"_nTkR2/I");
@@ -2158,15 +2365,16 @@ void Tau3MuAnalysis_V2::beginJob() {
       ExTree->Branch("Q_Reco_2",&_qR2   ,"_qR2/I");
 
       ExTree->Branch("chiTk_Reco_2",&_chiTkR2   ,"_chiTkR2/D");
+      //ExTree->Branch("chiTk_Refit_Reco_2",&_chiTkR2_Refit   ,"_chiTkR2_Refit/D");
       ExTree->Branch("chiMu_Reco_2",&_chiMuR2   ,"_chiMuR2/D");
 
       //third mu-track
-      ExTree->Branch("IsTkMu_Reco_3",&_isTkR3   ,"_isTkR3/b");
-      ExTree->Branch("IsGlbMu_Reco_3",&_isGlbR3   ,"_isGlbR3/b");
-      ExTree->Branch("IsSAMu_Reco_3",&_isSAR3   ,"_isSAR3/b");
-      ExTree->Branch("IsTMOMu_Reco_3",&_isTMOR3   ,"_isTMOR3/b");
-      ExTree->Branch("IsTightMu_Reco_3",&_isTightR3   ,"_isTightR3/b");
-      ExTree->Branch("IsPFMu_Reco_3",&_isPFR3   ,"_isPFR3/b");
+      ExTree->Branch("IsTkMu_Reco_3",&_isTkR3   ,"_isTkR3/O");
+      ExTree->Branch("IsGlbMu_Reco_3",&_isGlbR3   ,"_isGlbR3/O");
+      ExTree->Branch("IsSAMu_Reco_3",&_isSAR3   ,"_isSAR3/O");
+      ExTree->Branch("IsTMOMu_Reco_3",&_isTMOR3   ,"_isTMOR3/O");
+      ExTree->Branch("IsTightMu_Reco_3",&_isTightR3   ,"_isTightR3/O");
+      ExTree->Branch("IsPFMu_Reco_3",&_isPFR3   ,"_isPFR3/O");
 
       ExTree->Branch("nPixHits_Reco_3",&_npixR3   ,"_npixR3/I");
       ExTree->Branch("nTkHits_Reco_3",&_nTkR3   ,"_nTkR3/I");
@@ -2174,23 +2382,39 @@ void Tau3MuAnalysis_V2::beginJob() {
       ExTree->Branch("Q_Reco_3",&_qR3   ,"_qR3/I");
 
       ExTree->Branch("chiTk_Reco_3",&_chiTkR3   ,"_chiTkR3/D");
+      //ExTree->Branch("chiTk_Refit_Reco_3",&_chiTkR3_Refit   ,"_chiTkR3_Refit/D");
       ExTree->Branch("chiMu_Reco_3",&_chiMuR3   ,"_chiMuR3/D");
       ExTree->Branch("DCATrack_SV_Reco_3",&_DCA_SVR   ,"_DCA_SVR/D");
       //
 
       //Reco GEN matched vertices
  
-      ExTree->Branch("isValidSV_Reco",&_svValidR,"_svValidR/b"); 
-      ExTree->Branch("isValidSVT_Reco",&_svtValidR,"_svtValidR/b"); 
-      ExTree->Branch("isPVLeading_Reco",&_isPVLeadingR,"_isPVLeadingR/b");
+      ExTree->Branch("isValid_Mu1TrackSV_Reco",&_sv1tValidR,"_sv1tValidR/O");
+      ExTree->Branch("isValid_Mu2TrackSV_Reco",&_sv2tValidR,"_sv2tValidR/O"); 
+
+      ExTree->Branch("isValidSV_Reco",&_svValidR,"_svValidR/O"); 
+      ExTree->Branch("isValidSVT_Reco",&_svtValidR,"_svtValidR/O"); 
+      ExTree->Branch("isPVLeading_Reco",&_isPVLeadingR,"_isPVLeadingR/O");
 
       ExTree->Branch("PV_Reco","TVector3",&_PVR); 
       ExTree->Branch("SV_Reco","TVector3",&_SVR);
       ExTree->Branch("SVT_Reco","TVector3",&_SVTR);
 
+      ExTree->Branch("SV_Mu1Track_Reco","TVector3",&_SV_Mu1TR);
+      ExTree->Branch("SVerr_Mu1Track_Reco","TVector3",&_SVe_Mu1TR);
+
+      ExTree->Branch("SV_Mu2Track_Reco","TVector3",&_SV_Mu2TR);
+      ExTree->Branch("SVerr_Mu2Track_Reco","TVector3",&_SVe_Mu2TR);
+
       ExTree->Branch("PVerr_Reco","TVector3",&_PVeR); 
       ExTree->Branch("SVerr_Reco","TVector3",&_SVeR);
       ExTree->Branch("SVTerr_Reco","TVector3",&_SVTeR);
+
+      ExTree->Branch("SV_Mu1Track_chi_Reco",&_SV1chiR   ,"_SV1chiR/D"); 
+      ExTree->Branch("SV_Mu1Track_prob_Reco",&_SV1probR   ,"_SV1probR/D"); 
+
+      ExTree->Branch("SV_Mu2Track_chi_Reco",&_SV2chiR   ,"_SV2chiR/D"); 
+      ExTree->Branch("SV_Mu2Track_prob_Reco",&_SV2probR   ,"_SV2probR/D"); 
 
       ExTree->Branch("SVchi_Reco",&_SVchiR   ,"_SVchiR/D"); 
       ExTree->Branch("SVprob_Reco",&_SVprobR   ,"_SVprobR/D"); 
@@ -2204,21 +2428,28 @@ void Tau3MuAnalysis_V2::beginJob() {
     
       ExTree->Branch("CosPoint2_Reco",&_cosp2R   ,"_cosp2R/D");
       ExTree->Branch("CosPoint3_Reco",&_cosp3R   ,"_cosp3R/D");
+
+      ExTree->Branch("Ntracks_AroundMu1_Reco",&_Ntracks_Mu1_R,"_Ntracks_Mu1_R/I");
+      ExTree->Branch("Ntracks_AroundMu2_Reco",&_Ntracks_Mu2_R,"_Ntracks_Mu2_R/I");
+
+      ExTree->Branch("dZ1_SVT_Reco",&_DZ1R   ,"_DZ1R/D");
+      ExTree->Branch("dZ2_SVT_Reco",&_DZ2R   ,"_DZ2R/D");
+      ExTree->Branch("dZ3_SVT_Reco",&_DZ3R   ,"_DZ3R/D");
       //
     }
 
-    ExTree->Branch("IsOfflineMcMatched",&_IsMcMatched ,"_IsMcMatched/b");
+    ExTree->Branch("IsOfflineMcMatched",&_IsMcMatched ,"_IsMcMatched/O");
   }
 
   if (debug) cout << "adding Offline branches" << endl;
   
   //Offline variables
 
-  ExTree->Branch("IsOfflineReco",&_IsOffline,"_IsOffline/b");
+  ExTree->Branch("IsOfflineReco",&_IsOffline,"_IsOffline/O");
 
-  ExTree->Branch("IsTrigMatched_Offline",&_TriggerMatched,"_TriggerMatched/b");
-  ExTree->Branch("IsDiMuFound_Offline",&_DiMuFound,"_DiMuFound/b");
-  ExTree->Branch("IsTrackFound_Offline",&_TrackFound,"_TrackFound/b");
+  ExTree->Branch("IsTrigMatched_Offline",&_TriggerMatched,"_TriggerMatched/O");
+  ExTree->Branch("IsDiMuFound_Offline",&_DiMuFound,"_DiMuFound/O");
+  ExTree->Branch("IsTrackFound_Offline",&_TrackFound,"_TrackFound/O");
 	
 
   _DiMu4Mom= new TLorentzVector(0.,0.,0.,0.);
@@ -2230,10 +2461,21 @@ void Tau3MuAnalysis_V2::beginJob() {
 
   _MuTrack_4Mom_Mu= new TLorentzVector(0.,0.,0.,0.);
   _MuTrack_4Mom_Pi= new TLorentzVector(0.,0.,0.,0.);
-  
+
+  _Mu1_4Mom_Refit= new TLorentzVector(0.,0.,0.,0.);
+  _Mu2_4Mom_Refit= new TLorentzVector(0.,0.,0.,0.);
+
+  _MuTrack_4Mom_Mu_Refit= new TLorentzVector(0.,0.,0.,0.);
+  _MuTrack_4Mom_Pi_Refit= new TLorentzVector(0.,0.,0.,0.);
+
   _PV= new TVector3(0.,0.,0.);
   _SV=new TVector3(0.,0.,0.);
   _SVT=new TVector3(0.,0.,0.);
+
+  _SV_Mu1T= new TVector3(0.,0.,0.);
+  _SVe_Mu1T= new TVector3(0.,0.,0.);
+  _SV_Mu2T= new TVector3(0.,0.,0.);
+  _SVe_Mu2T= new TVector3(0.,0.,0.);
 
   _PVe= new TVector3(0.,0.,0.);
   _SVe=new TVector3(0.,0.,0.);
@@ -2248,13 +2490,18 @@ void Tau3MuAnalysis_V2::beginJob() {
   ExTree->Branch("MuTrack_4Mom_Pi_Offline","TLorentzVector",&_MuTrack_4Mom_Pi); 
   ExTree->Branch("MuTrack_4Mom_Mu_Offline","TLorentzVector",&_MuTrack_4Mom_Mu); 
 
+  ExTree->Branch("Mu1_4Mom_Refit_Offline","TLorentzVector",&_Mu1_4Mom_Refit); 
+  ExTree->Branch("Mu2_4Mom_Refit_Offline","TLorentzVector",&_Mu2_4Mom_Refit); 
+  ExTree->Branch("MuTrack_Refit_4Mom_Pi_Offline","TLorentzVector",&_MuTrack_4Mom_Pi_Refit); 
+  ExTree->Branch("MuTrack_Refit_4Mom_Mu_Offline","TLorentzVector",&_MuTrack_4Mom_Mu_Refit); 
+
  //first offline mu   
-  ExTree->Branch("IsTkMu_Offline_1",&_isTk1   ,"_isTk1/b");
-  ExTree->Branch("IsGlbMu_Offline_1",&_isGlb1   ,"_isGlb1/b");
-  ExTree->Branch("IsSAMu_Offline_1",&_isSA1   ,"_isSA1/b");
-  ExTree->Branch("IsTMOMu_Offline_1",&_isTMO1   ,"_isTMO1/b");
-  ExTree->Branch("IsTightMu_Offline_1",&_isTight1   ,"_isTight1/b");
-  ExTree->Branch("IsPFMu_Offline_1",&_isPF1   ,"_isPF1/b");
+  ExTree->Branch("IsTkMu_Offline_1",&_isTk1   ,"_isTk1/O");
+  ExTree->Branch("IsGlbMu_Offline_1",&_isGlb1   ,"_isGlb1/O");
+  ExTree->Branch("IsSAMu_Offline_1",&_isSA1   ,"_isSA1/O");
+  ExTree->Branch("IsTMOMu_Offline_1",&_isTMO1   ,"_isTMO1/O");
+  ExTree->Branch("IsTightMu_Offline_1",&_isTight1   ,"_isTight1/O");
+  ExTree->Branch("IsPFMu_Offline_1",&_isPF1   ,"_isPF1/O");
 
   ExTree->Branch("nPixHits_Offline_1",&_npix1   ,"_npix1/I");
   ExTree->Branch("nTkHits_Offline_1",&_nTk1   ,"_nTk1/I");
@@ -2262,16 +2509,17 @@ void Tau3MuAnalysis_V2::beginJob() {
   ExTree->Branch("Q_Offline_1",&_q1   ,"_q1/I");
 
   ExTree->Branch("chiTk_Offline_1",&_chiTk1   ,"_chiTk1/D");
+  //ExTree->Branch("chiTk_Refit_Offline_1",&_chiTk1_Refit   ,"_chiTk1_Refit/D");
   ExTree->Branch("chiMu_Offline_1",&_chiMu1   ,"_chiMu1/D");
   //
- 
+
   //second offline mu
-  ExTree->Branch("IsTkMu_Offline_2",&_isTk2   ,"_isTk2/b");
-  ExTree->Branch("IsGlbMu_Offline_2",&_isGlb2   ,"_isGlb2/b");
-  ExTree->Branch("IsSAMu_Offline_2",&_isSA2   ,"_isSA2/b");
-  ExTree->Branch("IsTMOMu_Offline_2",&_isTMO2   ,"_isTMO2/b");
-  ExTree->Branch("IsTightMu_Offline_2",&_isTight2   ,"_isTight2/b");
-  ExTree->Branch("IsPFMu_Offline_2",&_isPF2   ,"_isPF2/b");
+  ExTree->Branch("IsTkMu_Offline_2",&_isTk2   ,"_isTk2/O");
+  ExTree->Branch("IsGlbMu_Offline_2",&_isGlb2   ,"_isGlb2/O");
+  ExTree->Branch("IsSAMu_Offline_2",&_isSA2   ,"_isSA2/O");
+  ExTree->Branch("IsTMOMu_Offline_2",&_isTMO2   ,"_isTMO2/O");
+  ExTree->Branch("IsTightMu_Offline_2",&_isTight2   ,"_isTight2/O");
+  ExTree->Branch("IsPFMu_Offline_2",&_isPF2   ,"_isPF2/O");
 
   ExTree->Branch("nPixHits_Offline_2",&_npix2   ,"_npix2/I");
   ExTree->Branch("nTkHits_Offline_2",&_nTk2   ,"_nTk2/I");
@@ -2279,15 +2527,16 @@ void Tau3MuAnalysis_V2::beginJob() {
   ExTree->Branch("Q_Offline_2",&_q2   ,"_q2/I");
 
   ExTree->Branch("chiTk_Offline_2",&_chiTk2   ,"_chiTk2/D");
+  //ExTree->Branch("chiTk_Refit_Offline_2",&_chiTk2_Refit   ,"_chiTk2_Refit/D");
   ExTree->Branch("chiMu_Offline_2",&_chiMu2   ,"_chiMu2/D");
  //
  //third offline mu-track   
-  ExTree->Branch("IsTkMu_Offline_3",&_isTk3   ,"_isTk3/b");
-  ExTree->Branch("IsGlbMu_Offline_3",&_isGlb3   ,"_isGlb3/b");
-  ExTree->Branch("IsSAMu_Offline_3",&_isSA3   ,"_isSA3/b");
-  ExTree->Branch("IsTMOMu_Offline_3",&_isTMO3   ,"_isTMO3/b");
-  ExTree->Branch("IsTightMu_Offline_3",&_isTight3   ,"_isTight3/b");
-  ExTree->Branch("IsPFMu_Offline_3",&_isPF3   ,"_isPF3/b");
+  ExTree->Branch("IsTkMu_Offline_3",&_isTk3   ,"_isTk3/O");
+  ExTree->Branch("IsGlbMu_Offline_3",&_isGlb3   ,"_isGlb3/O");
+  ExTree->Branch("IsSAMu_Offline_3",&_isSA3   ,"_isSA3/O");
+  ExTree->Branch("IsTMOMu_Offline_3",&_isTMO3   ,"_isTMO3/O");
+  ExTree->Branch("IsTightMu_Offline_3",&_isTight3   ,"_isTight3/O");
+  ExTree->Branch("IsPFMu_Offline_3",&_isPF3   ,"_isPF3/O");
 
   ExTree->Branch("nPixHits_Offline_3",&_npix3   ,"_npix3/I");
   ExTree->Branch("nTkHits_Offline_3",&_nTk3   ,"_nTk3/I");
@@ -2295,23 +2544,49 @@ void Tau3MuAnalysis_V2::beginJob() {
   ExTree->Branch("Q_Offline_3",&_q3   ,"_q3/I");
 
   ExTree->Branch("chiTk_Offline_3",&_chiTk3   ,"_chiTk3/D");
+  //ExTree->Branch("chiTk_Refit_Offline_3",&_chiTk3_Refit   ,"_chiTk3_Refit/D");
   ExTree->Branch("chiMu_Offline_3",&_chiMu3   ,"_chiMu3/D");
+
   ExTree->Branch("DCATrack_SV_Offline_3",&_DCA_SV   ,"_DCA_SV/D");
+
+  ExTree->Branch("Ntracks_AroundMu1_Offline",&_Ntracks_Mu1,"_Ntracks_Mu1/I");
+  ExTree->Branch("Ntracks_AroundMu2_Offline",&_Ntracks_Mu2,"_Ntracks_Mu2/I");
+
+  ExTree->Branch("dZ1_SVT_Offline",&_DZ1   ,"_DZ1/D");
+  ExTree->Branch("dZ2_SVT_Offline",&_DZ2   ,"_DZ2/D");
+  ExTree->Branch("dZ3_SVT_Offline",&_DZ3   ,"_DZ3/D");
+
  //
  //Offline vertices
 
-  ExTree->Branch("isValidSV_Offline",&_svValid,"_svValid/b"); 
-  ExTree->Branch("isValidSVT_Offline",&_svtValid,"_svtValid/b"); 
-  ExTree->Branch("isPVLeading_Offline",&_isPVLeading,"_isPVLeading/b");
+  ExTree->Branch("isValid_Mu1TrackSV_Offline",&_sv1tValid,"_sv1tValid/O");
+  ExTree->Branch("isValid_Mu2TrackSV_Offline",&_sv2tValid,"_sv2tValid/O"); 
+
+  ExTree->Branch("isValidSV_Offline",&_svValid,"_svValid/O"); 
+  ExTree->Branch("isValidSVT_Offline",&_svtValid,"_svtValid/O"); 
+  ExTree->Branch("isPVLeading_Offline",&_isPVLeading,"_isPVLeading/O");
 
   ExTree->Branch("PV_Offline","TVector3",&_PV); 
   ExTree->Branch("SV_Offline","TVector3",&_SV);
+
+  ExTree->Branch("SV_Mu1Track_Offline","TVector3",&_SV_Mu1T);
+  ExTree->Branch("SV_Mu2Track_Offline","TVector3",&_SV_Mu2T);
+
+  ExTree->Branch("SVerr_Mu1Track_Offline","TVector3",&_SVe_Mu1T);
+  ExTree->Branch("SVerr_Mu2Track_Offline","TVector3",&_SVe_Mu2T);
+
   ExTree->Branch("SVT_Offline","TVector3",&_SVT);
 
   ExTree->Branch("PVerr_Offline","TVector3",&_PVe); 
   ExTree->Branch("SVerr_Offline","TVector3",&_SVe);
   ExTree->Branch("SVTerr_Offline","TVector3",&_SVTe);
   
+  ExTree->Branch("SV_Mu1Track_chi_Offline",&_SV1chi   ,"_SV1chi/D"); 
+  ExTree->Branch("SV_Mu1Track_prob_Offline",&_SV1prob   ,"_SV1prob/D");
+
+  ExTree->Branch("SV_Mu2Track_chi_Offline",&_SV2chi   ,"_SV2chi/D"); 
+  ExTree->Branch("SV_Mu2Track_prob_Offline",&_SV2prob   ,"_SV2prob/D");
+
   ExTree->Branch("SVchi_Offline",&_SVchi   ,"_SVchi/D"); 
   ExTree->Branch("SVprob_Offline",&_SVprob   ,"_SVprob/D"); 
   ExTree->Branch("SVTchi_Offline",&_SVTchi   ,"_SVTchi/D"); 
@@ -2328,6 +2603,7 @@ void Tau3MuAnalysis_V2::beginJob() {
   htotEff=new TH1F("TotEff","Tot Eff",4,-0.5,3.5);
   hDiMuEff=new TH1F("DiMuEff","DiMuEff",10,-0.5,9.5);
   hTrackEff=new TH1F("TrackEff","TrackEff",10,-0.5,9.5);
+
 }
 
 
@@ -2449,7 +2725,7 @@ Tau3MuAnalysis_V2::endJob() {
   htotEff->Write();
   hDiMuEff->Write();
   hTrackEff->Write();
- 
+
   thefile->Write();
 
   delete htotEff;
@@ -2462,6 +2738,12 @@ Tau3MuAnalysis_V2::endJob() {
     delete _SVR;
     delete _PVR;
 
+    delete _SV_Mu1TR;
+    delete _SVe_Mu1TR;
+
+    delete _SV_Mu2TR;
+    delete _SVe_Mu2TR;
+
     delete _SVTeR;
     delete _SVeR;
     delete _PVeR;
@@ -2469,6 +2751,10 @@ Tau3MuAnalysis_V2::endJob() {
     delete _MuTrack_4MomR;
     delete _Mu2_4MomR;
     delete _Mu1_4MomR;
+
+    delete _MuTrack_4MomR_Refit;
+    delete _Mu2_4MomR_Refit;
+    delete _Mu1_4MomR_Refit;
      
     delete _DiMuPlusTrack4MomR;
     delete _DiMu4MomR;
@@ -2489,6 +2775,12 @@ Tau3MuAnalysis_V2::endJob() {
   delete _SV;
   delete _PV;
 
+  delete _SV_Mu1T;
+  delete _SVe_Mu1T;
+
+  delete _SV_Mu2T;
+  delete _SVe_Mu2T;
+
   delete _SVTe;
   delete _SVe;
   delete _PVe;
@@ -2497,6 +2789,11 @@ Tau3MuAnalysis_V2::endJob() {
   delete _MuTrack_4Mom_Pi;
   delete _Mu2_4Mom;
   delete _Mu1_4Mom;
+
+  delete _MuTrack_4Mom_Mu_Refit;
+  delete _MuTrack_4Mom_Pi_Refit;
+  delete _Mu2_4Mom_Refit;
+  delete _Mu1_4Mom_Refit;
  
   delete _DiMuPlusTrack4Mom_Pi;
   delete _DiMuPlusTrack4Mom_Mu;
