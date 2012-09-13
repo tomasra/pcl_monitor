@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2012/09/04 13:43:07 $
- *  $Revision: 1.15 $
+ *  $Date: 2012/09/12 18:13:31 $
+ *  $Revision: 1.16 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -407,6 +407,11 @@ bool LumiFileReaderByBX::readRootFile(const TString& fileName, int /*runMin*/, i
 
   Bool_t activeBx[NBXMAX] = {0};
 
+  // add some variables for debugging
+  float runTotalDelLumi = 0.;
+  float runTotalRecLumi = 0.;
+  float totRecLumiInLsByBX = 0;
+
   tree->SetBranchAddress("run", &run);
   tree->SetBranchAddress("ls", &ls);
   tree->SetBranchAddress("ratio", &ratio);
@@ -427,11 +432,25 @@ bool LumiFileReaderByBX::readRootFile(const TString& fileName, int /*runMin*/, i
       lsContainer[ls -1] = lumiByBx;
     } else {
       if (check_RunFound(run) && check_LSFound(RunLumiIndex(run, ls))) {
-      cout << "run: " << run << " ls " << ls << " ratio " << ratio << " has a wrong value" << endl;
+	cout << "run: " << run << " ls " << ls << " ratio " << ratio << " has a wrong value" << endl;
       }
       vector<float> lumiByBx;
       lsContainer[ls -1 ]  = lumiByBx ;
     }
+    runTotalDelLumi += totalDel;
+    runTotalRecLumi += totalRec;
+
+
+    //DEBUG
+    vector<float> lumiByBx = lsContainer[ls -1];
+    for(int bx = 0; bx != lumiByBx.size(); ++bx) {
+      if(activeBx[bx]) {
+	totRecLumiInLsByBX += lumiByBx[bx]*LENGTH_LS;
+      }
+    }
+
+
+
 
     lsTotalLumiContainer[ls - 1] = make_pair(totalDel, totalRec);
     lsRatioContainer[ls - 1] = ratio;
@@ -444,9 +463,10 @@ bool LumiFileReaderByBX::readRootFile(const TString& fileName, int /*runMin*/, i
     if (activeBx[i])
       trueCount++;
   }
-  cout << "Got " << trueCount << " active bx\n";
-
   cout << "   run: " << run << " # ls: " << lsContainer.size() << endl;
+  cout << "   filling schema: " << trueCount << " active bx\n";
+  cout << "   total del. lumi (1/ub) " << runTotalDelLumi << " total rec. lumi (1/ub): " << runTotalRecLumi << endl;
+  cout << "   total rec. lumi out of BX values: (1/ub) " <<    totRecLumiInLsByBX << endl; // FIXME: this needs to be understood
   theLumiTable[run] = lsContainer;
   theLumiRatioByRunByLS[run] = lsRatioContainer;
   theTotalLumiByRun[run] = lsTotalLumiContainer;
@@ -723,42 +743,55 @@ TH1F * LumiFileReaderByBX::getRecLumiBins(int nbins, float min, float max) const
   //cout << "     # bins: " << nbins << " min: " << min << " max: " << max << endl;
   Long_t runN = cachedRun;
   TString hName = TString("hRec_") + runN;
-  TH1F *histo = new TH1F(hName.Data(), "; inst. luminosity per BX [#mub^{-1}]; Events", nbins, min, max);
+  TH1F *histo = new TH1F(hName.Data(), "; inst. luminosity per BX [Hz/#mub^{-1}]; integrated lumi[#mub^{-1}]", nbins, min, max);
 
+  float totRecLumi = 0.;
+  float totDelLumi = 0.;
   for(map<int, vector< vector<float> > >::const_iterator run = theLumiTable.begin();
       run != theLumiTable.end(); ++run) {
+    // get the vector of lumiByBx for each LS
     vector< vector<float> > lsContainer = (*run).second;
+    // get the vector of ratio rec./del. for every LS
     vector<float> ratioContainer = (*theLumiRatioByRunByLS.find((*run).first)).second;
 
+    
     for(vector< vector<float> >::const_iterator bxValues =  lsContainer.begin();
-	bxValues != lsContainer.end(); ++bxValues) {
+	bxValues != lsContainer.end(); ++bxValues) { // loop on all LSs
+      // get the LS #
       int ls = bxValues - lsContainer.begin() + 1;
-
+      
+      // get the lumi. by BX for this LS
       vector<float> values = (*bxValues);
       if(values.size() != 0) {
 
 	float ratio = ratioContainer[ls-1];
 
 	for(unsigned int index = 0; index != values.size(); ++index) {
-    RunLumiBXIndex runAndLumiAndBx(runN, ls, index);
-    if (check_BXFilled(runAndLumiAndBx)) {
-	  float recLumi = values[index];
-	  float delLumi = 0;
-	  if(ratio != 0) {
-	    delLumi = recLumi/ratio;
-	  } 
-    //else {
-	  //  cout << "Warning ls : BX : " << ls << ": " << index << " del: " << delLumi << " rec: " << recLumi << endl;
-	  //}
+	  RunLumiBXIndex runAndLumiAndBx(runN, ls, index);
+	  if (check_BXFilled(runAndLumiAndBx)) {
+	    if(theFillingScheme[index]) {// check that this is actually in the filling schema
 
-        histo->Fill(delLumi, recLumi*LENGTH_LS);
+	      float recLumi = values[index];
+	      float delLumi = 0;
+	      if(ratio != 0) {
+		delLumi = recLumi/ratio;
+	      } else {
+	        cout << "Warning ls : BX : " << ls << ": " << index << " del: " << delLumi << " rec: " << recLumi << endl;
+	      }
+	      totRecLumi += recLumi*LENGTH_LS;
+	      totDelLumi += delLumi*LENGTH_LS;
+	      histo->Fill(delLumi, recLumi*LENGTH_LS);
+	    } 
 	    // del Lumi per BX, weight with rec Lumi
+	  } else {
+	    cout << "   BX values not filled for LS: " << ls << endl;
+	  }
 	}
       }
     }
   }
-}
-
+  cout << "   Integral: " << histo->Integral() << endl;
+  cout << "   total del. lumi (1/ub): " << totDelLumi << " total rec. lumi (1/ub): " << totRecLumi << endl;
   return histo;
   
 }
