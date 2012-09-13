@@ -69,7 +69,7 @@ void runTreeReader() {
 
 
 // select one special <runnumber>, pres.c_str() or all.c_str()
-  chain->Process(selector, run2012A.c_str());
+  chain->Process(selector, run2012B.c_str());
 
 
 }

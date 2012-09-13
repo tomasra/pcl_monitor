@@ -49,6 +49,7 @@ struct PerCutHistograms
    TH1F* sipL2;
 
    TProfile* nVtx_delLumi;
+   TProfile* nVtx_pileUp;
    TProfile* ls_delLumi;
 
    TH1F* eff;

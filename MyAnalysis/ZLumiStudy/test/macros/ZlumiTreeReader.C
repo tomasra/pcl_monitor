@@ -99,9 +99,9 @@ string to_string(int i)
 } 
 
 // function to calculate the luminosity in other units 
-float calcLumi(float lumiBarn) { // ub^-1 -> cm^-2 * s^-1
+float calcLumiPerBX(float lumiBarn) { // ub^-1 -> cm^-2 * s^-1
 	float my_barn = pow(10.0, -30);
-	int bunch = 1440;
+	int bunch = 1;
 
 	return lumiBarn / (my_barn * LENGTH_LS) * bunch;
 }
@@ -111,6 +111,14 @@ float calcLumi_avgInst(float lumiBarn) { // Hz * ub^-1 -> cm^-2 * s^-1
 	int bunch = 1440;
 
 	return lumiBarn / (my_barn) * bunch;
+}
+
+float calcPileUp(float lumi)
+{
+	float sigma_pp = 69.3;
+	float frequency = 11246.;
+
+	return lumi * sigma_pp * 1e-27 / frequency;
 }
 
 // function which generate the histograms
@@ -169,66 +177,14 @@ static string PER_CUT_FOLDER_Mu17[] = {
 	"OurMuonID_To_DoubleMu17Mu8_Mu17_lumi_Eta1P2_Iso_for_Run2012", 
 	"OurMuonID_To_DoubleMu17Mu8_Mu17_lumi_Eta1P2_for_Run2012", 
 };
-static string PER_CUT_FOLDER_Mu8[] = {
-	"Track_To_DoubleMu17Mu8_Mu8_lumi_for_Run2012", 
-	"OurMuonID_To_DoubleMu17Mu8_Mu8_lumi_Eta2P4_Iso_for_Run2012",
-	"OurMuonID_To_DoubleMu17Mu8_Mu8_lumi_Eta2P4_for_Run2012", 
-	"OurMuonID_To_DoubleMu17Mu8_Mu8_lumi_Eta1P2_Iso_for_Run2012", 
-	"OurMuonID_To_DoubleMu17Mu8_Mu8_lumi_Eta1P2_for_Run2012",
-};
 
-
-vector<pair<double, double> > getEntries(TFile* eff_File, string folder)
+vector<pair<double, double> > getEffEntries(TFile* eff_File, string canv_Mu17)
 {
-	vector<pair<double, double> > entries (nBins, make_pair(-1, -1));
+	vector<pair<double, double> > entries(nBins, make_pair(-1, -1));
+	vector<pair<double, double> > entries_Mu17 (nBins, make_pair(-1,-1));
 
-	// change in the right folder and look for the eff plot
-	eff_File->cd(("tpTree/" + folder + "/fit_eff_plots/").c_str());
-	TList* keyList = gDirectory->GetListOfKeys();
-
-	string plotName = "";
-	string name = "";
-
-	for(int i = 0; i < keyList->GetSize(); i++) {
-		name = keyList->At(i)->GetName();
-		string start = name.substr(0, 15);
-		if (start == "bxInstLumi_PLOT")
-			plotName = name;
-	}
-
-	if (plotName == "") {
-		cout << "no entries found" << endl;
-		return entries;
-	}
-
-	eff_File->cd("tpTree/");
-
-	TObject* obj = eff_File->Get(("tpTree/" + folder + "/fit_eff_plots/" + plotName).c_str()); // use both triggers and save the product
-
-	TCanvas* canv = dynamic_cast<TCanvas*>(obj);
-	if (canv) {
-		TList* list = canv->GetListOfPrimitives();
-		for (int i = 0; i < list->GetSize(); i++) {
-			TGraph* graph = dynamic_cast<TGraph*>(list->At(i));
-			if (graph) {
-				for (int bin = 0; bin < graph->GetN(); ++bin) {
-    				double x, y;
-    				graph->GetPoint(bin, x, y);
-    				double err = graph->GetErrorY(bin);
-    				entries[bin] = make_pair(y, err); // first: value, second: error
-				}
-				break;
-			}
-		}
-	}
-	return entries;
-}
-
-vector<pair<double, double> > getEffEntries(TFile* eff_File, string canvas)
-{
-	vector<pair<double, double> > entries (nBins, make_pair(-1, -1));
-
-	TObject* obj = eff_File->Get((canvas).c_str()); // use both triggers and save the product
+	// load the correct trigger eff with muon id
+	TObject* obj = eff_File->Get((canv_Mu17).c_str());
 
 	TCanvas* canv = dynamic_cast<TCanvas*>(obj);
 	if (canv) {
@@ -240,58 +196,23 @@ vector<pair<double, double> > getEffEntries(TFile* eff_File, string canvas)
     				double y, err;
     				y = hist->GetBinContent(bin + 1);
     				err = hist->GetBinError(bin + 1);
-    				entries[bin] = make_pair(y, err); // first: value, second: error
+    				entries_Mu17[bin] = make_pair(y, err); // first: value, second: error
 				}
 				break;
 			}
 		}
 	}
-	else 
-		cout << "Mist " << endl;
-	return entries;	
-}
 
-vector<pair<double, double> > getEntries(TFile* eff_File, string folder_Mu17, string folder_Mu8)
-{
-	vector<pair<double, double> > entries(nBins, make_pair(-1, -1));
-	vector<pair<double, double> > entries_Mu17 (nBins, make_pair(-1,-1));
-	vector<pair<double, double> > entries_Mu8 (nBins, make_pair(-1, -1));
-
-	entries_Mu17 = getEntries(eff_File, folder_Mu17);
-	entries_Mu8 = getEntries(eff_File, folder_Mu8);
-
+	// calculate the eff = 1 - (1-eff_{trigger, muonId})^2
 	for (int i = 0; i < nBins; i++) {
-		if (entries_Mu17[i].second == -1 || entries_Mu8[i].second == -1) {
+		if (entries_Mu17[i].second == -1) {
 			entries[i].first = -1;
 			entries[i].second = -1;
 		}
 		else {
-			entries[i].first = entries_Mu17[i].first * entries_Mu8[i].first;
-			entries[i].second = sqrt(pow(entries_Mu17[i].second * entries_Mu8[i].first, 2) + pow(entries_Mu17[i].first * entries_Mu8[i].second, 2));
+			entries[i].first = 1 - pow(1 - entries_Mu17[i].first, 2);
+			entries[i].second = 2.0 * entries_Mu17[i].second * (1 - entries_Mu17[i].first);
 		}
-	}
-	return entries;
-}
-
-
-vector<pair<double, double> > getEffEntries(TFile* eff_File, string canv_Mu17, string canv_Mu8)
-{
-	vector<pair<double, double> > entries(nBins, make_pair(-1, -1));
-	vector<pair<double, double> > entries_Mu17 (nBins, make_pair(-1,-1));
-	vector<pair<double, double> > entries_Mu8 (nBins, make_pair(-1, -1));
-
-	entries_Mu17 = getEffEntries(eff_File, canv_Mu17);
-	entries_Mu8 = getEffEntries(eff_File, canv_Mu8);
-
-	for (int i = 0; i < nBins; i++) {
-		if (entries_Mu17[i].second == -1 || entries_Mu8[i].second == -1) {
-			entries[i].first = -1;
-			entries[i].second = -1;
-		}
-		else {
-			entries[i].first = entries_Mu17[i].first * entries_Mu8[i].first;
-			entries[i].second = sqrt(pow(entries_Mu17[i].second * entries_Mu8[i].first, 2) + pow(entries_Mu17[i].first * entries_Mu8[i].second, 2));
-			}
 	}
 	return entries;		
 }
@@ -316,6 +237,16 @@ vector<pair<double, double> > saveEff(vector<pair<double, double> > entries)
 double calculateXSecError(double countZ, double lumi, pair<double, double> effi)
 {
 	return (1000.0 / lumi) * sqrt(pow(sqrt(countZ) / effi.first, 2) + pow(effi.second * countZ / pow(effi.first, 2), 2));
+}
+
+double calculateXSecError(double countZtot, double countZtot_err, double fraction, double fraction_err, double effi, double effi_err, double lumi)
+{
+	double countZ = countZtot * fraction;
+	double countZ_err = sqrt(pow(fraction * countZtot_err, 2) + pow(countZtot * fraction_err, 2));
+
+	double xSecErr = (1000.0 / lumi) * sqrt(pow(countZ_err / effi, 2) + pow(effi_err * countZ / pow(effi, 2), 2));
+
+	return xSecErr;
 }
 
 
@@ -370,6 +301,7 @@ void ZlumiTreeReader::CreatePerCutHists()
 		histsPerCut[i].xSection_count = new TH1F(("XSection_count" + index_str).c_str(), ("XSection calculated by counting (" + PER_CUT_TITLE[i] + "); inst. luminosity [#mub^{-1}]; x-section [nb]").c_str(), nBins, minBin, maxBin);
 
 		histsPerCut[i].nVtx_delLumi = new TProfile(("NVtx_delLumi" + index_str).c_str(), ("#vertices vs. luminosity (" + PER_CUT_TITLE[i] + "); #vertices; luminosity per BX [cm^{-2}s^{-1}]").c_str(), 15, 0, 30);
+		histsPerCut[i].nVtx_pileUp = new TProfile(("NVtx_pileUp" + index_str).c_str(), ("#vertices vs. pileUp (" + PER_CUT_TITLE[i] + "); #vertices; pileUp").c_str(), 15, 0, 30);
 		histsPerCut[i].ls_delLumi = new TProfile(("ls_delLumi" + index_str).c_str(), ("lumisection vs. luminosity (" + PER_CUT_TITLE[i] + "); lumisection; luminosity per BX [cm^{-2}s^{-1}]").c_str(), 40, 0, 1600);
     
     	histsPerCut[i].eff = new TH1F(("eff per bin" + index_str).c_str(), ("eff per bin (" + PER_CUT_TITLE[i] + "); inst. luminosity [#mub^{-1}]; eff").c_str(), nBins, minBin, maxBin);
@@ -409,8 +341,9 @@ void ZlumiTreeReader::FillPerCutHist(size_t index, int index_Z, RunLumiBXIndex l
 	}
 	float delLumiPerBX = lumiReader[RunNumber].getDelLumi(lumiBXIndex);
 
-	histsPerCut[index].nVtx_delLumi->Fill(Nvtx, calcLumi(delLumiPerBX));
-	histsPerCut[index].ls_delLumi->Fill(LumiNumber, calcLumi(delLumiPerBX));
+	histsPerCut[index].nVtx_delLumi->Fill(Nvtx, calcLumiPerBX(delLumiPerBX));
+	histsPerCut[index].nVtx_pileUp->Fill(Nvtx, calcPileUp(calcLumiPerBX(delLumiPerBX)));
+	histsPerCut[index].ls_delLumi->Fill(LumiNumber, calcLumiPerBX(delLumiPerBX));
 
 }
 
@@ -444,6 +377,7 @@ void ZlumiTreeReader::DrawPerCutHists()
 		histsPerCut[i].xSection_count->Write();
 
 		histsPerCut[i].nVtx_delLumi->Write();
+		histsPerCut[i].nVtx_pileUp->Write();
 		histsPerCut[i].ls_delLumi->Write();
 
 		histsPerCut[i].eff->Write();
@@ -470,6 +404,7 @@ void ZlumiTreeReader::DeletePerCutHists()
 		delete histsPerCut[i].sipL2;
 
 		delete histsPerCut[i].nVtx_delLumi;
+		delete histsPerCut[i].nVtx_pileUp;
 		delete histsPerCut[i].ls_delLumi;
 
 		delete histsPerCut[i].hAll->hMass;
@@ -715,14 +650,14 @@ void ZlumiTreeReader::Terminate()
 	vector<pair<double, double> > graphEntries (nBins, make_pair(-1, -1));
 	//TFile* eff_File = new TFile("../TagAndProbe/Run2012A_save_allCuts.root");
 	//TFile* eff_File = new TFile("../TagAndProbe/Run2012B_save_allCuts_2of3.root");
-	TFile* eff_File = new TFile("../TagAndProbe/plots_Eff/Run2012_A.root");
+	TFile* eff_File = new TFile("../TagAndProbe/plots_Eff/Run2012_B.root");
 	for (size_t cut = 0; cut < NUM_CUTS; cut++) {
 		if (eff_File->IsZombie())
 			cout << "could not open file " << eff_File << endl;
 		else {
 			// get TGraph, save them for eff
 		 	//graphEntries = getEntries(eff_File, PER_CUT_FOLDER_Mu17[cut], PER_CUT_FOLDER_Mu8[cut]);
-		 	graphEntries = getEffEntries(eff_File, PER_CUT_FOLDER_Mu17[cut], PER_CUT_FOLDER_Mu8[cut]);
+		 	graphEntries = getEffEntries(eff_File, PER_CUT_FOLDER_Mu17[cut]);
 		}
 		eff[cut] = saveEff(graphEntries);
 
@@ -782,20 +717,26 @@ void ZlumiTreeReader::Terminate()
 			RooFitResult* result_VExpo = fit_ZMass.getResult("VExpo");
 			RooRealVar* par1_VExpo = (RooRealVar*) result_VExpo->floatParsFinal().find("numTot_VExpo");
 			double numTot_VExpo = par1_VExpo->getVal();
+			double numTot_Err_VExpo = par1_VExpo->getError();
 			RooRealVar* par2_VExpo = (RooRealVar*) result_VExpo->floatParsFinal().find("fSigAll_VExpo");
 			double fSigAll_VExpo = par2_VExpo->getVal();
+			double fSigAll_Err_VExpo = par2_VExpo->getError();
 
 			RooFitResult* result_2VExpo = fit_ZMass.getResult("2VExpo");
 			RooRealVar* par1_2VExpo = (RooRealVar*) result_2VExpo->floatParsFinal().find("numTot_2VExpo");
 			double numTot_2VExpo = par1_2VExpo->getVal();
+			double numTot_Err_2VExpo = par1_2VExpo->getError();
 			RooRealVar* par2_2VExpo = (RooRealVar*) result_2VExpo->floatParsFinal().find("fSigAll_2VExpo");
 			double fSigAll_2VExpo = par2_2VExpo->getVal();
+			double fSigAll_Err_2VExpo = par2_2VExpo->getError();
 
 			RooFitResult* result_2VExpoMin70 = fit_ZMass.getResult("2VExpoMin70");
 			RooRealVar* par1_2VExpoMin70 = (RooRealVar*) result_2VExpoMin70->floatParsFinal().find("numTot_2VExpoMin70");
 			double numTot_2VExpoMin70 = par1_2VExpoMin70->getVal();
+			double numTot_Err_2VExpoMin70 = par1_2VExpoMin70->getError();
 			RooRealVar* par2_2VExpoMin70 = (RooRealVar*) result_2VExpoMin70->floatParsFinal().find("fSigAll_2VExpoMin70");
 			double fSigAll_2VExpoMin70 = par2_2VExpoMin70->getVal();
+			double fSigAll_Err_2VExpoMin70 = par2_2VExpoMin70->getError();
 
 
 			// get luminosity and Z counts
@@ -818,16 +759,14 @@ void ZlumiTreeReader::Terminate()
 
 			if (lumiInBin != 0 && eff[i][bin].first != 0 && eff[i][bin].second) {
 				xSectionInBin_fitVExpo = nZInBin_fit_VExpo * 1000 / (lumiInBin * eff[i][bin].first);
-				xSecErrorInBin_fitVExpo = calculateXSecError(nZInBin_fit_VExpo, lumiInBin, eff[i][bin]);
+				xSecErrorInBin_fitVExpo = calculateXSecError(numTot_VExpo, numTot_Err_VExpo, fSigAll_VExpo, fSigAll_Err_VExpo, eff[i][bin].first, eff[i][bin].second, lumiInBin);
 				xSectionInBin_fit2VExpo = nZInBin_fit_2VExpo * 1000 / (lumiInBin * eff[i][bin].first);
-				xSecErrorInBin_fit2VExpo = calculateXSecError(nZInBin_fit_2VExpo, lumiInBin, eff[i][bin]);
+				xSecErrorInBin_fit2VExpo = calculateXSecError(numTot_2VExpo, numTot_Err_2VExpo, fSigAll_2VExpo, fSigAll_Err_2VExpo, eff[i][bin].first, eff[i][bin].second, lumiInBin);
 				xSectionInBin_fit2VExpoMin70 = nZInBin_fit_2VExpoMin70 * 1000 / (lumiInBin * eff[i][bin].first);
-				xSecErrorInBin_fit2VExpoMin70 = calculateXSecError(nZInBin_fit_2VExpoMin70, lumiInBin, eff[i][bin]);
+				xSecErrorInBin_fit2VExpoMin70 = calculateXSecError(numTot_2VExpoMin70, numTot_Err_2VExpoMin70, fSigAll_2VExpoMin70, fSigAll_Err_2VExpoMin70, eff[i][bin].first, eff[i][bin].second, lumiInBin);
 				xSectionInBin_count = nZInBin_count * 1000 / (lumiInBin * eff[i][bin].first);
 				xSecErrorInBin_count = calculateXSecError(nZInBin_count, lumiInBin, eff[i][bin]);
 			}
-
-			cout << "cut: " << i << " bin: " << bin << " --> " << numTot_2VExpoMin70 << " * " << fSigAll_2VExpoMin70 << " = " << nZInBin_fit_2VExpoMin70 << "   " << lumiInBin << endl;
 
 			histsPerCut[i].xSection_fitVExpo->SetBinContent(bin+1, xSectionInBin_fitVExpo); // wrote in the first and not in the underflow bin!
 			histsPerCut[i].xSection_fitVExpo->SetBinError(bin+1, xSecErrorInBin_fitVExpo);
@@ -855,6 +794,17 @@ void ZlumiTreeReader::Terminate()
 
 	DrawPerCutHists();
 	DeletePerCutHists();
+
+
+
+    set<int>::iterator iter;
+    cout << "RunList for which no csvt file or no filling scheme was found:" << endl;
+    for(iter=runNotFound.begin(); iter!=runNotFound.end(); ++iter)
+    {
+        cout << *iter << endl;
+    }
+    cout << endl;
+
 
 
 	// do not close the file before deleting all objects, otherwise it will crash!
