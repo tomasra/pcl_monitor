@@ -501,34 +501,36 @@ void ZlumiTreeReader::Begin(TTree* /*tree*/)
 	cutflow = CreateHist("cutflow", "", "", "", 9, -0.5, 8.5);
 
 	bool first = true;
-	for (std::set<int>::iterator it = runsToUse.begin(); it != runsToUse.end(); it++) {
-		int run = *it;
+	// FIXME: all the caching logic should be moved to the LumiFileReaderByBX class
+	for (std::set<int>::iterator it = runsToUse.begin(); it != runsToUse.end(); it++) {// loop over all the runs to be used
+	  int run = *it;
 
-		lumiReader.insert(make_pair(run, LumiFileReaderByBX("/data1/ZLumiStudy/CalcLumi/Version0/")));
-		lumiReader[run].readFileForRun(run);
-		if (!lumiReader[run].isGood()) {
-			runNotFound.insert(run);
-			cout << "Run " << run << " not found." << endl;
-		}
+	  LumiFileReaderByBX lumiReaderForRun("/data1/ZLumiStudy/CalcLumi/Version0/");
+	  lumiReaderForRun.readFileForRun(run);
 
-		if (first) {
-			hLumiIntegralsByBin = lumiReader[run].getRecLumiBins(nBins, minBin, maxBin);
-		}
-		else {
-			TH1F *tmp = lumiReader[run].getRecLumiBins(nBins, minBin, maxBin);
-			hLumiIntegralsByBin->Add(tmp);
-		}
-		hLumiIntegralsByBin->SetName("hRec");
+	  if(lumiReaderForRun.isGood()) {
+	    if (first) {
+	      hLumiIntegralsByBin = lumiReaderForRun.getRecLumiBins(nBins, minBin, maxBin);
+	      hLumiIntegralsByBin->SetName("hRec");
+	    } else {
+	      first = false;
+	      TH1F *tmp = lumiReaderForRun.getRecLumiBins(nBins, minBin, maxBin);
+	      hLumiIntegralsByBin->Add(tmp);
+	    }
+	    lumiReader[run] = lumiReaderForRun;
 
-		first = false;
+	  } else {
+	    runNotFound.insert(run);
+	    cout << "Run " << run << " not found." << endl;
+	  }
 	}
+
+	cout << "Approx. integrated luminosity for this run selection: " << hLumiIntegralsByBin->Integral() << " [1/ub]" << endl;
 
 	for (int i = 0; i < NUM_CUTS; i++) {
 		vector<pair<double, double> > tmp (nBins, make_pair(-1, -1));
 		eff.push_back(tmp);
 	}
-
-
 	cout << " all histograms are created" << endl;
 }
 
@@ -566,11 +568,12 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 
 	RunLumiBXIndex lumiBXIndex = RunLumiBXIndex(RunNumber, LumiNumber, BXNumber);
 
-	if (runsToUse.count(RunNumber) == 0 || runNotFound.count(RunNumber) != 0)
-		return kTRUE;
-
+	if (runsToUse.count(RunNumber) == 0 || runNotFound.count(RunNumber) != 0) {
+	  
+	  return kTRUE;
+	}
 	// find the Z-particle with least mass difference
-	double m_diff = 1000;
+	double m_diff = 99999;
 	int index_Z = -1;
 	for(size_t i=0; i < ZMass->size(); i++) {
 		double m_temp = fabs(ZMass->at(i) - M_Z);
@@ -580,7 +583,8 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 		}
 	}
 	if (index_Z == -1) {
-		return kTRUE;
+	  cout << "Warning: no best Z out of " << ZMass->size() << " candidates" << endl;
+	  return kTRUE;
 	}
 
 	wholeMassZ_selected->Fill(ZMass->at(index_Z));
