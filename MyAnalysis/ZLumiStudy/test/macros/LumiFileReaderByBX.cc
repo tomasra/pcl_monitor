@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2012/09/12 18:13:31 $
- *  $Revision: 1.16 $
+ *  $Date: 2012/09/13 09:43:22 $
+ *  $Revision: 1.17 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -144,7 +144,11 @@ void LumiFileReaderByBX::readCSVFileNew(const TString& fileName, int runMin, int
   vector< std::pair<float,float> > lsTotalLumiContainer;
 
   getFillingScheme(runMin);
-
+  if(!foundRun) {
+    // this means that the filling schema could not be found/read
+    // FIXME: this is a dirty hack we should put the check directly in the 'getFillingScheme' returning a bool
+    return;
+  }
   cout << "##Begin readCSVFile\n";
 
   // loop over lines: each line corresponds to a LS
