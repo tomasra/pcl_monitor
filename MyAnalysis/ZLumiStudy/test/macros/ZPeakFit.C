@@ -91,7 +91,7 @@ void ZPeakFit::fit2VExpoMin70(std::string title) {
 RooPlot* ZPeakFit::plot() {
 	data.plotOn(massframe, DataError(RooAbsData::SumW2));
 	if (fit_VExpo) {
-		pdf_VExpo->plotOn(massframe);
+		pdf_VExpo->plotOn(massframe, LineColor(kBlue), LineStyle(2));
 		double chi2 = massframe->chiSquare();
 		std::string label = "VExpo (chi2 = " + lexical_cast<std::string>(chi2) + ")";
 		pdf_VExpo->paramOn(massframe, Label("VExpo"), Layout(0.7, 0.9, 0.9), Label(label.c_str()));

@@ -501,6 +501,7 @@ void ZlumiTreeReader::Begin(TTree* /*tree*/)
 	cutflow = CreateHist("cutflow", "", "", "", 9, -0.5, 8.5);
 
 	bool first = true;
+
 	// FIXME: all the caching logic should be moved to the LumiFileReaderByBX class
 	for (std::set<int>::iterator it = runsToUse.begin(); it != runsToUse.end(); it++) {// loop over all the runs to be used
 	  int run = *it;
@@ -654,7 +655,7 @@ void ZlumiTreeReader::Terminate()
 	vector<pair<double, double> > graphEntries (nBins, make_pair(-1, -1));
 	//TFile* eff_File = new TFile("../TagAndProbe/Run2012A_save_allCuts.root");
 	//TFile* eff_File = new TFile("../TagAndProbe/Run2012B_save_allCuts_2of3.root");
-	TFile* eff_File = new TFile("../TagAndProbe/plots_Eff/Run2012_B.root");
+	TFile* eff_File = new TFile("../TagAndProbe/plots_Eff/Run2012_A.root");
 	for (size_t cut = 0; cut < NUM_CUTS; cut++) {
 		if (eff_File->IsZombie())
 			cout << "could not open file " << eff_File << endl;
