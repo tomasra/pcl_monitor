@@ -1,0 +1,3 @@
+| [[%LINKTOGTLIST%/?GlobalTag=COSMC_53_DECO][COSMC_53_DECO]] | %GREEN%53X%ENDCOLOR% | As the 'MC' GT (including bad channels), but with realistic startup alignment and calibration constants. The mis-alignment and mis-calibration scenarios are described [[AlCaScenarios][here]] | As !START53_V10 with the following updates:<br> - setup for cosmics, tracker in deconvolution mode. |
+| [[%LINKTOGTLIST%/?GlobalTag=COSMC_53_PEAK][COSMC_53_PEAK]] | %GREEN%53X%ENDCOLOR% | As the 'MC' GT (including bad channels), but with realistic startup alignment and calibration constants. The mis-alignment and mis-calibration scenarios are described [[AlCaScenarios][here]] | As !START53_V10 with the following updates:<br> - setup for cosmics, tracker in peak mode. |
+
