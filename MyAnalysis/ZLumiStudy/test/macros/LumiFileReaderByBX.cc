@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2012/09/13 09:43:22 $
- *  $Revision: 1.17 $
+ *  $Date: 2012/09/13 17:55:01 $
+ *  $Revision: 1.18 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -539,8 +539,22 @@ float LumiFileReaderByBX::getAvgInstLumi(const RunLumiBXIndex& runAndLumiAndBx) 
 
 
 pair<float, float> LumiFileReaderByBX::getLumi(const RunLumiBXIndex& runAndLumiAndBx) const {
-  if (!check_RunFound(runAndLumiAndBx.run()) || !check_LSFound(RunLumiIndex(runAndLumiAndBx.run(), runAndLumiAndBx.lumiSection())) || !check_BXFilled(runAndLumiAndBx)) 
+  if (!check_RunFound(runAndLumiAndBx.run()) ||
+      !check_LSFound(RunLumiIndex(runAndLumiAndBx.run(), runAndLumiAndBx.lumiSection()))
+      || !check_BXFilled(runAndLumiAndBx)) {
+    cout << "Warning [LumiFileReaderByBX::getLumi] no values for run: " << runAndLumiAndBx.run()
+	 << " ls: " << runAndLumiAndBx.lumiSection()
+	 << " bx: " << runAndLumiAndBx.bx() << endl;
     return make_pair(-1.f, -1.f);
+  }
+
+
+  if(!theFillingScheme[runAndLumiAndBx.bx()-1]) {
+    cout << "Warning [LumiFileReaderByBX::getLumi] run: " << runAndLumiAndBx.run()
+	 << " ls: " << runAndLumiAndBx.lumiSection()
+	 << " bx: " << runAndLumiAndBx.bx() << " is not active in this filling schema!" << endl;
+    return make_pair(-1.f, -1.f);
+  }
 
   map<int, vector< vector<float> > >::const_iterator lsContainer = theLumiTable.find(runAndLumiAndBx.run());
   map<int, vector<float> >::const_iterator lsRatioContainer = theLumiRatioByRunByLS.find(runAndLumiAndBx.run());
