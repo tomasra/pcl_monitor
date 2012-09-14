@@ -512,8 +512,8 @@ void ZlumiTreeReader::Begin(TTree* /*tree*/)
 	    if (first) {
 	      hLumiIntegralsByBin = lumiReaderForRun.getRecLumiBins(nBins, minBin, maxBin);
 	      hLumiIntegralsByBin->SetName("hRec");
-	    } else {
 	      first = false;
+	    } else {
 	      TH1F *tmp = lumiReaderForRun.getRecLumiBins(nBins, minBin, maxBin);
 	      hLumiIntegralsByBin->Add(tmp);
 	    }
