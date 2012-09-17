@@ -14,10 +14,10 @@ scenario = "data_all"
 if len(args) > 0: scenario = args[0]
 print "Will run scenario ", scenario
 
-run_files = "Run2012B"
+run_files = "Run2012A"
 print "Will use files for ", run_files
 
-outputName = run_files + "_TnP_Z_Trigger_" + scenario + ".root"
+outputName = run_files + "_TnP_Z_Trigger_inSteps" + scenario + ".root"
 
 
 process = cms.Process("TagProbe")
@@ -242,60 +242,139 @@ def GetOurMuonId(trigger, extraCuts):
     result += extraCuts
     return result  
 
-for (T,M) in [ ("DoubleMu17Mu8_Mu17","Track"),("DoubleMu17Mu8_Mu17","OurMuonID"),("DoubleMu17Mu8_Mu8","Track"),("DoubleMu17Mu8_Mu8","OurMuonID")]:
-    print "--------------"
-    print "Trigger: " + T
-    print "From: " + M
+noSteps = False
 
-    if M == 'OurMuonID':
-        setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_lumi_Eta2P4_for_" + run_files, cms.PSet(
-            EfficiencyCategoryAndState = GetOurMuonId(T, ["eta2P4", "below"]),
-            UnbinnedVariables = cms.vstring("mass"),
-            BinnedVariables = LUMI_ETA2P4,
-            BinToPDFmap = cms.vstring("vpvPlusExpo")
-            ))
-    
-        setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_lumi_Eta1P2_for_" + run_files, cms.PSet(
-            EfficiencyCategoryAndState = GetOurMuonId(T, ["eta1P2", "below"]),
-            UnbinnedVariables = cms.vstring("mass"),
-            BinnedVariables = LUMI_ETA1P2,
-            BinToPDFmap = cms.vstring("vpvPlusExpo")
-            ))
+if noSteps:
+    for (T,M) in [ ("DoubleMu17Mu8_Mu17","Track"),("DoubleMu17Mu8_Mu17","OurMuonID"),("DoubleMu17Mu8_Mu8","Track"),("DoubleMu17Mu8_Mu8","OurMuonID")]:
+        print "--------------"
+        print "Trigger: " + T
+        print "From: " + M
 
-        setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_lumi_Eta2P4_Iso_for_" + run_files, cms.PSet(
-            EfficiencyCategoryAndState = GetOurMuonId(T, ["eta2P4", "below", "combRelIso0P4", "below"]),
-            UnbinnedVariables = cms.vstring("mass"),
-            BinnedVariables = LUMI_ETA2P4_ISO,
-            BinToPDFmap = cms.vstring("vpvPlusExpo")
-            ))
-    
-        setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_lumi_Eta1P2_Iso_for_" + run_files, cms.PSet(
-            EfficiencyCategoryAndState = GetOurMuonId(T, ["eta1P2", "below", "combRelIso0P4", "below"]),
-            UnbinnedVariables = cms.vstring("mass"),
-            BinnedVariables = LUMI_ETA1P2_ISO,
-            BinToPDFmap = cms.vstring("vpvPlusExpo")
-            ))
+        if M == 'OurMuonID':
+            setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_lumi_Eta2P4_for_" + run_files, cms.PSet(
+                EfficiencyCategoryAndState = GetOurMuonId(T, ["eta2P4", "below"]),
+                UnbinnedVariables = cms.vstring("mass"),
+                BinnedVariables = LUMI_ETA2P4,
+                BinToPDFmap = cms.vstring("vpvPlusExpo")
+                ))
+        
+            setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_lumi_Eta1P2_for_" + run_files, cms.PSet(
+                EfficiencyCategoryAndState = GetOurMuonId(T, ["eta1P2", "below"]),
+                UnbinnedVariables = cms.vstring("mass"),
+                BinnedVariables = LUMI_ETA1P2,
+                BinToPDFmap = cms.vstring("vpvPlusExpo")
+                ))
 
-    elif M == "Track":
-        setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_lumi_for_" + run_files, cms.PSet(
-            EfficiencyCategoryAndState = cms.vstring(T, "pass"),
-            UnbinnedVariables = cms.vstring("mass"),
-            BinnedVariables = cms.PSet(
-                bxInstLumi = cms.vdouble([1+0.25*x for x in range(0,17)])
-                ),
-            BinToPDFmap = cms.vstring("vpvPlusExpo")
-            ))
+            setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_lumi_Eta2P4_Iso_for_" + run_files, cms.PSet(
+                EfficiencyCategoryAndState = GetOurMuonId(T, ["eta2P4", "below", "combRelIso0P4", "below"]),
+                UnbinnedVariables = cms.vstring("mass"),
+                BinnedVariables = LUMI_ETA2P4_ISO,
+                BinToPDFmap = cms.vstring("vpvPlusExpo")
+                ))
+        
+            setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_lumi_Eta1P2_Iso_for_" + run_files, cms.PSet(
+                EfficiencyCategoryAndState = GetOurMuonId(T, ["eta1P2", "below", "combRelIso0P4", "below"]),
+                UnbinnedVariables = cms.vstring("mass"),
+                BinnedVariables = LUMI_ETA1P2_ISO,
+                BinToPDFmap = cms.vstring("vpvPlusExpo")
+                ))
 
-        # check eff vs pt (using no cuts)
-        setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_Pt_for_" + run_files, cms.PSet(
-            EfficiencyCategoryAndState = cms.vstring(T, "pass"),
-            UnbinnedVariables = cms.vstring("mass"),
-            BinnedVariables = cms.PSet(
-                pt = cms.vdouble(15, 25, 35, 100),
-                bxInstLumi = cms.vdouble([1+0.25*x for x in range(0,17)])
-                ),
-            BinToPDFmap = cms.vstring("vpvPlusExpo")
-            ))
+        elif M == "Track":
+            setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_lumi_for_" + run_files, cms.PSet(
+                EfficiencyCategoryAndState = cms.vstring(T, "pass"),
+                UnbinnedVariables = cms.vstring("mass"),
+                BinnedVariables = cms.PSet(
+                    bxInstLumi = cms.vdouble([1+0.25*x for x in range(0,17)])
+                    ),
+                BinToPDFmap = cms.vstring("vpvPlusExpo")
+                ))
+
+            # check eff vs pt (using no cuts)
+            setattr(process.TnP_Trigger.Efficiencies, M + "_To_" + T + "_Pt_for_" + run_files, cms.PSet(
+                EfficiencyCategoryAndState = cms.vstring(T, "pass"),
+                UnbinnedVariables = cms.vstring("mass"),
+                BinnedVariables = cms.PSet(
+                    pt = cms.vdouble(15, 25, 35, 100),
+                    bxInstLumi = cms.vdouble([1+0.25*x for x in range(0,17)])
+                    ),
+                BinToPDFmap = cms.vstring("vpvPlusExpo")
+                ))
+
+else:
+    T = "DoubleMu17Mu8_Mu17"
+    print "in steps"
+    print "Trigger", T
+
+    setattr(process.TnP_Trigger.Efficiencies, T + "_" + run_files, cms.PSet(
+    EfficiencyCategoryAndState = cms.vstring(T, "pass"),
+    UnbinnedVariables = cms.vstring("mass"),
+    BinnedVariables = LUMI_ETA2P4,
+    BinToPDFmap = cms.vstring("vpvPlusExpo")
+    ))
+
+    setattr(process.TnP_Trigger.Efficiencies, T + "_GlbMuon_" + run_files, cms.PSet(
+    EfficiencyCategoryAndState = cms.vstring(T, "pass", "GlbOrTMwMatch", "pass"),
+    UnbinnedVariables = cms.vstring("mass"),
+    BinnedVariables = LUMI_ETA2P4,
+    BinToPDFmap = cms.vstring("vpvPlusExpo")
+    ))
+
+    setattr(process.TnP_Trigger.Efficiencies, T + "_GlbMuon_VBTF_" + run_files, cms.PSet(
+    EfficiencyCategoryAndState = cms.vstring(T, "pass", "GlbOrTMwMatch", "pass", "VBTF", "pass"),
+    UnbinnedVariables = cms.vstring("mass"),
+    BinnedVariables = LUMI_ETA2P4,
+    BinToPDFmap = cms.vstring("vpvPlusExpo")
+    ))
+
+    setattr(process.TnP_Trigger.Efficiencies, T + "_GlbMuon_VBTF_dxy_" + run_files, cms.PSet(
+    EfficiencyCategoryAndState = cms.vstring(T, "pass", "GlbOrTMwMatch", "pass", "VBTF", "pass", "dxyPV0P5", "below"),
+    UnbinnedVariables = cms.vstring("mass"),
+    BinnedVariables = LUMI_ETA2P4,
+    BinToPDFmap = cms.vstring("vpvPlusExpo")
+    ))
+
+    setattr(process.TnP_Trigger.Efficiencies, T + "_GlbMuon_VBTF_dxy_dz_" + run_files, cms.PSet(
+    EfficiencyCategoryAndState = cms.vstring(T, "pass", "GlbOrTMwMatch", "pass", "VBTF", "pass", "dxyPV0P5", "below", "dz1", "below"),
+    UnbinnedVariables = cms.vstring("mass"),
+    BinnedVariables = LUMI_ETA2P4,
+    BinToPDFmap = cms.vstring("vpvPlusExpo")
+    ))
+
+    setattr(process.TnP_Trigger.Efficiencies, T + "_GlbMuon_VBTF_dxy_dz_PF_" + run_files, cms.PSet(
+    EfficiencyCategoryAndState = cms.vstring(T, "pass", "GlbOrTMwMatch", "pass", "VBTF", "pass", "dxyPV0P5", "below", "dz1", "below", "PF", "pass"),
+    UnbinnedVariables = cms.vstring("mass"),
+    BinnedVariables = LUMI_ETA2P4,
+    BinToPDFmap = cms.vstring("vpvPlusExpo")
+    ))
+
+    setattr(process.TnP_Trigger.Efficiencies, T + "_GlbMuon_VBTF_dxy_dz_PF_SIP_" + run_files, cms.PSet(
+    EfficiencyCategoryAndState = cms.vstring(T, "pass", "GlbOrTMwMatch", "pass", "VBTF", "pass", "dxyPV0P5", "below", "dz1", "below", "PF", "pass", "SIP3", "below"),
+    UnbinnedVariables = cms.vstring("mass"),
+    BinnedVariables = LUMI_ETA2P4,
+    BinToPDFmap = cms.vstring("vpvPlusExpo")
+    ))
+
+    setattr(process.TnP_Trigger.Efficiencies, T + "_GlbMuon_VBTF_dxy_dz_PF_SIP_pt_" + run_files, cms.PSet(
+    EfficiencyCategoryAndState = cms.vstring(T, "pass", "GlbOrTMwMatch", "pass", "VBTF", "pass", "dxyPV0P5", "below", "dz1", "below", "PF", "pass", "SIP3", "below", "pt20", "above"),
+    UnbinnedVariables = cms.vstring("mass"),
+    BinnedVariables = LUMI_ETA2P4,
+    BinToPDFmap = cms.vstring("vpvPlusExpo")
+    ))
+
+    setattr(process.TnP_Trigger.Efficiencies, T + "_GlbMuon_VBTF_dxy_dz_PF_SIP_pt_iso_" + run_files, cms.PSet(
+    EfficiencyCategoryAndState = cms.vstring(T, "pass", "GlbOrTMwMatch", "pass", "VBTF", "pass", "dxyPV0P5", "below", "dz1", "below", "PF", "pass", "SIP3", "below", "pt20", "above", "combRelIso0P4", "below"),
+    UnbinnedVariables = cms.vstring("mass"),
+    BinnedVariables = LUMI_ETA2P4_ISO,
+    BinToPDFmap = cms.vstring("vpvPlusExpo")
+    ))
+
+    setattr(process.TnP_Trigger.Efficiencies, T + "_GlbMuon_VBTF_dxy_dz_PF_SIP_pt_iso_eta_" + run_files, cms.PSet(
+    EfficiencyCategoryAndState = cms.vstring(T, "pass", "GlbOrTMwMatch", "pass", "VBTF", "pass", "dxyPV0P5", "below", "dz1", "below", "PF", "pass", "SIP3", "below", "pt20", "above", "combRelIso0P4", "below", "eta1P2", "below"),
+    UnbinnedVariables = cms.vstring("mass"),
+    BinnedVariables = LUMI_ETA1P2_ISO,
+    BinToPDFmap = cms.vstring("vpvPlusExpo")
+    ))
+
 
 # for  X,B in ALLBINS:
 #     setattr(process.TnP_Trigger.Efficiencies, "Track_To_VBTF_Mu9_"+X, cms.PSet(
