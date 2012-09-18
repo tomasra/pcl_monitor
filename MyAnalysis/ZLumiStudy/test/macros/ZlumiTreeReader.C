@@ -210,8 +210,9 @@ vector<pair<double, double> > getEffEntries(TFile* eff_File, string canv_Mu17)
 			entries[i].second = -1;
 		}
 		else {
-			entries[i].first = 1 - pow(1 - entries_Mu17[i].first, 2);
-			entries[i].second = 2.0 * entries_Mu17[i].second * (1 - entries_Mu17[i].first);
+			entries[i].first = pow(entries_Mu17[i].first, 2);
+			entries[i].second = sqrt(2.0 * pow(entries_Mu17[i].first * entries_Mu17[i].second, 2));
+			//entries[i].second = 2.0 * entries_Mu17[i].second * (1 - entries_Mu17[i].first);
 		}
 	}
 	return entries;		
@@ -295,16 +296,16 @@ void ZlumiTreeReader::CreatePerCutHists()
 			histsPerCut[i].hByBin.push_back(new HistoZ(to_string(bin).c_str() + index_str, "Z Mass (" + PER_CUT_TITLE[i] + ") for " + histoNameStr));
 		}
 
-		histsPerCut[i].xSection_fitVExpo = new TH1F(("XSection_fit_VExpo" + index_str).c_str(), ("XSection calculated by fitting with VExpo (" + PER_CUT_TITLE[i] + "); inst. luminosity [#mub^{-1}]; x-section [nb]").c_str(), nBins, minBin, maxBin);
-		histsPerCut[i].xSection_fit2VExpo = new TH1F(("XSection_fit_2VExpo" + index_str).c_str(), ("XSection calculated by fitting with 2VExpo (" + PER_CUT_TITLE[i] + "); inst. luminosity [#mub^{-1}]; x-section [nb]").c_str(), nBins, minBin, maxBin);
-		histsPerCut[i].xSection_fit2VExpoMin70 = new TH1F(("XSection_fit_2VExpoMin70" + index_str).c_str(), ("XSection calculated by fitting with 2VExpoMin70 (" + PER_CUT_TITLE[i] + "); inst. luminosity [#mub^{-1}]; x-section [nb]").c_str(), nBins, minBin, maxBin);
-		histsPerCut[i].xSection_count = new TH1F(("XSection_count" + index_str).c_str(), ("XSection calculated by counting (" + PER_CUT_TITLE[i] + "); inst. luminosity [#mub^{-1}]; x-section [nb]").c_str(), nBins, minBin, maxBin);
+		histsPerCut[i].xSection_fitVExpo = new TH1F(("XSection_fit_VExpo" + index_str).c_str(), ("XSection calculated by fitting with VExpo (" + PER_CUT_TITLE[i] + "); inst. luminosity [Hz#times#mub^{-1}]; x-section [nb]").c_str(), nBins, minBin, maxBin);
+		histsPerCut[i].xSection_fit2VExpo = new TH1F(("XSection_fit_2VExpo" + index_str).c_str(), ("XSection calculated by fitting with 2VExpo (" + PER_CUT_TITLE[i] + "); inst. luminosity [Hz#times#mub^{-1}]; x-section [nb]").c_str(), nBins, minBin, maxBin);
+		histsPerCut[i].xSection_fit2VExpoMin70 = new TH1F(("XSection_fit_2VExpoMin70" + index_str).c_str(), ("XSection calculated by fitting with 2VExpoMin70 (" + PER_CUT_TITLE[i] + "); inst. luminosity [Hz#times#mub^{-1}]; x-section [nb]").c_str(), nBins, minBin, maxBin);
+		histsPerCut[i].xSection_count = new TH1F(("XSection_count" + index_str).c_str(), ("XSection calculated by counting (" + PER_CUT_TITLE[i] + "); inst. luminosity [Hz#times#mub^{-1}]; x-section [nb]").c_str(), nBins, minBin, maxBin);
 
 		histsPerCut[i].nVtx_delLumi = new TProfile(("NVtx_delLumi" + index_str).c_str(), ("#vertices vs. luminosity (" + PER_CUT_TITLE[i] + "); #vertices; luminosity per BX [cm^{-2}s^{-1}]").c_str(), 15, 0, 30);
 		histsPerCut[i].nVtx_pileUp = new TProfile(("NVtx_pileUp" + index_str).c_str(), ("#vertices vs. pileUp (" + PER_CUT_TITLE[i] + "); #vertices; pileUp").c_str(), 15, 0, 30);
 		histsPerCut[i].ls_delLumi = new TProfile(("ls_delLumi" + index_str).c_str(), ("lumisection vs. luminosity (" + PER_CUT_TITLE[i] + "); lumisection; luminosity per BX [cm^{-2}s^{-1}]").c_str(), 40, 0, 1600);
     
-    	histsPerCut[i].eff = new TH1F(("eff per bin" + index_str).c_str(), ("eff per bin (" + PER_CUT_TITLE[i] + "); inst. luminosity [#mub^{-1}]; eff").c_str(), nBins, minBin, maxBin);
+    	histsPerCut[i].eff = new TH1F(("eff per bin" + index_str).c_str(), ("eff per bin (" + PER_CUT_TITLE[i] + "); inst. luminosity [Hz#times#mub^{-1}]; eff").c_str(), nBins, minBin, maxBin);
 	}
 }
 
@@ -653,9 +654,19 @@ void ZlumiTreeReader::Terminate()
 
 	// load the eff root files and remember eff for every cut
 	vector<pair<double, double> > graphEntries (nBins, make_pair(-1, -1));
-	//TFile* eff_File = new TFile("../TagAndProbe/Run2012A_save_allCuts.root");
-	//TFile* eff_File = new TFile("../TagAndProbe/Run2012B_save_allCuts_2of3.root");
-	TFile* eff_File = new TFile("../TagAndProbe/plots_Eff/Run2012_A.root");
+
+	TFile* eff_File = 0;
+	if (processName == "run2012A")
+		eff_File = new TFile("../TagAndProbe/plots_Eff/Run2012_A.root");
+	else if(processName == "run2012B" || processName == "presentationRuns")
+		eff_File = new TFile("../TagAndProbe/plots_Eff/Run2012_B.root");
+	else if(processName == "run2012B_1")
+		eff_File = new TFile("../TagAndProbe/plots_Eff/Run2012_B1.root");
+	else if(processName == "run2012B_2")
+		eff_File = new TFile("../TagAndProbe/plots_Eff/Run2012_B2.root");
+	else 
+		eff_File = new TFile("../TagAndProbe/plots_Eff/Run2012_B3.root");
+
 	for (size_t cut = 0; cut < NUM_CUTS; cut++) {
 		if (eff_File->IsZombie())
 			cout << "could not open file " << eff_File << endl;

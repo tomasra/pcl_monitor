@@ -1,6 +1,6 @@
 import os
 
-allRuns = False
+allRuns = True
 maxCalc = 5
 calc = 0
 
@@ -13,7 +13,7 @@ for lines in read_file:
 	if (allRuns or calc < maxCalc):
 		line = lines[0:len(lines)-1]
 		print line
-		command = str("RecoLuminosity/LumiDB/scripts/lumiCalc2.py lumibylsXing  -i /data1/ZLumiStudy/CalcLumi/JsonFiles/" + str(line) + ".json -o /data1/ZLumiStudy/CalcLumi/Version0/" + str(line) + ".csvt")
+		command = str("RecoLuminosity/LumiDB/scripts/lumiCalc2.py lumibylsXing  -i /data1/ZLumiStudy/CalcLumi/JsonFiles/" + str(line) + ".json -o /data1/ZLumiStudy/CalcLumi/Version1/" + str(line) + ".csvt")
 		print command
 		os.system(command)
 		calc += 1

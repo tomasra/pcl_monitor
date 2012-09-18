@@ -1,6 +1,5 @@
 # produce allRuns.txt with: RecoLuminosity/LumiDB/scripts/lumiCalc2.py overview -i RecoLuminosity/LumiDB/Cert_190456-198485_8TeV_PromptReco_Collisions12_JSON.txt -o MyAnalysis/ZLumiStudy/test/macros/allRuns.txt
 
-
 dicty = {}
 
 read_file = open("MyAnalysis/ZLumiStudy/test/macros/allRuns.txt", "r")
