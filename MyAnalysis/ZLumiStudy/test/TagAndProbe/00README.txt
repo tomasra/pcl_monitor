@@ -63,6 +63,8 @@ UserCodecerminar/Tools/MyCondTools/scripts/checkOutputDir.py
 To generate the input file list:
 python buildinputlist.py -n TPV0_SingleMu_Run2012B-PromptReco-v1.h /store/caf/user/cerminar/ZLumiStudy/TPV0/Data_SingleMu_Run2012B-PromptReco-v1/ 
 
+python buildinputlist.py -n TPV0_SingleMu_Run2012A-PromptReco-v1.h /store/caf/user/cerminar/ZLumiStudy/TPV0/Data_SingleMu_Run2012A-PromptReco-v1/ 
+
 to actually sort the trees:
 
 .x sortTPTrees.r
@@ -81,8 +83,10 @@ in the file to point at the correct input list and outputDir
 NOTE: for some reason needs to be run 2 times after each compilation....
 
 Also in this case you need to generate the list of files using
-python buildinputlist.py -s local -n TPV0_SingleMu_Run2012B-PromptReco-v1_sorted.h
-/data1/ZLumiStudy/TagAndProbe/TPV0/SingleMu_Run2012B-PromptReco-v1/
+python buildinputlist.py -s local -n TPV0_SingleMu_Run2012B-PromptReco-v1_sorted.h /data1/ZLumiStudy/TagProbe/SingleMu_Run2012B-PromptReco-v1/
+
+python buildinputlist.py -s local -n TPV0_SingleMu_Run2012A-PromptReco-v1_sorted.h /data1/ZLumiStudy/TagProbe/SingleMu_Run2012A-PromptReco-v1/
+
 
 and than you need to set it in the script:
   gROOT->Macro("TPV0_SingleMu_Run2012B-PromptReco-v1.h");
