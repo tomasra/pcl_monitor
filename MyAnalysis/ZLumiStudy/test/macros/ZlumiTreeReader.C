@@ -52,22 +52,28 @@ int cutEta = 0;
 int cutSIP = 0;
 int cutIsolation = 0;
 int cutZMass = 0;
+int cutPF = 0;
 
 int withoutIso = 0;
 int withIso = 0;
 int eta_withoutIso = 0;
 int eta_withIso = 0;
+int eta0P8_withIso = 0;
+int eta0P8_withoutIso = 0;
 
 float cut_SIP = 3;
 float noCut_SIP = 400;
 float cut_pt = 20;
 float noCut_pt = 0;
 float cut_eta = 1.2;
+float cut_eta0P8 = 0.8;
 float noCut_eta = 2.4;
 float cut_iso = 0.4;
 float noCut_iso = 400;
 float cut_ZMass_min = 55;
 float cut_ZMass_max = 120;
+bool cut_checkPF = true;
+bool cut_noPF = false;
 
 // eff
 vector<vector<pair<double, double> > > eff;
@@ -171,12 +177,15 @@ TH1F* CreateHist(string name, string htitle, string xtitle, string unit, size_t 
 
 // different eff folder per cut
 static string PER_CUT_FOLDER_Mu17[] = {
-	"Track_To_DoubleMu17Mu8_Mu17_lumi_for_Run2012", 
-	"OurMuonID_To_DoubleMu17Mu8_Mu17_lumi_Eta2P4_Iso_for_Run2012",
-	"OurMuonID_To_DoubleMu17Mu8_Mu17_lumi_Eta2P4_for_Run2012", 
-	"OurMuonID_To_DoubleMu17Mu8_Mu17_lumi_Eta1P2_Iso_for_Run2012", 
-	"OurMuonID_To_DoubleMu17Mu8_Mu17_lumi_Eta1P2_for_Run2012", 
+	"Track_and_DoubleMu17Mu8_Mu17_lumi_for_Run2012", 
+	"OurMuonID_and_DoubleMu17Mu8_Mu17_lumi_Eta2P4_Iso_for_Run2012",
+	"OurMuonID_and_DoubleMu17Mu8_Mu17_lumi_Eta2P4_for_Run2012", 
+	"OurMuonID_and_DoubleMu17Mu8_Mu17_lumi_Eta1P2_Iso_for_Run2012", 
+	"OurMuonID_and_DoubleMu17Mu8_Mu17_lumi_Eta1P2_for_Run2012",
+	"OurMuonID_and_DoubleMu17Mu8_Mu17_lumi_Eta0P8_Iso_for_Run2012",
+	"OurMuonID_and_DoubleMu17Mu8_Mu17_lumi_Eta0P8_for_Run2012",
 };
+
 
 vector<pair<double, double> > getEffEntries(TFile* eff_File, string canv_Mu17)
 {
@@ -258,6 +267,8 @@ static std::string PER_CUT_TITLE[] = {
     "no isolation cut",
     "eta and isolation cut",
     "eta and no isolation cut",
+    "eta 0P8 and isolation",
+    "eta 0P8 and no isolation",
 };
 
 
@@ -428,12 +439,14 @@ void writeAndDeleteHist(TH1* hist) {
 }
 
 // looks whether one event survive the cut or not
-bool ZlumiTreeReader::analyseCut(/*SIP*/ float sip, /*pt*/ float pt, /*eta*/ float eta, /*Iso*/ float iso, /*ZMass*/ float massZ_min, float massZ_max, int index_Z) {
+bool ZlumiTreeReader::analyseCut(/*SIP*/ float sip, /*pt*/ float pt, /*PF*/ bool checkPF, /*eta*/ float eta, /*Iso*/ float iso, /*ZMass*/ float massZ_min, float massZ_max, int index_Z) {
 	if (!(ZMass->at(index_Z) > massZ_min && ZMass->at(index_Z) < massZ_max))
 		return false;
 	if (!(Lep1Pt->at(index_Z) > pt && Lep2Pt->at(index_Z) > pt))
 		return false;
 	if (!(Lep1SIP->at(index_Z) < sip && Lep2SIP->at(index_Z) < sip))
+		return false;
+	if (checkPF && !(Lep1isID->at(index_Z) && Lep2isID->at(index_Z)))
 		return false;
 	if (!(fabs(Lep1Eta->at(index_Z)) < eta && fabs(Lep2Eta->at(index_Z)) < eta))
 		return false;
@@ -499,7 +512,7 @@ void ZlumiTreeReader::Begin(TTree* /*tree*/)
 
 	wholeMassZ_selected = CreateHist("selectedZ_wholeMassRange", "", "M_{#mu#bar{#mu}}", "GeV", 100, 0, 200);
 
-	cutflow = CreateHist("cutflow", "", "", "", 9, -0.5, 8.5);
+	cutflow = CreateHist("cutflow", "", "", "", 12, -0.5, 11.5);
 
 	bool first = true;
 
@@ -591,29 +604,37 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 
 	wholeMassZ_selected->Fill(ZMass->at(index_Z));
 
-	// no cut
-	FillPerCutHist(NO_CUT, index_Z, lumiBXIndex);
+	// only pt cut
+	bool onlyPtCut = analyseCut(noCut_SIP, cut_pt, cut_noPF, noCut_eta, noCut_iso, 0, 200, index_Z); // use the whole mass range
+	if (onlyPtCut)
+		FillPerCutHist(NO_CUT, index_Z, lumiBXIndex);
 
 	// analyse cutflow
 	beforeCuts++;
-	bool survive_ZMass = analyseCut(noCut_SIP, noCut_pt, noCut_eta, noCut_iso, cut_ZMass_min, cut_ZMass_max, index_Z);
+	bool survive_ZMass = analyseCut(noCut_SIP, noCut_pt, cut_noPF, noCut_eta, noCut_iso, cut_ZMass_min, cut_ZMass_max, index_Z);
 	if (survive_ZMass) {
 		cutZMass++;
-		bool survive_pt = analyseCut(noCut_SIP, cut_pt, noCut_eta, noCut_iso, cut_ZMass_min, cut_ZMass_max, index_Z);
+		bool survive_pt = analyseCut(noCut_SIP, cut_pt, cut_noPF, noCut_eta, noCut_iso, cut_ZMass_min, cut_ZMass_max, index_Z);
 		if (survive_pt) {
 			cutPt++;
-			bool survive_sip = analyseCut(cut_SIP, cut_pt, noCut_eta, noCut_iso, cut_ZMass_min, cut_ZMass_max, index_Z);
+			bool survive_sip = analyseCut(cut_SIP, cut_pt, cut_noPF, noCut_eta, noCut_iso, cut_ZMass_min, cut_ZMass_max, index_Z);
 			if (survive_sip) {
 				cutSIP++;
+				bool survive_PF = analyseCut(cut_SIP, cut_pt, cut_checkPF, noCut_eta, noCut_iso, cut_ZMass_min, cut_ZMass_max, index_Z);
+				if (survive_PF) {
+					cutPF++;
+				}
 			}
 		}
 	}
 	
 	// check different cut possibilities
-	bool survive_withoutIso = analyseCut(cut_SIP, cut_pt, noCut_eta, noCut_iso, cut_ZMass_min, cut_ZMass_max, index_Z);
-	bool survive_withIso = analyseCut(cut_SIP, cut_pt, noCut_eta, cut_iso, cut_ZMass_min, cut_ZMass_max, index_Z);
-	bool survive_eta_withoutIso = analyseCut(cut_SIP, cut_pt, cut_eta, noCut_iso, cut_ZMass_min, cut_ZMass_max, index_Z);
-	bool survive_eta_withIso = analyseCut(cut_SIP, cut_pt, cut_eta, cut_iso, cut_ZMass_min, cut_ZMass_max, index_Z);
+	bool survive_withoutIso = analyseCut(cut_SIP, cut_pt, cut_checkPF, noCut_eta, noCut_iso, cut_ZMass_min, cut_ZMass_max, index_Z);
+	bool survive_withIso = analyseCut(cut_SIP, cut_pt, cut_checkPF, noCut_eta, cut_iso, cut_ZMass_min, cut_ZMass_max, index_Z);
+	bool survive_eta_withoutIso = analyseCut(cut_SIP, cut_pt, cut_checkPF, cut_eta, noCut_iso, cut_ZMass_min, cut_ZMass_max, index_Z);
+	bool survive_eta_withIso = analyseCut(cut_SIP, cut_pt, cut_checkPF, cut_eta, cut_iso, cut_ZMass_min, cut_ZMass_max, index_Z);
+	bool survive_eta0P8_withoutIso = analyseCut(cut_SIP, cut_pt, cut_checkPF, cut_eta0P8, noCut_iso, cut_ZMass_min, cut_ZMass_max, index_Z);
+	bool survive_eta0P8_withIso = analyseCut(cut_SIP, cut_pt, cut_checkPF, cut_eta0P8, cut_iso, cut_ZMass_min, cut_ZMass_max, index_Z);
 
 	if (survive_withoutIso) {
 		withoutIso++;
@@ -630,6 +651,14 @@ Bool_t ZlumiTreeReader::Process(Long64_t entry)
 	if (survive_eta_withIso) {
 		eta_withIso++;
 		FillPerCutHist(ETA_AND_ISOLATION_CUT, index_Z, lumiBXIndex);
+	}
+	if (survive_eta0P8_withIso) {
+		eta0P8_withIso++;
+		FillPerCutHist(ETA0P8_AND_ISOLATION_CUT, index_Z, lumiBXIndex);
+	}
+	if (survive_eta0P8_withoutIso) {
+		eta0P8_withoutIso++;
+		FillPerCutHist(ETA0P8_AND_NO_ISOLATION_CUT, index_Z, lumiBXIndex);
 	}
 
 	return kTRUE;
@@ -697,16 +726,22 @@ void ZlumiTreeReader::Terminate()
 	cutflow->GetXaxis()->SetBinLabel(3, "after Pt cut");
 	cutflow->SetBinContent(4, cutSIP);
 	cutflow->GetXaxis()->SetBinLabel(4, "after SIP cut");
+	cutflow->SetBinContent(5, cutPF);
+	cutflow->GetXaxis()->SetBinLabel(5, "after PF check");
 
 	//cutflow->GetXaxis()->SetBinLabel(5, "-> Z Mass cut, Pt cut, SIP cut, written cut");
-	cutflow->SetBinContent(6, withoutIso);
-	cutflow->GetXaxis()->SetBinLabel(6, "without isolation cut");
-	cutflow->SetBinContent(7, withIso);
-	cutflow->GetXaxis()->SetBinLabel(7, "with isolation cut");
-	cutflow->SetBinContent(8, eta_withoutIso);
-	cutflow->GetXaxis()->SetBinLabel(8, "with |#eta| < 1.2 and without isolation cut");
-	cutflow->SetBinContent(9, eta_withIso);
-	cutflow->GetXaxis()->SetBinLabel(9, "with |#eta| < 1.2 and with isolation cut");
+	cutflow->SetBinContent(7, withoutIso);
+	cutflow->GetXaxis()->SetBinLabel(7, "without isolation cut");
+	cutflow->SetBinContent(8, withIso);
+	cutflow->GetXaxis()->SetBinLabel(8, "with isolation cut");
+	cutflow->SetBinContent(9, eta_withoutIso);
+	cutflow->GetXaxis()->SetBinLabel(9, "with |#eta| < 1.2 and without isolation cut");
+	cutflow->SetBinContent(10, eta_withIso);
+	cutflow->GetXaxis()->SetBinLabel(10, "with |#eta| < 1.2 and with isolation cut");
+	cutflow->SetBinContent(11, eta0P8_withoutIso);
+	cutflow->GetXaxis()->SetBinLabel(11, "with |#eta| < 0.8 and without isolation cut");
+	cutflow->SetBinContent(12, eta0P8_withIso);
+	cutflow->GetXaxis()->SetBinLabel(12, "with |#eta| < 0.8 and with isolation cut");
 
 
 	writeAndDeleteHist(cutflow);

@@ -7,8 +7,8 @@ from ROOT import *
 gROOT.SetBatch(True)
 
 #file_name = "ZLumiStudy_presentationRuns"
-file_name = "ZLumiStudy_run2012A"
-#file_name = "ZLumiStudy_run2012B"
+#file_name = "ZLumiStudy_run2012A"
+file_name = "ZLumiStudy_run2012B"
 #file_name = "ZLumiStudy_run2012B_1"
 #file_name = "ZLumiStudy_run2012B_2"
 #file_name = "ZLumiStudy_run2012B_3"
@@ -32,10 +32,15 @@ def drawXSec(hist, cname):
 		err_withLumi = sqrt(pow(xs_err, 2) + pow(xs * 0.045, 2))
 		histClone.SetBinError(bin, err_withLumi)
 
+	print cname
 	if cname[-1] == "3" or cname[-1] == "4":
-		histClone.GetYaxis().SetRangeUser(0.14, 0.22)
+		print "barrel"
+		histClone.GetYaxis().SetRangeUser(0.12, 0.2)
+	elif cname[-1] == "5" or cname[-1] == "6":
+		print "eta0P8"
+		histClone.GetYaxis().SetRangeUser(0.06, 0.1)
 	else:
-		histClone.GetYaxis().SetRangeUser(0.35, 0.65)
+		histClone.GetYaxis().SetRangeUser(0.32, 0.55)
 	histClone.SetFillColor(kGreen+1)
 	histClone.Draw("E5")
 	histClones.append(histClone)

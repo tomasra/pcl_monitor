@@ -9,10 +9,11 @@ gROOT.SetBatch(True)
 
 stats = {
 	"A_steps": {
-		"file": "Run2012A_inSteps.root",
+		"file": "not used",
 	}
 }
 
+file_name = "Run2012A_inSteps_noVBTF.root"
 
 color = [kBlack, kGreen+1, kRed+1, kCyan+1, kBlue+1, kOrange+10, kMagenta+1, kYellow-4, kViolet-6, kGray+2, kGreen+4] 
 
@@ -35,8 +36,8 @@ hists = {}
 saveLegs = []
 saveHist = []
 
-def allPlots(hists):
-	canv = TCanvas("all", "allSteps", 800, 800)
+def allPlots(hists, count):
+	canv = TCanvas("all" + str(count), "allSteps", 800, 800)
 
 	leg = TLegend(0.1,0.1,0.55,0.5)
 
@@ -48,7 +49,7 @@ def allPlots(hists):
 	hists[0].SetLineWidth(2)
 	hists[0].Draw("E")
 
-	for i in range(1, len(hists)):
+	for i in range(1, count):
 		leg.AddEntry(hists[i], hists[i].GetName()[:-9], "L")
 		hists[i].SetLineColor(color[i])
 		hists[i].SetLineWidth(2)
@@ -62,28 +63,6 @@ def allPlots(hists):
 	canv.Update()
 	return canv
 
-def draw_TH1F(histos, name):
-	canv = TCanvas(name, name, 600, 600)
-
-	histos[0].SetStats(False)
-	histos[0].SetTitle("")
-	histos[0].GetYaxis().SetRangeUser(0.75, 1.0)
-	histos[0].SetLineWidth(1)
-	histos[0].SetLineColor(kBlack)
-	histos[0].SetLineWidth(2)
-	histos[0].Draw("E")
-
-
-	for i in range(1, len(histos)):
-		histos[i].SetLineColor(color[i])
-		histos[i].SetLineWidth(2)
-		histos[i].Draw("E same")
-
-	canv.Update()
-	return canv
-
-
-file_name = "Run2012A_inSteps.root"
 
 print file_name
 
@@ -123,10 +102,8 @@ print "after loading files"
 
 canv = []
 print len(hists)
-for hist in hists:
-	canv.append(draw_TH1F(hists[hist], hist))
-
-canv.append(allPlots(saveHist))
+for i in range(1,len(hists)):
+	canv.append(allPlots(saveHist, i))
 
 outfile_name = "Run2012"
 for run in stats:

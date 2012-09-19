@@ -9,10 +9,10 @@ gROOT.SetBatch(True)
 
 stats = {
 	"A": {
-		"file": "Run2012A_save_allCuts.root",
+		"file": "Run2012A_save_allCuts_noVBTFbutPF.root",
 	},
 	"B": {
-		"file": "Run2012B_save_allCuts_2of3.root",
+		"file": "Run2012B_save_allCuts_noVBTFbutPF.root",
 	}
 }
 
@@ -56,8 +56,8 @@ def draw_TH1F(histos, name):
 	leg = TLegend(0.1,0.1,0.2,0.3)
 	leg.AddEntry(histos[0], "A", "L")
 	histos[0].SetStats(False)
-	histos[0].SetTitle("")
-	histos[0].GetYaxis().SetRangeUser(0.75, 1.0)
+	#histos[0].SetTitle("")
+	histos[0].GetYaxis().SetRangeUser(0.85, 1.0)
 	histos[0].SetLineWidth(1)
 	histos[0].SetLineColor(kBlack)
 	histos[0].SetLineWidth(2)

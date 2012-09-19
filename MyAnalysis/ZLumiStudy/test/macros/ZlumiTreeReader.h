@@ -56,13 +56,15 @@ struct PerCutHistograms
 }; 
 
 
-#define NUM_CUTS 5
+#define NUM_CUTS 7
 
 #define NO_CUT 0
 #define ISOLATION_CUT 1
 #define NO_ISOLATION_CUT 2
 #define ETA_AND_ISOLATION_CUT 3
 #define ETA_AND_NO_ISOLATION_CUT 4
+#define ETA0P8_AND_ISOLATION_CUT 5
+#define ETA0P8_AND_NO_ISOLATION_CUT 6
 
 
 
@@ -197,7 +199,7 @@ public :
 
    ClassDef(ZlumiTreeReader,0);
 
-   bool analyseCut(/*SIP*/ float sip, /*Pt*/ float pt, /*eta*/ float eta, /*Iso*/ float iso, /*ZMass*/ float massZ_min, float massZ_max, int index_Z);
+   bool analyseCut(/*SIP*/ float sip, /*Pt*/ float pt, /*PF*/ bool checkPF, /*eta*/ float eta, /*Iso*/ float iso, /*ZMass*/ float massZ_min, float massZ_max, int index_Z);
 
    PerCutHistograms histsPerCut[NUM_CUTS];
 
