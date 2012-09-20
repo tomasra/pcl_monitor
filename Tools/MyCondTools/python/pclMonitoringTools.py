@@ -26,6 +26,9 @@ class RunReport:
         self._jobTime = datetime.datetime
         return
 
+    def runNumber(self):
+        return self._runnumber
+
     def startTime(self):
         return self._startTime
 
@@ -156,10 +159,13 @@ def writeCacheAndLog(cachefilename, logfilename, runReports):
     #print str(len(runReports))
     for rep in runReports:
 
-        twdaysago = datetime.datetime.today() - last2days
-        if rep.startTime() < twdaysago:
-            #print "start: " + str(rep.startTime()) + " older than " + str(twdaysago)
-            tableForCache.append(rep.getList())            
+        # cache only runs older than 48h
+        #twdaysago = datetime.datetime.today() - last2days
+        #if rep.startTime() < twdaysago:
+        #    #print "start: " + str(rep.startTime()) + " older than " + str(twdaysago)
+        #    tableForCache.append(rep.getList())            
+        # FIXME: cache everything and refresh only runs younger than 48h
+        tableForCache.append(rep.getList())
         tableForLog.append(rep.getList()) 
 
         
@@ -177,7 +183,7 @@ def writeCacheAndLog(cachefilename, logfilename, runReports):
 
 def getRunReport(runinfoTag, run, promptCalibDir, fileList, iovtableByRun_oracle, iovtableByLumi_oracle):
     
-    #print run
+    print run
     # input: runInfoTag, run, fileList, iovlist
     runInfo = None
     try:
