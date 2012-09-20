@@ -7,7 +7,7 @@ import time
 """
 Module providing an interface to common queries to Tier0-DAS
 
-$Date: 2012/05/31 10:43:32 $
+$Date: 2012/06/11 17:53:35 $
 $Revision: 1.3 $
 Author: G.Cerminara
 
@@ -124,7 +124,13 @@ class Tier0DasInterface:
         url = self._t0DasBaseUrl + "runs"
         try:
             json = self.getData(url)
-            return max(self.getValues(json, 'run', ('reco_started', 1)))+1
+            values = self.getValues(json, 'run', ('reco_started', 1))
+            if len(values) != 0:
+                return max(values)+1
+            else:
+                print "[Tier0DasInterface::lastPromptRun] returned no run for with prompt reco was released:"
+                print json
+                return -1
         except:
             print "[Tier0DasInterface::lastPromptRun] error"
             raise
@@ -140,7 +146,13 @@ class Tier0DasInterface:
         url = self._t0DasBaseUrl + "firstconditionsaferun"
         try:
             json = self.getData(url)
-            return max(self.getValues(json, 'run_id'))
+            values = self.getValues(json, 'run_id')
+            if len(values) != 0 and values[0] != None:
+                return max(values)
+            else:
+                print "[Tier0DasInterface::firstconditionSafeRun] returned no run for safe condition upload"
+                print json
+                return -1
         except Exception:
             print "[Tier0DasInterface::firstConditionSafeRun] error"
             raise
@@ -151,13 +163,15 @@ class Tier0DasInterface:
         Query the GT currently used by prompt.
         """
         url = self._t0DasBaseUrl + "reco_config?run=" + str(run) + "&dataset=" + dataset
+        print "url =", url
         try:
             json = self.getData(url)
-            return max(self.getValues(json, 'global_tag'))
+            values = self.getValues(json, 'global_tag')
+            return values
         except Exception:
-            print "[Tier0DasInterface::firstConditionSafeRun] error"
+            print "[Tier0DasInterface::promptGlobalTag] error"
             raise
-            return 0
+            return None
 
 
 if __name__ == "__main__":
