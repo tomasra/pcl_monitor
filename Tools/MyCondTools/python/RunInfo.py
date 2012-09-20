@@ -25,8 +25,8 @@ db = rdbms.getDB(dbName)
 """
 Module providing tools to query the RunInfo tags in the condition DB
 
-$Date: 2012/05/31 10:43:32 $
-$Revision: 1.3 $
+$Date: 2012/06/11 17:31:28 $
+$Revision: 1.6 $
 Author: G.Cerminara
 
 """
@@ -40,10 +40,13 @@ def getDate(string):
     """
     Convert a string into a datetime object
     """
-    date = string.split()[0].split('-')
-    time = string.split()[1].split(':')
-    datet = datetime.datetime(int(date[0]),int(date[1]),int(date[2]),int(time[0]),int(time[1]),int(float(time[2])))
-    return datet
+    if not 'null' in string:
+        date = string.split()[0].split('-')
+        time = string.split()[1].split(':')
+        datet = datetime.datetime(int(date[0]),int(date[1]),int(date[2]),int(time[0]),int(time[1]),int(float(time[2])))
+        return datet
+    else:
+        return None
 
 class RunInfoContent:
     """
@@ -75,7 +78,7 @@ class RunInfoContent:
         if self._stopTime != 'null':
             return self.getDate(self._stopTime)+self._fromUTCToLocal
         else:
-            return self._stopTime
+            return 'null null'
 
             
     def run(self):
