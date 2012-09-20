@@ -5,8 +5,8 @@ from Tools.MyCondTools.rrapi import RRApi, RRApiError
 """
 Module providing an interface to the RunRegistry 2 and RunRegistry 3 APIs.
 
-$Date: 2012/05/31 10:43:32 $
-$Revision: 1.3 $
+$Date: 2012/06/11 17:53:57 $
+$Revision: 1.5 $
 Author: G.Cerminara
 
 """
@@ -87,7 +87,7 @@ def getRunListRR3(minRun, datasetName, runClassName):
 
     # connect to API
     try:
-        api = RRApi(FULLADDRESS, debug = False)
+        api = RRApi(FULLADDRESS, debug = True)
     except RRApiError, error:
         print error
 
@@ -116,5 +116,5 @@ def getRunListRR3(minRun, datasetName, runClassName):
 
 
 if __name__ == "__main__":
-    print getRunListRR3(181950, "Online", "Commissioning12")
+    print getRunListRR3(200246, "Online", "Commissioning12")
     
