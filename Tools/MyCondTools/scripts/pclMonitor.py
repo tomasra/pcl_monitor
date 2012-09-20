@@ -108,8 +108,31 @@ def runBackEnd():
     else:
         cachedRuns.append(1)
 
+    retValues = 0, 'OK'
+
+    # get the list of runs to be refreshed (< 24h old)
+    runsToBeRefreshed = []
+    reportsToBeRefreshed = []
+    last2days = datetime.timedelta(days=2)
+    twdaysago = datetime.datetime.today() - last2days
+    for rep in runReports:
+
+        if rep.startTime() >= twdaysago:
+            runsToBeRefreshed.append(rep.runNumber())
+            reportsToBeRefreshed.append(rep)
+            #print rep.runNumber()
+            #print "start: " + str(rep.startTime()) + " less than " + str(twdaysago)
+
+    #remove the list of reports and runs to be refreshed from the cahced ones
+    for rep in reportsToBeRefreshed:
+        cachedRuns.remove(rep.runNumber())
+        runReports.remove(rep)
+
     lastCachedRun = cachedRuns[len(cachedRuns)-1]
+    runsToBeRefreshed.sort(reverse=True)
     print "last cached run #: " + str(lastCachedRun)
+    print "runs to be refreshed: " + str(runsToBeRefreshed)
+
 
     
     # --------------------------------------------------------------------------------
@@ -126,7 +149,13 @@ def runBackEnd():
         print '*** Error 1: RR query has failed'
         print error
         return 101, "Error: failed to get collision runs from RunRegistry: " + str(error)
-    print runList
+
+    print "run list from RR: " + str(runList)
+    if len(runList) < len(runsToBeRefreshed):
+        print "Warning: list from RR is fishy...using the previous one!"
+        retValues = 1, 'Warning: list from RR is fishy...using the previous one!'
+        runList = runsToBeRefreshed
+
     # --- get the prompt reco status from Tier0-DAS
     tier0Das = tier0DasInterface.Tier0DasInterface(tier0DasSrc) 
     lastPromptRecoRun = lastCachedRun
@@ -159,7 +188,7 @@ def runBackEnd():
     # find the file produced by PCL in the afs area
     fileList = os.listdir(promptCalibDir)
     
-    retValues = 0, 'OK'
+
     # --------------------------------------------------------------------------------
     # run on runs not yet cached
     isFirst = True
