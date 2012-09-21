@@ -8,12 +8,12 @@ from pprint import pprint
 gROOT.SetBatch(True)
 
 stats = {
-	"A_steps": {
+	"B_steps_EtaFirst": {
 		"file": "not used",
 	}
 }
 
-file_name = "Run2012A_inSteps_noVBTF.root"
+file_name = "Run2012B_inSteps_etaFirst.root"
 
 color = [kBlack, kGreen+1, kRed+1, kCyan+1, kBlue+1, kOrange+10, kMagenta+1, kYellow-4, kViolet-6, kGray+2, kGreen+4] 
 
@@ -43,7 +43,7 @@ def allPlots(hists, count):
 
 	hists[0].SetStats(False)
 	hists[0].SetTitle("")
-	hists[0].GetYaxis().SetRangeUser(0.65, 1.0)
+	hists[0].GetYaxis().SetRangeUser(0.65, 1.02)
 	leg.AddEntry(hists[0], hists[0].GetName()[:-9], "L")
 	hists[0].SetLineColor(color[0])
 	hists[0].SetLineWidth(2)
@@ -102,7 +102,7 @@ print "after loading files"
 
 canv = []
 print len(hists)
-for i in range(1,len(hists)):
+for i in range(1,len(hists)+1):
 	canv.append(allPlots(saveHist, i))
 
 outfile_name = "Run2012"

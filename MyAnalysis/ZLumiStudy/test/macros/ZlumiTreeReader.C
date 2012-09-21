@@ -685,7 +685,7 @@ void ZlumiTreeReader::Terminate()
 	vector<pair<double, double> > graphEntries (nBins, make_pair(-1, -1));
 
 	TFile* eff_File = 0;
-	if (processName == "run2012A")
+	if (processName == "run2012A" || processName == "run2012A_1" || processName == "run2012A_2")
 		eff_File = new TFile("../TagAndProbe/plots_Eff/Run2012_A.root");
 	else if(processName == "run2012B" || processName == "presentationRuns")
 		eff_File = new TFile("../TagAndProbe/plots_Eff/Run2012_B.root");

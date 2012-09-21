@@ -7,8 +7,8 @@ from ROOT import *
 gROOT.SetBatch(True)
 
 #file_name = "ZLumiStudy_presentationRuns"
-#file_name = "ZLumiStudy_run2012A"
-file_name = "ZLumiStudy_run2012B"
+file_name = "ZLumiStudy_run2012A_2"
+#file_name = "ZLumiStudy_run2012B"
 #file_name = "ZLumiStudy_run2012B_1"
 #file_name = "ZLumiStudy_run2012B_2"
 #file_name = "ZLumiStudy_run2012B_3"
