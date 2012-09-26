@@ -35,7 +35,7 @@ if __name__     ==  "__main__":
     CONFIGFILE = 'gtValid.cfg'
 
     if not os.path.isfile(CONFIGFILE):
-        print error("*** Error:") + " cfg file: " + CONFIGFILE + " doesn't exist!"
+        print "*** Error: cfg file: " + CONFIGFILE + " doesn't exist!"
         sys.exit(1)
 
     diffconfig = ConfigParser()
