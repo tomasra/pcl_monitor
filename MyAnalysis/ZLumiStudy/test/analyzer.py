@@ -8,7 +8,7 @@
 try:
     IsMC
 except NameError:
-    IsMC = True
+    IsMC = False
 
 try:
     LEPTON_SETUP
@@ -18,7 +18,7 @@ except NameError:
 try:
     PD
 except NameError:
-    PD = ""             # "" for MC, "DoubleEle", "DoubleMu", or "MuEG" for data 
+    PD = "DoubleMu"             # "" for MC, "DoubleEle", "DoubleMu", or "MuEG" for data 
 
 try:
     MCFILTER
@@ -45,7 +45,8 @@ process.source.fileNames = cms.untracked.vstring(
 
 #        'root://cmsphys05//data/b/botta/V5_2_0/cmgTuple_H120Fall11_noSmearing.root' #Fall11 H120 for May, 21 synch exercise
 #        'root://cmsphys05//data/b/botta/V5_4_0/cmgTuple_H120Fall11_noSmearing.root' #Fall11 H120 for FSR synch
-         'root://cmsphys05//data/b/botta/V5_4_0/cmgTuple_H126Summer12.root' #Summer12 H126 for FSR synch        
+#         'root://cmsphys05//data/b/botta/V5_4_0/cmgTuple_H126Summer12.root' #Summer12 H126 for FSR synch
+         '/store/cmst3/user/cmgtools/CMG/DoubleMu/Run2012A-13Jul2012-v1/AOD/V5_B/PAT_CMG_V5_7_0/cmgTuple_94.root'
     )
 
 
@@ -74,32 +75,6 @@ process.TFileService=cms.Service('TFileService',
 
 
 
-
-
-#Count events with at least 1 Z
-# process.ZFiltered = cms.EDFilter("PATCompositeCandidateRefSelector",
-#     src = cms.InputTag("ZCand"),
-#     cut = cms.string("userFloat('GoodLeptons')")
-# )
-# process.sStep4 = cms.EDFilter("CandViewCountFilter",
-#                               src = cms.InputTag("ZFiltered"),
-#                               minNumber = cms.uint32(1)
-#                               )
-#process.step4 = cms.Path(process.SkimSequence + process.ZFiltered + process.sStep4 )
-
-
-#Count events with at least 1 ZZ
-# process.ZZFiltered = cms.EDFilter("PATCompositeCandidateRefSelector",
-#     src = cms.InputTag("ZZCand"),
-#     cut = cms.string("userFloat('GoodLeptons')")
-# )
-# process.sStep5 = cms.EDFilter("CandViewCountFilter",
-#                                 src = cms.InputTag("ZZFiltered"),
-#                                 minNumber = cms.uint32(1)
-#                             )
-#process.step5 = cms.Path(process.SkimSequence + process.ZZFiltered + process.sStep5 )
-
-
 ### ----------------------------------------------------------------------
 ### Analyzer for Trees
 ### ----------------------------------------------------------------------
@@ -122,37 +97,5 @@ process.Z2muTree.channel = 'MM'
 process.Z2muTree.CandCollection = 'MMCand'
 
 
-
-# # Debug
-# #Define candidates to be dumped
-# process.ZZFiltered = cms.EDFilter("PATCompositeCandidateRefSelector",
-#                                   src = cms.InputTag("ZZCand"),
-#                                   cut = cms.string("userFloat('isBestCand')")
-#                                   )
-# ### Select only events with one such candidate
-# process.ZZSelection= cms.EDFilter("CandViewCountFilter",
-#                                   src = cms.InputTag("ZZFiltered"),
-#                                   minNumber = cms.uint32(1)
-#                                   )
-
-
-# process.dumpUserData =  cms.EDAnalyzer("dumpUserData",
-#      dumpTrigger = cms.untracked.bool(True),
-#      muonSrc = cms.InputTag("appendPhotons:muons"), 
-#      electronSrc = cms.InputTag("appendPhotons:electrons"),
-#      candidateSrcs = cms.PSet(
-#         Zmm   = cms.InputTag("MMCand"),
-#         Zee   = cms.InputTag("EECand"),
-#         Z     = cms.InputTag("ZCand"),                                          
-#         MMMM  = cms.InputTag("MMMMCand"),
-#         EEEE  = cms.InputTag("EEEECand"),
-#         EEMM  = cms.InputTag("EEMMCand"),
-#      )
-# )
-
-# if (not IsMC):
-#     process.dump = cms.Path(process.ZZFiltered + process.ZZSelection + process.dumpUserData)
-
-# process.p = cms.EndPath( process.Plots4mu + process.Plots4e + process.Plots2e2mu + process.PlotsCRZLL + process.PlotsCRZMM + process.PlotsCRZEE + process.PlotsCRZLLHiSIP + process.PlotsCRZLLHiSIPMM + process.PlotsCRZLLHiSIPKin + process.PlotsCRMMEEss + process.PlotsCREEMMss + process.PlotsCRMMMMss + process.PlotsCREEEEss + process.PlotsCRMMEEos + process.PlotsCREEMMos + process.PlotsCRMMMMos + process.PlotsCREEEEos )
 process.trees = cms.EndPath( process.Z2muTree)
 

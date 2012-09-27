@@ -14,7 +14,7 @@ except NameError:
 try:
     LEPTON_SETUP
 except NameError:
-    LEPTON_SETUP = 2011 # define the set of effective areas, rho corrections, etc.
+    LEPTON_SETUP = 2012 # define the set of effective areas, rho corrections, etc.
 
 
 try:
@@ -61,7 +61,7 @@ if IsMC:
   #2012 Analysis: First Step Fall11 42X MC 
   process.GlobalTag.globaltag = 'START44_V12::All'
 else: 
-  process.GlobalTag.globaltag = 'GR_P_V37::All' # For Jan16rereco, 42X 
+  process.GlobalTag.globaltag = 'GR_P_V41_AN2::All' # For Jan16rereco, 42X 
 
 
 ### ----------------------------------------------------------------------
