@@ -93,7 +93,7 @@ if __name__     ==  "__main__":
 
     # copy the sqlite file in the public if not already there
     for gt in args:
-        newsqlite = options.gtsqlitestore +'/'+gt+'.db'
+        newsqlite = options.gtcreationarea +'/'+gt+'.db'
         sqlitefile = options.gtsqlitestore +'/'+gt+'.db'
         if os.path.exists(newsqlite):
             shutil.move(newsqlite, sqlitefile)
