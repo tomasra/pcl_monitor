@@ -47,7 +47,6 @@ void ZMuMuNtupleFactory::FillEvent() {
   _Lep1LepId.clear();
   _Lep1SIP.clear();
   _Lep1isID.clear();
-  _Lep1BDT.clear();
   _Lep1ParentId.clear();
 
   _Lep2Pt.clear();
@@ -56,7 +55,6 @@ void ZMuMuNtupleFactory::FillEvent() {
   _Lep2LepId.clear();
   _Lep2SIP.clear();
   _Lep2isID.clear();
-  _Lep2BDT.clear();
   _Lep2ParentId.clear();
 
   //Lepton isolation variables
@@ -64,11 +62,13 @@ void ZMuMuNtupleFactory::FillEvent() {
   _Lep1neutralHadIso.clear();
   _Lep1photonIso.clear();
   _Lep1combRelIsoPF.clear();
+  _Lep1combRelIsoPFFSRCorr.clear();
 
   _Lep2chargedHadIso.clear();
   _Lep2neutralHadIso.clear();
   _Lep2photonIso.clear();
   _Lep2combRelIsoPF.clear();
+  _Lep2combRelIsoPFFSRCorr.clear();
 
   InitializeVariables();
 
@@ -110,10 +110,9 @@ void ZMuMuNtupleFactory::InitializeVariables() {
   _BXNumber = 0;
   _IndexBestCand = 0;
 
-  _Nmu = 0;
-  _Nele = 0;
 
   _Nvtx = 0;
+  _NGoodVtx = 0;
   _NObsInt =0;
   _NTrueInt =0;
   _PUWeight11 =0;
@@ -147,9 +146,9 @@ void ZMuMuNtupleFactory::InitializeBranches()
   _outTree->Branch("LumiNumber",&_LumiNumber,"LumiNumber/I");
   _outTree->Branch("BXNumber",&_BXNumber,"BXNumber/I");
   _outTree->Branch("iBC",&_IndexBestCand,"iBC/I");
-  _outTree->Branch("Nmu",&_Nmu,"Nmu/I");
-  _outTree->Branch("Nele",&_Nele,"Nele/I");
+
   _outTree->Branch("Nvtx",&_Nvtx,"Nvtx/I");
+  _outTree->Branch("NGoodVtx",&_NGoodVtx,"NGoodVtx/I");
   _outTree->Branch("NObsInt",&_NObsInt,"NObsInt/I");
   _outTree->Branch("NTrueInt",&_NTrueInt,"NTrueInt/F");
   _outTree->Branch("PUWeight11",&_PUWeight11,"PUWeight11/F");
@@ -171,7 +170,6 @@ void ZMuMuNtupleFactory::InitializeBranches()
   _outTree->Branch("Lep1LepId",&_Lep1LepId);
   _outTree->Branch("Lep1SIP",&_Lep1SIP);
   _outTree->Branch("Lep1isID",&_Lep1isID);
-  _outTree->Branch("Lep1BDT",&_Lep1BDT);
   _outTree->Branch("Lep1ParentId",&_Lep1ParentId);
 
   _outTree->Branch("Lep2Pt",&_Lep2Pt);
@@ -180,7 +178,6 @@ void ZMuMuNtupleFactory::InitializeBranches()
   _outTree->Branch("Lep2LepId",&_Lep2LepId);
   _outTree->Branch("Lep2SIP",&_Lep2SIP);
   _outTree->Branch("Lep2isID",&_Lep2isID);
-  _outTree->Branch("Lep2BDT",&_Lep2BDT);
   _outTree->Branch("Lep2ParentId",&_Lep2ParentId);
 
 
@@ -189,11 +186,13 @@ void ZMuMuNtupleFactory::InitializeBranches()
   _outTree->Branch("Lep1neutralHadIso",&_Lep1neutralHadIso);
   _outTree->Branch("Lep1photonIso",&_Lep1photonIso);
   _outTree->Branch("Lep1combRelIsoPF",&_Lep1combRelIsoPF);
+  _outTree->Branch("Lep1combRelIsoPFFSRCorr",&_Lep1combRelIsoPFFSRCorr);
 
   _outTree->Branch("Lep2chargedHadIso",&_Lep2chargedHadIso);
   _outTree->Branch("Lep2neutralHadIso",&_Lep2neutralHadIso);
   _outTree->Branch("Lep2photonIso",&_Lep2photonIso);
   _outTree->Branch("Lep2combRelIsoPF",&_Lep2combRelIsoPF);
+  _outTree->Branch("Lep2combRelIsoPFFSRCorr",&_Lep2combRelIsoPFFSRCorr);
 
 //   //Photon variables
 //   _outTree->Branch("PhotPt",&_PhotPt);
@@ -265,6 +264,7 @@ void ZMuMuNtupleFactory::FillEventInfo(const Int_t RunNumber,
 				       const int bxNumber,
 				       const Int_t IndexBestCand, //FIXME: how to fill this?
 				       Int_t Nvtx, 
+				       Int_t NGoodVtx,
 				       Int_t NObsInt,
 				       Float_t NTrueInt,
 				       Float_t weight11,
@@ -278,6 +278,7 @@ void ZMuMuNtupleFactory::FillEventInfo(const Int_t RunNumber,
   _BXNumber = bxNumber;
   _IndexBestCand = IndexBestCand;
   _Nvtx = Nvtx;
+  _NGoodVtx = NGoodVtx;
   _NObsInt =NObsInt;
   _NTrueInt =NTrueInt;
   _PUWeight11 =weight11;
@@ -308,7 +309,6 @@ void ZMuMuNtupleFactory::FillLepInfo(const Float_t LepPt,
 				     const Int_t LepId,
 				     const Float_t LepSIP,
 				     bool isID,
-				     float BDT,
 				     short parentId) {
   switch(_LeptonIndex){
 
@@ -319,7 +319,6 @@ void ZMuMuNtupleFactory::FillLepInfo(const Float_t LepPt,
     _Lep1LepId.push_back(LepId);
     _Lep1SIP.push_back(LepSIP);
     _Lep1isID.push_back(isID);
-    _Lep1BDT.push_back(BDT);
     _Lep1ParentId.push_back(parentId);
     break;
 
@@ -330,7 +329,6 @@ void ZMuMuNtupleFactory::FillLepInfo(const Float_t LepPt,
     _Lep2LepId.push_back(LepId);
     _Lep2SIP.push_back(LepSIP);
     _Lep2isID.push_back(isID);
-    _Lep2BDT.push_back(BDT);
     _Lep2ParentId.push_back(parentId);
     break;
   
@@ -349,7 +347,8 @@ void ZMuMuNtupleFactory::FillLepInfo(const Float_t LepPt,
 void ZMuMuNtupleFactory::FillLepIsolInfo(const Float_t LepchargedHadIso,
 					 const Float_t LepneutralHadIso,
 					 const Float_t LepphotonIso,
-					 const Float_t LepcombRelIsoPF) {
+					 const Float_t LepcombRelIsoPF,
+					 const Float_t LepcombRelIsoPFFSRCorr) {
 
   switch(_LeptonIsoIndex){
 
@@ -358,13 +357,14 @@ void ZMuMuNtupleFactory::FillLepIsolInfo(const Float_t LepchargedHadIso,
     _Lep1neutralHadIso.push_back(LepneutralHadIso);
     _Lep1photonIso.push_back(LepphotonIso);
     _Lep1combRelIsoPF.push_back(LepcombRelIsoPF);
+    _Lep1combRelIsoPFFSRCorr.push_back(LepcombRelIsoPFFSRCorr);
     break;
 
   case 2:
     _Lep2chargedHadIso.push_back(LepchargedHadIso);
     _Lep2neutralHadIso.push_back(LepneutralHadIso);
     _Lep2photonIso.push_back(LepphotonIso);
-    _Lep2combRelIsoPF.push_back(LepcombRelIsoPF);
+    _Lep2combRelIsoPFFSRCorr.push_back(LepcombRelIsoPFFSRCorr);
     break;
 
 

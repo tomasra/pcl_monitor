@@ -13,7 +13,7 @@
 //
 // Original Author:  Stefano Casasso,,,
 //         Created:  Tue Feb 28 14:33:03 CET 2012
-// $Id: ZTreeMaker.cc,v 1.1 2012/07/13 10:46:06 cerminar Exp $
+// $Id: ZTreeMaker.cc,v 1.2 2012/07/16 13:46:21 cerminar Exp $
 //
 //
 
@@ -62,9 +62,9 @@
 #include "MyAnalysis/ZLumiStudy/src/ZMuMuConfigHelper.h"
 #include "MyAnalysis/ZLumiStudy/src/ZMuMuNtupleFactory.h"
 
-namespace {
-  bool writePhotons = false;  // Write photons in the tree. FIXME: make this configurable
-}
+// namespace {
+//   bool writePhotons = false;  // Write photons in the tree. FIXME: make this configurable
+// }
 
 
 using namespace std;
@@ -140,7 +140,7 @@ ZTreeMaker::ZTreeMaker(const edm::ParameterSet& pset) : myHelper(pset) {
   } else {
     cout << "[ZTreeMaker] INFO: running on DATA!" << endl;
   }
-
+  cout << "        channel: " << theChannel << endl;
   // initialize the counters
   Nevt_Gen = 0;
 
@@ -159,6 +159,10 @@ void ZTreeMaker::analyze(const edm::Event& event, const edm::EventSetup& eSetup)
   Handle<vector<reco::Vertex> >  vertexs;
   event.getByLabel("offlinePrimaryVertices",vertexs);
   
+  Handle<vector<reco::Vertex> >  goodVertexs;
+  event.getByLabel("goodOfflinePrimaryVertices", goodVertexs);
+
+
   //----------------------------------------------------------------------
   // Analyze MC history. THIS HAS TO BE DONE BEFORE ANY RETURN STATEMENT
   // (eg skim or trigger), in order to update the gen counters correctly!!!
@@ -294,6 +298,7 @@ void ZTreeMaker::analyze(const edm::Event& event, const edm::EventSetup& eSetup)
 			event.eventAuxiliary().bunchCrossing(),
 			NbestCand,
 			vertexs->size(),
+			goodVertexs->size(),
 			nObsInt,
 			nTrueInt,
 			weight1,
@@ -350,6 +355,7 @@ void ZTreeMaker::FillCandidate(const pat::CompositeCandidate& cand, bool evtPass
   vector<float> PFNeutralHadIso(2);
   vector<float> PFPhotonIso(2);
   vector<float> combRelIsoPF(2);
+  vector<float> combRelIsoPFFSRCorr(2);
   vector<bool>  isID(2);
 
 
@@ -361,14 +367,11 @@ void ZTreeMaker::FillCandidate(const pat::CompositeCandidate& cand, bool evtPass
     PFNeutralHadIso[i] = userdatahelpers::getUserFloat(leptons[i],"PFNeutralHadIso");
     PFPhotonIso[i]     = userdatahelpers::getUserFloat(leptons[i],"PFPhotonIso");
     isID[i]            = userdatahelpers::getUserFloat(leptons[i],"ID");
-    if (theChannel==ZL) {
-      combRelIsoPF[i]    = userdatahelpers::getUserFloat(leptons[i],"combRelIsoPF");
-      //FIXME cannot take labels[i]+"SIP", that info only attached to the Z!!
-    } else {
-      combRelIsoPF[i]    = cand.userFloat(labels[i]+"combRelIsoPFFSRCorr"); // Note: the FSR-corrected iso is attached to the Z, not to the lepton!
-      // Check that I don't mess up with labels[] and leptons[]
-      assert(SIP[i] == cand.userFloat(labels[i]+"SIP"));
-    }
+    combRelIsoPF[i]    = userdatahelpers::getUserFloat(leptons[i],"combRelIsoPF");
+    combRelIsoPFFSRCorr[i]    = cand.userFloat(labels[i]+"combRelIsoPFFSRCorr"); // Note: the FSR-corrected iso is attached to the Z, not to the lepton!    
+    // Check that I don't mess up with labels[] and leptons[]
+    assert(SIP[i] == cand.userFloat(labels[i]+"SIP"));
+    
 
     //Fill the info on the lepton candidates  
     myTree->FillLepInfo(leptons[i]->pt(),
@@ -377,14 +380,14 @@ void ZTreeMaker::FillCandidate(const pat::CompositeCandidate& cand, bool evtPass
 			leptons[i]->pdgId(),
 			SIP[i],
 			isID[i],
-			userdatahelpers::getUserFloat(leptons[i],"BDT"),
 			userdatahelpers::getUserFloat(leptons[i],"MCParentCode"));
 
     //Isolation variables
     myTree->FillLepIsolInfo(PFChargedHadIso[i],
 			    PFNeutralHadIso[i],
 			    PFPhotonIso[i], 
-			    combRelIsoPF[i]);
+			    combRelIsoPF[i],
+			    combRelIsoPFFSRCorr[i]);
   }
 
 }

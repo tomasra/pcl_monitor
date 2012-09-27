@@ -39,6 +39,7 @@ class ZMuMuNtupleFactory{
 		     const int  bxNumber,
 		     const Int_t IndexBestCand,
 		     Int_t Nvtx,
+		     Int_t NGoodVtx,
 		     Int_t NObsInt,
 		     Float_t NTrueInt,
 		     Float_t weight11,
@@ -59,7 +60,6 @@ class ZMuMuNtupleFactory{
 		   const Int_t LepId,
 		   const Float_t SIP,
 		   bool isID,
-		   float BDT,
 		   short parentId);
 
 
@@ -67,7 +67,8 @@ class ZMuMuNtupleFactory{
   void FillLepIsolInfo(const Float_t LepchargedHadIso,
 		       const Float_t LepneutralHadIso,
 		       const Float_t LepphotonIso,
-		       const Float_t LepcombRelIsoPF);
+		       const Float_t LepcombRelIsoPF,
+		       const Float_t LepcombRelIsoPFFSRCorr);
 
 
   //  void FillPhotonInfo(const Float_t PhotPt, const Float_t PhotEta, const Float_t PhotPhi); // KEEP COMMENTED
@@ -101,10 +102,8 @@ class ZMuMuNtupleFactory{
   Int_t _IndexBestCand;
 
 
-  Int_t _Nmu;
-  Int_t _Nele;
-
   Int_t _Nvtx;
+  Int_t _NGoodVtx;
   Int_t _NObsInt;
   Float_t _NTrueInt;
   Float_t _PUWeight11;
@@ -128,7 +127,6 @@ class ZMuMuNtupleFactory{
   std::vector<Int_t>   _Lep1LepId;
   std::vector<Float_t> _Lep1SIP;
   std::vector<Bool_t>  _Lep1isID;
-  std::vector<Float_t> _Lep1BDT;
   std::vector<Short_t> _Lep1ParentId;
 
   std::vector<Float_t> _Lep2Pt;
@@ -137,7 +135,6 @@ class ZMuMuNtupleFactory{
   std::vector<Int_t>   _Lep2LepId;
   std::vector<Float_t> _Lep2SIP;
   std::vector<Bool_t>  _Lep2isID;
-  std::vector<Float_t> _Lep2BDT;
   std::vector<Short_t> _Lep2ParentId;
 
 
@@ -147,11 +144,13 @@ class ZMuMuNtupleFactory{
   std::vector<Float_t> _Lep1neutralHadIso;
   std::vector<Float_t> _Lep1photonIso;
   std::vector<Float_t> _Lep1combRelIsoPF;
+  std::vector<Float_t> _Lep1combRelIsoPFFSRCorr;
 
   std::vector<Float_t> _Lep2chargedHadIso;
   std::vector<Float_t> _Lep2neutralHadIso;
   std::vector<Float_t> _Lep2photonIso;
   std::vector<Float_t> _Lep2combRelIsoPF;
+  std::vector<Float_t> _Lep2combRelIsoPFFSRCorr;
 
 //   //Photon variables
 //   std::vector<Float_t> _PhotPt;
