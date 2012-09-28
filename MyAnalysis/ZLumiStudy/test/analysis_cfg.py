@@ -44,23 +44,25 @@ try:
 except NameError:
     MCFILTER = ""
 
+try:
+    GT
+except NameError:
+    GT = ""
+
+
 
 ### ----------------------------------------------------------------------
 ### Set the GT
 ### ----------------------------------------------------------------------
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
-if IsMC: 
-    
-  process.GlobalTag.globaltag = 'START44_V12::All'
-else: 
-  process.GlobalTag.globaltag = 'GR_P_V41_AN2::All' # For Jan16rereco, 42X 
+process.GlobalTag.globaltag = GT
 
 
 ### ----------------------------------------------------------------------
 ### Standard stuff
 ### ----------------------------------------------------------------------
 process.load("FWCore.MessageService.MessageLogger_cfi")
-process.load("Configuration.StandardSequences.Geometry_cff")
+process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
 process.load("Configuration.StandardSequences.MagneticField_38T_cff")
 process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
 process.options = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
