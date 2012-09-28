@@ -10,6 +10,6 @@ PyFilePath = os.environ['CMSSW_BASE'] + "/src/MyAnalysis/ZLumiStudy/test/"
 IsMC = False
 LEPTON_SETUP = 2012
 PD = "DoubleMu"
-GT = "FT_53_V10_AN2::All
+GT = "FT_53_V10_AN2::All"
 execfile(PyFilePath + "analysis_cfg.py")
 
