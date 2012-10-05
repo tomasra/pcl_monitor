@@ -18,6 +18,9 @@ process = cms.Process("TEST")
 # - GT selection
 try:
     IsMC
+    if type(IsMC) is str:
+        import ast
+        IsMC = ast.literal_eval(IsMC)
 except NameError:
     IsMC = True
 
@@ -50,6 +53,12 @@ except NameError:
     GT = ""
 
 
+try:
+    JSON_FILE
+except NameError:
+    JSON_FILE = ""
+    
+
 
 ### ----------------------------------------------------------------------
 ### Set the GT
@@ -73,9 +82,17 @@ process.options = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 ### ----------------------------------------------------------------------
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
-      '/store/cmst3/user/cmgtools/CMG/GluGluToHToZZTo4L_M-130_7TeV-powheg-pythia6/Fall11-PU_S6_START42_V14B-v1/AODSIM/V5/PAT_CMG_V5_2_0/patTuple_1.root'
+      '/store/cmst3/user/cmgtools/CMG/DoubleMu/Run2012A-13Jul2012-v1/AOD/V5_B/PAT_CMG_V5_7_0/cmgTuple_94.root'
     )
 )
+
+
+
+if JSON_FILE != "":
+    import FWCore.PythonUtilities.LumiList as LumiList
+    process.source.lumisToProcess = LumiList.LumiList(filename = JSON_FILE).getVLuminosityBlockRange()
+
+
 
 process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32(-1)
@@ -91,13 +108,13 @@ process.hltFilterDiMu  = HLTrigger.HLTfilters.hltHighLevel_cfi.hltHighLevel.clon
 process.hltFilterDiMu.TriggerResultsTag  = cms.InputTag("TriggerResults","","HLT")
 process.hltFilterDiMu.throw  = cms.bool(False) #FIXME: beware of this!
 
-if (LEPTON_SETUP == 2011):
-   if (IsMC):
+if (int(LEPTON_SETUP) == 2011):
+   if (bool(IsMC)):
        process.hltFilterDiMu.HLTPaths = ["HLT_Mu17_Mu8_v*"] # to run on MC 2011    
    else :
        process.hltFilterDiMu.HLTPaths = ["HLT_DoubleMu7_v*", "HLT_Mu13_Mu8_v*", "HLT_Mu17_Mu8_v*"] # to run on data 2011 NB: Emulation is needed
 
-elif (LEPTON_SETUP == 2012):
+elif (int(LEPTON_SETUP) == 2012):
   #process.hltFilterDiMu.HLTPaths = ["HLT_Mu17_Mu8_v*", "HLT_Mu17_TkMu8_v*"] # to run on data 2012 Data/MC No Emulation needed
   process.hltFilterDiMu.HLTPaths = ["HLT_Mu17_Mu8_v*"] # to run on data 2012 Data/MC No Emulation needed
 
@@ -172,8 +189,8 @@ process.muonMatch = cms.EDProducer("MCMatcher", # cut on deltaR, deltaPt/Pt; pic
 
 process.softMuons = cms.EDProducer("MuProperties",
     src = cms.InputTag("bareSoftMuons"),
-    sampleType = cms.int32(SAMPLE_TYPE),                     
-    setup = cms.int32(LEPTON_SETUP), # define the set of effective areas, rho corrections, etc.
+    sampleType = cms.int32(int(SAMPLE_TYPE)),                     
+    setup = cms.int32(int(LEPTON_SETUP)), # define the set of effective areas, rho corrections, etc.
 #    cut = cms.string("userFloat('SIP')<100"),
     cut = cms.string("userFloat('dxy')<0.5 && userFloat('dz')<1."),
     flags = cms.PSet(
@@ -220,8 +237,8 @@ process.bareMMCand = cms.EDProducer("CandViewShallowCloneCombiner",
 )
 process.MMCand = cms.EDProducer("ZCandidateProperties",
     src = cms.InputTag("bareMMCand"),
-    sampleType = cms.int32(SAMPLE_TYPE),                     
-    setup = cms.int32(LEPTON_SETUP), # define the set of effective areas, rho corrections, etc.
+    sampleType = cms.int32(int(SAMPLE_TYPE)),                     
+    setup = cms.int32(int(LEPTON_SETUP)), # define the set of effective areas, rho corrections, etc.
     bestZAmong = cms.string(BESTZ_AMONG),
     flags = cms.PSet(
         GoodLeptons = cms.string(ZLEPTONSEL),
@@ -277,9 +294,9 @@ TreeSetup = cms.EDAnalyzer("ZTreeMaker",
                                    channel = cms.untracked.string('aChannel'),
                                    CandCollection = cms.untracked.string('aCand'),
                                    fileName = cms.untracked.string('candTree'),
-                                   isMC = cms.untracked.bool(IsMC),
-                                   sampleType = cms.int32(SAMPLE_TYPE),
-                                   setup = cms.int32(LEPTON_SETUP),
+                                   isMC = cms.untracked.bool(bool(IsMC)),
+                                   sampleType = cms.int32(int(SAMPLE_TYPE)),
+                                   setup = cms.int32(int(LEPTON_SETUP)),
                                    skimPaths = cms.vstring(),
                                    PD = cms.string(PD),
                                    MCFilterPath = cms.string(MCFILTER),
