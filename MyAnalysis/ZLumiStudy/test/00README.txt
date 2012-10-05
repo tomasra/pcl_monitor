@@ -50,10 +50,39 @@ https://twiki.cern.ch/twiki/bin/view/CMS/CmgSamplesSeptember12
 They are in 
 /eos/cms/store/cmst3/user/cmgtools/CMG
 
+
 You can use also the CMG discovery tool:
 getInfo.py -s "SELECT distinct(dataset_id), file_owner, path_name,
 dataset_fraction FROM dataset_details WHERE path_name LIKE '%V5_4_0'"
 
+(you need 
+cvs co -d CMGTools/Production UserCode/CMG/CMGTools/Production   
+)
+
 where the release refers to the CMG tool rlease as in:
 https://twiki.cern.ch/twiki/bin/view/CMS/CMGToolsReleasesExperimental
+
+* submitting the Jobs on the CMGTuples on the batch system
+
+You need to checkout:
+cvs co -d Tools/MyAnalysisTools UserCode/cerminar/Tools/MyAnalysisTools
+
+Then you can submit using the cfg in
+MyAnalysis/ZLumiStudy/test/prod/submission.cfg
+(the syntax is straightforward)
+
+To create the configuration files:
+submission.py --file submission.cfg --create
+
+To submit the jobs:
+submission.py --file submission.cfg --create
+
+To check the status
+submission.py --file submission.cfg --status
+
+This should return back for each job:
+1. the tree file
+2. the JSON file of the input cmgTuples
+3. the and of the inputJson file and the JSON_FILE provided for
+filtering
 
