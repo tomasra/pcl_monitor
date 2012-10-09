@@ -74,8 +74,10 @@ MyAnalysis/ZLumiStudy/test/prod/submission.cfg
 To create the configuration files:
 submission.py --file submission.cfg --create
 
+NOTE: this can take a while....
+
 To submit the jobs:
-submission.py --file submission.cfg --create
+submission.py --file submission.cfg --submit
 
 To check the status
 submission.py --file submission.cfg --status
@@ -85,4 +87,23 @@ This should return back for each job:
 2. the JSON file of the input cmgTuples
 3. the and of the inputJson file and the JSON_FILE provided for
 filtering
+
+* getting the lumi from lumi-calc
+
+cvs co  -r V04-01-06 RecoLuminosity/LumiDB
+
+
+configure the lumiMonitor using the file
+/MyAnalysis/ZLumiStudy/test/prod/53X_v0/lumi.cfg
+
+To actually run:
+
+lumiMonitor.py --read-lumi
+
+reads the input JSON files (output of ht eproduction step), splits
+them by run (storing the individual json files) and uses the run by
+run json to get the BXbyBX lumi in csv files
+
+The version of lumiCalc and of the DB is stored for each run in the file:
+lumiCalcVersion.log
 
