@@ -11,6 +11,35 @@ from Tools.MyAnalysisTools.color_tools import *
 import FWCore.ParameterSet.Config as cms
 
 
+def buildMergedJsonFileName(taskCfg, baseJsonName):
+    return  baseJsonName + "_" + taskCfg.taskName + '_' + taskCfg.version + ".json"
+
+def mergeJsonFiles(taskCfg, inputJsons):
+    if len(inputJsons) == 0:
+        return
+    baseJsonName = inputJsons[0].split('_')[0]
+    mergedInputJsonName = buildMergedJsonFileName(taskCfg, baseJsonName)
+    if len(inputJsons) == 1:
+        shutil.copy(inputJsons[0], mergedInputJsonName)
+    else:
+        merge_cmd = "mergeJSON.py --output=" + mergedInputJsonName + " " + inputJsons[0] + " " + inputJsons[1]
+        merge_out = commands.getstatusoutput(merge_cmd)
+        if merge_out[0] != 0:
+            print merge_out[1]
+            sys.exit(1)
+        if len(inputJsons) >= 3:
+            for idx in range(3, len(inputJsons)):
+                merge_cmd = "mergeJSON.py --output=" + mergedInputJsonName + " " + inputJsons[idx] + " " + mergedInputJsonName
+                merge_out = commands.getstatusoutput(merge_cmd)
+                if merge_out[0] != 0:
+                    print merge_out[1]
+    return
+
+def buildJobSpecificFileName(fileName, jobNumber):
+    """ Given a generic file name builds a specific one for the given job (starting from index)"""
+    return fileName.split(".")[0]+ '_' +  str(jobNumber) + '.' + fileName.split(".")[1]
+
+
 class TaskConfig:
     def __init__(self, taskName, cfgfile):
         self.taskName      = taskName
@@ -37,6 +66,11 @@ class TaskConfig:
                 #print item[0]
                 self.additionalVariables[item[0].split("@")[1]] = item[1]
         #print self.additionalVariables
+        if self.doJson:
+            # make sure that the json is copied
+            self.outputFiles.append('input.json')
+            if "JSON_FILE" in self.additionalVariables:
+                self.outputFiles.append('output.json')
 
 def createJobSetups(inputCfg,
                     inputDir,
@@ -111,11 +145,6 @@ def createJobSetups(inputCfg,
 
     # in case we need to generate the JSON files for the input
     inputJson_cmd = "edmLumisInFiles.py --output=input.json "        
-    if doJson:
-        # make sure that the json is copied
-        outputFiles.append('input.json')
-        if "JSON_FILE" in additionalVars:
-            outputFiles.append('output.json')
             
     #print globals()
     globalsFromCfg = globals()
@@ -200,7 +229,7 @@ def createJobSetups(inputCfg,
             for outFileName in outputFiles:
                 outFileNameTmp = outFileName
                 scriptfile.write('echo "   file: ' + outFileNameTmp + '"\n')
-                outFileNameTask = outFileName.split(".")[0]+ '_' +  str(indexJob) + '.' + outFileName.split(".")[1]
+                outFileNameTask = buildJobSpecificFileName(outFileName, indexJob)
                 scriptfile.write("cp " + outFileNameTmp + " " + outputDir + '/' + outFileNameTask + "\n")
                 scriptfile.write("set RFCP_EXIT = $status\n")
                 scriptfile.write("@ EXIT = $EXIT + $RFCP_EXIT\n")
@@ -230,10 +259,13 @@ if __name__     ==  "__main__":
             '     %prog [options] --queue <queue> --submit --file <conffile>\n\n'+\
             '   * check job status:\n'+\
             '     %prog [options] --status --file <conffile>\n\n'+\
+            '   * check merge all the "input" and "output" JSON files for each task (if produced):\n'+\
+            '     NOTE: if a job failed you might have to clean-up the output directory first...\n'+\
+            '     %prog [options] --json-add --file <conffile>\n\n'+\
             '   * copy the output files of the various tasks in the cfg to a target dir.:\n'+\
             '     %prog [options] --copy --file <conffile> <targetdir>\n\n'
 
-    revision = '$Revision: 1.5 $'
+    revision = '$Revision: 1.6 $'
     vnum = revision.lstrip('$')
     vnum = vnum.lstrip('Revision: ')
     vnum = vnum.rstrip(' $')
@@ -250,20 +282,20 @@ if __name__     ==  "__main__":
 
     parser.add_option("-q", "--queue", dest="queue",
                       help="queue", type="str", metavar="<queue>")
-    parser.add_option("-s", "--split", dest="split",
-                      help="# files per job", type="int", metavar="<split>", default=100)
-    parser.add_option("-c", "--cfg", dest="config",
-                      help="configuration file", type="str", metavar="<config>")
-    parser.add_option("-i", "--input-dir", dest="inputdir",
-                      help="input directory", type="str", metavar="<input dir>")
-    parser.add_option("-o", "--output-dir", dest="outputdir",
-                      help="output directory", type="str", metavar="<output dir>")
-    parser.add_option("-j", "--job-name", dest="jobname",
-                      help="job name", type="str", metavar="<job name>")
-    parser.add_option("-f", "--file-basename", dest="basename",
-                      help="file basename", type="str", metavar="<file basename>")
-    parser.add_option("-n", "--n-jobs", dest="njobs",
-                      help="# of jobs", type="int", metavar="<# jobs>")
+#     parser.add_option("-s", "--split", dest="split",
+#                       help="# files per job", type="int", metavar="<split>", default=100)
+#     parser.add_option("-c", "--cfg", dest="config",
+#                       help="configuration file", type="str", metavar="<config>")
+#     parser.add_option("-i", "--input-dir", dest="inputdir",
+#                       help="input directory", type="str", metavar="<input dir>")
+#     parser.add_option("-o", "--output-dir", dest="outputdir",
+#                       help="output directory", type="str", metavar="<output dir>")
+#     parser.add_option("-j", "--job-name", dest="jobname",
+#                       help="job name", type="str", metavar="<job name>")
+#     parser.add_option("-f", "--file-basename", dest="basename",
+#                       help="file basename", type="str", metavar="<file basename>")
+#     parser.add_option("-n", "--n-jobs", dest="njobs",
+#                       help="# of jobs", type="int", metavar="<# jobs>")
 
 
 
@@ -271,7 +303,9 @@ if __name__     ==  "__main__":
     parser.add_option("--copy", action="store_true",dest="copy",default=False, help="copy the output of the jobs from castor to a local dir (argument)")
     parser.add_option("--status", action="store_true",dest="status",default=False, help="check the status of the jobs")
     parser.add_option("--create", action="store_true",dest="create",default=False, help="create the job configuration ")
-    
+
+    parser.add_option("--json-add", action="store_true",dest="jsonAdd",default=False, help="add the input.json and output.json files of all jobs for the specified tasks ")
+
     parser.add_option("--file", dest="file",
                       help="submission config file", type="str", metavar="<file>")
 
@@ -327,24 +361,72 @@ if __name__     ==  "__main__":
                 pending = True
 
             print "    Output dir: " + taskCfg.outputDir
-            rfdir_cmd = "rfdir " + taskCfg.outputDir
+            rfdir_cmd = "ls -1 " + taskCfg.outputDir
             nOutFile = 0
             outCastorDir_out = commands.getstatusoutput(rfdir_cmd)
             if outCastorDir_out[0] == 0:
                 castorLines = outCastorDir_out[1].split("\n")
+                #print castorLines
                 if len(castorLines) != 0:
-                    for castorFileLine in castorLines:
-                        if 'cerminar' in castorFileLine and "root" in castorFileLine:
-                            print "        - " + castorFileLine.split()[8]
+                    for jobIdx in range(0, nJobs):
+                        missingfiles = []
+                        for outFile in taskCfg.outputFiles:
+                            fname = buildJobSpecificFileName(outFile, jobIdx)
+                            if not fname in castorLines:
+                                #print "         missing: " + fname
+                                missingfiles.append(fname)
+                        if len(missingfiles) == 0:
                             nOutFile += 1
+                            # print "      - Job: " + str(jobIdx) + " has all files"
+                        else:
+                            print "      - Job: " + str(jobIdx) + " missing files: " + " ".join(missingfiles)
+                            #if not pending:
+                            #    print "NOT PENDING anymore"
+                                
             else:
                 print outCastorDir_out[1]
-            print "    # of output files: " + str(nOutFile)
+            print "    # of jobs with all output files: " + str(nOutFile)
             if nOutFile != nJobs and not pending:
                 status = error("ERROR")
             print "    Status: " + status
         sys.exit(0)
 
+    # loop over all tasks and create the global JSON for the successful jobs
+    if options.jsonAdd:
+        for taskCfg in taskCfgList:
+            task = taskCfg.taskName
+            flag = taskCfg.version
+            print "--- Task name: " + blue(task) + "  (" + taskCfg.version + "_" + task + ")"  
+            os.chdir(taskCfg.outputDir)
+            if os.path.exists(buildMergedJsonFileName(taskCfg, "input")):
+                os.remove(buildMergedJsonFileName(taskCfg, "input"))
+            if os.path.exists(buildMergedJsonFileName(taskCfg, "output")):
+                os.remove(buildMergedJsonFileName(taskCfg, "output"))
+
+            lsout_cmd = "ls -1 " + taskCfg.outputDir
+            lsout_out = commands.getstatusoutput(lsout_cmd)
+
+            if lsout_out[0] != 0:
+                print lsout_out[1]
+            else:
+                lsoutLines = lsout_out[1].split('\n')
+                inputJsons = []
+                outputJsons = []
+                for line in lsoutLines:
+                    if ".json" in line:
+                        if "input_" in line:
+                            inputJsons.append(line)
+                        elif "output_" in line:
+                            outputJsons.append(line)
+                print "# of input JSONs: " + str(len(inputJsons))
+                #print inputJsons
+                mergeJsonFiles(taskCfg, inputJsons)
+                print "# of output JSONs: " + str(len(outputJsons))
+                #print outputJsons
+                mergeJsonFiles(taskCfg, outputJsons)
+        sys.exit(0)
+
+        
     # copy to the target directory the output files of all the tasks listed in the cfg file
     if options.copy:
         # read the target directory from command line
