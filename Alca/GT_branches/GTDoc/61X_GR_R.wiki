@@ -1,0 +1,1 @@
+| [[%LINKTOGTLIST%/?GlobalTag=GR_R_60_V7][GR_R_60_V7]] | %GREEN%61X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_60_V6 with the following updates:<br> - another bug fix for ECAL laser APD/PN tag. |
