@@ -33,7 +33,7 @@ def modifyCfgs(wf, GT, local):
                         # Replace the globalTag name
                         notHltStepGreaterThan1 = (not GT.startswith("GR_H")) or (GT.startswith("GR_H") and file.find("HLT") != -1)
                         if notHltStepGreaterThan1:
-                            if line.find("process.GlobalTag.globaltag") != -1:
+                            if line.find("process.GlobalTag = GlobalTag(process.GlobalTag,") != -1 or line.find("process.GlobalTag.globaltag") != -1:
                                 line = "process.GlobalTag.globaltag = '"+GT+"::All'\n"
                                 if local:
                                     userName = getpass.getuser()
@@ -89,7 +89,7 @@ def getWfList(GT):
     """
     if GT.startswith("STARTHI"):
         return [40, 41, 42]
-    elif GT.startswith("DESIGN") or GT.startswith("MC") or GT.startswith("START"):
+    elif GT.startswith("DESIGN") or GT.startswith("MC") or GT.startswith("START") or GT.startswith("POST"):
         return [29, 35]
     elif GT.startswith("GR_H"):
         return [4.291]
