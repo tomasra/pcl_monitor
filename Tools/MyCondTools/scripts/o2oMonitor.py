@@ -71,8 +71,10 @@ def runBackEnd():
         print error
         return 102, "Error: Tier0-DAS query has failed: " + str(error)
 
-
-    gtName = gtFromPrompt.split('::')[0]
+    print len(gtFromPrompt) 
+    if(len(gtFromPrompt) == 0):
+        return 202, "No " + referenceDataset + " datset for run: " + str(nextPromptRecoRun) + " -> failed to get the GT name"
+    gtName = gtFromPrompt[0].split('::')[0]
     gtConfFile = gtName + '.conf'
 
     
