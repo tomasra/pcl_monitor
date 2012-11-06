@@ -8,6 +8,7 @@ import pluginCondDBPyInterface as condDB
 
 # FIXME: this should go to cfg
 dbName =  "oracle://cms_orcon_adg/CMS_COND_31X_RUN_INFO"
+#dbName =  "frontier://PromptProd/CMS_COND_31X_RUN_INFO"
 logName = "oracle://cms_orcon_adg/CMS_COND_31X_POPCONLOG"
 
 fwkInc = condDB.FWIncantation()
@@ -25,9 +26,8 @@ db = rdbms.getDB(dbName)
 """
 Module providing tools to query the RunInfo tags in the condition DB
 
-$Date: 2012/06/11 17:31:28 $
-$Revision: 1.6 $
-Author: G.Cerminara
+$Date: 2012/09/20 14:33:33 $
+$Revision: 1.7 $
 
 """
 
@@ -106,6 +106,8 @@ def getRunInfoStartAndStopTime(runinfoTag, runinfoaccount, run):
     """
     Builds a RunInfoContent for a given run. Input parameters are the RunInfo tag name, connection string and run #
     """
+
+
     try :
         db.startTransaction()
         log = db.lastLogEntry(runinfoTag)
@@ -128,3 +130,11 @@ def getRunInfoStartAndStopTime(runinfoTag, runinfoaccount, run):
             #print x[3]
             # run lenght
             return runInfo
+
+
+if __name__ == "__main__":
+    print getRunInfoStartAndStopTime("runinfo_31X_hlt", '', 206448)
+
+
+
+
