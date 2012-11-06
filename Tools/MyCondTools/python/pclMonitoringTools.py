@@ -180,15 +180,31 @@ def writeCacheAndLog(cachefilename, logfilename, runReports):
     logFile.close()
 
 
+def getFileTimeHash(filename):
+    hashTime = ''
+    if 'ALCAPROMPTHarvest' in filename:
+        # this is the ProdA file-name
+        hashTime = filename.split('-')[4]
+    else:
+        # this is the WMA file-name
+        hashTime = filename.split('@')[2]
+    return hashTime
+
+
+class OngoingRunExcept(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
+
 
 def getRunReport(runinfoTag, run, promptCalibDir, fileList, iovtableByRun_oracle, iovtableByLumi_oracle):
-    
-    print run
+
+    #print run
     # input: runInfoTag, run, fileList, iovlist
     runInfo = None
     try:
         runInfo = RunInfo.getRunInfoStartAndStopTime(runinfoTag, '', run)
-
     except Exception as error:
         print "*** Error can not find run: " + str(run) + " in RunInfo: " + str(error)
         raise Exception("Error can not find run: " + str(run) + " in RunInfo: " + str(error))
@@ -213,11 +229,12 @@ def getRunReport(runinfoTag, run, promptCalibDir, fileList, iovtableByRun_oracle
     rRep.setRunNumber(runInfo.run())
     rRep.setRunInfoContent(runInfo)
 
-    if(runInfo.stopTime() != 'null'):
-
+    if(type(runInfo.stopTime()) == datetime.datetime):
+        print runInfo.stopTime()
+        #raise OngoingRunExcept('Run ' + str(runInfo.run()) + " is still onging!")
         deltaTRun = runInfo.stopTime() - runInfo.startTime()
         deltaTRunH = deltaTRun.days*24. + deltaTRun.seconds/(60.*60.)
-        
+
         print "-- run #: " + colorTools.blue(runInfo.run())            
         print "   start: " + str(runInfo.startTime()) + " stop: " + str(runInfo.stopTime()) + " lenght (h): " + str(deltaTRunH)
     else:
@@ -235,10 +252,15 @@ def getRunReport(runinfoTag, run, promptCalibDir, fileList, iovtableByRun_oracle
     # --- look for the file on AFS
     fileName = ""
     fileForRun = []
+    hashTimes = []
     # find the files associated to this run:
     for dbFile in fileList:
-        if str(run) in dbFile:
-            fileForRun.append(dbFile)
+        if '.db' in dbFile:
+            if str(run) in dbFile:
+                hashTime = getFileTimeHash(dbFile)
+                if not hashTime in hashTimes:
+                    hashTimes.append(hashTime)
+                    fileForRun.append(dbFile)
 
     if len(fileForRun) == 0:
         print "   " + colorTools.warning("***Warning") + ": no sqlite file found!"
@@ -248,8 +270,11 @@ def getRunReport(runinfoTag, run, promptCalibDir, fileList, iovtableByRun_oracle
         print "   " + colorTools.warning("***Warning") + ": more than one file for this run!"
         for dbFile in fileForRun:
             modifDate = datetime.datetime.fromtimestamp(os.path.getmtime(promptCalibDir + dbFile))
-            print '       ',dbFile,'time-stamp:',modifDate
-
+            accessDate = datetime.datetime.fromtimestamp(os.path.getatime(promptCalibDir + dbFile))
+            changeDate = datetime.datetime.fromtimestamp(os.path.getctime(promptCalibDir + dbFile))
+            print '       ',dbFile,'time-stamp (modification):',modifDate
+            print '       ',dbFile,'time-stamp (access):',accessDate
+            print '       ',dbFile,'time-stamp (change):',changeDate
 
     for dbFile in fileForRun:
         isFileFound = True
