@@ -13,8 +13,8 @@ import CondCore.Utilities.iovInspector as iovInspector
 """
 Module providing tools to inspect IOV tags in the DB
 
-$Date: 2012/11/06 09:51:29 $
-$Revision: 1.8 $
+$Date: 2012/11/22 11:19:48 $
+$Revision: 1.1 $
 
 """
 
@@ -23,7 +23,7 @@ $Revision: 1.8 $
 
 def getSummaries(tagName, dbName, since, till, logName = 'oracle://cms_orcon_adg/CMS_COND_31X_POPCONLOG', passwdFile = '/afs/cern.ch/cms/DB/conddb/ADG'):
     """
-    Builds a RunInfoContent for a given run. Input parameters are the RunInfo tag name, connection string and run #
+    Get the summaries for a given IOV range using the py-wrappers
     """
 
 
