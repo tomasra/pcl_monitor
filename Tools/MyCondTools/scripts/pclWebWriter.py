@@ -52,6 +52,9 @@ class WebPageWriter:
         if self._statusCode == 0:
             self._statusImg = "../common/imgs/ok.png"
             self._statusMsg = '<b>OK: </b> ' + self._statusMsg
+        elif self._statusCode <= 10:
+            self._statusImg = "../common/imgs/warning.png"
+            self._statusMsg = '<b>WARNING: </b> ' + self._statusMsg
         else:
             self._statusImg = "../common/imgs/error.png"
             self._statusMsg = '<b>ERROR: </b> ' + self._statusMsg
