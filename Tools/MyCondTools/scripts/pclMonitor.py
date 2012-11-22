@@ -37,11 +37,10 @@ cfgfile.read([ CONFIGFILE ])
 runinfoTag                  = cfgfile.get('Common','runinfoTag')
 tier0DasSrc                 = cfgfile.get('Common','tier0DasSrc')
 passwdfile                  = cfgfile.get('Common','passwdfile')
-# FIXME: use consistently with or without ADG in al applications
-passwd                 = "/afs/cern.ch/cms/DB/conddb/ADG"
 
 
 
+taskName                    = cfgfile.get('PCLMonitor','taskName')
 promptCalibDir              = cfgfile.get('PCLMonitor','promptCalibDir')
 weburl                      = cfgfile.get('PCLMonitor','weburl')
 webArea                     = cfgfile.get('PCLMonitor','webArea')
@@ -53,7 +52,7 @@ tagLumiOracle               = cfgfile.get('PCLMonitor','tagBSLumiOracle')
 cacheFileName               = cfgfile.get('PCLMonitor','cacheFileName')
 rrDatasetName               = cfgfile.get('PCLMonitor','rrDatasetName')
 rrRunClassName              = cfgfile.get('PCLMonitor','rrRunClassName')
-
+firstRunToMonitor           = int(cfgfile.get('PCLMonitor','firstRunToMonitor'))
 
 
 
@@ -106,7 +105,7 @@ def runBackEnd():
     if len(cachedRuns) != 0:
         cachedRuns.sort()
     else:
-        cachedRuns.append(1)
+        cachedRuns.append(firstRunToMonitor)
 
     retValues = 0, 'OK'
 
@@ -128,7 +127,10 @@ def runBackEnd():
         cachedRuns.remove(rep.runNumber())
         runReports.remove(rep)
 
-    lastCachedRun = cachedRuns[len(cachedRuns)-1]
+        
+    lastCachedRun = firstRunToMonitor
+    if(len(cachedRuns) != 0):
+        lastCachedRun = cachedRuns[len(cachedRuns)-1]
     runsToBeRefreshed.sort(reverse=True)
     print "last cached run #: " + str(lastCachedRun)
     print "runs to be refreshed: " + str(runsToBeRefreshed)
@@ -172,14 +174,14 @@ def runBackEnd():
     # list the IOVs in oracle
     # FIXME: get the tag name directly from the GT through the Tier0-DAS interface for the prompt_cfg
     # runbased tag
-    listiov_run_oracle = listIov(connectOracle, tagRunOracle, passwd)
+    listiov_run_oracle = listIov(connectOracle, tagRunOracle, passwdfile)
     if listiov_run_oracle[0] == 0:
         iovtableByRun_oracle = IOVTable()
         iovtableByRun_oracle.setFromListIOV(listiov_run_oracle[1])
         #iovtableByRun_oracle.printList()
 
     # iovbased tag
-    listiov_lumi_oracle = listIov(connectOracle, tagLumiOracle, passwd)
+    listiov_lumi_oracle = listIov(connectOracle, tagLumiOracle, passwdfile)
     if listiov_lumi_oracle[0] == 0:
         iovtableByLumi_oracle = IOVTable()
         iovtableByLumi_oracle.setFromListIOV(listiov_lumi_oracle[1])
@@ -203,6 +205,8 @@ def runBackEnd():
         try:
             rRep = pclMonitoringTools.getRunReport(runinfoTag, run, promptCalibDir, fileList,
                                                    iovtableByRun_oracle, iovtableByLumi_oracle)
+        except pclMonitoringTools.OngoingRunExcept as error:
+            print error
         except Exception as error:
             unknownRun = True
             unknownRunMsg = "Error: can not get report for run: " + str(run) + ", reason: " + str(error)
@@ -257,7 +261,7 @@ if __name__ == "__main__":
     # 6. come fai a catchare problemi nel frontend?
 
     # start here
-    status = monitorStatus.MonitorStatus("PCLMonitor")
+    status = monitorStatus.MonitorStatus(taskName)
     status.setWebUrl(weburl)
     statAndMsg = None
     #try:
