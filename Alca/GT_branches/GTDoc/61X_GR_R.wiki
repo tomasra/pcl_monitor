@@ -1,5 +1,4 @@
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_61_V5][GR_R_61_V5]] | %GREEN%61X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_61_V4 with the following updates:<br> - Castor saturation added. |
-| [[%LINKTOGTLIST%/?GlobalTag=GR_R_61_V4A][GR_R_61_V4A]] | %GREEN%61X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_61_V4 with the following updates:<br> - omment. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_61_V4][GR_R_61_V4]] | %GREEN%61X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_61_V3 with the following updates:<br> - updated preshower clustering. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_61_V3][GR_R_61_V3]] | %GREEN%61X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_61_V2 with the following updates:<br> - extended ECAL laser tag (also fixing problem in 2012C data). |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_61_V2][GR_R_61_V2]] | %GREEN%61X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_61_V1 with the following updates:<br> - Updated HCAL corrections to cope with radiation damage in HF. <br> - Updated ECAL cluster local containment corrections. |
