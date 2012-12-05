@@ -1,3 +1,4 @@
+| [[%LINKTOGTLIST%/?GlobalTag=GR_E_V32][GR_E_V32]] | %GREEN%53X%ENDCOLOR% | To be used for express processing of 2012 data. | As !GR_E_V31 with the following updates:<br> - omment. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_E_V31][GR_E_V31]] | %GREEN%>=533%ENDCOLOR% | To be used for express processing of 2012 data. | As !GR_E_V30 with the following updates:<br> - possibility to mask ECAL samples added. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_E_V30][GR_E_V30]] | %GREEN%53X,<533%ENDCOLOR% | To be used for express processing of 2012 data. | As !GR_E_V28 with the following updates:<br> - Decoupling pixel templates from HLT<br> - Fix for ECAL LocalContCorrParameters. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_E_V29][GR_E_V29]] | %GREEN%52X%ENDCOLOR% | To be used for express processing of 2012 data. | As !GR_E_V27 with the following updates:<br> - Decoupling pixel templates from HLT. |
