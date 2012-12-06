@@ -1,3 +1,4 @@
+| [[%LINKTOGTLIST%/?GlobalTag=GR_R_61_V6][GR_R_61_V6]] | %GREEN%61X%ENDCOLOR% %RED%(Not for prod.[[[#NOTENotProd][1]]])%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_61_V5 with the following updates:<br> - first version of HB alignment<br> - first version of HF alignment<br> - first version of HO alignment<br> - first version of HE alignment<br> - Updated ECAL cluster corrections. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_61_V5][GR_R_61_V5]] | %GREEN%61X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_61_V4 with the following updates:<br> - Castor saturation added. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_61_V4][GR_R_61_V4]] | %GREEN%61X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_61_V3 with the following updates:<br> - updated preshower clustering. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_61_V3A][GR_R_61_V3A]] | %GREEN%61X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_61_V3 with the following updates:<br> - Castor saturation added. |
