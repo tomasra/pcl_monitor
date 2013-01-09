@@ -42,6 +42,7 @@ referenceDataset            = cfgfile.get('Common','referenceDataset')
 gtconnstring                = cfgfile.get('Common','gtconnstring')
 runinfoTag                  = cfgfile.get('Common','runinfoTag')
 
+taskName                    = cfgfile.get('O2OMonitor','taskName')
 monitoredrecords            = cfgfile.get('O2OMonitor','monitoredrecords')
 weburl                      = cfgfile.get('O2OMonitor','weburl')
 webArea                     = cfgfile.get('O2OMonitor','webArea')
@@ -366,7 +367,7 @@ def runBackEnd():
 if __name__     ==  "__main__":
 
     # start here
-    status = monitorStatus.MonitorStatus("O2OMonitor")
+    status = monitorStatus.MonitorStatus(taskName)
     status.setWebUrl(weburl)
     statAndMsg = None
     #try:
