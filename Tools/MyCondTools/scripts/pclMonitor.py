@@ -174,16 +174,16 @@ def runBackEnd():
     # list the IOVs in oracle
     # FIXME: get the tag name directly from the GT through the Tier0-DAS interface for the prompt_cfg
     # runbased tag
+    iovtableByRun_oracle = IOVTable()
     listiov_run_oracle = listIov(connectOracle, tagRunOracle, passwdfile)
     if listiov_run_oracle[0] == 0:
-        iovtableByRun_oracle = IOVTable()
         iovtableByRun_oracle.setFromListIOV(listiov_run_oracle[1])
         #iovtableByRun_oracle.printList()
 
     # iovbased tag
+    iovtableByLumi_oracle = IOVTable()
     listiov_lumi_oracle = listIov(connectOracle, tagLumiOracle, passwdfile)
     if listiov_lumi_oracle[0] == 0:
-        iovtableByLumi_oracle = IOVTable()
         iovtableByLumi_oracle.setFromListIOV(listiov_lumi_oracle[1])
 
     # --------------------------------------------------------------------------------
