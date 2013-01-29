@@ -53,11 +53,16 @@ if __name__ == "__main__":
         print "--------------------------------------------"
         print "--------------------------------------------"
         print "==== Group: " + group
+
+        # read the configration for this "group"
         epoch = configfile.get(group, 'epoch')
         version = configfile.get(group, 'version')
         rawversion = configfile.get(group, 'rawversion')
+
+        # look for ALCARECO dataserts matching this "group" in DBS
         jsonDatasetList = alcaRecoMonitoringTools.AlcaRecoDatasetJson(group)
         datasets = alcaRecoMonitoringTools.getDatasets("*",epoch, version, "ALCARECO")
+        # for all datasets look for the parent
         for dataset in datasets:
             pd = dataset.split("/")[1]
             parenttier = "RECO"
@@ -76,6 +81,8 @@ if __name__ == "__main__":
                 pd = 'HIExpressPhysics'
                 parenttier = "FEVT"
             parent = alcaRecoMonitoringTools.getDatasets(pd,epoch, version, parenttier)
+            # filter out RECO datasets which are not the right ones
+            parent = filter(alcaRecoMonitoringTools.PDFilterOutPromptSkim, parent)
             if len(parent) == 0 or parent[0] == '':
                 parent = alcaRecoMonitoringTools.getDatasets(pd,epoch, rawversion,"RAW")
             print "--------------------------------------------"
