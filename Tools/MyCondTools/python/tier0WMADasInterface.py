@@ -1,14 +1,14 @@
 import json
 import sys, urllib2
 import time
-
+import ast
 #from xml.dom import minidom
 
 """
 Module providing an interface to common queries to Tier0-DAS
 
-$Date: 2012/09/20 14:36:14 $
-$Revision: 1.4 $
+$Date: 2013/01/22 13:50:33 $
+$Revision: 1.1 $
 Author: G.Cerminara
 
 """
@@ -25,7 +25,7 @@ class Tier0DasInterface:
         """
         #self._t0DasBaseUrl = "http://gowdy-wttest.cern.ch:8304/tier0/"
         self._t0DasBaseUrl = url
-        self._debug = True
+        self._debug = False
         self._retry = 0
         self._maxretry = 5
         
@@ -88,6 +88,17 @@ class Tier0DasInterface:
                 print "data:",data
             return data
 
+    def getResultList(self, json):
+        """
+        Extractt the result list out of the JSON file
+        """
+        resultList = []
+        #FIXME try
+        resultList = json['result']
+        
+        #print self.getValues(json, 'result')
+        return resultList
+
     def getValues(self, json, key, selection = ''):
         """
         Extract the value corrisponding to a given key from a JSON file. It is also possible to apply further selections.
@@ -122,23 +133,21 @@ class Tier0DasInterface:
         """
         Query to get the last run released for prompt
         """
-        url = self._t0DasBaseUrl + "run"
+        url = self._t0DasBaseUrl + "reco_config"
         try:
             json = self.getData(url)
-            print json
-            values = self.getValues(json, 'run', ('reco_started', 1))
-            if len(values) != 0:
-                return max(values)+1
-            else:
-                print "[Tier0DasInterface::lastPromptRun] returned no run for with prompt reco was released:"
-                print json
-                return -1
+            results = self.getResultList(json)
+            workflowlist = ast.literal_eval(results[0])
+            maxRun = -1
+            for workflow in workflowlist:
+                run = workflow['run']
+                if int(run) > maxRun:
+                    maxRun = run
+            return maxRun
         except:
             print "[Tier0DasInterface::lastPromptRun] error"
             raise
             return 0
-
-
 
 
     def firstConditionSafeRun(self):
@@ -148,54 +157,68 @@ class Tier0DasInterface:
         url = self._t0DasBaseUrl + "firstconditionsaferun"
         try:
             json = self.getData(url)
-            values = self.getValues(json, 'run_id')
-            if len(values) != 0 and values[0] != None:
-                return max(values)
-            else:
-                print "[Tier0DasInterface::firstconditionSafeRun] returned no run for safe condition upload"
-                print json
-                return -1
-        except Exception:
-            print "[Tier0DasInterface::firstConditionSafeRun] error"
+            results = self.getResultList(json)
+            return results[0]
+        except Exception as details:
+            print "[Tier0DasInterface::firstConditionSafeRun] error", details
             raise
-            return 0
+        return 0
 
-    def promptGlobalTag(self, run, dataset):
+    def promptGlobalTag(self, dataset):
         """
-        Query the GT currently used by prompt.
+        Query the GT currently used by prompt = GT used by the last run released for prompt.
         """
-        url = self._t0DasBaseUrl + "reco_config?run=" + str(run) + "&dataset=" + dataset
-        print "url =", url
+        url = self._t0DasBaseUrl + "reco_config"
+        #print "url =", url
         try:
             json = self.getData(url)
-            values = self.getValues(json, 'global_tag')
-            return values
-        except Exception:
+            results = self.getResultList(json)
+            workflowlist = ast.literal_eval(results[0])
+            gt = "UNKNOWN"
+            for workflow in workflowlist:
+                if workflow['primary_dataset'] == dataset:
+                    gt = workflow['global_tag']
+            # FIXME: do we realluy need to raise?
+            if gt == "UNKNOWN":
+                raise KeyError
+            return gt
+        except:
             print "[Tier0DasInterface::promptGlobalTag] error"
             raise
             return None
 
 
+    
+
+
 if __name__ == "__main__":
+
+
+
 
     
     test = Tier0DasInterface()
-    try:
-        print "Tier0 DAS last run released for PROMPT:       ", test.lastPromptRun()
-    except Exception as error:
-        print 'Error 1'
-        print error
 
-#     try:
-#         run = test.firstConditionSafeRun()
-#         print "Tier0 DAS first run safe for condition update:", run
-#     except Exception as error:
-#         print 'Error 2'
-#         print error
+    if True:
+        try:
+            print "Tier0 DAS last run released for PROMPT:       ", test.lastPromptRun()
+        except Exception as error:
+            print 'Error 1'
+            print error
 
-#     try:
-#         dataset = 'MinimumBias'
-#         print "Tier0 DAS GT for run: " + str(run) + " dataset: " + dataset + " :", test.promptGlobalTag(run, dataset)
-#     except Exception as error:
-#         print 'Error 3'
-#         print error
+
+    if True:
+        try:
+            run = test.firstConditionSafeRun()
+            print "Tier0 DAS first run safe for condition update:", run
+        except Exception as error:
+            print 'Error 2'
+            print error
+
+    if True:
+        try:
+            dataset = 'MinimumBias'
+            print "Tier0 DAS GT for dataset: " + dataset + " :", test.promptGlobalTag(dataset)
+        except Exception as error:
+            print 'Error 3'
+            print error
