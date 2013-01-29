@@ -107,18 +107,21 @@ if __name__ == "__main__":
         if refreshCache:
 
             rrSet = ""
+            # FIXME: this needs to be more general
             if "2010" in  dataset.name():
                 rrSet = "Collisions10"
             elif "2011" in dataset.name():
                 rrSet = "Collisions11"
             elif "2012" in dataset.name():
                 rrSet = "Collisions12"
+            elif "2013" in dataset.name():
+                rrSet = "Collisions13"
 
             # cache the list from RR
             #if rrSet != cachedlisttype:
             cachedlisttype = rrSet
             #cachedlist = getRunList(1, rrSet)
-            cachedlist = RunRegistryTools.getRunListRR3(lastCached, "Online", "Collisions12")
+            cachedlist = RunRegistryTools.getRunListRR3(lastCached, "Online", cachedlisttype)
             cachedlist.sort()
             print cachedlist
             runList = cachedlist            
