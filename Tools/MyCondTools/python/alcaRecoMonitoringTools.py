@@ -7,13 +7,21 @@ from ROOT import *
 """
 Module providing utils for the monitoring of AlcaReco production
 
-$Date: 2012/06/11 17:52:59 $
-$Revision: 1.4 $
+$Date: 2013/01/29 10:49:06 $
+$Revision: 1.5 $
 Author: G.Cerminara
 
 """
 
-
+def PDNameFilter(pdName,match):
+    if match in pdName:
+        return True
+    return False
+    
+def PDFilterOutPromptSkim(pdName):
+    if not PDNameFilter(pdName, "PromptSkim"):
+        return True
+    return False
 
 
 class AlcaRecoDetails:
@@ -496,7 +504,7 @@ def getDatasets(pd, epoch, version, tier):
             theversion = components[len(components)-1]
             # FIXME: dont' remember why it was like this
             # theversion = components[len(components)-2] + "-" +  components[len(components)-1]
-            print theversion
+            #print theversion
             if theversion == version:
                 listforret.append(dataset)
     return listforret
