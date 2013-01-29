@@ -15,7 +15,7 @@ import shutil
 
 
 import Tools.MyCondTools.monitorStatus as monitorStatus
-import Tools.MyCondTools.tier0DasInterface as tier0DasInterface
+import Tools.MyCondTools.tier0WMADasInterface as tier0DasInterface
 import Tools.MyCondTools.gt_tools as gtTools
 import Tools.MyCondTools.o2oMonitoringTools as o2oMonitoringTools
 import Tools.MyCondTools.RunRegistryTools as RunRegistryTools
@@ -65,17 +65,17 @@ def runBackEnd():
     try:
         nextPromptRecoRun = tier0Das.firstConditionSafeRun()
         print "Tier0 DAS next run for prompt reco:",nextPromptRecoRun
-        gtFromPrompt = tier0Das.promptGlobalTag(nextPromptRecoRun, referenceDataset)
+        gtFromPrompt = tier0Das.promptGlobalTag(referenceDataset)
         print "      GT for dataset: ", referenceDataset, "run:", str(nextPromptRecoRun), ":", gtFromPrompt
     except Exception as error:
-        print '*** Error 2: Tier0-DAS query has failed'
+        print '*** Error: Tier0-DAS query has failed'
         print error
         return 102, "Error: Tier0-DAS query has failed: " + str(error)
 
     print len(gtFromPrompt) 
     if(len(gtFromPrompt) == 0):
         return 202, "No " + referenceDataset + " datset for run: " + str(nextPromptRecoRun) + " -> failed to get the GT name"
-    gtName = gtFromPrompt[0].split('::')[0]
+    gtName = gtFromPrompt.split('::')[0]
     gtConfFile = gtName + '.conf'
 
     
@@ -176,7 +176,7 @@ def runBackEnd():
             key = rcdEntry.split(':')[0]
             logFileForKey = rcdEntry.split(':')[1]
             o2oLogfiles[key] = logFileForKey
-        jobData = popLog.PopConJobRunTime(authfile=passwdfile + "/ADG/authentication.xml",
+        jobData = popLog.PopConJobRunTime(authfile=passwdfile + "/authentication.xml",
                                           logFile=o2oLogfiles[recordName])
 
         if len(jobData) != 0:
@@ -203,7 +203,7 @@ def runBackEnd():
 
         # 1. get the last updates from PopConLogger
         # FIXME: the auth.xml can it be read from a central place?
-        logData = popLog.PopConRecentActivityRecorded(authfile=passwdfile + "/ADG/authentication.xml",
+        logData = popLog.PopConRecentActivityRecorded(authfile=passwdfile + "/authentication.xml",
                                                       account=accountName,
                                                       iovtag=tagName)
 
@@ -244,8 +244,7 @@ def runBackEnd():
 
             
         # 2. check the status of the tag
-        # FIXME: patch to use ADG accounts
-        outputAndStatus = gtTools.listIov(entry.getOraclePfn(False), tagName, passwdfile + "/ADG")
+        outputAndStatus = gtTools.listIov(entry.getOraclePfn(False), tagName, passwdfile)
         iovtable = gtTools.IOVTable()
         iovtable.setFromListIOV(outputAndStatus[1])
         datesince = iovtable.lastIOV().sinceDate()
