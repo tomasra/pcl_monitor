@@ -112,7 +112,7 @@ class WebPageWriter:
 
 
 import Tools.MyCondTools.pclMonitoringTools as pclMonitoringTools
-import Tools.MyCondTools.tier0DasInterface as tier0DasInterface
+import Tools.MyCondTools.tier0WMADasInterface as tier0DasInterface
 import Tools.MyCondTools.monitorStatus as monitorStatus
 import Tools.MyCondTools.RunInfo as RunInfo
 
@@ -395,7 +395,7 @@ if __name__ == "__main__":
     tier0Das = tier0DasInterface.Tier0DasInterface(tier0DasSrc) 
     lastPromptRecoRun = 1
     try:
-        lastPromptRecoRun = tier0Das.lastPromptRun()
+        lastPromptRecoRun = tier0Das.firstConditionSafeRun()
         print "Tier0 DAS last run released for PROMPT:       ", lastPromptRecoRun
         #print "Tier0 DAS first run safe for condition update:", tier0Das.firstConditionSafeRun()
     except Exception as error:
