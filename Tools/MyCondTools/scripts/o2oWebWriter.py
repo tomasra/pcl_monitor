@@ -12,15 +12,15 @@
 # which implements the real montoring. The output of this script are static html pages
 # and a "status" JSON file used by the mail notification and eventually by the NAGIOS plugin.
 #
-# $Date: $
-# $Revision: $
+# $Date: 2012/05/31 10:43:32 $
+# $Revision: 1.3 $
 # Author: G.Cerminara
 #
 ############################################################################################
 
 
 import Tools.MyCondTools.o2oMonitoringTools as o2oMonitoringTools
-import Tools.MyCondTools.tier0DasInterface as tier0DasInterface
+import Tools.MyCondTools.tier0WMADasInterface as tier0DasInterface
 import Tools.MyCondTools.monitorStatus as monitorStatus
 import Tools.MyCondTools.RunInfo as RunInfo
 
@@ -308,7 +308,7 @@ if __name__ == "__main__":
     tier0Das = tier0DasInterface.Tier0DasInterface(tier0DasSrc) 
     try:
         nextPromptRecoRun = tier0Das.firstConditionSafeRun()
-        nextPromptRecoRun = tier0Das.lastPromptRun()
+        lastPromptRecoRun = tier0Das.lastPromptRun()
 
         print "Tier0 DAS next run for prompt reco:",nextPromptRecoRun
         #gtFromPrompt = tier0Das.promptGlobalTag(nextPromptRecoRun, referenceDataset)
@@ -320,7 +320,7 @@ if __name__ == "__main__":
         sys.exit(102)
     
     pageWriter = WebPageWriter()
-    pageWriter.setLastPromptReco(int(nextPromptRecoRun))
+    pageWriter.setLastPromptReco(int(lastPromptRecoRun))
 
     rcdReports = []
     
@@ -333,13 +333,16 @@ if __name__ == "__main__":
 
     runReports.sort(key=lambda rr: rr._runnumber)
 
+    nextFound = False
     for rRep in runReports:
         print rRep
         deltaTRun = rRep.stopTime() - rRep.startTime()
         deltaTRunH = deltaTRun.seconds/(60.*60.)
         # FIXME
-        pageWriter.setNextPromptReco(rRep.runNumber(), rRep.startTime(), rRep.stopTime(), deltaTRunH)
-
+        if rRep.runNumber() > lastPromptRecoRun and not nextFound:
+            pageWriter.setNextPromptReco(rRep.runNumber(), rRep.startTime(), rRep.stopTime(), deltaTRunH)
+            nextFound = True
+            
     producePlots(rcdReports, runReports, nextPromptRecoRun)
 
     status = monitorStatus.MonitorStatus('read')
