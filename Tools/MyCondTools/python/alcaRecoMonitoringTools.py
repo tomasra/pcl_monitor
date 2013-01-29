@@ -7,8 +7,8 @@ from ROOT import *
 """
 Module providing utils for the monitoring of AlcaReco production
 
-$Date: 2012/05/31 10:43:32 $
-$Revision: 1.3 $
+$Date: 2012/06/11 17:52:59 $
+$Revision: 1.4 $
 Author: G.Cerminara
 
 """
@@ -26,7 +26,9 @@ class AlcaRecoDetails:
         self._epoch = epoch
         self._version = version
         self._pd = pd
-        self._shortname = dataset.split('/')[2].split('-')[1]
+        # FIXME: divide in Short and long name
+        self._shortname = dataset.split('/')[2].split('-'+ self._version)[0].split( self._epoch + '-')[1]
+        print self._shortname
 
     def dataset(self):
         return self._datasetname
@@ -63,6 +65,7 @@ class WebPageIndex:
             if ".html" in fname and fname != 'index.html' and not '~' in fname:
                 self._filenames.append(fname)
                 namesplit = fname.split('.')[0].split('-')
+                print namesplit
                 self._epochs.append(namesplit[0])
                 if len(namesplit) == 3:
                     self._versions.append(namesplit[1] + "-" + namesplit[2])
@@ -135,6 +138,9 @@ class WebPageWriter:
         htmlpage.write('<center><h1>' + self._title + '</h1></center>\n<hr>\n')
         htmlpage.write('<center>[<a href=./index.html>index</a>]</center><br>\n')
         htmlpage.write('<p>\n')
+
+        self._pds.sort()
+        
         for pd in self._pds:
             htmlpage.write('<b>' + pd + '</b>:\n')
             listofalcarecos = self._datasets[pd]
@@ -471,7 +477,7 @@ def getDatasets(pd, epoch, version, tier):
     """
     Query DBS to find all the datasets for a given PD/Epoch/version/datatier set
     """
-    dbs_cmd = 'dbs search --noheader --query="find dataset where dataset=/' + pd + '/' + epoch + '*' + version + '/' + tier +'"'
+    dbs_cmd = 'dbs search --noheader --query="find dataset where dataset=/' + pd + '/' + epoch + '-*' + version + '/' + tier +'"'
     print dbs_cmd
     dbs_out = commands.getstatusoutput(dbs_cmd)
     listofgroups = dbs_out[1].split("\n")
@@ -479,14 +485,18 @@ def getDatasets(pd, epoch, version, tier):
     for dataset in listofgroups:
         if dataset == "":
             continue
-        #print dataset
+        print dataset
         versionpart = dataset.split("/")[2]
         components = versionpart.split("-")
         if len(components) <= 3:
             listforret.append(dataset)
         else:
             theepoch = components[0]
-            theversion = components[len(components)-2] + "-" +  components[len(components)-1]
+            # new version for WMA dataser names
+            theversion = components[len(components)-1]
+            # FIXME: dont' remember why it was like this
+            # theversion = components[len(components)-2] + "-" +  components[len(components)-1]
+            print theversion
             if theversion == version:
                 listforret.append(dataset)
     return listforret
