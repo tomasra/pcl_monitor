@@ -96,13 +96,19 @@ def getWfList(GT):
     elif GT.startswith("GR_E"):
         # return [1001]
         # return [4.17] # RunMinBias2011A
-        # return [4.29] # RunMinBias2011A
+        # return [4.29] # RunMinBias2011B
         # return [4.40] # RunMinBias2012A
         return [4.51] # RunMinBias2012B
     elif GT.startswith("GR_P"):
-        return [1000, 4.17]
+        # return [1000, 4.17] # RunMinBias2011A
+        # return [1000, 4.29] # RunMinBias2011B
+        # return [1000, 4.40] # RunMinBias2012A
+        return [1000, 4.51] # RunMinBias2012B
     elif GT.startswith("GR") or GT.startswith("FT"):
-        return [4.17]
+        # return [4.17] # RunMinBias2011A
+        # return [4.29] # RunMinBias2011B
+        # return [4.40] # RunMinBias2012A
+        return [4.51] # RunMinBias2012B
     else:
         print "Error: unknonwn GT type for ", GT
     return []
