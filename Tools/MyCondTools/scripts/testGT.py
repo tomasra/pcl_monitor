@@ -95,7 +95,10 @@ def getWfList(GT):
         return [4.291]
     elif GT.startswith("GR_E"):
         # return [1001]
-        return [4.17]
+        # return [4.17] # RunMinBias2011A
+        # return [4.29] # RunMinBias2011A
+        # return [4.40] # RunMinBias2012A
+        return [4.51] # RunMinBias2012B
     elif GT.startswith("GR_P"):
         return [1000, 4.17]
     elif GT.startswith("GR") or GT.startswith("FT"):
