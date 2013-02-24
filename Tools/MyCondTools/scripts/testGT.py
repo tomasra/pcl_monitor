@@ -29,7 +29,8 @@ def modifyCfgs(wf, GT, local):
                         if localConnect:
                             line = "\n"
                         if GT.startswith("FT") and line.find("process.GlobalTag.pfnPrefix") != -1 and line.find("frontier://FrontierProd/") != -1:
-                            line = line.replace("FrontierProd", "FrontierArc")
+                            # line = line.replace("FrontierProd", "FrontierArc")
+                            line = "\n"
                         # Replace the globalTag name
                         notHltStepGreaterThan1 = (not GT.startswith("GR_H")) or (GT.startswith("GR_H") and file.find("HLT") != -1)
                         if notHltStepGreaterThan1:
