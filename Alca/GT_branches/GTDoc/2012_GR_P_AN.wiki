@@ -1,3 +1,7 @@
+| [[%LINKTOGTLIST%/?GlobalTag=GR_P_V42_AN4][GR_P_V42_AN4]] | %GREEN%>=533X%ENDCOLOR% | To be used for data reprocessing. | As !GR_P_V42_ANTEMP with the following updates:<br> - New btag and mistag Data/MC scale factors. |
+| [[%LINKTOGTLIST%/?GlobalTag=GR_P_V41_AN4][GR_P_V41_AN4]] | %GREEN%>=533X%ENDCOLOR% | To be used for data reprocessing. | As !GR_P_V41_ANTEMP with the following updates:<br> - New btag and mistag Data/MC scale factors. |
+| [[%LINKTOGTLIST%/?GlobalTag=GR_P_V40_AN4][GR_P_V40_AN4]] | %GREEN%>=533X%ENDCOLOR% | To be used for data reprocessing. | As !GR_P_V40_ANTEMP with the following updates:<br> - New btag and mistag Data/MC scale factors. |
+| [[%LINKTOGTLIST%/?GlobalTag=GR_P_V39_AN4][GR_P_V39_AN4]] | %GREEN%>=533X%ENDCOLOR% | To be used for data reprocessing. | As !GR_P_V39_ANTEMP with the following updates:<br> - New btag and mistag Data/MC scale factors. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_P_V42_AN3][GR_P_V42_AN3]] | %GREEN%>=533X%ENDCOLOR% | To be used for analysis of 2012D prompt reco data. | As !GR_P_V42_AN2 with the following updates:<br> - updated JECs (Fall 2012). |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_P_V41_AN3][GR_P_V41_AN3]] | %GREEN%>=533X%ENDCOLOR% | To be used for analysis of 2012C v2 prompt reco data. | As !GR_P_V41_AN2 with the following updates:<br> - updated JECs (Fall 2012). |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_P_V40_AN3][GR_P_V40_AN3]] | %GREEN%53X, <533%ENDCOLOR% | To be used for analysis of 2012C v1 prompt reco data. | As !GR_P_V40_AN2 with the following updates:<br> - updated JECs (Fall 2012). |
