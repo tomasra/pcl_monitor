@@ -1,9 +1,12 @@
 import datetime
 import os
+import json
+import ast
 import Tools.MyCondTools.RunInfo as RunInfo
 import Tools.MyCondTools.tableWriter as tableWriter
 import Tools.MyCondTools.color_tools as colorTools
 import Tools.MyCondTools.gt_tools as gtTools
+import Tools.MyCondTools.monitoring_config as config
 
 
 # fixme find a method to configure which records/tafs need to be monitored
@@ -11,32 +14,162 @@ tagLumi                = "BeamSpotObject_ByLumi"
 tagRun                 = "BeamSpotObject_ByRun"
 
 
+class PCLDBFile:
+    """
+    Class representing an sqlite file created by Tier0 PCL machinery.
+    """
+    def __init__ (self, filename, isPA = False):
+        self._filename = filename
+        # creation time = modification = access = change time on AFS
+        self._creationtime = datetime.datetime.fromtimestamp(os.path.getmtime(filename))
+        # time of upload in the DropBox
+        self._uploadtime = None
+        self._uploadFileName = None
+        self._dbMetaDataFileName = None
+        # for ProdAgent the creation and the uplaod are simulteneous
+        # while for WMA a .txt.uploaded file is created at upload time
+        # by the upload deamon
+        if isPA:
+            self._uploadtime = self._creationtime
+        else:
+            self._uploadFileName = filename.split('.db')[0] + ".txt.uploaded"
+            self._dbMetaDataFileName = filename.split('.db')[0] + ".txt"
+            if os.path.exists(self._uploadFileName):
+                self._uploadtime = datetime.datetime.fromtimestamp(os.path.getmtime(self._uploadFileName))
+        return
+
+
+    def fileName(self):
+        return self._filename
+        
+    def isUploaded(self):
+        """ Returns True if the file has been sent (or tried to send) to the DB Drop-Box """
+        # file is uploaded only if the upload time was set
+        if self._uploadtime != None:
+            return True
+        return False
+
+    
+    def creationTime(self):
+        return self._creationtime
+
+
+    def uploadTime(self):
+        return self._uploadtime
+
+
+    def metadataFileName(self):
+        return self._dbMetaDataFileName
+
+    def uploadFileName(self):
+        return self._uploadFileName
+
+
+
 class RunReport:
-    def __init__(self):
-        self._runnumber = -1
-        self._pclRun = True
-        self._hasPayload = True
-        self._hasUpload = True
-        self._isOutOfOrder = False
+    """ This class represents the statemachine of the PCL for each run """
+    def __init__(self, runNumber):
+        self._runnumber = runNumber
+
+        # run start and stop time
         self._startTime = None
         self._stopTime = None
+
+        # ---- list of states for each run
+        # - this is set to true if at least 1 sqlite is found
+        self._pclRun = False
+        # - this is set if there is more than 1 db file for this run
+        self._multipleFiles = False
+        # - this is set to true if the file actually contains a payload
+        self._hasPayload = False
+        # - this is set to true if the .txt.upload file is found in AFS
+        # note that the upload might have failed but at least it was attempted
+        self._hasUpload = False
+        # - this is set to true if the payloads are found in the target tag in ORACLE
+        self._uploadSucceeded = False
+        # - this is set to true if the UPLOAD of different runs happened OutOf ORder
+        self._isOutOfOrder = False
+
         #self._runInfo = None
-        self._latencyFromEnd = -1.
-        self._latencyFromBeginning = -1.
+
+        # latencies in hours
+        self._latencyUploadFromEnd = -1.
+        self._latencyUploadFromStart = -1.
+        self._latencyJobFromEnd = -1
         self._jobTime = datetime.datetime
+
+        self._fileList = []
+
         return
+
+    def hasPayload(self):
+        return self._hasPayload
+
+    def isUploadSucceeded(self):
+        return self._uploadSucceeded
+
+    def outOfOrder(self):
+        return self._isOutOfOrder
+    
+
+    def latencyUploadFromEnd(self):
+        return self._latencyUploadFromEnd
+
+    def latencyUploadFromStart(self):
+        return self._latencyUploadFromStart
+
+    def latencyJobFromEnd(self):
+        return self._latencyJobFromEnd
+
+    def uploadDone(self):
+        return self._hasUpload
+
+    def addFile(self, file):
+        """
+        Add a file for this run. while adding check also some of the possible states
+        """
+        # append the file
+        self._fileList.append(file)
+
+        if len(self._fileList) > 1:
+            self._multipleFiles = True
+
+        # swtich the PCLRun flag on
+        self._pclRun = True
+
+        if file.uploadTime() != None:
+            self._hasUpload = True
+
+        self._fileList.sort(key = lambda ff: ff._creationtime)
+        
+    def pclRun(self):
+        return self._pclRun
+
+    def isPclRunMultipleTimes(self):
+        return self._multipleFiles
+
+    def pclRunMultipleTimes(self, isMultiple):
+        self._multipleFiles = isMultiple
+
 
     def runNumber(self):
         return self._runnumber
 
     def startTime(self):
+        """ run start time (from run-info) """
         return self._startTime
 
     def stopTime(self):
+        """ run stop time (from run-info) """
         return self._stopTime
 
-    def setRunNumber(self, number):
-        self._runnumber = number
+    def stopTimeAge(self):
+        """ time passed from the stop of the run until NOW (in hours) """
+        ageStop = datetime.datetime.today() - self._stopTime
+        return ageStop.days*24. + ageStop.seconds/(60.*60.)
+
+#     def setRunNumber(self, number):
+#         self._runnumber = number
 
     def sqliteFound(self, isFound):
         self._pclRun = isFound
@@ -47,7 +180,10 @@ class RunReport:
     def isUploaded(self, isUploaded):
         self._hasUpload = isUploaded
 
-    def isOutoforder(self, isOutofOrder):
+    def uploadSucceeded(self, isOk):
+        self._uploadSucceeded = isOk
+
+    def isOutofOrder(self, isOutofOrder):
         self._isOutOfOrder = isOutofOrder
 
     def setRunInfoContent(self, runInfo):
@@ -63,26 +199,51 @@ class RunReport:
 
     # hours
     def runLenght(self):
+        """ Run lenght in hours """
         deltaTRun = self.stopTime() - self.startTime()
         return deltaTRun.days*24. + deltaTRun.seconds/(60.*60.)
 
-    def setLatencyFromEnd(self, timeFromEnd):
-        self._latencyFromEnd = timeFromEnd
+    def setLatencyUploadFromEnd(self, timeFromEnd):
+        self._latencyUploadFromEnd = timeFromEnd
 
-    def setLatencyFromBeginning(self, timeFromBeginning):
-        self._latencyFromBeginning = timeFromBeginning
+    def setLatencyUploadFromStart(self, timeFromBeginning):
+        self._latencyUploadFromStart = timeFromBeginning
         
+    def setLatencyJobFromEnd(self, timeFromEnd):
+        self._latencyJobFromEnd = timeFromEnd
 
     def __str__(self):
         return "--- run #: " + str(self._runnumber) + " start time: " + str(self.startTime())
 
     def getList(self):
-        theList = [str(self._runnumber), str(self.startTime()), str(self.stopTime()), self._pclRun,  self._hasPayload, self._hasUpload, self._isOutOfOrder, float(self._latencyFromBeginning), float(self._latencyFromEnd)]
+        theList = [str(self._runnumber),\
+                   str(self.startTime()),\
+                   str(self.stopTime()),\
+                   self._pclRun,\
+                   self._multipleFiles,\
+                   self._hasPayload,\
+                   self._hasUpload,\
+                   self._uploadSucceeded,\
+                   self._isOutOfOrder,\
+                   float(self._latencyJobFromEnd),\
+                   float(self._latencyUploadFromStart),\
+                   float(self._latencyUploadFromEnd)]
         return theList
 
     def setJobTime(self, time):
         self._jobTime = time
-
+        deltaTfromEnd = time - self.stopTime()
+        self._latencyJobFromEnd = deltaTfromEnd.days*24. + deltaTfromEnd.seconds/(60.*60.)
+    
+    def setUploadTime(self, time):
+        self._uploadTime = time
+        # compute latency from end of run
+        deltaTfromEnd = time - self.stopTime()
+        self._latencyUploadFromEnd = deltaTfromEnd.days*24. + deltaTfromEnd.seconds/(60.*60.)
+        # compute latency from start of run
+        deltaTfromStart = time - self.startTime()
+        self._latencyUploadFromStart = deltaTfromStart.days*24. + deltaTfromStart.seconds/(60.*60.)
+        
     def jobTime(self):
         return self._jobTime
 
@@ -101,47 +262,37 @@ def readCache(filename):
         for line in data:
             if line[0] != '#' and line != "":
                 # read the relevant lines
+                # print line
                 items = line.split()
                 # get the  run #
                 runCached = int(items[0])
                 runNumbers.append(runCached)
                 # create the report
-                runReport = RunReport()
-                runReport.setRunNumber(runCached)
-
-                if items[5] == "True":
-                    runReport.sqliteFound(True)
-                else:
-                    runReport.sqliteFound(False)
-
-                if items[6] == "True":
-                    runReport.payloadFound(True)
-                else:
-                    runReport.payloadFound(False)
-
-                if items[7] == "True":
-                    runReport.isUploaded(True)
-                else:
-                    runReport.isUploaded(False)
-
-                if items[8] == "True":
-                    runReport.isOutoforder(True)
-                else:
-                    runReport.isOutoforder(False)
-                    oooCached = True
-
+                runReport = RunReport(runCached)
+                #runReport.setRunNumber(runCached)
 
                 startCached = RunInfo.getDate(items[1] + " " + items[2])
                 runReport.setStartTime(startCached)
                 
                 stopCached = RunInfo.getDate(items[3] + " " + items[4])
                 runReport.setStopTime(stopCached)
-                
-                latencyStartCached = float(items[9])
-                latencyEndCached = float(items[10])
 
-                runReport.setLatencyFromBeginning(latencyStartCached)
-                runReport.setLatencyFromEnd(latencyEndCached)
+                runReport.sqliteFound(    ast.literal_eval(items[5]))
+                runReport.pclRunMultipleTimes(    ast.literal_eval(items[6]))
+                
+                runReport.payloadFound(   ast.literal_eval(items[7]))
+                runReport.isUploaded(     ast.literal_eval(items[8]))
+                runReport.uploadSucceeded(ast.literal_eval(items[9]))
+                runReport.isOutofOrder(   ast.literal_eval(items[10]))
+
+                    
+                latencyJobFromEnd = float(items[11])
+                latencyStartCached = float(items[12])
+                latencyEndCached = float(items[13])
+
+                runReport.setLatencyJobFromEnd(latencyJobFromEnd)
+                runReport.setLatencyUploadFromStart(latencyStartCached)
+                runReport.setLatencyUploadFromEnd(latencyEndCached)
 
                 runReports.append(runReport)
         cache.close()                
@@ -149,22 +300,18 @@ def readCache(filename):
     return runNumbers, runReports
 
 def writeCacheAndLog(cachefilename, logfilename, runReports):
+    tableHeaders = ["# run", "start-time", "end-time", "PCL Run", "mult. files", "payload","upload","upload OK", "Tier0 OOO", "latency job", "lat. upload (f start)", "lat. upload (f end)"]
+    
+
     last2days = datetime.timedelta(days=2)
     tableForCache =[]
-    tableForCache.append(["# run", "start-time", "end-time", "PCL Run", "payload","upload","Tier0 OOO", "latency from start", "latency from end"])
+    tableForCache.append(tableHeaders)
 
     tableForLog =[]
-    tableForLog.append(["# run", "start-time", "end-time", "PCL Run", "payload","upload","Tier0 OOO", "latency from start", "latency from end"])
+    tableForLog.append(tableHeaders)
 
     #print str(len(runReports))
     for rep in runReports:
-
-        # cache only runs older than 48h
-        #twdaysago = datetime.datetime.today() - last2days
-        #if rep.startTime() < twdaysago:
-        #    #print "start: " + str(rep.startTime()) + " older than " + str(twdaysago)
-        #    tableForCache.append(rep.getList())            
-        # FIXME: cache everything and refresh only runs younger than 48h
         tableForCache.append(rep.getList())
         tableForLog.append(rep.getList()) 
 
@@ -198,40 +345,43 @@ class OngoingRunExcept(Exception):
         return repr(self.value)
 
 
-def getRunReport(runinfoTag, run, promptCalibDir, fileList, iovtableByRun_oracle, iovtableByLumi_oracle):
+def getDropBoxMetadata(dbFile):
+    jsonData = open(dbFile.uploadFileName())
+    metadataMap = json.load(jsonData)
+    jsonData.close()
+    return metadataMap
+
+    
+    
+
+
+def getRunReport(pclTag, run, fileList, oracleTables, lastUploadDate):
+
+
 
     #print run
     # input: runInfoTag, run, fileList, iovlist
     runInfo = None
     try:
-        runInfo = RunInfo.getRunInfoStartAndStopTime(runinfoTag, '', run)
+        runInfo = RunInfo.getRunInfoStartAndStopTime(config.runInfoTag_stop, config.runInfoConnect, run)
     except Exception as error:
         print "*** Error can not find run: " + str(run) + " in RunInfo: " + str(error)
         raise Exception("Error can not find run: " + str(run) + " in RunInfo: " + str(error))
 
     if int(run) != int(runInfo.run()):
         # try to get the payload from runinfo_start: this run might still be ongoing
-        # FIXME: need to get this from cfg
-        runinfoStartTag = "runinfo_start_31X_hlt"
         try:
-            runInfo = RunInfo.getRunInfoStartAndStopTime(runinfoStartTag, '', run)
+            runInfo = RunInfo.getRunInfoStartAndStopTime(config.runInfoTag_start, config.runInfoConnect, run)
             if int(run) != int(runInfo.run()):
                 raise Exception("Error mismatch with the runInfo payload for run: " + str(run) + " in RunInfo: " + str(runInfo.run()))
         except Exception as error:
             print "*** Error can not find run: " + str(run) + " in RunInfo (start): " + str(error)
             raise Exception("Error can not find run: " + str(run) + " in RunInfo (start): " + str(error))
         
-        
 
-    #print run
-    #print runInfo.run()
-    rRep = RunReport()
-    rRep.setRunNumber(runInfo.run())
-    rRep.setRunInfoContent(runInfo)
-
+    # -------------------------------------------------------------------
+    # 0 --- print the timing information about this run
     if(type(runInfo.stopTime()) == datetime.datetime):
-        print runInfo.stopTime()
-        #raise OngoingRunExcept('Run ' + str(runInfo.run()) + " is still onging!")
         deltaTRun = runInfo.stopTime() - runInfo.startTime()
         deltaTRunH = deltaTRun.days*24. + deltaTRun.seconds/(60.*60.)
 
@@ -240,158 +390,189 @@ def getRunReport(runinfoTag, run, promptCalibDir, fileList, iovtableByRun_oracle
     else:
         print "-- run #: " + colorTools.blue(runInfo.run())            
         print "   start: " + str(runInfo.startTime()) + " is ongoing according to RunInfo" 
+    
+        
 
 
-    # --- status flags for this run
-    isFileFound = False
-    emptyPayload = True
-    isOutOfOrder = False
-    allLumiIOVFound = False
+        
+    # print '   -- Creating runReport for tag: ' + colorTools.blue(pclTag)
+    rRep = RunReport(runInfo.run())
 
+    # set the info about the run from RunInfo
+    rRep.setRunInfoContent(runInfo)
 
-    # --- look for the file on AFS
-    fileName = ""
-    fileForRun = []
-    hashTimes = []
-    # find the files associated to this run:
+    # -------------------------------------------------------------------
+    # 1 --- look for the file on AFS
     for dbFile in fileList:
         if '.db' in dbFile:
             if str(run) in dbFile:
-                hashTime = getFileTimeHash(dbFile)
-                if not hashTime in hashTimes:
-                    hashTimes.append(hashTime)
-                    fileForRun.append(dbFile)
+                if pclTag in dbFile:
+                    rRep.addFile(PCLDBFile(config.promptCalibDir + dbFile, False))
 
-    if len(fileForRun) == 0:
+
+    if not rRep.pclRun():
         print "   " + colorTools.warning("***Warning") + ": no sqlite file found!"
-        isFileFound = False
 
-    elif len(fileForRun) > 1:
+    elif rRep.isPclRunMultipleTimes():
         print "   " + colorTools.warning("***Warning") + ": more than one file for this run!"
-        for dbFile in fileForRun:
-            modifDate = datetime.datetime.fromtimestamp(os.path.getmtime(promptCalibDir + dbFile))
-            accessDate = datetime.datetime.fromtimestamp(os.path.getatime(promptCalibDir + dbFile))
-            changeDate = datetime.datetime.fromtimestamp(os.path.getctime(promptCalibDir + dbFile))
-            print '       ',dbFile,'time-stamp (modification):',modifDate
-            print '       ',dbFile,'time-stamp (access):',accessDate
-            print '       ',dbFile,'time-stamp (change):',changeDate
+        # print timestamps of all files
+        for dbFile in rRep._fileList:
+            print '       ',dbFile.fileName() ,'time-stamp (creation):',dbFile.creationTime(),' (upload)',dbFile.uploadTime()
 
-    for dbFile in fileForRun:
-        isFileFound = True
-        if isFileFound and not emptyPayload and isFileFound:
-            # in this case the file was already identified
+    # pick the most meaningful file (the first one? and run checks
+    for dbFile in rRep._fileList:
+        print "     file: " + dbFile.fileName()
+
+
+
+        # -------------------------------------------------------------------
+        # 2 --- Check for empty payloads (if the case exit)
+        # list IOV
+        # - if empty -> setEmpty Payload and continue
+        # - if full quit check for uplaod in oracle and quit the loop
+        connect    = "sqlite_file:" + dbFile.fileName()
+        listiov_sqlite = gtTools.listIov(connect, pclTag, '')
+
+        rRep.setJobTime(dbFile.creationTime())
+        
+
+        if listiov_sqlite[0] != 0:
+            # the payload was not found in the sqlite -> look for the next file
+            print colorTools.warning("Warning") +  " can not list IOV for this file -> no payload"
             continue
-        print "   file: " + dbFile
-        modifDate = datetime.datetime.fromtimestamp(os.path.getmtime(promptCalibDir + dbFile))
-        rRep.setJobTime(modifDate)
 
-        #         # check this is not older than the one for the following run
-        #         if isFirst or modifDate < lastDate:
-        #             lastDate = modifDate
-        #             isFirst = False
-        #             isOutOfOrder = False
-
-        #         else:
-        #             print "   " + warning("Warning: ") + " this comes after the following run!!!"
-        #             isOutOfOrder = True
+        # FIXME: use pywrappers
+        iovtable_sqlite = gtTools.IOVTable()
+        iovtable_sqlite.setFromListIOV(listiov_sqlite[1])
+        rRep.payloadFound(True)
+        print "     sqlite contains a payload!"
 
 
-        # delta-time from begin of run
-        deltaTFromBegin = modifDate - runInfo.startTime()
-        deltaTFromBeginH = deltaTFromBegin.days*24. + deltaTFromBegin.seconds/(60.*60.)
+        # -------------------------------------------------------------------
+        # 3 --- check if upload was tried (if not exit)
+        if not dbFile.isUploaded():
+            print colorTools.warning("      Warning") +  " upload not yet tried!",connect
+            continue
+        rRep.isUploaded(True)
+        rRep.setUploadTime(dbFile.uploadTime())
 
-        # delta-time from end of run
-        deltaTFromEndH = 0.01
-        if(modifDate > runInfo.stopTime()): 
-            deltaTFromEnd = modifDate - runInfo.stopTime()
-            deltaTFromEndH = deltaTFromEnd.days*24. + deltaTFromEnd.seconds/(60.*60.)
+        # -------------------------------------------------------------------
+        # 4 --- check for out-of-order upload
+        if not lastUploadDate == None:
+            # make sure this is not the first run to be checked...
+            if dbFile.uploadTime() <  dbFile.uploadTime():
+                print "     " + warning("Warning: ") + " this comes after the following run!!!"
+                rRep.isOutofOrder(True)
+        
+        lastUploadDate = dbFile.uploadTime()
 
-        print "   file time: " + str(modifDate) + " Delta_T begin (h): " + str(deltaTFromBeginH) + " Delta_T end (h): " + str(deltaTFromEndH)
+        # -------------------------------------------------------------------
+        # 5 --- check for the IOVs in ORACLE
+        # get the target tag in oracle from the Drop-Box metadata
+        metadatamap = getDropBoxMetadata(dbFile)
+        #print metadatamap
+        targetOracleTag = metadatamap['destinationTags'].keys()[0]
+        targetOracleConnect = metadatamap['destinationDatabase']
+        # check for online connection strings
+        if 'oracle://cms_orcon_prod' in targetOracleConnect:
+            targetOracleConnect = 'oracle://cms_orcon_adg/CMS_COND_'+metadatamap['destinationDatabase'].split('CMS_COND_')[1]
 
-        rRep.setLatencyFromBeginning(deltaTFromBeginH)
-        rRep.setLatencyFromEnd(deltaTFromEndH)
+        print "     Target tag in Oracle:",targetOracleTag,'in account',targetOracleConnect
 
-        # check the file size
-        fileSize = os.path.getsize(promptCalibDir + dbFile)
-        if fileSize == 1 or fileSize == 32768:
-            emptyPayload = True
-            print "   " + colorTools.warning("***Warning") + ": no payload in sqlite file!"
+
+        # list IOV for the target tag (cache the list of IOV by pclTag: in case has not changed there is no need to re-run listIOv)
+        iovtable_oracle = gtTools.IOVTable()
+        if not targetOracleTag in oracleTables:
+            # IOV for this tag in ORACLE has not yet been cached -> will now list IOV
+            listiov_oracle = gtTools.listIov(targetOracleConnect, targetOracleTag, config.passwdfile)
+            print "      listing IOV..."
+            if listiov_oracle[0] == 0:
+                iovtable_oracle.setFromListIOV(listiov_oracle[1])
+                oracleTables[targetOracleTag] = iovtable_oracle
         else:
-            
-            emptyPayload = False
-
-            
-            # list the iov in the tag
-            connect    = "sqlite_file:" + promptCalibDir + dbFile
-            listiov_run_sqlite = gtTools.listIov(connect, tagRun, '')
-            if listiov_run_sqlite[0] == 0:
-                iovtableByRun_sqlite = gtTools.IOVTable()
-                iovtableByRun_sqlite.setFromListIOV(listiov_run_sqlite[1])
-                #iovtableByRun_sqlite.printList()
-                for iov in iovtableByRun_sqlite._iovList:
-                    iovOracle = gtTools.IOVEntry()
-                    if iovtableByRun_oracle.search(iov.since(), iovOracle):
-                        print "    runbased IOV found in Oracle!"
-                        #print iovOracle
-                    else:
-                        print "    " + colorTools.warning("Warning:") + " runbased IOV not found in Oracle"
-            else:
-                print colorTools.warning("Warning") +  " can not list IOV for file",connect
-                #raise Exception("Error can not list IOV for file",connect)
-              
-
-            missingIOV = False
-            listiov_lumi_sqlite = gtTools.listIov(connect, tagLumi, '')
-            if listiov_lumi_sqlite[0] == 0:
-                iovtableByLumi_sqlite = gtTools.IOVTable()
-                iovtableByLumi_sqlite.setFromListIOV(listiov_lumi_sqlite[1])
-                #iovtableByLumi_sqlite.printList()
-                counterbla = 0
-                for iov in iovtableByLumi_sqlite._iovList:
-                    iovOracle = gtTools.IOVEntry()
-                    if not iovtableByLumi_oracle.search(iov.since(), iovOracle):
-                        #print "    Lumi based IOV found in Oracle:"
-                        #print iovOracle
-                        counterbla += 1
-                        print "    " + colorTools.warning("Warning:") + " lumibased IOV not found in Oracle for since: " + str(iov.since())
-                        missingIOV = True
-            else:
-                emptyPayload = True
-                print "   " + colorTools.warning("***Warning") + ": no payload in sqlite file!"
-                print colorTools.warning("Warning") +  " can not list IOV for file",connect
-                #raise Exception("Error can not list IOV for file",connect)
-                
-
-        if not emptyPayload:
-            if not missingIOV:
-                allLumiIOVFound = True
-                print "    All lumibased IOVs found in oracle!"
-            else:
-                allLumiIOVFound = False
-                print "    " + colorTools.warning("Warning:") + " not all lumibased IOVs found in Oracle!!!"
+            # get the IOV from the cache dictionary
+            print "      getting IOV list from cache..."
+            iovtable_oracle = oracleTables[targetOracleTag]
 
 
 
 
-    # fill the run-report for this run
-    if not isFileFound:
-        rRep.sqliteFound(False)
-    else:
-        rRep.sqliteFound(True)
-        if isOutOfOrder:
-            rRep.isOutoforder(True)
+        # check if the IOVs of the sqlite are found in oracle and flip the corresponding flag in rRep
+        missingIOV = False
+        for iov in iovtable_sqlite._iovList:
+            iovOracle = gtTools.IOVEntry()
+            if not iovtable_oracle.search(iov.since(), iovOracle):
+                    print "    " + colorTools.warning("Warning:") + " lumibased IOV not found in Oracle for since: " + str(iov.since())
+                    missingIOV = True
+
+        if missingIOV:
+            print "      " + colorTools.warning("Warning:") + " not all IOVs found in Oracle!!!"
         else:
-            rRep.isOutoforder(False)
+            print "      All IOVs found in oracle: upload OK!"
 
-        if emptyPayload:
-            rRep.payloadFound(False)
-        else:
-            rRep.payloadFound(True)
+        rRep.uploadSucceeded(not missingIOV)
 
-        if not allLumiIOVFound:
-            rRep.isUploaded(False)
-        else:
-            rRep.isUploaded(True)
+
+
+        # no need to check the following files
+        break
+
+
 
     return rRep
+
+
+
+
+class PclTagReport:
+    def __init__(self, tagname):
+        self._properties = {}
+        self._properties['tagName'] = tagname
+        self._properties['status'] = 0
+        self._properties['statusMsg'] = 'OK'
+        self._properties['runs'] = []
+        
+    def getProperty(self, key):
+        return self._properties[key]
+
+    def addRunStatus(self, run, status):
+        self._properties['runs'].append(run)
+        self._properties[run] = status
+        # FIXME: is this the right way? The logic sits in the status value?
+        if status[0] > self._properties['status']:
+            self._properties['status'] = status[0]
+            self._properties['statusMsg'] = status[1]
+            
+
+class PCLTagsJson:
+    def __init__(self, name):
+        self._name = name
+        self._tagMap = {}
+
+    def addTag(self, tagName, report):
+        self._tagMap[tagName] = report._properties
+
+        
+    def writeJsonFile(self, dirName):
+        filename =  self._name + ".json"
+        # get a string with JSON encoding the list
+        #dthandler = lambda obj: obj.isoformat() if isinstance(obj, datetime.datetime) else None
+        dump = json.dumps(self._tagMap)
+        file = open(dirName + '/' + filename, 'w')
+        file.write(dump + "\n")
+        file.close()
+
+    def readJsonFile(self, dirName):
+        filename = self._name + ".json"
+        jsonData = open(dirName + '/' + filename)
+        self._tagMap = json.load(jsonData)
+        jsonData.close()
+
+    def getTagReport(self, tagName):
+        tagRep = PclTagReport(tagName)
+        tagRep._properties = self._tagMap[tagName]
+        return tagRep
+
+    def getTagNames(self):
+        return self._tagMap.keys()
 
