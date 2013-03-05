@@ -1,25 +1,10 @@
 #!/usr/bin/env python
 
-
-import ConfigParser as ConfigParser
-#from ConfigParser import ConfigParser
+import Tools.MyCondTools.monitoring_config as config
 
 
-# --------------------------------------------------------------------------------
-# configuration
 
-# read a global configuration file
-cfgfile = ConfigParser.ConfigParser()
-cfgfile.optionxform = str
-
-CONFIGFILE = "GT_branches/pclMonitoring.cfg"
-print 'Reading configuration file from ',CONFIGFILE
-cfgfile.read([ CONFIGFILE ])
-
-tier0DasSrc                 = cfgfile.get('Common','tier0DasSrc')
-webArea                     = cfgfile.get('PCLMonitor','webArea')
-
-
+# FIXME: this is not used coherently in the code....
 writeToWeb             = True
 
 
@@ -27,13 +12,21 @@ class WebPageWriter:
     def __init__(self):
         self._fineName ="./index.html"
         self._title = "Monitoring of Prompt Calibration Loop"
-        self._version = "2.0"
+        self._version = "3.0"
         self._nRunsInPlot = 100
+        self._workflows = []
+        self._reports = []
+
         self._statusCode = -1
         self._statusMsg = ""
         self._statusImg = "../common/img/warning.png"
         self._backEndUpdate = datetime.datetime
         self._udateAge = datetime.timedelta
+
+
+    def addWorkflow(self, workflow, tagReport):
+        self._workflows.append(workflow)
+        self._reports.append(tagReport)
 
     def setBackendUpdateDate(self, date):
         self._backEndUpdate = date
@@ -60,41 +53,111 @@ class WebPageWriter:
             self._statusMsg = '<b>ERROR: </b> ' + self._statusMsg
             
 
-    def buildPage(self):
-        htmlpage = file(self._fineName,"w")
+    def buildPage(self, directory):
+        htmlpage = file(directory + self._fineName,"w")
+
+        #--- Write the HTML header
         htmlpage.write('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">\n')
         htmlpage.write('<html><head>\n')
         htmlpage.write('<link rel="stylesheet" type="text/css" href="../common/PromptCalibMonitoring.css">\n')
         htmlpage.write('<META HTTP-EQUIV="REFRESH" CONTENT="3600">\n')
         htmlpage.write('<title>' + self._title + '</title>\n')
         htmlpage.write('</head>\n')
+
+        #--- Start the body
         htmlpage.write('<body>\n')
         htmlpage.write('<center><h1>' + self._title + '</h1></center>\n<hr>\n')
         #htmlpage.write('<center>[<a href=./index.html>index</a>]</center><br>\n')
         htmlpage.write('<p>\n')
 
 
+        #--- Itroduction Paragraph
         htmlpage.write('<p>This page shows <b>monitoring</b> and <b>statistics</b> about the prompt-calibration loop running @ Tier0.</p>\n')
         htmlpage.write('<p>The following plots show the latency of the production step in hours. The dashed black line is the current average value. The monitoring is limited to the last ' + str(self._nRunsInPlot) + ' <i>collision</i> runs (based on Run-Registry).</p>\n')        
-        
-        htmlpage.write('<table width="100%">\n')
-        if self._statusCode != -1 :
-            htmlpage.write('<tr><td><h4>Status summary of last 48h</h4></td></tr>\n')
-            htmlpage.write('<tr><td><table><tr><td><img src="' + self._statusImg + '" width="20"></td><td>' + self._statusMsg + '</td><td>(Last update on: ' + str(self._backEndUpdate) + ')</td></tr></table></td></tr>\n')
+        htmlpage.write('<p>The workflows currently monitored are:</p>\n')
 
+        #--- main menu for the choice of the workflow
+        htmlpage.write('<center>')
+        for wkflow in self._workflows:
+            htmlpage.write('[<a href=#' + wkflow + '>' + wkflow + '</a>]')
+        htmlpage.write('</center><br>\n')
+
+        #--- global status table: display the global status from JSON and, in case of need, a warning about the update frequency 
+        htmlpage.write('<table width="100%">\n')
+        htmlpage.write('<tr><td><h3>Status summary of last 48h</h3></td></tr>\n')
+        htmlpage.write('<tr><td><table><tr><td><img src="' + self._statusImg + '" width="20"></td><td>' \
+                       + self._statusMsg + '</td><td>(Last update on: ' + str(self._backEndUpdate) + ')</td></tr></table></td></tr>\n')
+
+        # FIXME: broken
         if self._udateAge >  datetime.timedelta(hours=2,minutes=0):
             htmlpage.write('<tr><td><img src="../common/imgs/warning.png" width="20"><b>WARNING:</b> last update is more than ' + str(self._udateAge) + ' hours old</td></tr>\n')
-            
-        htmlpage.write('<tr><td><h4>Latency since the beginning of the run (h)</h4></td></tr>\n')
-        htmlpage.write('<tr><td><img src="./cTimeFromBegin.png" width="1200"></td></tr>\n')
-        htmlpage.write('<tr><td><h4>Latency since the end of the run (h)</h4></td></tr>\n')
-        htmlpage.write('<tr><td><img src="./cTimeFromEnd.png" width="1200"></td></tr>\n')
         htmlpage.write('</table>\n')
 
-        htmlpage.write('<p>Full logs can be accessed here: <a href=log.txt>log.txt</a></p>\n')
 
-        htmlpage.write('<hr>\n')
-        htmlpage.write('<center>[<a href=./' + self._fineName + '>back to the top</a>]</center>\n')
+        ## --- build tables for each workflow
+        for index in range(0, len(self._workflows)):
+            wkflow = self._workflows[index]
+            report = self._reports[index]
+            
+            plotName = 'cHisto_' + wkflow + '.png'
+            logFileName = 'log_' + wkflow + '.txt'
+
+
+            outstat = report.getProperty('status')
+            msg = report.getProperty('statusMsg')
+
+            # FIXME: the location of the various figures should be parametrized
+            img = "../common/imgs/ok.png"
+            runs = report.getProperty('runs')
+            
+            if outstat != 0 and outstat < 1000:
+                img = "../common/imgs/warning.png"
+            elif outstat != 0 and outstat >= 1000:
+                img = "../common/imgs/error.png"
+
+            
+
+
+            # --- Status Table
+            htmlpage.write('<h3>' + wkflow + '</h3><a name=' + wkflow + '></a>\n')
+            htmlpage.write('<table width="100%">\n')
+            htmlpage.write('<tr><td><h4>Status of last 48h:</h4></td></tr>\n')
+            htmlpage.write('<tr><td><table><tr><td><img src="' + img + '" width="20"></td><td>' + msg + '</td></tr></table></td></tr>\n')
+
+            if len(runs) != 0:
+                htmlpage.write('<tr><td><table>\n')
+                htmlpage.write('<tr><th>run</th><th>status</th></tr>\n')
+                for run in runs: 
+                    # read the status for thi run from JSON
+                    valueAndStat = report.getProperty(str(run))
+                    outstatrun = valueAndStat[0]
+                    outstatmsgrun = valueAndStat[1]
+                    img = "../common/imgs/ok.png"
+                    if outstatrun < 1000:
+                        # this is a warning
+                        img = "../common/imgs/warning.png"
+                    elif  outstatrun >= 1000:
+                        # this is an error
+                        img = "../common/imgs/error.png"
+
+                    # FIXME: this should not be hardoced
+                    if valueAndStat[0] == 1004:
+                        # FIXME: the dates need to come from the RunReport through the new engine
+                        outstatmsgrun += ' (<a href="https://cms-conddb-prod.cern.ch/logs/dropBox/searchUserLog?beginDate=2013-01-25&fileName=Run' + run + '@' + wkflow + '&endDate=2013-03-04&metadata=&fileHash=&userText=&username=cmsprod&backend=&statusCode=Any">Drop-Box Log</a>)' 
+                    htmlpage.write('<tr><td><a href=https://cmswbm.web.cern.ch/cmswbm/cmsdb/servlet/RunSummary?RUN=' + run + '>' + run + '</a></td>')
+                    htmlpage.write('<td><img src="' + img + '" width="20"></td><td>' + outstatmsgrun + '</td>')
+                    htmlpage.write('</tr>\n')
+                    
+                htmlpage.write('</table></td></tr>\n')
+
+            htmlpage.write('<tr><td><h4>Run states and latencies</h4></td></tr>\n')
+            htmlpage.write('<tr><td><img src="./' + plotName + '" width="1200"></td></tr>\n')
+            htmlpage.write('</table>\n')
+
+            htmlpage.write('<p>Full logs can be accessed here: <a href=./' + logFileName + '>logs</a></p>\n')
+
+            htmlpage.write('<hr>\n')
+            htmlpage.write('<center>[<a href=./' + self._fineName + '>back to the top</a>]</center>\n')
 
         htmlpage.write('<address>Gianluca Cerminara</address>\n')
         htmlpage.write('<p>Page generated on: ' + str(datetime.datetime.today()) + '</p>\n')
@@ -122,7 +185,7 @@ import os
 import datetime
 
 #from ROOT import *
-def producePlots(runReports, nRunsToPlot, maxtimeEnd, maxtimeBegin, averageTimeFromEnd, averageTimeFromBegin, lastPromptRecoRun):
+def producePlots(pclTag, runReports, nRunsToPlot, maxtimeEnd, maxtimeBegin, averageTimeFromEnd, averageTimeFromBegin, lastPromptRecoRun):
 
     # --- set how many runs should be plotter
     nToFill = int(len(runReports))
@@ -145,64 +208,60 @@ def producePlots(runReports, nRunsToPlot, maxtimeEnd, maxtimeBegin, averageTimeF
     # --- book the histos
     newlegend = ROOT.TLegend(0.8,0.8,1,1)
 
-    hTimeFromEndNew = ROOT.TH1F("hTimeFromEndNew","time (h) from the end of the run",nToFill,0,nToFill)
-    hTimeFromEndNew.SetMarkerStyle(20)
-
-    hTimeFromBeginningNew = ROOT.TH1F("hTimeFromBeginningNew","time (h) from the beginning of the run",nToFill,0,nToFill)
-    hTimeFromBeginningNew.SetMarkerStyle(20)
-
-
-    hSuccessEnd = ROOT.TH1F("hSuccessEnd","success",nToFill,0,nToFill)
-    hSuccessEnd.SetFillColor(408)
-    hSuccessEnd.SetLineColor(408)
-    newlegend.AddEntry(hSuccessEnd, "Ok","F")
-
-    hSuccessBegin = ROOT.TH1F("hSuccessBegin","success",nToFill,0,nToFill)
-    hSuccessBegin.SetFillColor(408)
-    hSuccessBegin.SetLineColor(408)
-
-
-    hOutofOrdersEnd = ROOT.TH1F("hOutofOrdersEnd","Out of order",nToFill,0,nToFill)
-    hOutofOrdersEnd.SetFillColor(791)
-    hOutofOrdersEnd.SetLineColor(791)
-    newlegend.AddEntry(hOutofOrdersEnd, "Out of order","F")
 
     
-    hOutofOrdersBegin = ROOT.TH1F("hOutofOrdersBegin","Out of order",nToFill,0,nToFill)
-    hOutofOrdersBegin.SetFillColor(791)
-    hOutofOrdersBegin.SetLineColor(791)
+    # --------------------------------------------------------------------------
+    # histograms for delay monitoring
+    hJobTimeFromEnd = ROOT.TH1F(pclTag + "_hJobTimeFromEnd","job delay (h) from the end-of-run",nToFill,0,nToFill)
+    hJobTimeFromEnd.SetMarkerStyle(20)
+    # FIXME: color
+    # FIXME: add to legend
+    
+    hUploadTimeFromEnd = ROOT.TH1F(pclTag + "_hUploadTimeFromEnd","upload delay (h) from the end-of-run",nToFill,0,nToFill)
+    hUploadTimeFromEnd.SetMarkerStyle(20)
+    # FIXME: color
+    # FIXME: add to legend
 
+    hUploadTimeFromStart = ROOT.TH1F(pclTag + "_hUploadTimeFromStart","upload delay (h) from the start-of-run",nToFill,0,nToFill)
+    hUploadTimeFromStart.SetMarkerStyle(20)
+    # FIXME: color
+    # FIXME: add to legend
 
-    hNoPayloadEnd = ROOT.TH1F("hNoPayloadEnd","success",nToFill,0,nToFill)
-    hNoPayloadEnd.SetFillColor(611)
-    hNoPayloadEnd.SetLineColor(611)
-    newlegend.AddEntry(hNoPayloadEnd, "No payload","F")
-
-    hNoPayloadBegin = ROOT.TH1F("hNoPayloadBegin","success",nToFill,0,nToFill)
-    hNoPayloadBegin.SetFillColor(611)
-    hNoPayloadBegin.SetLineColor(611)
-
-
-    hNoUploadEnd = ROOT.TH1F("hNoUploadEnd","success",nToFill,0,nToFill)
-    hNoUploadEnd.SetFillColor(871)
-    hNoUploadEnd.SetLineColor(871)
-    newlegend.AddEntry(hNoUploadEnd, "No upload","F")
-
-    hNoUploadBegin = ROOT.TH1F("hNoUploadBegin","success",nToFill,0,nToFill)
-    hNoUploadBegin.SetFillColor(871)
-    hNoUploadBegin.SetLineColor(871)
+    # ---------------------------------------------------------------------------
+    # histograms for status monitoring
 
 
 
-    hNoPCLEnd = ROOT.TH1F("hNoPCLEnd","success",nToFill,0,nToFill)
-    hNoPCLEnd.SetFillColor(422)
-    hNoPCLEnd.SetLineColor(422)
-    newlegend.AddEntry(hNoPCLEnd, "PCL not run","F")
+    hOk = ROOT.TH1F(pclTag + "_hOk", "OK", nToFill,0,nToFill)
+    hOk.SetFillColor(408)
+    hOk.SetFillColor(408)
+    newlegend.AddEntry(hOk, "Ok","F")
 
+    hUploadFailed = ROOT.TH1F(pclTag + "_hUploadFailed", "UploadFailed", nToFill,0,nToFill)
+    hUploadFailed.SetFillColor(871)
+    hUploadFailed.SetFillColor(871)
+    newlegend.AddEntry(hUploadFailed, "UploadFailed","F")
 
-    hNoPCLBegin = ROOT.TH1F("hNoPCLBegin","success",nToFill,0,nToFill)
-    hNoPCLBegin.SetFillColor(422)
-    hNoPCLBegin.SetLineColor(422)
+    hNoUpload = ROOT.TH1F(pclTag + "_hNoUpload", "NoUpload", nToFill,0,nToFill)
+    hNoUpload.SetFillColor(611)
+    hNoUpload.SetFillColor(611)
+    newlegend.AddEntry(hNoUpload, "NoUpload","F")
+
+    hNoPayload = ROOT.TH1F(pclTag + "_hNoPayload", "NoPayload", nToFill,0,nToFill)
+    hNoPayload.SetFillColor(500)
+    hNoPayload.SetFillColor(500)
+    newlegend.AddEntry(hNoPayload, "NoPayload","F")
+
+    hMultiple = ROOT.TH1F(pclTag + "_hMultiple", "Multiple", nToFill,0,nToFill)
+    hMultiple.SetFillColor(410)
+    hMultiple.SetFillColor(410)
+    newlegend.AddEntry(hMultiple, "Multiple","F")
+    
+    hNotRun = ROOT.TH1F(pclTag + "_hNotRun", "NotRun", nToFill,0,nToFill)
+    hNotRun.SetFillColor(422)
+    hNotRun.SetFillColor(422)
+    newlegend.AddEntry(hNotRun, "NotRun","F")
+
 
     # superimpose the average
     lineAverageFromEnd = ROOT.TLine(0, averageTimeFromEnd, nToFill, averageTimeFromEnd)
@@ -230,29 +289,43 @@ def producePlots(runReports, nRunsToPlot, maxtimeEnd, maxtimeBegin, averageTimeF
 
     for id in range(minId, len(runReports)):
         report = runReports[id]
-        if int(report._runnumber) < int(lastPromptRecoRun):
+
+        if int(report.runNumber()) < int(lastPromptRecoRun):
             indexLastT0Run = index
-        hTimeFromEndNew.SetBinContent(index, report._latencyFromEnd)
-        hTimeFromBeginningNew.SetBinContent(index, report._latencyFromBeginning)
 
-        hSuccessEnd.GetXaxis().SetBinLabel(index, str(report._runnumber))
-        hSuccessBegin.GetXaxis().SetBinLabel(index, str(report._runnumber))
+        # fill the latency plots
+        hJobTimeFromEnd.SetBinContent(index, report.latencyJobFromEnd())
+        hUploadTimeFromEnd.SetBinContent(index, report.latencyUploadFromEnd())
+        hUploadTimeFromStart.SetBinContent(index, report.latencyUploadFromStart())
 
-        if(report._pclRun and report._hasPayload and  report._hasUpload):
-            hSuccessEnd.SetBinContent(index, maxtimeEnd)
-            hSuccessBegin.SetBinContent(index, maxtimeBegin)
-        elif(report._isOutOfOrder):
-            hOutofOrdersEnd.SetBinContent(index, maxtimeEnd)
-            hOutofOrdersBegin.SetBinContent(index, maxtimeBegin)
-        elif(not report._hasPayload):
-            hNoPayloadEnd.SetBinContent(index, maxtimeEnd)
-            hNoPayloadBegin.SetBinContent(index, maxtimeBegin)
-        elif(not report._isOutOfOrder and not report._hasUpload):
-            hNoUploadEnd.SetBinContent(index, maxtimeEnd)
-            hNoUploadBegin.SetBinContent(index, maxtimeBegin)
-        elif(not report._pclRun):
-            hNoPCLEnd.SetBinContent(index, maxtimeEnd)
-            hNoPCLBegin.SetBinContent(index, maxtimeBegin)
+
+        # set bin label
+        hOk.GetXaxis().SetBinLabel(index, str(report.runNumber()))
+
+        # set the various states filling the appropriate histogram
+
+
+        if not report.pclRun():
+            hNotRun.SetBinContent(index, maxtimeEnd)
+        elif not report.hasPayload():
+            hNoPayload.SetBinContent(index, maxtimeEnd)
+        elif not report.uploadDone():
+            hNoUpload.SetBinContent(index, maxtimeEnd)
+        elif not report.isUploadSucceeded():
+            hUploadFailed.SetBinContent(index, maxtimeEnd)
+        elif report.isUploadSucceeded():
+            hOk.SetBinContent(index, maxtimeEnd)
+
+        if report.isPclRunMultipleTimes():
+            hMultiple.SetBinContent(index, maxtimeEnd)
+
+            #     hNotRun  -> not pclRun()
+            #     hMultiple -> isPclRunMultipleTimes()
+            #     hNoPayload -> 
+            #     hNoUpload -> not uploadDone()
+            #     hUploadFailed -> uploadDone() and not uploadSucceeded()
+            #     hOk -> uploadSucceeded()
+
         index += 1
         
 
@@ -272,127 +345,42 @@ def producePlots(runReports, nRunsToPlot, maxtimeEnd, maxtimeBegin, averageTimeF
 
     # --- draw the histos
     c4 = ROOT.TCanvas("cTimeFromEndN1","cTimeFromEndN1",1200,600)
-    hSuccessEnd.GetYaxis().SetRangeUser(0,maxtimeEnd)
-    hSuccessEnd.Draw("")
-    hSuccessEnd.GetXaxis().SetTitle("run #")
-    hSuccessEnd.GetXaxis().SetTitleOffset(1.6)
-    hSuccessEnd.GetYaxis().SetTitle("delay (hours)")
-    hSuccessEnd.LabelsOption("v","X")
+    hOk.GetYaxis().SetRangeUser(0,maxtimeEnd)
+    hOk.Draw("")
+    hOk.GetXaxis().SetTitle("run #")
+    hOk.GetXaxis().SetTitleOffset(1.6)
+    hOk.GetYaxis().SetTitle("delay (hours)")
+    hOk.LabelsOption("v","X")
 
-    hOutofOrdersEnd.Draw("same")
-    hNoUploadEnd.Draw("same")
-    hNoPayloadEnd.Draw("same")
-    hNoPCLEnd.Draw("same")
-    #hTimeFromEndNew.Draw("P")
-    #hSuccessEnd.Draw("same")
+    hUploadFailed.Draw("same")
+    hNoUpload.Draw("same")
+    hNoPayload.Draw("same")
+    hNotRun.Draw("same")
+
     lineAverageFromEnd.Draw("same")
     lineLastPromptRecoEnd.Draw("same")
-    hTimeFromEndNew.Draw("P,SAME")
+
+    hJobTimeFromEnd.Draw("P,SAME")
+    hUploadTimeFromEnd.Draw("P,SAME")
+    hUploadTimeFromStart.Draw("P,SAME")
     newlegend.Draw("same")
+    plotName = 'cHisto_' + pclTag + '.png'
     if writeToWeb:
-        c4.Print(webArea + 'cTimeFromEnd.png')
+        c4.Print(config.webArea + plotName)
 
 
-    c5 = ROOT.TCanvas("cTimeFromBeginN","cTimeFromBeginN",1200,600)
-    hSuccessBegin.GetYaxis().SetRangeUser(0,maxtimeBegin)
-    hSuccessBegin.Draw("")
-    hSuccessBegin.GetXaxis().SetTitle("run #")
-    hSuccessBegin.GetXaxis().SetTitleOffset(1.6)
-    hSuccessBegin.GetYaxis().SetTitle("delay (hours)")
-    hSuccessBegin.LabelsOption("v","X")
-
-    hOutofOrdersBegin.Draw("same")
-    hNoUploadBegin.Draw("same")
-    hNoPayloadBegin.Draw("same")
-    hNoPCLBegin.Draw("same")
-    #hTimeFromBeginNew.Draw("P")
-    #hSuccessBegin.Draw("same")
-    lineAverageFromBegin.Draw("same")
-    lineLastPromptRecoBegin.Draw("same")
-    hTimeFromBeginningNew.Draw("P,SAME")
-    newlegend.Draw("same")
-    hSuccessBegin.GetYaxis().Draw("same")
-    if writeToWeb:
-        c5.Print(webArea + 'cTimeFromBegin.png')
-
+    return plotName
     
 
 if __name__ == "__main__":
 
-    # get the run reports from the file
-    allCachedRuns = pclMonitoringTools.readCache(webArea + "log.txt")
-    cachedRuns = allCachedRuns[0]
-    runReports = allCachedRuns[1]
-    runReports.sort(key=lambda rr: rr._runnumber)
+
+    htmlwriter = WebPageWriter()
 
 
-    nToFill = 100
-    nRuns = int(len(runReports))
 
-    minId = 0
-    if nToFill != -1 and nToFill < nRuns:
-        minId = nRuns - nToFill
-    else:
-        nToFill = nRuns
 
-    # global counters
-    avgDelayFromRunEnd = 0
-    avgDelayFromRunBegin = 0
-    nPCLNotRun = 0
-    nNoPayload = 0
-    nOutOfOrder = 0
-    nUploadproblems = 0
-
-    # counters for last n runs (where n = nToFill)
-    avgDelayFromRunEnd_lastN = 0
-    avgDelayFromRunBegin_lastN = 0
-    nPCLNotRun_lastN = 0
-    nNoPayload_lastN = 0
-    nOutOfOrder_lastN = 0
-    nUploadproblems_lastN = 0
-
-    index = 1
-
-    maxTimeFromEnd = 0
-    maxTimeFromBegin = 0
-
-    for rRep in runReports:
-        #print rRep
-        if not rRep._pclRun:
-            nPCLNotRun += 1
-            if index > minId:
-                nPCLNotRun_lastN += 1
-        if not rRep._hasPayload:
-            nNoPayload += 1
-            if index > minId:
-                nNoPayload_lastN += 1
-        if rRep._isOutOfOrder:
-            nOutOfOrder += 1
-            if index > minId:
-                nOutOfOrder_lastN += 1      
-        if not rRep._hasUpload:
-            nUploadproblems += 1
-            if index > minId:
-                nUploadproblems_lastN += 1
-        avgDelayFromRunEnd += rRep._latencyFromEnd
-        avgDelayFromRunBegin += rRep._latencyFromBeginning
-        if index > minId:
-            avgDelayFromRunEnd_lastN += rRep._latencyFromEnd
-            avgDelayFromRunBegin_lastN += rRep._latencyFromBeginning
-            if rRep._pclRun:
-                if rRep._latencyFromEnd > maxTimeFromEnd:
-                    maxTimeFromEnd = rRep._latencyFromEnd
-                if rRep._latencyFromBeginning > maxTimeFromBegin:
-                    maxTimeFromBegin = rRep._latencyFromBeginning
-        index += 1
-    
-    avgDelayFromRunEnd = avgDelayFromRunEnd/nRuns
-    avgDelayFromRunBegin = avgDelayFromRunBegin/nRuns
-
-    avgDelayFromRunEnd_lastN = avgDelayFromRunEnd_lastN/nToFill
-    avgDelayFromRunBegin_lastN = avgDelayFromRunBegin_lastN/nToFill
-
-    tier0Das = tier0DasInterface.Tier0DasInterface(tier0DasSrc) 
+    tier0Das = tier0DasInterface.Tier0DasInterface(config.tier0DasSrc) 
     lastPromptRecoRun = 1
     try:
         lastPromptRecoRun = tier0Das.firstConditionSafeRun()
@@ -403,39 +391,95 @@ if __name__ == "__main__":
         print error
 
 
+    # read the status JSON for the various pclTags
+    pclTagsJson = pclMonitoringTools.PCLTagsJson('pclMonitor')
+    pclTagsJson.readJsonFile(config.webArea)
+    
+    
+    for pclTag in config.pclTasks:
+
+        print "Read cache for tag: " + pclTag
+        
+        # get the run reports from the file
+        logFileName = '/log_' + pclTag + '.txt'
+
+        allCachedRuns = pclMonitoringTools.readCache(config.webArea + logFileName)
+        cachedRuns = allCachedRuns[0]
+        runReports = allCachedRuns[1]
+        runReports.sort(key=lambda rr: rr._runnumber)
+
+        # NOTE: if Tier0 is off than the lastPromptRecoRun is automatically bigger than the lat cached run but unfortunately Tier0DAS returns None
+        # This is just a workaround
+        lastPromptRecoRun = cachedRuns[len(cachedRuns)-1]+1
+
+        # FIXME: move this to configuration
+        nToFill = 100
+
+        nRuns = int(len(runReports))
+
+        minId = 0
+        if nToFill != -1 and nToFill < nRuns:
+            minId = nRuns - nToFill
+        else:
+            nToFill = nRuns
+
+
+        # find some numbers needed to better format the plot
+        avgJobFromEnd = 0
+        nJobRun = 0
+        avgUploadFromEnd = 0
+        avgUploadFromStart = 0
+        maxDelayFromStart = -1
+        nUploads = 0
+        for id in range(minId, len(runReports)):
+            rRep = runReports[id]
+
+            #print "Run: " + str(rRep.runNumber())
+            if rRep.pclRun():
+                avgJobFromEnd += rRep.latencyJobFromEnd()
+                nJobRun +=1
+                if rRep.uploadDone():
+                    nUploads += 1
+                    avgUploadFromEnd += rRep.latencyUploadFromEnd()
+                    avgUploadFromStart += rRep.latencyUploadFromStart()
+                    if rRep.latencyUploadFromStart() > maxDelayFromStart:
+                        maxDelayFromStart = rRep.latencyUploadFromStart()
+
+        avgJobFromEnd = avgJobFromEnd/nJobRun
+        avgUploadFromEnd = avgUploadFromEnd/nUploads
+        avgUploadFromStart = avgUploadFromStart/nUploads
+
+        # FIXME: review the parameters
+        plotName = producePlots(pclTag,\
+                                runReports,\
+                                nToFill,\
+                                maxDelayFromStart,\
+                                maxDelayFromStart,\
+                                avgUploadFromEnd,\
+                                avgUploadFromStart,\
+                                lastPromptRecoRun)
+
+
+        pclTagReport = pclTagsJson.getTagReport(pclTag)
+        
+        htmlwriter.addWorkflow(pclTag, pclTagReport)
+        
+
+
 
     
 
-    producePlots(runReports, nToFill, maxTimeFromEnd, maxTimeFromBegin, avgDelayFromRunEnd_lastN, avgDelayFromRunBegin_lastN, lastPromptRecoRun)
 
-    # --- printout
-    print "--------------------------------------------------"
-
-    print "Total # of runs:", nRuns
-    # --- compute average values
-    print "Average time from the end-of-run: " + str(avgDelayFromRunEnd)
-    print "Average time from the begining of run: " + str(avgDelayFromRunBegin)
-    print "# runs for which PCL was not run: " + str(nPCLNotRun) + " = " + str(nPCLNotRun*100./nRuns) + "%"
-    print "# runs for which no payload was produced: " + str(nNoPayload) + " = " + str(nNoPayload*100./nRuns) + "%"
-    print "# runs for which upload was out-of-order: " + str(nOutOfOrder) + " = " + str(nOutOfOrder*100./nRuns) + "%"
-    print "# runs for which had upload problems: " + str(nUploadproblems) + " = " + str(nUploadproblems*100./nRuns) + "%"
-    
-    print "--------------------------------------------------"
-    print "Last ", nToFill, " runs"
-    print "Average time from the end-of-run: " + str(avgDelayFromRunEnd_lastN)
-    print "Average time from the begining of run: " + str(avgDelayFromRunBegin_lastN)
-    print "# runs for which PCL was not run: " + str(nPCLNotRun_lastN) + " = " + str(nPCLNotRun_lastN*100./nToFill) + "%"
-    print "# runs for which no payload was produced: " + str(nNoPayload_lastN) + " = " + str(nNoPayload_lastN*100./nToFill) + "%"
-    print "# runs for which upload was out-of-order: " + str(nOutOfOrder_lastN) + " = " + str(nOutOfOrder_lastN*100./nToFill) + "%"
-    print "# runs for which had upload problems: " + str(nUploadproblems_lastN) + " = " + str(nUploadproblems_lastN*100./nToFill) + "%"
-    
     print '--- last run # in prompt reco: ' + str(lastPromptRecoRun)    
 
+
+
+
+
+
     status = monitorStatus.MonitorStatus('read')
-    status.readJsonFile(webArea + "status.json")
+    status.readJsonFile(config.webArea + "status.json")
     
-    os.chdir(webArea)
-    htmlwriter = WebPageWriter()
     htmlwriter.setNRunsShown(nToFill)
     htmlwriter.setBackendUpdateDate(status.getField('update'))
     htmlwriter.statusSummary(status.getField('status'),status.getField('msg'))
@@ -448,4 +492,5 @@ if __name__ == "__main__":
 
 
 
-    htmlwriter.buildPage()
+
+    htmlwriter.buildPage(config.webArea)
