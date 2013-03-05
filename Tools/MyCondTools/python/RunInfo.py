@@ -1,39 +1,16 @@
 import datetime
 
-import os,sys, DLFCN
-sys.setdlopenflags(DLFCN.RTLD_GLOBAL+DLFCN.RTLD_LAZY)
-
-#from pluginCondDBPyInterface import *
-import pluginCondDBPyInterface as condDB
-
-# FIXME: this should go to cfg
-dbName =  "oracle://cms_orcon_adg/CMS_COND_31X_RUN_INFO"
-#dbName =  "frontier://PromptProd/CMS_COND_31X_RUN_INFO"
-logName = "oracle://cms_orcon_adg/CMS_COND_31X_POPCONLOG"
-
-fwkInc = condDB.FWIncantation()
-rdbms = condDB.RDBMS("/afs/cern.ch/cms/DB/conddb/ADG")
-rdbms.setLogger(logName)
-
-from CondCore.Utilities import iovInspector as inspect
-
-db = rdbms.getDB(dbName)
-
-#tags = db.allTags()
+import InspectTag
 
 
 
 """
 Module providing tools to query the RunInfo tags in the condition DB
 
-$Date: 2012/09/20 14:33:33 $
-$Revision: 1.7 $
+$Date: 2012/11/06 09:51:29 $
+$Revision: 1.8 $
 
 """
-
-
-
-
 
 
 def getDate(string):
@@ -73,11 +50,12 @@ class RunInfoContent:
 
     def stopTime(self):
         """
-        Returns a datetime object for the stop time of the run
+        Returns a datetime object for the stop time of the run. In case of runs still ongoing it returns 'null null'
         """
         if self._stopTime != 'null':
             return self.getDate(self._stopTime)+self._fromUTCToLocal
         else:
+            # FIXME: should handle with exception...
             return 'null null'
 
             
@@ -93,47 +71,32 @@ class RunInfoContent:
         """
         #print string
         if string != 'null':
-            date = string.split('T')[0].split('-')
-            time = string.split('T')[1].split(':')
-            datet = datetime.datetime(int(date[0]),int(date[1]),int(date[2]),int(time[0]),int(time[1]),int(float(time[2])))
-            return datet
+            return datetime.datetime.strptime(string, "%Y-%m-%dT%H:%M:%S.%f")
         else :
             print "string for date is:",string
             return None 
 
 
-def getRunInfoStartAndStopTime(runinfoTag, runinfoaccount, run):
+def getRunInfoStartAndStopTime(runInfoTag, runinfoaccount, run, logName = 'oracle://cms_orcon_adg/CMS_COND_31X_POPCONLOG', passwdFile = '/afs/cern.ch/cms/DB/conddb/ADG'):
     """
     Builds a RunInfoContent for a given run. Input parameters are the RunInfo tag name, connection string and run #
     """
-
-
-    try :
-        db.startTransaction()
-        log = db.lastLogEntry(runinfoTag)
-        # for printing all log info present into log db 
-        #print log.getState()
-
-        # for inspecting all payloads/runs
-        iov = inspect.Iov(db,runinfoTag, run,run)
-        db.commitTransaction()
-    except RuntimeError as error :
-        print error("*** Error") + " no iov? in RunInfo tag ", runinfoTag
-        raise RuntimeError('No IOV for run: ' + str(run) + ' in RunInfo tag: ' + runinfoTag)
-    except Exception:
-        raise 
-    else:
-        # --- read the information for the run from runinfo
-        for x in  iov.summaries():
+    
+    try:
+        summaries = InspectTag.getSummaries(runInfoTag, runinfoaccount, run, run, logName, passwdFile)
+        for x in  summaries:
             #print x
             runInfo = RunInfoContent(x[3])
             #print x[3]
             # run lenght
             return runInfo
 
+    except Exception:
+        raise 
+
 
 if __name__ == "__main__":
-    print getRunInfoStartAndStopTime("runinfo_31X_hlt", '', 206448)
+    print getRunInfoStartAndStopTime("runinfo_31X_hlt", "oracle://cms_orcon_adg/CMS_COND_31X_RUN_INFO", 206448)
 
 
 
