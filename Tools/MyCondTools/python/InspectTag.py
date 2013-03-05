@@ -13,8 +13,8 @@ import CondCore.Utilities.iovInspector as iovInspector
 """
 Module providing tools to inspect IOV tags in the DB
 
-$Date: 2012/11/22 11:19:48 $
-$Revision: 1.1 $
+$Date: 2012/11/22 11:22:11 $
+$Revision: 1.2 $
 
 """
 
@@ -42,10 +42,12 @@ def getSummaries(tagName, dbName, since, till, logName = 'oracle://cms_orcon_adg
     except Exception:
         raise 
     else:
-        for iovSummary in iovs.summaries():
-            print "----- OID: " + iovSummary[0] + " since: " + str(iovSummary[1]) + " till: " + str(iovSummary[2])
-            print "Summary:"
-            print iovSummary[3]
+        debug = False
+        if debug:
+            for iovSummary in iovs.summaries():
+                print "----- OID: " + iovSummary[0] + " since: " + str(iovSummary[1]) + " till: " + str(iovSummary[2])
+                print "Summary:"
+                print iovSummary[3]
         return iovs.summaries()
 
     return None
