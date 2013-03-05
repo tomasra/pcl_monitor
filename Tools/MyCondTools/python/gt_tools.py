@@ -609,7 +609,7 @@ class IOVTable:
                     self._containerName = linewords[1]
 
                     
-        print self._tagName
+        #print self._tagName
         for line in range(6, nLines-1):
             # print "listiovlines =", listiovlines[line]
             # if "Since" in listiovlines[line] or "------------" in listiovlines[line] or listiovlines[line] == "":
