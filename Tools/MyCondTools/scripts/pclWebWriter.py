@@ -290,33 +290,33 @@ def producePlots(pclTag, runReports, nRunsToPlot, maxtimeEnd, maxtimeBegin, aver
     for id in range(minId, len(runReports)):
         report = runReports[id]
 
-        if int(report.runNumber()) < int(lastPromptRecoRun):
+        if int(report.runNumber) < int(lastPromptRecoRun):
             indexLastT0Run = index
 
         # fill the latency plots
-        hJobTimeFromEnd.SetBinContent(index, report.latencyJobFromEnd())
-        hUploadTimeFromEnd.SetBinContent(index, report.latencyUploadFromEnd())
-        hUploadTimeFromStart.SetBinContent(index, report.latencyUploadFromStart())
+        hJobTimeFromEnd.SetBinContent(index, report.latencyJobFromEnd)
+        hUploadTimeFromEnd.SetBinContent(index, report.latencyUploadFromEnd)
+        hUploadTimeFromStart.SetBinContent(index, report.latencyUploadFromStart)
 
 
         # set bin label
-        hOk.GetXaxis().SetBinLabel(index, str(report.runNumber()))
+        hOk.GetXaxis().SetBinLabel(index, str(report.runNumber))
 
         # set the various states filling the appropriate histogram
 
 
-        if not report.pclRun():
+        if not report.pclRun:
             hNotRun.SetBinContent(index, maxtimeEnd)
-        elif not report.hasPayload():
+        elif not report.hasPayload:
             hNoPayload.SetBinContent(index, maxtimeEnd)
-        elif not report.uploadDone():
+        elif not report.hasUpload:
             hNoUpload.SetBinContent(index, maxtimeEnd)
-        elif not report.isUploadSucceeded():
+        elif not report.uploadSucceeded:
             hUploadFailed.SetBinContent(index, maxtimeEnd)
-        elif report.isUploadSucceeded():
+        elif report.uploadSucceeded:
             hOk.SetBinContent(index, maxtimeEnd)
 
-        if report.isPclRunMultipleTimes():
+        if report.multipleFiles:
             hMultiple.SetBinContent(index, maxtimeEnd)
 
             #     hNotRun  -> not pclRun()
@@ -406,7 +406,7 @@ if __name__ == "__main__":
         allCachedRuns = pclMonitoringTools.readCache(config.webArea + logFileName)
         cachedRuns = allCachedRuns[0]
         runReports = allCachedRuns[1]
-        runReports.sort(key=lambda rr: rr._runnumber)
+        runReports.sort(key=lambda rr: rr.runNumber)
 
         # NOTE: if Tier0 is off than the lastPromptRecoRun is automatically bigger than the lat cached run but unfortunately Tier0DAS returns None
         # This is just a workaround
@@ -434,16 +434,16 @@ if __name__ == "__main__":
         for id in range(minId, len(runReports)):
             rRep = runReports[id]
 
-            #print "Run: " + str(rRep.runNumber())
-            if rRep.pclRun():
-                avgJobFromEnd += rRep.latencyJobFromEnd()
+            #print "Run: " + str(rRep.runNumber)
+            if rRep.pclRun:
+                avgJobFromEnd += rRep.latencyJobFromEnd
                 nJobRun +=1
-                if rRep.uploadDone():
+                if rRep.hasUpload:
                     nUploads += 1
-                    avgUploadFromEnd += rRep.latencyUploadFromEnd()
-                    avgUploadFromStart += rRep.latencyUploadFromStart()
-                    if rRep.latencyUploadFromStart() > maxDelayFromStart:
-                        maxDelayFromStart = rRep.latencyUploadFromStart()
+                    avgUploadFromEnd += rRep.latencyUploadFromEnd
+                    avgUploadFromStart += rRep.latencyUploadFromStart
+                    if rRep.latencyUploadFromStart > maxDelayFromStart:
+                        maxDelayFromStart = rRep.latencyUploadFromStart
 
         avgJobFromEnd = avgJobFromEnd/nJobRun
         avgUploadFromEnd = avgUploadFromEnd/nUploads

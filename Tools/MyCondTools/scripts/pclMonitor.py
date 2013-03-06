@@ -119,15 +119,15 @@ def runBackEnd():
         twdaysago = datetime.datetime.today() - last2days
         for rep in runReports:
 
-            if rep.startTime() >= twdaysago:
-                runsToBeRefreshed.append(rep.runNumber())
+            if rep.startTime >= twdaysago:
+                runsToBeRefreshed.append(rep.runNumber)
                 reportsToBeRefreshed.append(rep)
                 #print rep.runNumber()
                 #print "start: " + str(rep.startTime()) + " less than " + str(twdaysago)
 
         #remove the list of reports and runs to be refreshed from the cahced ones
         for rep in reportsToBeRefreshed:
-            cachedRuns.remove(rep.runNumber())
+            cachedRuns.remove(rep.runNumber)
             runReports.remove(rep)
 
         
@@ -191,40 +191,40 @@ def runBackEnd():
                 # as soon as a run is uploaded or Tier0 tries to uplaod it all the following runs should have the flag set to false
                 # the same is true if the "age" of the run is > than 12h (time-out on the Tier0 side to launch PCL)
                 # here the logic is based on the reverse order of the runs in the list
-                if rRep.uploadDone() or rRep.stopTimeAge() > 12:
+                if rRep.hasUpload or rRep.stopTimeAge() > 12:
                     isLastProcessed = False
 
                 #print run, isLastProcessed
 
                 # these are assigned before any other since they are only warning and they could in principle be overwritten by error statuses
-                if rRep.isPclRunMultipleTimes():
-                    statusValues = 998, "PCL run multiple times for run: " + str(rRep._runnumber)
-                if rRep.outOfOrder():
-                    statusValues = 999, "PCL run out of order for run: " + str(rRep._runnumber)
+                if rRep.multipleFiles:
+                    statusValues = 998, "PCL run multiple times for run: " + str(rRep.runNumber)
+                if rRep.isOutOfOrder:
+                    statusValues = 999, "PCL run out of order for run: " + str(rRep.runNumber)
 
 
                 # assign the status to this run
-                if not rRep.pclRun():
+                if not rRep.pclRun:
                     if not isLastProcessed:
-                        statusValues  =  1001, "PCL not run for run: " + str(rRep._runnumber)
-                elif not rRep.hasPayload():
-                    statusValues  =  1002, "PCL produced no paylaod for run: " + str(rRep._runnumber)
-                elif not rRep.uploadDone():
+                        statusValues  =  1001, "PCL not run for run: " + str(rRep.runNumber)
+                elif not rRep.hasPayload:
+                    statusValues  =  1002, "PCL produced no paylaod for run: " + str(rRep.runNumber)
+                elif not rRep.hasUpload:
                     if not isLastProcessed:
-                        statusValues  =  1003, "PCL did not upload paylaod for run: " + str(rRep._runnumber)
-                elif not rRep.isUploadSucceeded():
-                    statusValues = 1004, "Upload to DB failed for run: " + str(rRep._runnumber)
+                        statusValues  =  1003, "PCL did not upload paylaod for run: " + str(rRep.runNumber)
+                elif not rRep.uploadSucceeded:
+                    statusValues = 1004, "Upload to DB failed for run: " + str(rRep.runNumber)
 
                 # strore the status of the problemati runs only
                 if statusValues[0] != 0:
-                    tagReport.addRunStatus(rRep._runnumber, statusValues)
+                    tagReport.addRunStatus(rRep.runNumber, statusValues)
 
 
 
                 #print statusValues
 
 
-        runReports.sort(key=lambda rr: rr._runnumber)
+        runReports.sort(key=lambda rr: rr.runNumber)
 
 
         # -----------------------------------------------------------------
