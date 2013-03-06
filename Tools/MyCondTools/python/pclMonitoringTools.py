@@ -9,9 +9,6 @@ import Tools.MyCondTools.gt_tools as gtTools
 import Tools.MyCondTools.monitoring_config as config
 
 
-# fixme find a method to configure which records/tafs need to be monitored
-tagLumi                = "BeamSpotObject_ByLumi"
-tagRun                 = "BeamSpotObject_ByRun"
 
 
 class PCLDBFile:
@@ -19,233 +16,139 @@ class PCLDBFile:
     Class representing an sqlite file created by Tier0 PCL machinery.
     """
     def __init__ (self, filename, isPA = False):
-        self._filename = filename
+        self.fileName = filename
         # creation time = modification = access = change time on AFS
-        self._creationtime = datetime.datetime.fromtimestamp(os.path.getmtime(filename))
+        self.creationTime = datetime.datetime.fromtimestamp(os.path.getmtime(filename))
         # time of upload in the DropBox
-        self._uploadtime = None
-        self._uploadFileName = None
-        self._dbMetaDataFileName = None
+        self.uploadTime = None
+        self.uploadFileName = None
+        self.metaDataFileName = None
         # for ProdAgent the creation and the uplaod are simulteneous
         # while for WMA a .txt.uploaded file is created at upload time
         # by the upload deamon
         if isPA:
-            self._uploadtime = self._creationtime
+            self.uploadTime = self.creationTime
         else:
-            self._uploadFileName = filename.split('.db')[0] + ".txt.uploaded"
-            self._dbMetaDataFileName = filename.split('.db')[0] + ".txt"
-            if os.path.exists(self._uploadFileName):
-                self._uploadtime = datetime.datetime.fromtimestamp(os.path.getmtime(self._uploadFileName))
+            self.uploadFileName = filename.split('.db')[0] + ".txt.uploaded"
+            self.metaDataFileName = filename.split('.db')[0] + ".txt"
+            if os.path.exists(self.uploadFileName):
+                self.uploadTime = datetime.datetime.fromtimestamp(os.path.getmtime(self.uploadFileName))
         return
 
-
-    def fileName(self):
-        return self._filename
-        
     def isUploaded(self):
         """ Returns True if the file has been sent (or tried to send) to the DB Drop-Box """
         # file is uploaded only if the upload time was set
-        if self._uploadtime != None:
+        if self.uploadTime != None:
             return True
         return False
-
-    
-    def creationTime(self):
-        return self._creationtime
-
-
-    def uploadTime(self):
-        return self._uploadtime
-
-
-    def metadataFileName(self):
-        return self._dbMetaDataFileName
-
-    def uploadFileName(self):
-        return self._uploadFileName
 
 
 
 class RunReport:
     """ This class represents the statemachine of the PCL for each run """
     def __init__(self, runNumber):
-        self._runnumber = runNumber
+        self.runNumber = runNumber
 
-        # run start and stop time
-        self._startTime = None
-        self._stopTime = None
+        # run start and stop time (from run-info)
+        self.startTime = None
+        self.stopTime = None
 
         # ---- list of states for each run
         # - this is set to true if at least 1 sqlite is found
-        self._pclRun = False
+        self.pclRun = False
         # - this is set if there is more than 1 db file for this run
-        self._multipleFiles = False
+        self.multipleFiles = False
         # - this is set to true if the file actually contains a payload
-        self._hasPayload = False
+        self.hasPayload = False
         # - this is set to true if the .txt.upload file is found in AFS
         # note that the upload might have failed but at least it was attempted
-        self._hasUpload = False
+        self.hasUpload = False
         # - this is set to true if the payloads are found in the target tag in ORACLE
-        self._uploadSucceeded = False
+        self.uploadSucceeded = False
         # - this is set to true if the UPLOAD of different runs happened OutOf ORder
-        self._isOutOfOrder = False
+        self.isOutOfOrder = False
 
         #self._runInfo = None
 
         # latencies in hours
-        self._latencyUploadFromEnd = -1.
-        self._latencyUploadFromStart = -1.
-        self._latencyJobFromEnd = -1
-        self._jobTime = datetime.datetime
+        self.latencyUploadFromEnd = -1.
+        self.latencyUploadFromStart = -1.
+        self.latencyJobFromEnd = -1
+        self.jobTime = datetime.datetime
 
-        self._fileList = []
+        self.fileList = []
 
         return
 
-    def hasPayload(self):
-        return self._hasPayload
-
-    def isUploadSucceeded(self):
-        return self._uploadSucceeded
-
-    def outOfOrder(self):
-        return self._isOutOfOrder
-    
-
-    def latencyUploadFromEnd(self):
-        return self._latencyUploadFromEnd
-
-    def latencyUploadFromStart(self):
-        return self._latencyUploadFromStart
-
-    def latencyJobFromEnd(self):
-        return self._latencyJobFromEnd
-
-    def uploadDone(self):
-        return self._hasUpload
 
     def addFile(self, file):
         """
         Add a file for this run. while adding check also some of the possible states
         """
         # append the file
-        self._fileList.append(file)
+        self.fileList.append(file)
 
-        if len(self._fileList) > 1:
-            self._multipleFiles = True
+        if len(self.fileList) > 1:
+            self.multipleFiles = True
 
         # swtich the PCLRun flag on
-        self._pclRun = True
+        self.pclRun = True
 
-        if file.uploadTime() != None:
-            self._hasUpload = True
+        if file.uploadTime != None:
+            self.hasUpload = True
 
-        self._fileList.sort(key = lambda ff: ff._creationtime)
+        self.fileList.sort(key = lambda ff: ff.creationTime)
         
-    def pclRun(self):
-        return self._pclRun
-
-    def isPclRunMultipleTimes(self):
-        return self._multipleFiles
-
-    def pclRunMultipleTimes(self, isMultiple):
-        self._multipleFiles = isMultiple
-
-
-    def runNumber(self):
-        return self._runnumber
-
-    def startTime(self):
-        """ run start time (from run-info) """
-        return self._startTime
-
-    def stopTime(self):
-        """ run stop time (from run-info) """
-        return self._stopTime
-
     def stopTimeAge(self):
         """ time passed from the stop of the run until NOW (in hours) """
-        ageStop = datetime.datetime.today() - self._stopTime
+        ageStop = datetime.datetime.today() - self.stopTime
         return ageStop.days*24. + ageStop.seconds/(60.*60.)
 
-#     def setRunNumber(self, number):
-#         self._runnumber = number
-
-    def sqliteFound(self, isFound):
-        self._pclRun = isFound
-
-    def payloadFound(self, isFound):
-        self._hasPayload = isFound
-
-    def isUploaded(self, isUploaded):
-        self._hasUpload = isUploaded
-
-    def uploadSucceeded(self, isOk):
-        self._uploadSucceeded = isOk
-
-    def isOutofOrder(self, isOutofOrder):
-        self._isOutOfOrder = isOutofOrder
 
     def setRunInfoContent(self, runInfo):
-        self._startTime = runInfo.startTime()
-        self._stopTime = runInfo.stopTime()
+        self.startTime = runInfo.startTime()
+        self.stopTime = runInfo.stopTime()
         #self._runInfo = runInfo
-
-    def setStartTime(self, start):
-        self._startTime = start
-
-    def setStopTime(self, stop):
-        self._stopTime = stop
 
     # hours
     def runLenght(self):
         """ Run lenght in hours """
-        deltaTRun = self.stopTime() - self.startTime()
+        deltaTRun = self.stopTime - self.startTime
         return deltaTRun.days*24. + deltaTRun.seconds/(60.*60.)
-
-    def setLatencyUploadFromEnd(self, timeFromEnd):
-        self._latencyUploadFromEnd = timeFromEnd
-
-    def setLatencyUploadFromStart(self, timeFromBeginning):
-        self._latencyUploadFromStart = timeFromBeginning
         
-    def setLatencyJobFromEnd(self, timeFromEnd):
-        self._latencyJobFromEnd = timeFromEnd
 
     def __str__(self):
-        return "--- run #: " + str(self._runnumber) + " start time: " + str(self.startTime())
+        return "--- run #: " + str(self.runNumber) + " start time: " + str(self.startTime)
 
     def getList(self):
-        theList = [str(self._runnumber),\
-                   str(self.startTime()),\
-                   str(self.stopTime()),\
-                   self._pclRun,\
-                   self._multipleFiles,\
-                   self._hasPayload,\
-                   self._hasUpload,\
-                   self._uploadSucceeded,\
-                   self._isOutOfOrder,\
-                   float(self._latencyJobFromEnd),\
-                   float(self._latencyUploadFromStart),\
-                   float(self._latencyUploadFromEnd)]
+        theList = [str(self.runNumber),\
+                   str(self.startTime),\
+                   str(self.stopTime),\
+                   self.pclRun,\
+                   self.multipleFiles,\
+                   self.hasPayload,\
+                   self.hasUpload,\
+                   self.uploadSucceeded,\
+                   self.isOutOfOrder,\
+                   float(self.latencyJobFromEnd),\
+                   float(self.latencyUploadFromStart),\
+                   float(self.latencyUploadFromEnd)]
         return theList
 
     def setJobTime(self, time):
-        self._jobTime = time
-        deltaTfromEnd = time - self.stopTime()
-        self._latencyJobFromEnd = deltaTfromEnd.days*24. + deltaTfromEnd.seconds/(60.*60.)
+        self.jobTime = time
+        deltaTfromEnd = time - self.stopTime
+        self.latencyJobFromEnd = deltaTfromEnd.days*24. + deltaTfromEnd.seconds/(60.*60.)
     
     def setUploadTime(self, time):
-        self._uploadTime = time
+        self.uploadTime = time
         # compute latency from end of run
-        deltaTfromEnd = time - self.stopTime()
-        self._latencyUploadFromEnd = deltaTfromEnd.days*24. + deltaTfromEnd.seconds/(60.*60.)
+        deltaTfromEnd = time - self.stopTime
+        self.latencyUploadFromEnd = deltaTfromEnd.days*24. + deltaTfromEnd.seconds/(60.*60.)
         # compute latency from start of run
-        deltaTfromStart = time - self.startTime()
-        self._latencyUploadFromStart = deltaTfromStart.days*24. + deltaTfromStart.seconds/(60.*60.)
+        deltaTfromStart = time - self.startTime
+        self.latencyUploadFromStart = deltaTfromStart.days*24. + deltaTfromStart.seconds/(60.*60.)
         
-    def jobTime(self):
-        return self._jobTime
 
 
 
@@ -271,28 +174,26 @@ def readCache(filename):
                 runReport = RunReport(runCached)
                 #runReport.setRunNumber(runCached)
 
-                startCached = RunInfo.getDate(items[1] + " " + items[2])
-                runReport.setStartTime(startCached)
-                
-                stopCached = RunInfo.getDate(items[3] + " " + items[4])
-                runReport.setStopTime(stopCached)
+                runReport.startTime = RunInfo.getDate(items[1] + " " + items[2])
+                runReport.stopTime  = RunInfo.getDate(items[3] + " " + items[4])
 
-                runReport.sqliteFound(    ast.literal_eval(items[5]))
-                runReport.pclRunMultipleTimes(    ast.literal_eval(items[6]))
+
+                runReport.pclRun        = ast.literal_eval(items[5])
+                runReport.multipleFiles = ast.literal_eval(items[6])
                 
-                runReport.payloadFound(   ast.literal_eval(items[7]))
-                runReport.isUploaded(     ast.literal_eval(items[8]))
-                runReport.uploadSucceeded(ast.literal_eval(items[9]))
-                runReport.isOutofOrder(   ast.literal_eval(items[10]))
+                runReport.hasPayload      = ast.literal_eval(items[7])
+                runReport.hasUpload       = ast.literal_eval(items[8])
+                runReport.uploadSucceeded = ast.literal_eval(items[9])
+                runReport.isOutofOrder    = ast.literal_eval(items[10])
 
                     
                 latencyJobFromEnd = float(items[11])
                 latencyStartCached = float(items[12])
                 latencyEndCached = float(items[13])
 
-                runReport.setLatencyJobFromEnd(latencyJobFromEnd)
-                runReport.setLatencyUploadFromStart(latencyStartCached)
-                runReport.setLatencyUploadFromEnd(latencyEndCached)
+                runReport.latencyJobFromEnd      = latencyJobFromEnd
+                runReport.latencyUploadFromStart = latencyStartCached
+                runReport.latencyUploadFromEnd   = latencyEndCached
 
                 runReports.append(runReport)
         cache.close()                
@@ -346,7 +247,7 @@ class OngoingRunExcept(Exception):
 
 
 def getDropBoxMetadata(dbFile):
-    jsonData = open(dbFile.uploadFileName())
+    jsonData = open(dbFile.uploadFileName)
     metadataMap = json.load(jsonData)
     jsonData.close()
     return metadataMap
@@ -410,18 +311,18 @@ def getRunReport(pclTag, run, fileList, oracleTables, lastUploadDate):
                     rRep.addFile(PCLDBFile(config.promptCalibDir + dbFile, False))
 
 
-    if not rRep.pclRun():
+    if not rRep.pclRun:
         print "   " + colorTools.warning("***Warning") + ": no sqlite file found!"
 
-    elif rRep.isPclRunMultipleTimes():
+    elif rRep.multipleFiles:
         print "   " + colorTools.warning("***Warning") + ": more than one file for this run!"
         # print timestamps of all files
-        for dbFile in rRep._fileList:
-            print '       ',dbFile.fileName() ,'time-stamp (creation):',dbFile.creationTime(),' (upload)',dbFile.uploadTime()
+        for dbFile in rRep.fileList:
+            print '       ',dbFile.fileName ,'time-stamp (creation):',dbFile.creationTime,' (upload)',dbFile.uploadTime
 
     # pick the most meaningful file (the first one? and run checks
-    for dbFile in rRep._fileList:
-        print "     file: " + dbFile.fileName()
+    for dbFile in rRep.fileList:
+        print "     file: " + dbFile.fileName
 
 
 
@@ -430,10 +331,10 @@ def getRunReport(pclTag, run, fileList, oracleTables, lastUploadDate):
         # list IOV
         # - if empty -> setEmpty Payload and continue
         # - if full quit check for uplaod in oracle and quit the loop
-        connect    = "sqlite_file:" + dbFile.fileName()
+        connect    = "sqlite_file:" + dbFile.fileName
         listiov_sqlite = gtTools.listIov(connect, pclTag, '')
 
-        rRep.setJobTime(dbFile.creationTime())
+        rRep.setJobTime(dbFile.creationTime)
         
 
         if listiov_sqlite[0] != 0:
@@ -444,7 +345,7 @@ def getRunReport(pclTag, run, fileList, oracleTables, lastUploadDate):
         # FIXME: use pywrappers
         iovtable_sqlite = gtTools.IOVTable()
         iovtable_sqlite.setFromListIOV(listiov_sqlite[1])
-        rRep.payloadFound(True)
+        rRep.hasPayload = True
         print "     sqlite contains a payload!"
 
 
@@ -453,18 +354,19 @@ def getRunReport(pclTag, run, fileList, oracleTables, lastUploadDate):
         if not dbFile.isUploaded():
             print colorTools.warning("      Warning") +  " upload not yet tried!",connect
             continue
-        rRep.isUploaded(True)
-        rRep.setUploadTime(dbFile.uploadTime())
+        rRep.hasUpload = True
+        rRep.setUploadTime(dbFile.uploadTime)
 
         # -------------------------------------------------------------------
         # 4 --- check for out-of-order upload
         if not lastUploadDate == None:
             # make sure this is not the first run to be checked...
-            if dbFile.uploadTime() <  dbFile.uploadTime():
+            # FIXME: check
+            if lastUploadDate <  dbFile.uploadTime:
                 print "     " + warning("Warning: ") + " this comes after the following run!!!"
-                rRep.isOutofOrder(True)
+                rRep.isOutofOrder = True
         
-        lastUploadDate = dbFile.uploadTime()
+        lastUploadDate = dbFile.uploadTime
 
         # -------------------------------------------------------------------
         # 5 --- check for the IOVs in ORACLE
@@ -510,7 +412,7 @@ def getRunReport(pclTag, run, fileList, oracleTables, lastUploadDate):
         else:
             print "      All IOVs found in oracle: upload OK!"
 
-        rRep.uploadSucceeded(not missingIOV)
+        rRep.uploadSucceeded = not missingIOV
 
 
 
