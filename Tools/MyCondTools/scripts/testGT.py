@@ -6,7 +6,7 @@ import fileinput
 from subprocess import Popen, PIPE
 import getpass
 
-def modifyCfgs(wf, GT, local):
+def modifyCfgs(wf, GT, local, hltVersion):
     """ This function finds the directory created by runTheMatrix for the given workflow number assuming it starts by that number.
     It finds all the cfgs assuming they are the only files in that directory ending with \".py\".
     It modifes them by replacing the GlobalTag with the one to test. It also modifies the connection string if the test is local.
@@ -31,6 +31,8 @@ def modifyCfgs(wf, GT, local):
                         if GT.startswith("FT") and line.find("process.GlobalTag.pfnPrefix") != -1 and line.find("frontier://FrontierProd/") != -1:
                             # line = line.replace("FrontierProd", "FrontierArc")
                             line = "\n"
+                        if line.find('HLTrigger.Configuration.HLT_') != -1 and hltVersion != "":
+                            line = "process.load('HLTrigger.Configuration.HLT_"+hltVersion+"_cff')\n"
                         # Replace the globalTag name
                         notHltStepGreaterThan1 = (not GT.startswith("GR_H")) or (GT.startswith("GR_H") and file.find("HLT") != -1)
                         if notHltStepGreaterThan1:
@@ -47,7 +49,7 @@ def modifyCfgs(wf, GT, local):
                         print line,
     return testDir, cfgList
 
-def runTest(GT, wf, local, stdoutFile, stderrFile, exitCodeFile, recycle):
+def runTest(GT, wf, local, HLTVersion, stdoutFile, stderrFile, exitCodeFile, recycle):
     """ This function runs creates the configuration files, modifes them for the GT to be tested and runs the jobs.
     The outputs are saved in local files and they can be retrieved after the tests.
     """
@@ -65,7 +67,7 @@ def runTest(GT, wf, local, stdoutFile, stderrFile, exitCodeFile, recycle):
     stdout, stderr = p.communicate()
 
     # modify the cfgs before running
-    testDir, cfgList = modifyCfgs(wf, GT, local)
+    testDir, cfgList = modifyCfgs(wf, GT, local, hltVersion)
 
     # FIXME: it happens that sorting is enough with the current workflows. It could be that the first
     # file is not the correct one, in that case this should be adapted
@@ -118,17 +120,18 @@ if __name__ == '__main__':
 
     # Parse input parameters
     local = False
-    if len(sys.argv) < 2 or len(sys.argv) > 3:
-        print "Usage: testGT.py GT_NAME [local]"
+    hltVersion = ""
+    if len(sys.argv) < 2 or len(sys.argv) > 4:
+        print "Usage: testGT.py GT_NAME local|remote [HLTVERSION]"
         sys.exit(1)
-    if len(sys.argv) == 2:
-        GT = sys.argv[1]
-    elif sys.argv[2] == "local":
-        GT = sys.argv[1]
+    GT = sys.argv[1]
+    if sys.argv[2] == "local":
         local = True
-    else:
-        print "The second argument can only be local, received", sys.argv[2], "exiting."
+    elif sys.argv[2] != "remote":
+        print "The second argument can only be local or remote, received", sys.argv[2], "exiting."
         sys.exit(1)
+    if len(sys.argv) == 4:
+        hltVersion = sys.argv[3]
 
     # if True skip the generation of mc samples
     recycle = False
@@ -144,7 +147,7 @@ if __name__ == '__main__':
     wfList = getWfList(GT)
     # Run all the tests
     for wf in wfList:
-        runTest(GT, wf, local, stdoutFile, stderrFile, exitCodeFile, recycle)
+        runTest(GT, wf, local, hltVersion, stdoutFile, stderrFile, exitCodeFile, recycle)
 
     stdoutFile.close()
     stderrFile.close()
