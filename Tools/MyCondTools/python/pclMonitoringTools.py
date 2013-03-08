@@ -11,12 +11,19 @@ import Tools.MyCondTools.monitoring_config as config
 
 
 
-class PCLDBFile:
+class PCLOutputFiles:
     """
-    Class representing an sqlite file created by Tier0 PCL machinery.
+    Class representing the output files fo the Tier0 workflow for each run (sqlite + metadata files).
     """
     def __init__ (self, filename, isPA = False):
         self.fileName = filename
+        # filename without the directory
+        self.shortFileName = None
+
+        # attributes:
+        
+        
+
         # creation time = modification = access = change time on AFS
         self.creationTime = datetime.datetime.fromtimestamp(os.path.getmtime(filename))
         # time of upload in the DropBox
@@ -253,31 +260,192 @@ def getDropBoxMetadata(dbFile):
     return metadataMap
 
     
+
+class PCLOutputFile:
+    """
+    Class representing the output files fo the Tier0 workflow for each run (sqlite + metadata files).
+    """
+    def __init__ (self, dirname, filename):
+        self.dirName = dirname
+        self.completeFileName = dirname + filename
+
+        self.fileName         = filename
+        self.uploadFileName   = filename.split('.db')[0] + ".txt.uploaded"
+        self.metaDataFileName = filename.split('.db')[0] + ".txt"
+
+        # status flags
+        self.isPayload  = False
+        self.isUploaded = False
+        self.isInOracle = False
+        self.isOOO      = False
+        
+
+        # time information
+        self.creationTime = datetime.datetime.fromtimestamp(os.path.getmtime(self.completeFileName))
+        self.uploadTime   = None
+        if os.path.exists(self.dirName + self.uploadFileName):
+            self.uploadTime = datetime.datetime.fromtimestamp(os.path.getmtime(self.dirName + self.uploadFileName))
+            self.isUploaded = True
+
+        self.iovTable = None
+        
+#     def checkCreationTime(self):
+#         # creation time = modification = access = change time on AFS
+#         self.creationTime = 
+#         return
+
+    def checkPayload(self, pclTag):
+
+        # -------------------------------------------------------------------
+        # 2 --- Check for empty payloads (if the case exit)
+        # list IOV
+        # - if empty -> setEmpty Payload and continue
+        # - if full quit check for uplaod in oracle and quit the loop
+        connect    = "sqlite_file:" + self.completeFileName
+        listiov_sqlite = gtTools.listIov(connect, pclTag, '')
+
+
+        if listiov_sqlite[0] != 0:
+            # the payload was not found in the sqlite -> look for the next file
+            print colorTools.warning("Warning") +  " can not list IOV for this file -> no payload"
+            self.isPayload  = False
+            return False
+
+        # FIXME: use pywrappers
+        iovtable_sqlite = gtTools.IOVTable()
+        iovtable_sqlite.setFromListIOV(listiov_sqlite[1])
+        self.isPayload = True
+        self.iovTable = iovtable_sqlite
+        #print "     sqlite contains a payload!"
+        return True
+
+    
+
+#     def checkUploadTime(self):
+#         if os.path.exists(self.uploadFileName):
+#             self.uploadTime = datetime.datetime.fromtimestamp(os.path.getmtime(self.uploadFileName))
+#             self.isUploaded = True
+#         return
+        
+    def checkOracleExport(self, iovtable_oracle):
+        # check if the IOVs of the sqlite are found in oracle and flip the corresponding flag in rRep
+        missingIOV = False
+        for iov in self.iovTable._iovList:
+            iovOracle = gtTools.IOVEntry()
+            if not iovtable_oracle.search(iov.since(), iovOracle):
+                    print "    " + colorTools.warning("Warning:") + " IOV not found in Oracle for since: " + str(iov.since())
+                    missingIOV = True
+
+        if missingIOV:
+            self.isInOracle = False
+            return False
+        else:
+            self.isInOracle = True
+            print "      All IOVs found in oracle: upload OK!"
+
+        return True
+
+    def checkOutOfOrder(self, followingRunUploadTime):
+        # FIXME
+        return
+
+
+    def status(self):
+        flags = (self.isPayload, self.isUploaded, self.isInOracle,self.isOOO)
+        # this is the state transition table
+        statusMap = {(False, False, False, False) : 'empty',\
+                     (False, False, False, True)  : 'emptyOOO',\
+                     (False, True,  False, False) : 'empty',\
+                     (False, True,  False, True)  : 'empty',\
+                     (True,  False, False, False) : 'notUploaded',\
+                     (True,  True,  False, False) : 'uploaded',\
+                     (True,  True,  False, True)  : 'uploadedOOO',\
+                     (True,  True,  True, False)  : 'inOracle',\
+                     (True,  True,  True, True)   : 'inOracle'}
+
+        return statusMap[flags]
+        
+    def getRunNumber(self):
+        return
+
+    def getDropBoxMetadata(self):
+        jsonData = open(self.dirName + self.uploadFileName)
+        metadataMap = json.load(jsonData)
+        jsonData.close()
+        return metadataMap
+
+class PCLFileEngine:
+    """
+    Class representing the output files fo the Tier0 workflow for each run (sqlite + metadata files).
+    """
+    # FIXME: take dirname from here or from config module?
+    def __init__ (self, dirname, pclWorkflow):
+
+        self.pclWorkflow = pclWorkflow
+        self.lastSuccesfulUpload = datetime.datetime(1960, 01, 01, 00, 00, 00)
+        
+
+        self._cached = False
+        # stores the complete information only for most recent files from cache (~last 48h) and new files
+        self.runFileMap = {}
+        # stores the file name and the upload date for all the known files (cache + new) to be used to determine which file needs to be refreshed
+        self.fileUploadDateMap = {}
+        self.cacheFileName = pclWorkflow + '_file.cache'
+
+
+
+    def readFromCache(self):
+        if self._cached:
+            # cache has already been read -> exit
+            return
+        self._cached = True
+        if not os.path.exists(self.cacheFileName):
+            return
+
+        # FIXME actually read the file here
+
+        return
+
+    def writeToCache(self):
+        return
+
+    def isNewFile(self, pclFile):
+
+        # FIXME: while storing in the cache
+        #if not pclFile.fileName in self.fileUploadDateMap:
+        #    return True
+
+
+        if datetime.datetime.today() - pclFile.creationTime  < datetime.timedelta(days=config.refreshDays):
+            return True
+
+        return False
+
+
+    def addNewFile(self, pclFile):
+        
+
+        return
+
+    def getFilesForRun(self, run):
+        # return a time ordered list of flies for a particular run
+        # 1. reads the file from cache
+        # 2. reads the file from AFS if needed:
+        #   - files newer than last succesful upload (with a timeout that can be set from cfg)
+        
+        return
+        
+
     
 
 
-def getRunReport(pclTag, run, fileList, oracleTables, lastUploadDate):
 
+def getRunReport(pclTag, run, runInfo, fileList, oracleTables, lastUploadDate):
 
-
-    #print run
-    # input: runInfoTag, run, fileList, iovlist
-    runInfo = None
-    try:
-        runInfo = RunInfo.getRunInfoStartAndStopTime(config.runInfoTag_stop, config.runInfoConnect, run)
-    except Exception as error:
-        print "*** Error can not find run: " + str(run) + " in RunInfo: " + str(error)
-        raise Exception("Error can not find run: " + str(run) + " in RunInfo: " + str(error))
 
     if int(run) != int(runInfo.run()):
-        # try to get the payload from runinfo_start: this run might still be ongoing
-        try:
-            runInfo = RunInfo.getRunInfoStartAndStopTime(config.runInfoTag_start, config.runInfoConnect, run)
-            if int(run) != int(runInfo.run()):
-                raise Exception("Error mismatch with the runInfo payload for run: " + str(run) + " in RunInfo: " + str(runInfo.run()))
-        except Exception as error:
-            print "*** Error can not find run: " + str(run) + " in RunInfo (start): " + str(error)
-            raise Exception("Error can not find run: " + str(run) + " in RunInfo (start): " + str(error))
+        print "*** Error can not find run: " + str(run) + " in RunInfo!"
+        raise Exception("Error can not find run: " + str(run) + " in RunInfo!")
         
 
     # -------------------------------------------------------------------
@@ -286,10 +454,10 @@ def getRunReport(pclTag, run, fileList, oracleTables, lastUploadDate):
         deltaTRun = runInfo.stopTime() - runInfo.startTime()
         deltaTRunH = deltaTRun.days*24. + deltaTRun.seconds/(60.*60.)
 
-        print "-- run #: " + colorTools.blue(runInfo.run())            
+        print "-- run #: " + colorTools.blue(str(runInfo.run()))            
         print "   start: " + str(runInfo.startTime()) + " stop: " + str(runInfo.stopTime()) + " lenght (h): " + str(deltaTRunH)
     else:
-        print "-- run #: " + colorTools.blue(runInfo.run())            
+        print "-- run #: " + colorTools.blue(str(runInfo.run()))            
         print "   start: " + str(runInfo.startTime()) + " is ongoing according to RunInfo" 
     
         
@@ -308,7 +476,7 @@ def getRunReport(pclTag, run, fileList, oracleTables, lastUploadDate):
         if '.db' in dbFile:
             if str(run) in dbFile:
                 if pclTag in dbFile:
-                    rRep.addFile(PCLDBFile(config.promptCalibDir + dbFile, False))
+                    rRep.addFile(PCLOutputFiles(config.promptCalibDir + dbFile, False))
 
 
     if not rRep.pclRun:

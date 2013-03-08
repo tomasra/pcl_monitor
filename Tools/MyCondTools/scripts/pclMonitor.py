@@ -11,8 +11,10 @@ from Tools.MyCondTools.RunInfo import *
 import Tools.MyCondTools.RunRegistryTools as RunRegistryTools
 import Tools.MyCondTools.tier0WMADasInterface as tier0DasInterface
 import Tools.MyCondTools.pclMonitoringTools as pclMonitoringTools
+import Tools.MyCondTools.gt_tools as gtTools
 
 import Tools.MyCondTools.monitoring_config as config
+import Tools.MyCondTools.RunInfo as RunInfo
 
 
 
@@ -75,6 +77,7 @@ def runBackEnd():
     # find the file produced by PCL in the afs area
     fileList = os.listdir(config.promptCalibDir)
 
+
     # --------------------------------------------------------------------------------
     # create a dictionary to store cached IOV tables for target tags in ORACLE
     oracleTables = {}
@@ -90,6 +93,73 @@ def runBackEnd():
         print blue("---------------------------------------------------------------------")
         print "--- Check status for PCL workflow: " + blue(pclTag)
 
+        # --------------------------------------------------------------------------------
+        # --- get the overview of the files produced by PCL for thsi workflow (cache + AFS area)
+        print "Look for new files produced for this workflow:"
+        pclFileEngine = pclMonitoringTools.PCLFileEngine(config.promptCalibDir, pclTag)
+        pclFileEngine.readFromCache()
+
+        lastUploadTime = datetime.datetime(1960, 01, 01, 00, 00, 00)
+
+        for pclFileName in fileList:
+            if '.db' in pclFileName:
+                if pclTag in pclFileName:
+
+                    outFile = pclMonitoringTools.PCLOutputFile(config.promptCalibDir, pclFileName)
+
+                    if pclFileEngine.isNewFile(outFile):
+                        print " -- New file found for this workflow: " + pclFileName
+                        # 1. check if the file contains a paylaod
+                        if outFile.checkPayload(pclTag):
+                            print "   file contains paylaods"
+                            if outFile.isUploaded:
+                                print "   file has been uploaded to DropBox"
+                                # FIXME: need sorting of the files?
+                                # 2. check if the file was uploaded out of order
+                                if outFile.checkOutOfOrder(lastUploadTime):
+                                    print "   file uploaded OOO"
+                                # FIXME: where?
+                                lastUploadTime = outFile.uploadTime
+
+                                # -------------------------------------------------------------------
+                                # 3. check for the IOVs in ORACLE
+                                # get the target tag in oracle from the Drop-Box metadata
+                                metadatamap = outFile.getDropBoxMetadata()
+                                #print metadatamap
+                                targetOracleTag = metadatamap['destinationTags'].keys()[0]
+                                targetOracleConnect = metadatamap['destinationDatabase']
+                                # check for online connection strings
+                                if 'oracle://cms_orcon_prod' in targetOracleConnect:
+                                    targetOracleConnect = 'oracle://cms_orcon_adg/CMS_COND_'+metadatamap['destinationDatabase'].split('CMS_COND_')[1]
+
+                                print "     Target tag in Oracle:",targetOracleTag,'in account',targetOracleConnect
+
+
+                                # list IOV for the target tag (cache the list of IOV by pclTag: in case has not changed there is no need to re-run listIOv)
+                                iovtable_oracle = gtTools.IOVTable()
+                                if not targetOracleTag in oracleTables:
+                                    # IOV for this tag in ORACLE has not yet been cached -> will now list IOV
+                                    listiov_oracle = gtTools.listIov(targetOracleConnect, targetOracleTag, config.passwdfile)
+                                    print "      listing IOV..."
+                                    if listiov_oracle[0] == 0:
+                                        iovtable_oracle.setFromListIOV(listiov_oracle[1])
+                                        oracleTables[targetOracleTag] = iovtable_oracle
+                                else:
+                                    # get the IOV from the cache dictionary
+                                    print "      getting IOV list from cache..."
+                                    iovtable_oracle = oracleTables[targetOracleTag]
+
+                                if outFile.checkOracleExport(iovtable_oracle):
+                                    print "   file correctly exported to Oracle"
+
+                        print "   file status: " + outFile.status()
+                        pclFileEngine.addNewFile(outFile)
+
+        pclFileEngine.writeToCache()
+
+
+
+
         tagReport = pclMonitoringTools.PclTagReport(pclTag)
 
         
@@ -97,9 +167,7 @@ def runBackEnd():
         
         # --------------------------------------------------------------------------------
         # --- read the cache
-        allCachedRuns = pclMonitoringTools.readCache(cacheFileName)
-        cachedRuns = allCachedRuns[0]
-        runReports = allCachedRuns[1]
+        cachedRuns, runReports = pclMonitoringTools.readCache(cacheFileName)
 
         unknownRun = False # this is set to true only if one run can not be processed
         unknownRunMsg = ''
@@ -165,17 +233,46 @@ def runBackEnd():
 
 
         # --------------------------------------------------------------------------------
+        # --- Get the run-info information for the interesting run-range
+        if len(runList) > 0:
+            print "Accessing runInfo...may take a while..."
+            runInfoList = None
+            try:
+                runInfoList = RunInfo.getRunInfoStartAndStopTime(config.runInfoTag_stop, config.runInfoConnect, runList[len(runList)-1], runList[0])
+            except Exception as error:
+                print "*** Error can not query run-info for runs between: " + str(runList[0]) + " and " + str(runList[len(runList)-1]) + " error: " + str(error)
+                raise Exception("Error can not query run-info for runs between: " + str(runList[0]) + " and " + str(runList[len(runList)-1]) + " error: " + str(error))
+
+                            
+        # --------------------------------------------------------------------------------
         # run on runs not yet cached
         # FIXME: remove?
         lastUploadDate = None
         isLastProcessed = True
         for run in runList:
             statusValues = 0, 'OK'
+            runInfo = None
 
+            # look for the RunInfo corresponding to this run
+            matches = [runI for runI in runInfoList if int(runI.run()) == int(run)]
+            if len(matches) == 0:
+                # try to get the payload from runinfo_start: this run might still be ongoing
+                try:
+                    runInfo = RunInfo.getRunInfoStartAndStopTime(config.runInfoTag_start, config.runInfoConnect, run, run)
+                except Exception as error:
+                    print "*** Error can not query run-info for run: " + str(run) + " error: " + str(error)
+                    raise Exception("Error can not query run-info for run: " + str(run) + " error: " + str(error))
+                               
+            elif len(matches) == 1:
+                runInfo = matches[0]
+            else:
+                print "***Error: more than one match (" + str(len(matches)) + " in run-info for run: " + str(run)
+                raise Exception("***Error: more than one match (" + str(len(matches)) + " in run-info for run: " + str(run))
+                
             # get the run report for all the records run in PCL (dictionary)
             rRep = None 
             try:
-                rRep = pclMonitoringTools.getRunReport(pclTag, run, fileList, oracleTables, lastUploadDate)
+                rRep = pclMonitoringTools.getRunReport(pclTag, run, runInfo, fileList, oracleTables, lastUploadDate)
             except pclMonitoringTools.OngoingRunExcept as error:
                 print error
             except Exception as error:
