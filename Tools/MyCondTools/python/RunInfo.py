@@ -7,8 +7,8 @@ import InspectTag
 """
 Module providing tools to query the RunInfo tags in the condition DB
 
-$Date: 2012/11/06 09:51:29 $
-$Revision: 1.8 $
+$Date: 2013/03/05 15:00:53 $
+$Revision: 1.9 $
 
 """
 
@@ -77,26 +77,36 @@ class RunInfoContent:
             return None 
 
 
-def getRunInfoStartAndStopTime(runInfoTag, runinfoaccount, run, logName = 'oracle://cms_orcon_adg/CMS_COND_31X_POPCONLOG', passwdFile = '/afs/cern.ch/cms/DB/conddb/ADG'):
+def getRunInfoStartAndStopTime(runInfoTag, runinfoaccount, runMin, runMax, logName = 'oracle://cms_orcon_adg/CMS_COND_31X_POPCONLOG', passwdFile = '/afs/cern.ch/cms/DB/conddb/ADG'):
     """
     Builds a RunInfoContent for a given run. Input parameters are the RunInfo tag name, connection string and run #
     """
+
+    ret = []
     
     try:
-        summaries = InspectTag.getSummaries(runInfoTag, runinfoaccount, run, run, logName, passwdFile)
+        summaries = InspectTag.getSummaries(runInfoTag, runinfoaccount, runMin, runMax, logName, passwdFile)
         for x in  summaries:
             #print x
+
+            # skip "fake" runs...
+            if int(x[3].split(',')[0].lstrip('RUN:').lstrip()) == -1:
+                continue
+
             runInfo = RunInfoContent(x[3])
             #print x[3]
             # run lenght
-            return runInfo
+
+            ret.append(runInfo)
 
     except Exception:
         raise 
 
+    return ret
+
 
 if __name__ == "__main__":
-    print getRunInfoStartAndStopTime("runinfo_31X_hlt", "oracle://cms_orcon_adg/CMS_COND_31X_RUN_INFO", 206448)
+    print getRunInfoStartAndStopTime("runinfo_31X_hlt", "oracle://cms_orcon_adg/CMS_COND_31X_RUN_INFO", 206448, 206448)[0]
 
 
 
