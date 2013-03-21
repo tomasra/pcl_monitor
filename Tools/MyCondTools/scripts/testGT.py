@@ -90,9 +90,9 @@ def runTest(GT, wf, local, HLTVersion, stdoutFile, stderrFile, exitCodeFile, rec
 def getWfList(GT):
     """ Decide whether the GT is for data or MC from its name.
     """
-    if GT.startswith("STARTHI"):
-        return [40, 41, 42]
-    elif GT.startswith("DESIGN") or GT.startswith("MC") or GT.startswith("START") or GT.startswith("POST"):
+    if GT.startswith("STARTHI") or GT.startswith("PRE_PO"):
+        return [40] # , 41, 42]
+    elif GT.startswith("DESIGN") or GT.startswith("MC") or GT.startswith("START") or GT.startswith("POST") or GT.startswith("PRE_MC") or GT.startswith("PRE_ST") or GT.startswith("PRE_PO"):
         return [29, 35]
     elif GT.startswith("GR_H"):
         return [4.291]
@@ -102,12 +102,12 @@ def getWfList(GT):
         # return [4.29] # RunMinBias2011B
         # return [4.40] # RunMinBias2012A
         return [4.51] # RunMinBias2012B
-    elif GT.startswith("GR_P"):
+    elif GT.startswith("GR_P") or GT.startswith("PRE_P"):
         # return [1000, 4.17] # RunMinBias2011A
         # return [1000, 4.29] # RunMinBias2011B
         # return [1000, 4.40] # RunMinBias2012A
         return [1000, 4.51] # RunMinBias2012B
-    elif GT.startswith("GR") or GT.startswith("FT"):
+    elif GT.startswith("GR") or GT.startswith("FT") or GT.startswith("PRE"):
         # return [4.17] # RunMinBias2011A
         # return [4.29] # RunMinBias2011B
         # return [4.40] # RunMinBias2012A
