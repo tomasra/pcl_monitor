@@ -17,13 +17,16 @@ def modifyCfgs(wf, GT, local, hltVersion):
     testDir = ""
     for dir in os.listdir(os.getcwd()):
         if os.path.isdir(dir) and dir.startswith(str(wf)):
-            testDir = dir
-            for file in os.listdir(dir):
+            testDir = dir+'_'+GT
+            os.system('rm -rf '+testDir)
+            print "testDir =", testDir
+            os.system('mv '+dir+' '+testDir)
+            for file in os.listdir(testDir):
                 if file.endswith(".py"):
                     print file
                     cfgList.append(file)
                     #FIXME this can be done directly with a runTheMatrix option
-                    for line in fileinput.FileInput(dir+"/"+file,inplace=1):
+                    for line in fileinput.FileInput(testDir+"/"+file,inplace=1):
                         # Remove any unneeded pre-existing connection string if running in local
                         localConnect = local and line.find("process.GlobalTag.connect") != -1
                         if localConnect:
