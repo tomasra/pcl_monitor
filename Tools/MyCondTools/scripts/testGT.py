@@ -16,7 +16,7 @@ def modifyCfgs(wf, GT, local, hltVersion):
     cfgList = []
     testDir = ""
     for dir in os.listdir(os.getcwd()):
-        if os.path.isdir(dir) and dir.startswith(str(wf)):
+        if os.path.isdir(dir) and dir.startswith(str(wf)) and not dir.endswith(GT):
             testDir = dir+'_'+GT
             os.system('rm -rf '+testDir)
             print "testDir =", testDir
@@ -93,7 +93,7 @@ def runTest(GT, wf, local, HLTVersion, stdoutFile, stderrFile, exitCodeFile, rec
 def getWfList(GT):
     """ Decide whether the GT is for data or MC from its name.
     """
-    if GT.startswith("STARTHI") or GT.startswith("PRE_PO"):
+    if GT.startswith("STARTHI") or GT.startswith("PRE_SH"):
         return [40] # , 41, 42]
     elif GT.startswith("DESIGN") or GT.startswith("MC") or GT.startswith("START") or GT.startswith("POST") or GT.startswith("PRE_MC") or GT.startswith("PRE_ST") or GT.startswith("PRE_PO"):
         return [29, 35]
