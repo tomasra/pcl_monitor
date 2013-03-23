@@ -16,8 +16,8 @@ def modifyCfgs(wf, GT, local, hltVersion):
     cfgList = []
     testDir = ""
     for dir in os.listdir(os.getcwd()):
-        if os.path.isdir(dir) and dir.startswith(str(wf)) and not dir.endswith(GT):
-            testDir = dir+'_'+GT
+        if os.path.isdir(dir) and dir.startswith(str(wf)):
+            testDir = GT+'_'+dir
             os.system('rm -rf '+testDir)
             print "testDir =", testDir
             os.system('mv '+dir+' '+testDir)
