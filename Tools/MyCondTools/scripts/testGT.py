@@ -123,9 +123,10 @@ if __name__ == '__main__':
 
     # Parse input parameters
     local = False
+    option = ""
     hltVersion = ""
     if len(sys.argv) < 2 or len(sys.argv) > 5:
-        print "Usage: testGT.py GT_NAME local|remote option [HLTVERSION]"
+        print "Usage: testGT.py GT_NAME local|remote [option] [HLTVERSION]"
         sys.exit(1)
     GT = sys.argv[1]
     if sys.argv[2] == "local":
@@ -134,7 +135,8 @@ if __name__ == '__main__':
         print "The second argument can only be local or remote, received", sys.argv[2], "exiting."
         sys.exit(1)
     # This is a string containing optional parameters to be passed to runTheMatrix.py
-    option = sys.argv[3]
+    if len(sys.argv) > 4:
+        option = sys.argv[3]
     if len(sys.argv) == 5:
         hltVersion = sys.argv[4]
 
