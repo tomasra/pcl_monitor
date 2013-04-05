@@ -52,11 +52,11 @@ def modifyCfgs(wf, GT, local, hltVersion):
                         print line,
     return testDir, cfgList
 
-def runTest(GT, wf, local, HLTVersion, stdoutFile, stderrFile, exitCodeFile, recycle):
+def runTest(GT, wf, local, option, HLTVersion, stdoutFile, stderrFile, exitCodeFile, recycle):
     """ This function runs creates the configuration files, modifes them for the GT to be tested and runs the jobs.
     The outputs are saved in local files and they can be retrieved after the tests.
     """
-    cmd = "runTheMatrix.py -l "+str(wf)+" -j 0"
+    cmd = "runTheMatrix.py -l "+str(wf)+" "+option+" -j 0"
 
     if local:
         where = "local"
@@ -124,8 +124,8 @@ if __name__ == '__main__':
     # Parse input parameters
     local = False
     hltVersion = ""
-    if len(sys.argv) < 2 or len(sys.argv) > 4:
-        print "Usage: testGT.py GT_NAME local|remote [HLTVERSION]"
+    if len(sys.argv) < 2 or len(sys.argv) > 5:
+        print "Usage: testGT.py GT_NAME local|remote option [HLTVERSION]"
         sys.exit(1)
     GT = sys.argv[1]
     if sys.argv[2] == "local":
@@ -133,8 +133,10 @@ if __name__ == '__main__':
     elif sys.argv[2] != "remote":
         print "The second argument can only be local or remote, received", sys.argv[2], "exiting."
         sys.exit(1)
-    if len(sys.argv) == 4:
-        hltVersion = sys.argv[3]
+    # This is a string containing optional parameters to be passed to runTheMatrix.py
+    option = sys.argv[3]
+    if len(sys.argv) == 5:
+        hltVersion = sys.argv[4]
 
     # if True skip the generation of mc samples
     recycle = False
@@ -150,7 +152,7 @@ if __name__ == '__main__':
     wfList = getWfList(GT)
     # Run all the tests
     for wf in wfList:
-        runTest(GT, wf, local, hltVersion, stdoutFile, stderrFile, exitCodeFile, recycle)
+        runTest(GT, wf, local, option, hltVersion, stdoutFile, stderrFile, exitCodeFile, recycle)
 
     stdoutFile.close()
     stderrFile.close()
