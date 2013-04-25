@@ -95,7 +95,7 @@ def getWfList(GT):
     """
     if GT.startswith("STARTHI") or GT.startswith("PRE_SH"):
         return [40] # , 41, 42]
-    elif GT.startswith("DESIGN") or GT.startswith("MC") or GT.startswith("START") or GT.startswith("POST") or GT.startswith("PRE_MC") or GT.startswith("PRE_ST") or GT.startswith("PRE_PO"):
+    elif GT.startswith("DES") or GT.startswith("MC") or GT.startswith("START") or GT.startswith("POST") or GT.startswith("PRE_MC") or GT.startswith("PRE_ST") or GT.startswith("PRE_PO"):
         return [29, 35]
     elif GT.startswith("GR_H"):
         return [4.291]
