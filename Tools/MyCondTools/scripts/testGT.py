@@ -57,6 +57,7 @@ def runTest(GT, wf, local, option, HLTVersion, stdoutFile, stderrFile, exitCodeF
     The outputs are saved in local files and they can be retrieved after the tests.
     """
     cmd = "runTheMatrix.py -l "+str(wf)+" "+option+" -j 0"
+    print "runTheMatrix.py -l "+str(wf)+" "+option+" -j 0"
 
     if local:
         where = "local"
@@ -95,8 +96,11 @@ def getWfList(GT):
     """
     if GT.startswith("STARTHI") or GT.startswith("PRE_SH"):
         return [40] # , 41, 42]
-    elif GT.startswith("DES") or GT.startswith("MC") or GT.startswith("START") or GT.startswith("POST") or GT.startswith("PRE_MC") or GT.startswith("PRE_ST") or GT.startswith("PRE_PO"):
-        return [29, 35]
+    elif GT.startswith("DES") or GT.startswith("MC") or GT.startswith("START") or GT.startswith("POST") or GT.startswith("PRE_MC") or GT.startswith("PRE_ST") or GT.startswith("PRE_PO") :
+        if option == "--what upgrade"
+         return [3310]
+        else
+         return [29]
     elif GT.startswith("GR_H"):
         return [4.291]
     elif GT.startswith("GR_E"):
@@ -135,7 +139,7 @@ if __name__ == '__main__':
         print "The second argument can only be local or remote, received", sys.argv[2], "exiting."
         sys.exit(1)
     # This is a string containing optional parameters to be passed to runTheMatrix.py
-    if len(sys.argv) > 4:
+    if len(sys.argv) > 3:
         option = sys.argv[3]
     if len(sys.argv) == 5:
         hltVersion = sys.argv[4]
@@ -177,3 +181,4 @@ if __name__ == '__main__':
     stdoutFile.close()
     stderrFile.close()
     exitCodeFile.close()
+
