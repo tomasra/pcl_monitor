@@ -159,6 +159,8 @@ if __name__     ==  "__main__":
 
     parser.add_option("--dump", action="store_true",dest="dump",default=False, help="dump the entry in the GT")
     parser.add_option("--account", action="store_true",dest="checkaccount",default=False, help="check also the account name")
+    parser.add_option("--ignore-suffix", action="append",dest="ignoredsuffixes",default=[], help="add an account suffix to the list of ignored suffixes (for archival accounts)")
+    
     parser.add_option("--frontier", action="store_true",dest="frontier",default=False, help="use frontier instead of oracle")
     
     parser.add_option("-r", "--run-number", dest="runnumber",
@@ -210,23 +212,13 @@ if __name__     ==  "__main__":
     fillGTCollection(filename1, globaltag1, tagCollection1)
     fillGTCollection(filename2, globaltag2, tagCollection2)
 
+    recordList =  list(set(tagCollection1._tagByRcdAndLabelId.keys()) | set(tagCollection2._tagByRcdAndLabelId.keys()))
 
-    # compare the # of records in the GT
-#     print "    GT " + globaltag1 + " has " + str(tagCollection1.size()) + " entries"
-#     print "    GT " + globaltag2 + " has " + str(tagCollection2.size()) + " entries"
 
-    firstCollection = tagCollection1
-    secondCollection = tagCollection2
-    
-    if tagCollection1.size() <  tagCollection2.size():
-        firstCollection = tagCollection2
-        secondCollection = tagCollection1
-        print "    GT 1: " + globaltag2 + " has " + str(tagCollection2.size()) + " entries"
-        print "    GT 2: " + globaltag1 + " has " + str(tagCollection1.size()) + " entries"
-    else:
-        print "    GT 1: " + globaltag1 + " has " + str(tagCollection1.size()) + " entries"
-        print "    GT 2: " + globaltag2 + " has " + str(tagCollection2.size()) + " entries"
 
+    print "    GT 1: " + globaltag1 + " has " + str(tagCollection1.size()) + " entries"
+    print "    GT 2: " + globaltag2 + " has " + str(tagCollection2.size()) + " entries"
+    print "    Total number fo records:", len(recordList)
 
     if options.dump:
         if options.runnumber != None:
@@ -243,21 +235,44 @@ if __name__     ==  "__main__":
                 raise Exception("Error can not find run: " + str(options.runnumber) + " in RunInfo: " + str(error))
             nsec = calendar.timegm(runInfo.getDate(runInfo._startTime).timetuple())
             timeid = nsec<<32
-
+            
     nchanges = 0
 
+    if len(options.ignoredsuffixes) != 0:
+        print "will ognore the following account suffixes: ", options.ignoredsuffixes
+
+    
     # loop over all records and compare the tag names and the # of payloads
-    for index in range(0, len(firstCollection._tagOrder)):
-        entry1 = firstCollection._tagList[firstCollection._tagOrder[index]]
-
-        # FIXME: check that record is in the GT
-        if not secondCollection.hasRcdID(entry1.rcdID()):
-            print " Rcd: " + str(entry1.rcdID()) + " not in GT 2!!!"
+    for rcdId in recordList:
+        entry1 = None
+        if not tagCollection1.hasRcdID(rcdId):
+            print blue(str(rcdId))
+            print "     not in GT 1!!!"
             continue
-        
-        entry2 = secondCollection.getByRcdID(entry1.rcdID())
+        else:
+            entry1 = tagCollection1.getByRcdID(rcdId)
 
-        if entry1.tagName() != entry2.tagName() or (entry1.account() != entry2.account() and options.checkaccount):
+        entry2 = None
+        if not tagCollection2.hasRcdID(rcdId):
+            print blue(str(rcdId))
+            print "     not in GT 2!!!"
+            continue
+        else:
+            entry2 = tagCollection2.getByRcdID(rcdId)
+            
+        account1 = entry1.account()
+        account2 = entry2.account()
+
+        if len(options.ignoredsuffixes) != 0:
+            if account1.split('_')[-1] in options.ignoredsuffixes:
+                separator = '_'
+                account1 = separator.join(account1.split('_')[:-1])
+            if account2.split('_')[-1] in options.ignoredsuffixes:
+                separator = '_'
+                account2 = separator.join(account2.split('_')[:-1])
+
+            
+        if entry1.tagName() != entry2.tagName() or (account1 != account2 and options.checkaccount):
 
             match = False
 
@@ -327,7 +342,8 @@ if __name__     ==  "__main__":
             if not match:
                 print blue(str(entry1.rcdID()))
                 print "     tag 1: " + entry1.tagName() + " -> 2: " + entry2.tagName()
-                
+                if options.checkaccount:
+                    print "     account 1: " + entry1.account() + " -> 2: " + entry2.account()
                 nchanges += 1
                 
              
@@ -348,5 +364,7 @@ if __name__     ==  "__main__":
 
     print "# of changes: " + str(nchanges)
 
-    sys.exit(1)
+    
+    sys.exit(0)
+
     
