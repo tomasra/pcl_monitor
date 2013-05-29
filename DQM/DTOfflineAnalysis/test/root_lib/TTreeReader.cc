@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2011/02/13 22:36:38 $
- *  $Revision: 1.13 $
+ *  $Date: 2011/02/14 18:25:04 $
+ *  $Revision: 1.14 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -60,8 +60,6 @@ TH1F* hDistHits2L=new TH1F ("hDistHits2L","Distance in wire",10,0,10);
 bool insideThetaWindow(float theta, int wheel, int station);
 // <---
 
-bool doStep1 = true;
-// bool doStep1 = false;
 
 vector<DTDetId> badSLs;
 
@@ -113,6 +111,8 @@ bool skipBadSL(const DTDetId& id) {
 
 
 TTreeReader::TTreeReader(const TString& fileName, const TString& outputFile) : 
+  doStep1(false),
+  detail(999),
   theOutFile(outputFile),
   theGranularity(-1),
   nevents(0),
@@ -151,6 +151,8 @@ TTreeReader::TTreeReader(const TString& fileName, const TString& outputFile) :
 
 
 TTreeReader::TTreeReader(TTree* aTree, const TString& outputFile) :
+  doStep1(false),
+  detail(999),
   theOutFile(outputFile),
   tree(aTree),   
   theGranularity(-1),
@@ -254,9 +256,9 @@ void TTreeReader::begin() {
 	      TString setName = (*set).first;
 	      if(histosRes[setName].find(detId) == histosRes[setName].end()) {
 		cout << "book histo for: " << Utils::getHistoNameFromDetIdAndSet(detId, setName) << endl;
-		histosRes[setName][detId] = new HRes1DHits(Utils::getHistoNameFromDetIdAndSet(detId, setName));
+		histosRes[setName][detId] = new HRes1DHits(Utils::getHistoNameFromDetIdAndSet(detId, setName), detail);
 		if(doStep1)
-		  histosResS1[setName][detId] = new HRes1DHits(Utils::getHistoNameFromDetIdAndSet(detId, setName) + "_S1");
+		  histosResS1[setName][detId] = new HRes1DHits(Utils::getHistoNameFromDetIdAndSet(detId, setName) + "_S1", detail);
 	      } 
 	    }
 

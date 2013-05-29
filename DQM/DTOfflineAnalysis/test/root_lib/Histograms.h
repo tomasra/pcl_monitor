@@ -13,41 +13,56 @@ using namespace std;
 /// A set of histograms of meantimer for different y regions
 class HRes1DHits{
  public:
-  HRes1DHits(const TString& name_){
+  HRes1DHits(const TString& name_, int detail_=999) : 
+    hResDist(0),
+    hResDistVsDist(0),
+    hResDistVsAngle(0),
+    hResDistVsTheta(0),
+    hResPos(0),
+    hResDistVsX(0),
+    hResDistVsY(0),
+    detail(detail_)
+  {
     TString N = name_;
     name=N;
     hResDist = new TH1F(N+"_hResDist", 
 			N+"_hResDist", 
 			//"Res dist from wire",
 			400, -1, 1);
-    
-    hResDistVsDist = new TH2F(N+"_hResDistVsDist",
-			      N+"_hResDistVsDist",
-			      //"Res dist from wire vs dist",
-			      100, 0, 2.5, 200, -0.4, 0.4);
-
-    hResDistVsAngle = new TH2F(N+"_hResDistVsAngle",
-			       N+"_hResDistVsAngle",
-			       //"Res dist from wire vs angle",
-			       200,-3.15,3.15, 200, -0.4, 0.4);
-
-    hResDistVsTheta = new TH2F(N+"_hResDistVsTheta",
-			       N+"_hResDistVsTheta",
-			       //"Res dist from wire vs angle",
-			       200,-3.15,3.15, 200, -0.4, 0.4);
-
-    
-    hResDistVsX = new TH2F(N+"_hResDistVsX",
-			   N+"_hResDistVsX",
-			   //"Res. dist from wire vs X",
- 			   200, -200, 200, 600, -0.4, 0.4);
-
-    hResDistVsY = new TH2F(N+"_hResDistVsY",
-			   N+"_hResDistVsY",
-			   //"Res. dist from wire vs Y",
- 			   200, -200, 200, 600, -0.4, 0.4);
 
     hResPos = new TH1F(N+"_hResPos", N+"_hResPos", 200, -0.4, 0.4);
+
+
+    if (detail>1) {
+      
+      hResDistVsDist = new TH2F(N+"_hResDistVsDist",
+				N+"_hResDistVsDist",
+				//"Res dist from wire vs dist",
+				100, 0, 2.5, 200, -0.4, 0.4);
+
+      hResDistVsAngle = new TH2F(N+"_hResDistVsAngle",
+				 N+"_hResDistVsAngle",
+				 //"Res dist from wire vs angle",
+				 200,-3.15,3.15, 200, -0.4, 0.4);
+
+      hResDistVsTheta = new TH2F(N+"_hResDistVsTheta",
+				 N+"_hResDistVsTheta",
+				 //"Res dist from wire vs angle",
+				 200,-3.15,3.15, 200, -0.4, 0.4);
+
+    
+      hResDistVsX = new TH2F(N+"_hResDistVsX",
+			     N+"_hResDistVsX",
+			     //"Res. dist from wire vs X",
+			     200, -200, 200, 600, -0.4, 0.4);
+
+      hResDistVsY = new TH2F(N+"_hResDistVsY",
+			     N+"_hResDistVsY",
+			     //"Res. dist from wire vs Y",
+			     200, -200, 200, 600, -0.4, 0.4);
+    }
+    
+
     
 //     hPullPos = new TH1F(N+"_hPullPos", "Pulls on position", 100, -5, 5);
 
@@ -57,11 +72,12 @@ class HRes1DHits{
 
 
 
-
+    
   }
-  
-  HRes1DHits(TString name_, TFile* file){
+
+  HRes1DHits(TString name_, TFile* file, int detail_=999){
     name=name_;
+    detail=detail_;
 
     hResDist = (TH1F *) file->Get(name_+"_hResDist");
     hResDistVsDist = (TH2F *) file->Get(name_+"_hResDistVsDist");
@@ -76,13 +92,15 @@ class HRes1DHits{
 
     if (hResDist) {
       hResDist->SetXTitle("|d_hit|-|d_extr| (cm)");
-      hResDistVsDist->SetXTitle("|d_extr| (cm)");
-      hResDistVsDist->SetYTitle("|d_hit|-|d_extr| (cm)");
-      hResDistVsX->SetXTitle("Local X (cm)");
-      hResDistVsX->SetYTitle("|d_hit|-|d_extr| (cm)");
-      hResDistVsY->SetXTitle("Local Y (cm)");
-      hResDistVsY->SetYTitle("|d_hit|-|d_extr| (cm)");
-      hResDistVsTheta->SetYTitle("phi |d_hit|-|d_extr| (cm) vs angle in theta SL");
+      if (detail>1) {
+	hResDistVsDist->SetXTitle("|d_extr| (cm)");
+	hResDistVsDist->SetYTitle("|d_hit|-|d_extr| (cm)");
+	hResDistVsX->SetXTitle("Local X (cm)");
+	hResDistVsX->SetYTitle("|d_hit|-|d_extr| (cm)");
+	hResDistVsY->SetXTitle("Local Y (cm)");
+	hResDistVsY->SetYTitle("|d_hit|-|d_extr| (cm)");
+	hResDistVsTheta->SetYTitle("phi |d_hit|-|d_extr| (cm) vs angle in theta SL");
+      }
     }
   }
 
@@ -100,30 +118,34 @@ class HRes1DHits{
 
   void Fill(float deltaDist, float distFromWire, float deltaX, float hitX, float hitY, float angle, float sigma, float angleTheta) {
     hResDist->Fill(deltaDist);
-    hResDistVsDist->Fill(distFromWire, deltaDist);
-    hResDistVsAngle->Fill(angle, deltaDist);
-    hResDistVsTheta->Fill(angleTheta, deltaDist);
-
     hResPos->Fill(deltaX);
-//     hPullPos->Fill(deltaX/sigma);
-//     hResPosVsAngle->Fill(angle, deltaX);
-    hResDistVsX->Fill(hitX, deltaDist);
-    hResDistVsY->Fill(hitY, deltaDist);
 
+    if (detail>1) {
+      hResDistVsDist->Fill(distFromWire, deltaDist);
+      hResDistVsAngle->Fill(angle, deltaDist);
+      hResDistVsTheta->Fill(angleTheta, deltaDist);
+      hResDistVsX->Fill(hitX, deltaDist);
+      hResDistVsY->Fill(hitY, deltaDist);
+      //     hPullPos->Fill(deltaX/sigma);
+      //     hResPosVsAngle->Fill(angle, deltaX);
+    }
   }
   
   void Write() {
     hResDist->Write();
-    hResDistVsDist->Write();
-    hResDistVsAngle->Write();
-    hResDistVsTheta->Write();
-
     hResPos->Write();
-//     hPullPos->Write();
-//     hResPosVsAngle->Write();
-    hResDistVsX->Write();
-    hResDistVsY->Write();
+      
+    if (detail>1) {
+      hResDistVsDist->Write();
+      hResDistVsAngle->Write();
+      hResDistVsTheta->Write();
+      hResDistVsX->Write();
+      hResDistVsY->Write();
+      //     hPullPos->Write();
+      //     hResPosVsAngle->Write();
+    }
   }
+  
 
   
  public:
@@ -140,7 +162,7 @@ class HRes1DHits{
   TH2F * hResDistVsX;
   TH2F * hResDistVsY;
   TString name;
-
+  int detail;
 };
 
 

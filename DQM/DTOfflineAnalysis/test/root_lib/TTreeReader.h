@@ -4,8 +4,8 @@
 /** \class TTreeReader
  *  No description available.
  *
- *  $Date: 2011/02/07 21:55:34 $
- *  $Revision: 1.8 $
+ *  $Date: 2011/02/13 22:24:33 $
+ *  $Revision: 1.9 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -77,8 +77,9 @@ public:
 			 unsigned int fields);
 
   
-protected:
-
+public:
+  bool doStep1;
+  int detail;
 
 private:
   void begin();
