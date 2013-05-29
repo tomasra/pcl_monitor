@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2009/09/11 10:53:22 $
- *  $Revision: 1.1 $
+ *  $Date: 2010/05/08 11:01:13 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -320,7 +320,7 @@ void FEDNtupleReader::runQueries(int maxEv, const TString& selection) {
       if(debug > 2) cout << "Entry: " << nev << endl;
       int previousFields = 0;
       // loop over all subqueries
-      for(int qu = 0; qu != theQueryName.size(); ++qu) {
+      for(unsigned int qu = 0; qu != theQueryName.size(); ++qu) {
 	if(debug > 2) cout << "- Query: " << theQueryName[qu] << endl;
 
 	// retireve the # fields
@@ -379,7 +379,7 @@ void FEDNtupleReader::runQueries(int maxEv, const TString& selection) {
   cout << " # processed events: " << nev << endl;
 
   // draw all histos
-   for(int qu = 0; qu != theQueryName.size(); ++qu) {
+   for(unsigned int qu = 0; qu != theQueryName.size(); ++qu) {
 	if(debug > 2) cout << "- Query: " << theQueryName[qu] << endl;
 	TH1F *histo1D = the1DHistos[qu];
 	if(histo1D != NULL) {
