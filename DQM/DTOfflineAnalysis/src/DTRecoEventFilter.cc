@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2008/10/27 16:25:25 $
- *  $Revision: 1.2 $
+ *  $Date: 2008/12/03 10:41:13 $
+ *  $Revision: 1.1 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -17,7 +17,7 @@
 using namespace std;
 using namespace edm;
 
-DTRecoEventFilter::DTRecoEventFilter(const edm::ParameterSet& pset){
+DTRecoEventFilter::DTRecoEventFilter(const edm::ParameterSet& pset) : HLTFilter(pset){
   // the name of the 4D rec hits collection
   theDigiLabel =  pset.getParameter<InputTag>("dtDigiLabel");
 
