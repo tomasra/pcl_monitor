@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2011/02/07 21:58:12 $
- *  $Revision: 1.18 $
+ *  $Date: 2011/02/13 22:47:08 $
+ *  $Revision: 1.19 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -41,6 +41,8 @@
 #include "DataFormats/PatCandidates/interface/Muon.h"
 #include "DataFormats/Math/interface/LorentzVector.h"
 #include "DataFormats/MuonReco/interface/MuonSelectors.h"
+ #include "DataFormats/VertexReco/interface/VertexFwd.h"
+#include "DataFormats/VertexReco/interface/Vertex.h"
 
 #include "DataFormats/SiPixelCluster/interface/SiPixelCluster.h"
 
@@ -60,7 +62,7 @@ using namespace reco;
 DTTreeBuilder::DTTreeBuilder(const ParameterSet& pset, TFile* file) : 
   theFile(file),
   BX(-999),
-  pix(-999),
+  //  pix(-999),
   runN(-1),
   eventN(-1)
 {
@@ -96,17 +98,23 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 
   // Get the 2D segment collection from the event
   edm::Handle<DTRecSegment2DCollection> all2DSegments;
-  event.getByLabel(theRecHits2DLabel, all2DSegments);
-
+  if (theRecHits2DLabel!="") {
+    event.getByLabel(theRecHits2DLabel, all2DSegments);
+  }
+  
   // Get the DT rechit collection from the event
   Handle<DTRecHitCollection> dtRecHits;
   event.getByLabel(theRecHitLabel, dtRecHits);
 
+
+  edm::Handle<reco::VertexCollection> vertex; 
+  event.getByLabel("goodPrimaryVertices", vertex);
+
   // Get the pixel cluster collection
-  Handle<edmNew::DetSetVector<SiPixelCluster> > clusterColl; 
-//   event.getByLabel("siPixelClusters", clusterColl); //name hardcoded beacuse I am lazy...
-//   pix = clusterColl->size();
-  pix=-1;
+//   Handle<edmNew::DetSetVector<SiPixelCluster> > clusterColl; 
+// //   event.getByLabel("siPixelClusters", clusterColl); //name hardcoded beacuse I am lazy...
+// //   pix = clusterColl->size();
+//   pix=-1;
 
   // Get the DT Geometry
   ESHandle<DTGeometry> dtGeom;
@@ -263,13 +271,13 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 
       for(int sl = 1; sl != 4; ++sl) {
 	DTSuperLayerId supLayId((*chamberId), sl);
-	float ttrig = 0.;
+	//	float ttrig = 0.;
 	float mean = 0.;
 	float sigma = 0.;
 	float kFact = 0.0;
 	// FIXME: port to 31X interface
 	tTrigMap->get(supLayId, mean, sigma, kFact, DTTimeUnits::ns); 
-	ttrig = mean + kFact*sigma;
+	//ttrig = mean + kFact*sigma;
 	segmObj->setTTrig(sl, mean, sigma, kFact);
       }
 
@@ -360,8 +368,8 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 
 	// Get segment etrapolation pos. in layer RF
 	//LocalPoint segPosExtrInLayer = layer->toLocal(chamber->toGlobal(segPosAtZWire));
-	const DTSuperLayer* superlayer = chamber->superLayer(wireId.superlayerId());
-	LocalPoint segPosExtrInSL = superlayer->toLocal(chamber->toGlobal(segPosAtZWire));	
+	//	const DTSuperLayer* superlayer = chamber->superLayer(wireId.superlayerId());
+	//	LocalPoint segPosExtrInSL = superlayer->toLocal(chamber->toGlobal(segPosAtZWire));	
 
 	// create the DTHitObject
 	hitObj->setLocalPosition((*recHit1D).localPosition().x(),
@@ -407,12 +415,12 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	}
 
 	// 3. step: re-reco (crossckeck)
-	float dS3 =-1.;
+	//	float dS3 =-1.;
 	DTRecHit1D rhS3 = (*recHit1D);
-	GlobalPoint pos = chamber->toGlobal(segPosAtZWire);
-	if (theAlgo->compute(layer, (*recHit1D), angle, pos, rhS3)) {
-	  dS3 = fabs(wireX - rhS3.localPosition().x());
-	}
+	//	GlobalPoint pos = chamber->toGlobal(segPosAtZWire);
+// 	if (theAlgo->compute(layer, (*recHit1D), angle, pos, rhS3)) {
+// 	  dS3 = fabs(wireX - rhS3.localPosition().x());
+// 	}
 
 // 	if (fabs(dS3 - distRecHitToWire) > 0.0005) {  
 // 	  // FIXME must check why!!!
@@ -459,156 +467,154 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 
   // 2D segments
   //----------------------------------------------------------------------
-  int segm2DCounter = 0;
-
-  
-  for (DTRecSegment2DCollection::id_iterator slId = all2DSegments->id_begin(); slId != all2DSegments->id_end(); ++slId) { // loop over SLs with segments
-    DTRecSegment2DCollection::range  range = all2DSegments->get(*slId);
-    int nsegm = distance(range.first, range.second);
-    if(debug)
-      cout << "   SL: " << *slId << " has " << nsegm
-	   << " 2D segments" << endl;
-    // Get the SL
-    const DTSuperLayer* sl = dtGeom->superLayer(*slId);
-
-
-    for (DTRecSegment2DCollection::const_iterator segment2D = range.first;
-	 segment2D!=range.second; ++segment2D) { // Loop over the segments in this SL
-      if(debug){
-   	cout<<"Looping on 2D segments: -------------------------"<<endl;
-      }
+  if (theRecHits2DLabel!="") {
+    int segm2DCounter = 0;  
+    for (DTRecSegment2DCollection::id_iterator slId = all2DSegments->id_begin(); slId != all2DSegments->id_end(); ++slId) { // loop over SLs with segments
+      DTRecSegment2DCollection::range  range = all2DSegments->get(*slId);
+      int nsegm = distance(range.first, range.second);
+      if(debug)
+	cout << "   SL: " << *slId << " has " << nsegm
+	     << " 2D segments" << endl;
+      // Get the SL
+      const DTSuperLayer* sl = dtGeom->superLayer(*slId);
 
 
-      // Get all 1D RecHits at step 2 within the 2D segment
-      vector<DTRecHit1D> recHits1D_S2;
-
-      // Create the segment object
-      DTSegmentObject * segmObj = new((*segment2DArray)[segm2DCounter++]) DTSegmentObject((*slId).wheel(), (*slId).station(), (*slId).sector());
-      LocalPoint segment2DLocalPos = (*segment2D).localPosition();
-      segmObj->setPositionInChamber(segment2DLocalPos.x(), segment2DLocalPos.y(), segment2DLocalPos.z());
-
-      float dxdz =angleBtwHPiAndHPi(std::atan2((*segment2D).localDirection().x(),(*segment2D).localDirection().z()));
-
-      segmObj->phi = dxdz;
-      segmObj->theta = 0;
-      segmObj->chi2 = (*segment2D).chi2()/(*segment2D).degreesOfFreedom();
-      
-      int projection = -1;
-
-      if((*slId).superLayer()==2) {
-	projection = 2;
-      } else {
-	projection = 1;
-      }
-      
-      recHits1D_S2 = segment2D->specificRecHits();
-      segmObj->proj = projection;
-
-
-      // Loop over 1D RecHit inside 2D segment
-      for(vector<DTRecHit1D>::const_iterator recHit1D = recHits1D_S2.begin();
-	  recHit1D != recHits1D_S2.end();
-	  recHit1D++) {
-	const DTWireId wireId = (*recHit1D).wireId();
-	if(debug) {
-	  cout<<"Looping on 1D rechits: -------------------------"<<endl;
-	  cout << wireId << endl;
+      for (DTRecSegment2DCollection::const_iterator segment2D = range.first;
+	   segment2D!=range.second; ++segment2D) { // Loop over the segments in this SL
+	if(debug){
+	  cout<<"Looping on 2D segments: -------------------------"<<endl;
 	}
 
-	
-	DTHitObject *hitObj = segmObj->add1DHit(wireId.wheel(), wireId.station(), wireId.sector(),
-						wireId.superLayer(), wireId.layer(), wireId.wire());
-	
-	
-	hitObj->digiTime = (*recHit1D).digiTime() ;
 
-	float t0 = 0;
-	float t0rms = 0;
-	// Read the t0 from pulses for this wire (ns)
-	t0Handle->get(wireId,
-		      t0,
-		      t0rms,
-		      DTTimeUnits::ns);
+	// Get all 1D RecHits at step 2 within the 2D segment
+	vector<DTRecHit1D> recHits1D_S2;
 
-	hitObj->t0pulses = t0;
+	// Create the segment object
+	DTSegmentObject * segmObj = new((*segment2DArray)[segm2DCounter++]) DTSegmentObject((*slId).wheel(), (*slId).station(), (*slId).sector());
+	LocalPoint segment2DLocalPos = (*segment2D).localPosition();
+	segmObj->setPositionInChamber(segment2DLocalPos.x(), segment2DLocalPos.y(), segment2DLocalPos.z());
 
-	// Check for noisy channels and skip them
-	if(checkNoisyChannels) {
-	  bool isNoisy = false;
-	  bool isFEMasked = false;
-	  bool isTDCMasked = false;
-	  bool isTrigMask = false;
-	  bool isDead = false;
-	  bool isNohv = false;
-	  statusMap->cellStatus(wireId, isNoisy, isFEMasked, isTDCMasked, isTrigMask, isDead, isNohv);
-	  hitObj->isNoisyCell = isNoisy;
+	float dxdz =angleBtwHPiAndHPi(std::atan2((*segment2D).localDirection().x(),(*segment2D).localDirection().z()));
+
+	segmObj->phi = dxdz;
+	segmObj->theta = 0;
+	segmObj->chi2 = (*segment2D).chi2()/(*segment2D).degreesOfFreedom();
+      
+	int projection = -1;
+
+	if((*slId).superLayer()==2) {
+	  projection = 2;
+	} else {
+	  projection = 1;
 	}
+      
+	recHits1D_S2 = segment2D->specificRecHits();
+	segmObj->proj = projection;
 
-	// Get the layer and the wire position
-	const DTLayer* layer = sl->layer(wireId.layerId());
-	float wireX = layer->specificTopology().wirePosition(wireId.wire());
+
+	// Loop over 1D RecHit inside 2D segment
+	for(vector<DTRecHit1D>::const_iterator recHit1D = recHits1D_S2.begin();
+	    recHit1D != recHits1D_S2.end();
+	    recHit1D++) {
+	  const DTWireId wireId = (*recHit1D).wireId();
+	  if(debug) {
+	    cout<<"Looping on 1D rechits: -------------------------"<<endl;
+	    cout << wireId << endl;
+	  }
+
+	
+	  DTHitObject *hitObj = segmObj->add1DHit(wireId.wheel(), wireId.station(), wireId.sector(),
+						  wireId.superLayer(), wireId.layer(), wireId.wire());
+	
+	
+	  hitObj->digiTime = (*recHit1D).digiTime() ;
+
+	  float t0 = 0;
+	  float t0rms = 0;
+	  // Read the t0 from pulses for this wire (ns)
+	  t0Handle->get(wireId,
+			t0,
+			t0rms,
+			DTTimeUnits::ns);
+
+	  hitObj->t0pulses = t0;
+
+	  // Check for noisy channels and skip them
+	  if(checkNoisyChannels) {
+	    bool isNoisy = false;
+	    bool isFEMasked = false;
+	    bool isTDCMasked = false;
+	    bool isTrigMask = false;
+	    bool isDead = false;
+	    bool isNohv = false;
+	    statusMap->cellStatus(wireId, isNoisy, isFEMasked, isTDCMasked, isTrigMask, isDead, isNohv);
+	    hitObj->isNoisyCell = isNoisy;
+	  }
+
+	  // Get the layer and the wire position
+	  const DTLayer* layer = sl->layer(wireId.layerId());
+	  float wireX = layer->specificTopology().wirePosition(wireId.wire());
 
 
 	
-	// Distance of the 1D rechit from the wire
-	//float distRecHitToWire = fabs(wireX - (*recHit1D).localPosition().x());
-	float distRecHitToWire = fabs(wireX - (*recHit1D).localPosition().x());
+	  // Distance of the 1D rechit from the wire
+	  //float distRecHitToWire = fabs(wireX - (*recHit1D).localPosition().x());
+	  float distRecHitToWire = fabs(wireX - (*recHit1D).localPosition().x());
 	
-	// Extrapolate the segment to the z of the wire
+	  // Extrapolate the segment to the z of the wire
 	
-	// Get wire position in SL RF
-	LocalPoint wirePosInLay(wireX,0,0);
-	GlobalPoint wirePosGlob = layer->toGlobal(wirePosInLay);
-	LocalPoint wirePosInSl = sl->toLocal(wirePosGlob);
-// 	cout << "Wire: " << wireId << " z: " << wirePosInChamber.z() << endl;
+	  // Get wire position in SL RF
+	  LocalPoint wirePosInLay(wireX,0,0);
+	  GlobalPoint wirePosGlob = layer->toGlobal(wirePosInLay);
+	  LocalPoint wirePosInSl = sl->toLocal(wirePosGlob);
+	  // 	cout << "Wire: " << wireId << " z: " << wirePosInChamber.z() << endl;
 
-	// Segment position at Wire z in SL local frame
-	LocalPoint segPosAtZWire = (*segment2D).localPosition()
-	  + (*segment2D).localDirection()*wirePosInSl.z()/cos((*segment2D).localDirection().theta());
+	  // Segment position at Wire z in SL local frame
+	  LocalPoint segPosAtZWire = (*segment2D).localPosition()
+	    + (*segment2D).localDirection()*wirePosInSl.z()/cos((*segment2D).localDirection().theta());
   
 
-	float deltaX = (*recHit1D).localPosition().x() - (layer->toLocal(sl->toGlobal(segPosAtZWire))).x();
-	float angle = -1;
-	double distSegmToWire = fabs(wirePosInSl.x() - segPosAtZWire.x());
-	angle = dxdz;
+	  float deltaX = (*recHit1D).localPosition().x() - (layer->toLocal(sl->toGlobal(segPosAtZWire))).x();
+	  float angle = -1;
+	  double distSegmToWire = fabs(wirePosInSl.x() - segPosAtZWire.x());
+	  angle = dxdz;
 
-// 	cout << wireId << " wiX=" << wireX << " drhw=" << distRecHitToWire 
-// 	     << " wposL=" << wirePosInLay 
-// 	     << " wposSl=" << wirePosInSl << endl
-// 	     << " segPosAtZWire=" << segPosAtZWire
-// 	     << " deltaX " << deltaX 
-// 	     << " distSegmToWire " << distSegmToWire <<endl
-// 	     << " theta=" <<(*segment2D).localDirection().theta()
-// 	     << " angle=" <<angle <<endl <<endl;
+	  // 	cout << wireId << " wiX=" << wireX << " drhw=" << distRecHitToWire 
+	  // 	     << " wposL=" << wirePosInLay 
+	  // 	     << " wposSl=" << wirePosInSl << endl
+	  // 	     << " segPosAtZWire=" << segPosAtZWire
+	  // 	     << " deltaX " << deltaX 
+	  // 	     << " distSegmToWire " << distSegmToWire <<endl
+	  // 	     << " theta=" <<(*segment2D).localDirection().theta()
+	  // 	     << " angle=" <<angle <<endl <<endl;
 
 
-	if(fabs(distSegmToWire) > 10)
-	  cout << "  Warning: dist segment-wire: " << distSegmToWire << endl;
+	  if(fabs(distSegmToWire) > 10)
+	    cout << "  Warning: dist segment-wire: " << distSegmToWire << endl;
 	
 	
-	// plots for different angles
-	theFile->cd();
+	  // plots for different angles
+	  theFile->cd();
 
-	// FIXME
-	// create the DTHitObject
-	hitObj->setLocalPosition((*recHit1D).localPosition().x(),
-				(*recHit1D).localPosition().y(),
-				(*recHit1D).localPosition().z());
+	  // FIXME
+	  // create the DTHitObject
+	  hitObj->setLocalPosition((*recHit1D).localPosition().x(),
+				   (*recHit1D).localPosition().y(),
+				   (*recHit1D).localPosition().z());
 	
-	hitObj->resDist = distRecHitToWire - distSegmToWire;
-	hitObj->resPos = deltaX;
-	hitObj->distFromWire = distSegmToWire;
-	hitObj->sigmaPos = sqrt((*recHit1D).localPositionError().xx());
-	hitObj->angle = angle;	
+	  hitObj->resDist = distRecHitToWire - distSegmToWire;
+	  hitObj->resPos = deltaX;
+	  hitObj->distFromWire = distSegmToWire;
+	  hitObj->sigmaPos = sqrt((*recHit1D).localPositionError().xx());
+	  hitObj->angle = angle;	
 
-      }// End of loop over 1D RecHit inside 2D segment
+	}// End of loop over 1D RecHit inside 2D segment
       
-      if(debug) cout << "Add new segment with # hits: " << segmObj->hits->GetEntriesFast() << endl;
-      if(debug) cout << "    new # of segments is: " << segm2DCounter << endl;
+	if(debug) cout << "Add new segment with # hits: " << segmObj->hits->GetEntriesFast() << endl;
+	if(debug) cout << "    new # of segments is: " << segm2DCounter << endl;
 
-    }// End of loop over the segm2D of this ChamerId
-
-
+      }// End of loop over the segm2D of this ChamerId
+    }
   }
   
 
@@ -701,7 +707,9 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
       // hChamberMatched->Fill(muon->numberOfChambers());
 
       int sel = 0;
-      if(muon::isGoodMuon(*muon,muon::GlobalMuonPromptTight)) sel=1;
+      //      if(muon::isGoodMuon(*muon,muon::GlobalMuonPromptTight)) sel=1;
+      if(muon::isTightMuon(*muon,vertex->front())) sel=1;
+
       muObj->sel = sel;
     }
   }
@@ -748,10 +756,12 @@ void DTTreeBuilder::beginJob() {
   theTree->SetAutoSave(10000000);
 
   theTree->Branch("segments", "TClonesArray", &segmentArray); 
-  theTree->Branch("segments2D", "TClonesArray", &segment2DArray); 
+  if (theRecHits2DLabel!="") {
+    theTree->Branch("segments2D", "TClonesArray", &segment2DArray); 
+  }
   theTree->Branch("muonCands", "TClonesArray", &muArray);
   theTree->Branch("BX", &BX, "BX/I");
-  theTree->Branch("Pix", &pix, "Pix/I");
+  //  theTree->Branch("Pix", &pix, "Pix/I");
   theTree->Branch("Run", &runN, "Run/I");
   theTree->Branch("Event", &eventN, "Event/I");
 }
