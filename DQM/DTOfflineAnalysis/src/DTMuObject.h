@@ -4,8 +4,8 @@
 /** \class DTMuObject
  *  No description available.
  *
- *  $Date: 2010/07/30 10:32:47 $
- *  $Revision: 1.3 $
+ *  $Date: 2010/07/30 10:55:08 $
+ *  $Revision: 1.4 $
  */
 
 #if !defined(__CINT__)||  defined(__MAKECINT__)
@@ -29,13 +29,13 @@ public:
   float phi;
   float qpt;
   
-  int nMuHits;
-  int nStaDTHits;
-  int nGlbDTHits;
-  int nStaDTValidHits;
-  int nGlbDTValidHits;
-  int nStripHits;
-  int nPixHits;
+  short nMuHits;
+  short nStaDTHits;
+  short nGlbDTHits;
+  short nStaDTValidHits;
+  short nGlbDTValidHits;
+  short nStripHits;
+  short nPixHits;
 
   float normChi2tk;
   float normChi2sta;
@@ -47,11 +47,12 @@ public:
   // 3 -> STA + TM
   // 4 -> TM
   // 5 -> STA 
-  int type;
+  short type;
 
   // selection
   // 1 -> GlobalMuonPromptTight
-  int sel;
+  // 2 -> tightMuon
+  short sel;
 
 
 

@@ -4,14 +4,14 @@
 /** \class DTSegmentObject
  *  No description available.
  *
- *  $Date: 2010/09/10 12:49:11 $
- *  $Revision: 1.4 $
+ *  $Date: 2011/02/07 21:57:49 $
+ *  $Revision: 1.5 $
  *  \author G. Cerminara - INFN Torino
  */
 
 #if !defined(__CINT__)||  defined(__MAKECINT__)
 #include "TObject.h"
-#include "TArrayD.h"
+#include "TArrayF.h"
 #include "TClonesArray.h"
 #endif
 
@@ -51,42 +51,42 @@ protected:
 public:
   
   // Chamber ID
-  int wheel;
-  int station;
-  int sector;
+  short wheel;
+  short station;
+  short sector;
 
   // projection type:
   // 1 -> phi only
   // 2 -> theta only
   // 3 -> phi AND theta
-  int proj;
+  short proj;
   // position in SL RF
-  double Xsl;
-  double Ysl;
-  double Zsl;
+  float Xsl;
+  float Ysl;
+  float Zsl;
 
   // angles in chamber RF
-  double phi;
-  double theta;
+  float phi;
+  float theta;
   // t0segment
-  double t0SegPhi;
-  double t0SegTheta;
-  double vDriftCorrPhi;
-  double vDriftCorrTheta;
+  float t0SegPhi;
+  float t0SegTheta;
+  float vDriftCorrPhi;
+  float vDriftCorrTheta;
 
   // nhits
-  int nHits;
-  int nHitsPhi;
-  int nHitsTheta;
+  short nHits;
+  short nHitsPhi;
+  short nHitsTheta;
 
 
   // chi2
-  double chi2;
+  float chi2;
 
 //   // ttrig for the 3 SLs
-  TArrayD tTrigMean;
-  TArrayD tTrigSigma;
-  TArrayD tTrigKfact;
+  TArrayF tTrigMean;
+  TArrayF tTrigSigma;
+  TArrayF tTrigKfact;
   
 
   // the Collection of hits belonging to the segments
@@ -94,7 +94,7 @@ public:
 
 
   // the Collection of available 1D hits
-  int nAvailableHits;
+  short nAvailableHits;
   TClonesArray *availableHits;
 
   // Global coordinates
