@@ -27,15 +27,13 @@ dtLocalRecoAnal = cms.EDAnalyzer("DTLocalRecoAnalysis",
 #                                     DTParametrizedDriftAlgo,
                                      DTLinearDriftFromDBAlgo,
                                      debug = cms.untracked.bool(False),
-                                                              recHits4DLabel  = cms.string('dt4DSegments'),
-                                                              recHits2DLabel  = cms.string('dt2DSegments'),
-                                                              recHitLabel =  cms.string('dt1DRecHits'),
-                                                              muonLabel =  cms.string('muons'),
-                                                              checkNoisyChannels = cms.untracked.bool(False)          
-                                                              )
-                                 
-                                 
-
+                                     recHits4DLabel  = cms.string('dt4DSegments'),
+                                     #recHits2DLabel  = cms.string('dt2DSegments'),
+                                     recHits2DLabel  = cms.string(''),
+                                     recHitLabel =  cms.string('dt1DRecHits'),
+                                     muonLabel =  cms.string('muons'),
+                                     checkNoisyChannels = cms.untracked.bool(False)          
+                                     )
                                  )
 
 dtLocalRecoAnalT0Seg = cms.EDAnalyzer("DTLocalRecoAnalysis",
