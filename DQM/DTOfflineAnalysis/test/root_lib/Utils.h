@@ -4,8 +4,8 @@
 /** \class Utils
  *  No description available.
  *
- *  $Date: 2009/07/27 12:35:32 $
- *  $Revision: 1.1 $
+ *  $Date: 2009/09/11 10:53:22 $
+ *  $Revision: 1.2 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -27,6 +27,7 @@ public:
   
   static TString getHistoNameFromDetIdAndSet(const DTDetId& detId, const TString& set);
 
+  static TString getDTValidationHistoNameFromDetId(const DTDetId& detId, TString step="S3");
   
   static TCanvas * newCanvas(TString name,
 			     TString title="",
@@ -48,3 +49,5 @@ private:
 };
 #endif
 
+
+  

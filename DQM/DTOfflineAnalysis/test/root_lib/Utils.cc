@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2009/09/11 10:53:22 $
- *  $Revision: 1.2 $
+ *  $Date: 2010/05/13 09:34:58 $
+ *  $Revision: 1.3 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -60,6 +60,20 @@ TString Utils::getHistoNameFromDetId(const DTDetId& detId) {
 TString Utils::getHistoNameFromDetIdAndSet(const DTDetId& detId, const TString& set) {
   return Utils::getHistoNameFromDetId(detId) + "_" + set;
 }
+
+
+TString Utils::getDTValidationHistoNameFromDetId(const DTDetId& detId, TString step) {
+  TString result=step;
+  if(detId.sl == 2) {
+    result+="RZ_W";
+  } else {
+    result+="RPhi_W";
+  }
+  //  result+=long(abs(detId.wheel));
+  result=result+long(abs(detId.wheel))+"_St"+long(detId.station);
+  return result;
+}
+
 
 
 TCanvas * Utils::newCanvas(TString name, TString title,
