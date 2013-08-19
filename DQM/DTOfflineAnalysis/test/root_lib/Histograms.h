@@ -92,7 +92,7 @@ class HRes1DHits{
 
     if (hResDist) {
       hResDist->SetXTitle("|d_hit|-|d_extr| (cm)");
-      if (detail>1) {
+      if (hResDistVsDist!=0) {
 	hResDistVsDist->SetXTitle("|d_extr| (cm)");
 	hResDistVsDist->SetYTitle("|d_hit|-|d_extr| (cm)");
 	hResDistVsX->SetXTitle("Local X (cm)");
@@ -110,6 +110,7 @@ class HRes1DHits{
     delete hResDistVsDist;
     delete hResDistVsAngle;
     delete hResDistVsTheta;
+    delete hResDistVsX;
     delete hResDistVsY;
     delete hResPos;
 //     delete hPullPos;
