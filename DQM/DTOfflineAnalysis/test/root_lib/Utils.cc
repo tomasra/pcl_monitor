@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/05/13 09:34:58 $
- *  $Revision: 1.3 $
+ *  $Date: 2013/06/05 07:36:32 $
+ *  $Revision: 1.4 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -13,6 +13,7 @@
 #include "TCanvas.h"
 
 #include <sstream>
+#include <cmath>
 
 using namespace std;
 
@@ -64,13 +65,18 @@ TString Utils::getHistoNameFromDetIdAndSet(const DTDetId& detId, const TString& 
 
 TString Utils::getDTValidationHistoNameFromDetId(const DTDetId& detId, TString step) {
   TString result=step;
-  if(detId.sl == 2) {
+  if(detId.sl == 0) {
+    result+="W";    
+  } else if(detId.sl == 2) {
     result+="RZ_W";
   } else {
     result+="RPhi_W";
   }
-  //  result+=long(abs(detId.wheel));
-  result=result+long(abs(detId.wheel))+"_St"+long(detId.station);
+  if (detId.station==0) {
+    result+=long(abs(detId.wheel));
+  } else {
+    result=result+long(abs(detId.wheel))+"_St"+long(detId.station);
+  }
   return result;
 }
 
