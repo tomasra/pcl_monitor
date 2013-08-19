@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2009/03/04 12:34:44 $
- *  $Revision: 1.2 $
+ *  $Date: 2010/05/12 15:33:46 $
+ *  $Revision: 1.3 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -112,7 +112,7 @@ void DTSegmentAnalysis::analyze(const Event& event, const EventSetup& setup) {
 	t0theta = (*segment4D).zSegment()->t0();
       }
 
-      LocalPoint segment4DLocalPos = (*segment4D).localPosition();
+      //      LocalPoint segment4DLocalPos = (*segment4D).localPosition();
       LocalVector segment4DLocalDirection = (*segment4D).localDirection();
 
 

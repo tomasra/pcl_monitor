@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2009/04/14 17:32:06 $
- *  $Revision: 1.3 $
+ *  $Date: 2010/05/12 15:33:46 $
+ *  $Revision: 1.4 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -225,8 +225,8 @@ void DTResolutionAnalysis::analyze(const Event& event, const EventSetup& setup) 
 
 	// Get segment etrapolation pos. in layer RF
 	//LocalPoint segPosExtrInLayer = layer->toLocal(chamber->toGlobal(segPosAtZWire));
-	const DTSuperLayer* superlayer = chamber->superLayer(wireId.superlayerId());
-	LocalPoint segPosExtrInSL = superlayer->toLocal(chamber->toGlobal(segPosAtZWire));
+	//	const DTSuperLayer* superlayer = chamber->superLayer(wireId.superlayerId());
+	//	LocalPoint segPosExtrInSL = superlayer->toLocal(chamber->toGlobal(segPosAtZWire));
 
 	
 	
