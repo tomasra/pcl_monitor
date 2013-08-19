@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2011/02/14 18:25:04 $
- *  $Revision: 1.14 $
+ *  $Date: 2013/05/29 13:33:18 $
+ *  $Revision: 1.15 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -485,7 +485,7 @@ void TTreeReader::processEvent(int entry) {
 	cout << "       digi time: " << hitObj->digiTime << endl;
       }
       int segSl = hitObj->sl;
-      if((theGranularity == 3 || theGranularity == 4) &&   hitObj->sl == 3) segSl = 1; // "byView"
+      if((theGranularity == 3 || theGranularity == 4 || theGranularity==13) &&   hitObj->sl == 3) segSl = 1; // "byView"
       DTDetId detIdForPlot = buildDetid(oneSeg->wheel, oneSeg->station, oneSeg->sector,
 					segSl, hitObj->layer, hitObj->wire);
 
@@ -608,7 +608,7 @@ void TTreeReader::analyse(const int nEventMax) {
       bool tagEvent=false;
       for(int iMu=0; iMu < muons->GetEntriesFast(); iMu++) { // loop over events
 	DTMuObject *oneMu = (DTMuObject *) muons->At(iMu);	
-	
+	// type 5 = STA only
 	if (fabs(oneMu->eta)<1.2 && oneMu->type!=5 && fabs(oneMu->qpt) >ptmin) tagEvent=true;	
       }
       if (!tagEvent) continue;
@@ -639,7 +639,10 @@ DTDetId TTreeReader::buildDetid(int wheel, int station, int sector, int sl, int 
     return DTDetId(wheel, station, 0, sl, layer, 0);
   } else if(theGranularity == 7) { // chamberByLayer
     return DTDetId(wheel, station, sector, sl, layer, 0);
+  } else if(theGranularity == 13) { // abs(W), statByView
+    return DTDetId(abs(wheel), station, 0, sl, 0, 0);
   }
+  
 
   return DTDetId(0, 0, 0, 0, 0, 0);
   
@@ -668,7 +671,11 @@ void TTreeReader::setGranularity(const TString& granularity) {
   } else if(granularity == "chamberByLayer") {
     cout << "Granularity: Chamber by Layer" << endl;
     theGranularity = 7;
+  } else if(granularity == "absWStatByView") {
+    cout << "Granularity: Station by view, |W|" << endl;
+    theGranularity = 13;
   }
+
 }
 // TString TTreeReader::getNameFromDetId(const DTDetId& detId) const {
 //   stringstream wheelStr; 
