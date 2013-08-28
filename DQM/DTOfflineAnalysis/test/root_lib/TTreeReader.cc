@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2013/05/29 13:33:18 $
- *  $Revision: 1.15 $
+ *  $Date: 2013/08/19 21:41:20 $
+ *  $Revision: 1.16 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -191,9 +191,6 @@ void TTreeReader::setBranchAddresses() {
 
 }
 
-
-HSegment *hAll;
-
 void TTreeReader::begin() {
   cout << "Begin" << endl;
 
@@ -209,35 +206,27 @@ void TTreeReader::begin() {
 
   hThetaEffNum4 =new TH2F ("hThetaEffNum4","hThetaEffNum4",12 ,0.5,12.5,15,0.5,15.5);
   hNAvThetaHits=new TH1F("hNAvThetaHits"  ,"hTheta available Hits if non efficient with 3 or 4 Theta Hits",20,0,20. );
-  
-
-
-  hAll = new HSegment("ALL");
 
   // build the histos with the desired granularity
   for(int wheel = -2; wheel != 3; ++wheel) {   // loop over wheels
     for(int station = 1; station != 5; ++station) { // loop over stations
 
-//       TString setName = "AllSect";
-//       DTDetId chId(wheel, station, 0, 0, 0, 0);
-//       if(histosSeg[setName].find(chId) == histosSeg[setName].end()) {
-// 	histosSeg[setName][chId] = new HSegment(Utils::getHistoNameFromDetIdAndSet(chId, setName));
-//       }
-//       if(histosRes[setName].find(chId) == histosRes[setName].end()) {
-//       	histosRes[setName][chId] = new HRes1DHits(Utils::getHistoNameFromDetIdAndSet(chId, setName));
-//       }
-
       for(int sector = 1; sector != 15; ++sector) { // loop over sectors
 	if(station != 4 && (sector == 13 || sector == 14)) continue;
 
 	// book the segment histos
-	// loop over set of cuts
+	DTDetId chId = buildDetid(wheel, station, sector, 0, 0, 0);
+
+// 	// One set for all segments with no cuts
+// 	if(histosSeg["All"].find(chId) == histosSeg["All"].end()) {
+// 	  histosSeg["All"][chId] = new HSegment(Utils::getHistoNameFromDetIdAndSet(chId, "All"), 1);
+// 	}
+	
+	// One set of histograms for each specified set of cuts
 	for(map<TString, DTCut>::const_iterator set = cutSets.begin();   
 	    set != cutSets.end();
 	    ++set) {
 	  TString setName = (*set).first;
-	  //DTDetId chId(wheel, station, sector, 0, 0, 0);
-	  DTDetId chId = buildDetid(wheel, station, sector, 0, 0, 0);
 	  if(histosSeg[setName].find(chId) == histosSeg[setName].end()) {
 	    histosSeg[setName][chId] = new HSegment(Utils::getHistoNameFromDetIdAndSet(chId, setName));
 	  }
@@ -406,26 +395,10 @@ void TTreeReader::processEvent(int entry) {
 	cout << segmDetid << " vdrift: " << calibMap->meanVDrift(sl1Id) << endl;
     }
 
-
-    hAll->Fill(oneSeg->nHits,
-	       oneSeg->nHitsPhi,
-	       oneSeg->nHitsTheta,
-	       oneSeg->proj,
-	       oneSeg->phi,
-	       oneSeg->theta,
-	       -1,
-	       oneSeg->chi2,
-	       oneSeg->t0SegPhi,
-	       oneSeg->t0SegTheta,
-	       vdrift,
-	       oneSeg->Xsl,
-	       oneSeg->Ysl);
-
-    bool passHqPhiV = false;
     DTDetId chId = buildDetid(oneSeg->wheel, oneSeg->station, oneSeg->sector, 0, 0, 0);
-    // select segments
+    // Plots for selected segments: loop over set of cuts
+    bool passHqPhiV = false;
     vector<TString> passedCuts;
-    // loop over set of cuts
     for(map<TString, DTCut>::const_iterator set = cutSets.begin();   
 	set != cutSets.end();
 	++set) {
@@ -556,7 +529,6 @@ void TTreeReader::end() {
       (*hist).second->Write();
     }
   }
-  hAll->Write();
 
   hRun->Write();
 
