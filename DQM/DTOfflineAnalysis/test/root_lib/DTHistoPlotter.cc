@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/05/13 09:34:58 $
- *  $Revision: 1.4 $
+ *  $Date: 2010/07/29 13:56:22 $
+ *  $Revision: 1.5 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -91,7 +91,7 @@ TH1F * DTHistoPlotter::plotNHitsSegm(const int fileN,
 				     const TString& drawOptions) {
   DTDetId detId(wheel, station, sector, 0, 0, 0);
   HSegment *hSeg = getHistoSeg(fileN, set, detId);
-  TH1F *histo = hSeg->hNHits;
+  TH1F *histo = 0; //hSeg->hNHits; //FIXME to be updated
   if(histo !=0) {
     drawHisto(fileN, histo, drawOptions);
   }
@@ -195,7 +195,7 @@ TH1F * DTHistoPlotter::plotNHitsTheta(const int fileN,
 				      const TString& drawOptions) {
   DTDetId detId(wheel, station, sector, 0, 0, 0);
   HSegment *hSeg = getHistoSeg(fileN, set, detId);
-  TH1F *histo = hSeg->hNHitsTheta;
+  TH1F *histo = 0; // hSeg->hNHitsTheta; //FIXME: to be updated
   if(histo !=0) {
     drawHisto(fileN, histo, drawOptions);
   }
@@ -209,7 +209,7 @@ TH1F * DTHistoPlotter::plotT0SegPhi(const int fileN,
 				    const TString& drawOptions) {
   DTDetId detId(wheel, station, sector, 0, 0, 0);
   HSegment *hSeg = getHistoSeg(fileN, set, detId);
-  TH1F *histo = hSeg->ht0Phi;
+  TH1F *histo = 0; //hSeg->ht0Phi; //FIXME to be updated
   if(histo !=0) {
     drawHisto(fileN, histo, drawOptions);
   }
@@ -226,17 +226,18 @@ TH1F * DTHistoPlotter::plotSeg1D(const TString& hName,
   HSegment *hSeg = getHistoSeg(fileN, set, detId);
   TH1F *histo = 0;
 
-  if(hName == "NHits") histo = hSeg->hNHits;
-  else if(hName == "NHitsPhi") histo = hSeg->hNHitsPhi;
-  else if(hName == "NHitsTheta") histo = hSeg->hNHitsTheta;
-  else if(hName == "Proj") histo = hSeg->hProj;
+  //  if(hName == "NHits") histo = hSeg->hNHits; //FIXME to be updated
+  //  else if(hName == "NHitsPhi") histo = hSeg->hNHitsPhi; //FIXME to be updated
+  //  else if(hName == "NHitsTheta") histo = hSeg->hNHitsTheta; //FIXME to be updated
+  //  else 
+  if(hName == "Proj") histo = hSeg->hProj;
   else if(hName == "PhiLoc") histo = hSeg->hPhiLoc;
   else if(hName == "ThetaLoc") histo = hSeg->hThetaLoc;
   //  else if(hName == "ImpAngl") histo = hSeg->hImpAngl;
   else if(hName == "Chi2") histo = hSeg->hChi2;
-  else if(hName == "t0Phi") histo = hSeg->ht0Phi;
-  else if(hName == "t0Theta") histo = hSeg->ht0Theta;
-  else if(hName == "DeltaT0") histo = hSeg->hDeltaT0;
+  //  else if(hName == "t0Phi") histo = hSeg->ht0Phi; //FIXME to be updated
+  //  else if(hName == "t0Theta") histo = hSeg->ht0Theta; //FIXME to be updated
+  //  else if(hName == "DeltaT0") histo = hSeg->hDeltaT0; //FIXME to be updated
   else if(hName == "VDrift") histo = hSeg->hVDrift;
   else if(hName == "NSegm") histo = hSeg->hNSegm;
   else cout << "***Warning: Name of 1D plot not found!!!" << endl;
@@ -825,7 +826,7 @@ void DTHistoPlotter::fitAllInSet(const TString& set, const TString& options) {
 	  theSector = sector;	  
 	  DTDetId chId(wheel, station, sector, 0, 0, 0);
 	  HSegment *hSeg = getHistoSeg((*file).first, set, chId);
-	  TH1F *ht0 = hSeg->ht0Phi; 
+	  TH1F *ht0 = 0; //hSeg->ht0Phi; //FIXME to be updated
 	  t0seg = computeHistoMedian(ht0);
 	  for(int sl = 1; sl != 4; ++sl) { // loop over SLs
 	    if(station == 4 && sl == 2) continue;
