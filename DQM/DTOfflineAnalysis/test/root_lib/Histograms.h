@@ -43,12 +43,12 @@ class HRes1DHits{
       hResDistVsAngle = new TH2F(N+"_hResDistVsAngle",
 				 N+"_hResDistVsAngle",
 				 //"Res dist from wire vs angle",
-				 200,-3.15,3.15, 200, -0.4, 0.4);
+				 200,-1.,1., 200, -0.2, 0.2);
 
       hResDistVsTheta = new TH2F(N+"_hResDistVsTheta",
 				 N+"_hResDistVsTheta",
 				 //"Res dist from wire vs angle",
-				 200,-3.15,3.15, 200, -0.4, 0.4);
+				 200,-1.5,1, 200, -0.2, 0.2);
 
     
       hResDistVsX = new TH2F(N+"_hResDistVsX",
@@ -171,15 +171,40 @@ class HRes1DHits{
 /// A set of histograms for 4D segments in Chamber RF
 class HSegment{
  public:
-  HSegment(const TString& name_){
+  HSegment(const TString& name_, int detail_=999) :
+    hNHits(0),
+    hNHitsPhiVsPhi(0),
+    hNHitsThetaVsPhi(0),
+    hNHitsThetaVsTheta(0),
+    hProj(0),
+    hPhiLoc(0),
+    hThetaLoc(0),
+    hChi2(0),
+//     ht0Phi(0),
+//     ht0Theta(0),
+//     hDeltaT0(0),
+    ht0(0),
+    ht0PhiVsPhi(0),
+    hVDriftVsPhi(0),
+    hVDriftVsX(0),
+    hVDriftVsY(0),
+    hNSegm(0),
+    detail(detail_)
+    
+  {
     TString N = name_;
     name=N;
 
-    hNHits    = new TH1F(N+"_hNHits", "# hits per segment ("+N+")", 20,0,20);
+//     hNHits    = new TH1F(N+"_hNHits", "# hits per segment ("+N+")", 20,0,20);
+    hNHits = new TH2F(N+"_hNHits", "# hits per segment ("+N+")", 12,0,12, 6,0,6);
     hNHits->Sumw2();
 
-    hNHitsPhi    = new TH1F(N+"_hNHitsPhi", "# hits phi per segment ("+N+")", 15,1,16);
-    hNHitsPhi->Sumw2();
+    if (detail<=1) return;
+
+    // ----------------------------------------------------------------------
+
+//     hNHitsPhi    = new TH1F(N+"_hNHitsPhi", "# hits phi per segment ("+N+")", 15,1,16);
+//     hNHitsPhi->Sumw2();
 
     hNHitsPhiVsPhi    = new TH2F(N+"_hNHitsPhiVsPhi", "# hits phi per segment vs #phi angle ("+N+")",
 				 100, -1.58, 1.58,
@@ -188,11 +213,9 @@ class HSegment{
     hNHitsThetaVsPhi    = new TH2F(N+"_hNHitsThetaVsPhi", "# hits theta per segment vs #phi angle ("+N+")",
 				   100, -1.58, 1.58,
 				   15,1,16);
-
-
     
-    hNHitsTheta    = new TH1F(N+"_hNHitsTheta", "# hits theta per segment ("+N+")", 15,1,16);
-    hNHitsTheta->Sumw2();
+//     hNHitsTheta    = new TH1F(N+"_hNHitsTheta", "# hits theta per segment ("+N+")", 15,1,16);
+//     hNHitsTheta->Sumw2();
 
     hNHitsThetaVsTheta    = new TH2F(N+"_hNHitsThetaVsTheta",
 				     "# hits theta per segment vs #theta angle ("+N+")",
@@ -202,10 +225,10 @@ class HSegment{
     hProj     = new TH1F(N+"_hProj", "# proj type ("+N+")",3,1,4); 
     hProj->Sumw2();
 
-    hPhiLoc   = new TH1F( N+"_hPhiLoc", "#phi angle in chamber RF (x/z) in rad ("+N+")", 100, -1.58, 1.58);
+    hPhiLoc   = new TH1F( N+"_hPhiLoc", "#phi angle in chamber RF (x/z) in rad ("+N+")", 100, -1.5, 1.5);
     hPhiLoc->Sumw2();
 
-    hThetaLoc = new TH1F( N+"_hThetaLoc", "#theta angle in chamber RF (y/z) in rad ("+N+")", 100, -1.58, 1.58);
+    hThetaLoc = new TH1F( N+"_hThetaLoc", "#theta angle in chamber RF (y/z) in rad ("+N+")", 100, -1.5, 1.5);
     hThetaLoc->Sumw2();
     
 //     hImpAngl  = new TH1F(N+"_hImpAngle","Impact Angle (rad) ("+N+")",100, 0, 3.15);
@@ -214,18 +237,20 @@ class HSegment{
     hChi2     = new TH1F(N+"_hChi2","Chi2 ("+N+")",20,0,20);
     hChi2->Sumw2();
 
-    ht0Phi    = new TH1F(N+"_ht0Phi","t0 segment phi ("+N+")",200,-100,100);
-    ht0Phi->Sumw2();
+//     ht0Phi    = new TH1F(N+"_ht0Phi","t0 segment phi ("+N+")",200,-100,100);
+//     ht0Phi->Sumw2();
 
-    ht0Theta    = new TH1F(N+"_ht0Theta","t0 segment theta ("+N+")",200,-100,100);
-    ht0Theta->Sumw2();
+//     ht0Theta    = new TH1F(N+"_ht0Theta","t0 segment theta ("+N+")",200,-100,100);
+//     ht0Theta->Sumw2();
 
-    ht0PhiVsPhi    = new TH2F(N+"_ht0PhiVsPhi","t0 segment phi ("+N+")",
-			      100, -1.58, 1.58,
-			      100,-100,100);
+    ht0 = new TH2F(N+"_ht0","t0",100,-25,25,100,-25,25);
+
+    ht0PhiVsPhi = new TH2F(N+"_ht0PhiVsPhi","t0 segment phi ("+N+")",
+			   100, -1., 1.,
+			   100,-25,25);
     
-    hDeltaT0      = new TH1F(N+"_hDeltaT0","Delta t0 (ns)",100,-20,20);
-    hDeltaT0->Sumw2();
+//     hDeltaT0      = new TH1F(N+"_hDeltaT0","Delta t0 (ns)",100,-20,20);
+//     hDeltaT0->Sumw2();
 
     hVDrift = new TH1F(N+"_hVDrift", "V drift",100,0.0047, 0.0060);
     hVDrift->Sumw2();
@@ -242,33 +267,34 @@ class HSegment{
 			  200, -200, 200,
 			  100, 0.0047, 0.0060);
 
-    hNSegm = new TH1F(N+"hNSegm","# of segments", 100, 0, 100);
-    hNSegm->Sumw2();
+//     hNSegm = new TH1F(N+"hNSegm","# of segments", 100, 0, 100);
+//     hNSegm->Sumw2();
   }
   
   HSegment(TString name_, TFile* file){
     name=name_;
 
-    hNHits = (TH1F*) file->Get(name_+"_hNHits");
-    hNHitsPhi = (TH1F*) file->Get(name_+"_hNHitsPhi");
+    hNHits = (TH2F*) file->Get(name_+"_hNHits");
+//     hNHitsPhi = (TH1F*) file->Get(name_+"_hNHitsPhi");
     hNHitsPhiVsPhi = (TH2F*) file->Get(name_+"_hNHitsPhiVsPhi");
     hNHitsThetaVsPhi = (TH2F*) file->Get(name_+"_hNHitsThetaVsPhi");
-    hNHitsTheta = (TH1F*) file->Get(name_+"_hNHitsTheta");
+//     hNHitsTheta = (TH1F*) file->Get(name_+"_hNHitsTheta");
     hNHitsThetaVsTheta = (TH2F*) file->Get(name_+"_hNHitsThetaVsTheta");
     hProj = (TH1F*) file->Get(name_+"_hProj");
     hPhiLoc = (TH1F*) file->Get(name_+"_hPhiLoc");
     hThetaLoc = (TH1F*) file->Get(name_+"_hThetaLoc");
 //     hImpAngl = (TH1F*) file->Get(name_+"_hImpAngle");
     hChi2 = (TH1F*) file->Get(name_+"_hChi2");
-    ht0Phi = (TH1F*) file->Get(name_+"_ht0Phi");
-    ht0Theta = (TH1F*) file->Get(name_+"_ht0Theta");
+//     ht0Phi = (TH1F*) file->Get(name_+"_ht0Phi");
+//     ht0Theta = (TH1F*) file->Get(name_+"_ht0Theta");
+    ht0 = (TH2F*) file->Get(name_+"_ht0");
     ht0PhiVsPhi = (TH2F*) file->Get(name_+"_ht0PhiVsPhi");
-    hDeltaT0 = (TH1F*) file->Get(name_+"_hDeltaT0");
+//     hDeltaT0 = (TH1F*) file->Get(name_+"_hDeltaT0");
     hVDrift = (TH1F*) file->Get(name_+"_hVDrift");
     hVDriftVsPhi = (TH2F*) file->Get(name_+"_hVDriftVsPhi");
     hVDriftVsX = (TH2F*) file->Get(name_+"_hVDriftVsX");
     hVDriftVsY = (TH2F*) file->Get(name_+"_hVDriftVsY");
-    hNSegm = (TH1F*) file->Get(name_+"_hNSegm");
+//     hNSegm = (TH1F*) file->Get(name_+"_hNSegm");
 
   }
 
@@ -293,77 +319,85 @@ class HSegment{
 	    float Xsl,
 	    float Ysl) {
 
-    hNHits->Fill(nHits);
-    hNHitsPhi->Fill(nHitsPhi);
-    hNHitsPhiVsPhi->Fill(phi, nHitsPhi);
-    hNHitsThetaVsPhi->Fill(phi, nHitsTheta);
-    hNHitsTheta->Fill(nHitsTheta);
-    hNHitsThetaVsTheta->Fill(theta, nHitsTheta);
-    hProj->Fill(proj);
-    hPhiLoc->Fill(phi);
-    hThetaLoc->Fill(theta);
-//     hImpAngl->Fill(impAngle);
-    hChi2->Fill(chi2);
-    ht0Phi->Fill(t0Phi);
-    ht0Theta->Fill(t0Theta);
-    ht0PhiVsPhi->Fill(phi,t0Phi);
-    hDeltaT0->Fill(t0Theta-t0Phi);
-    if (vDrift!=0.) {
-      hVDrift->Fill(vDrift);
-      hVDriftVsPhi->Fill(phi,vDrift);
-      hVDriftVsX->Fill(Xsl,vDrift);
-      hVDriftVsY->Fill(Ysl,vDrift);
-    }
+    hNHits->Fill(nHitsPhi, nHitsTheta);
+    
+    if (detail>1) {
+      //     hNHitsPhi->Fill(nHitsPhi);
+      hNHitsPhiVsPhi->Fill(phi, nHitsPhi);
+      hNHitsThetaVsPhi->Fill(phi, nHitsTheta);
+      //     hNHitsTheta->Fill(nHitsTheta);
+      hNHitsThetaVsTheta->Fill(theta, nHitsTheta);
+      hProj->Fill(proj);
+      hPhiLoc->Fill(phi);
+      hThetaLoc->Fill(theta);
+      //     hImpAngl->Fill(impAngle);
+      hChi2->Fill(chi2);
+      ht0->Fill(t0Phi,t0Theta);
+//       ht0Phi->Fill(t0Phi);
+//       ht0Theta->Fill(t0Theta);
+      ht0PhiVsPhi->Fill(phi,t0Phi);
+//       hDeltaT0->Fill(t0Theta-t0Phi);
+      if (vDrift!=0.) {
+	hVDrift->Fill(vDrift);
+	hVDriftVsPhi->Fill(phi,vDrift);
+	hVDriftVsX->Fill(Xsl,vDrift);
+	hVDriftVsY->Fill(Ysl,vDrift);
+      }
+    }    
   }
   
   void Write() {
     hNHits->Write();
-    hNHitsPhi->Write();
-    hNHitsPhiVsPhi->Write();
-    hNHitsThetaVsPhi->Write();
-    hNHitsTheta->Write();
-    hNHitsThetaVsTheta->Write();
-    hProj->Write();
-    hPhiLoc->Write();
-    hThetaLoc->Write();
-//     hImpAngl->Write();
-    hChi2->Write();
-    ht0Phi->Write();
-    ht0Theta->Write();
-    ht0PhiVsPhi->Write();
-    hDeltaT0->Write();
-    hVDrift->Write();
-    hVDriftVsPhi->Write();
-    hVDriftVsX->Write();
-    hVDriftVsY->Write();
-    hNSegm->Write();
+//     hNHitsPhi->Write();
+    if (detail>1) {
+      hNHitsPhiVsPhi->Write();
+      hNHitsThetaVsPhi->Write();
+      //     hNHitsTheta->Write();
+      hNHitsThetaVsTheta->Write();
+      hProj->Write();
+      hPhiLoc->Write();
+      hThetaLoc->Write();
+      //     hImpAngl->Write();
+      hChi2->Write();
+      ht0->Write();
+//       ht0Phi->Write();
+//       ht0Theta->Write();
+      ht0PhiVsPhi->Write();
+//       hDeltaT0->Write();
+      hVDrift->Write();
+      hVDriftVsPhi->Write();
+      hVDriftVsX->Write();
+      hVDriftVsY->Write();
+      //    hNSegm->Write();
+    }
   }
-
   
  public:
 
 
-  TH1F* hNHits;
-  TH1F* hNHitsPhi;
+  TH2F* hNHits;
+//   TH1F* hNHitsPhi;
   TH2F* hNHitsPhiVsPhi;
   TH2F* hNHitsThetaVsPhi;
-  TH1F* hNHitsTheta;
+//   TH1F* hNHitsTheta;
   TH2F* hNHitsThetaVsTheta;
   TH1F* hProj;
   TH1F* hPhiLoc;
   TH1F* hThetaLoc;
 //   TH1F* hImpAngl;
   TH1F* hChi2;
-  TH1F* ht0Phi;
-  TH1F* ht0Theta;
+  TH2F* ht0;
+//   TH1F* ht0Phi;
+//   TH1F* ht0Theta;
   TH2F* ht0PhiVsPhi;
-  TH1F* hDeltaT0;
+//   TH1F* hDeltaT0;
   TH1F* hVDrift;
   TH2F* hVDriftVsPhi;
   TH2F* hVDriftVsX;
   TH2F* hVDriftVsY;
   TH1F* hNSegm;
   TString name;
+  int detail;
 
 };
 
