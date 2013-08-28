@@ -13,18 +13,19 @@
  *  All histos are produce per SuperLayer.
  *
  *
- *  $Date: 2011/02/13 22:47:08 $
- *  $Revision: 1.9 $
+ *  $Date: 2013/06/05 07:35:18 $
+ *  $Revision: 1.10 $
  *  \author G. Cerminara - INFN Torino
  */
 
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "DataFormats/MuonDetId/interface/DTSuperLayerId.h"
+#include "DataFormats/MuonDetId/interface/DTLayerId.h"
 #include <FWCore/Framework/interface/ESHandle.h>
 
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 
 class TFile;
 class TH1F;
@@ -34,6 +35,7 @@ class DTTtrig;
 class DTT0;
 class DTRecHitBaseAlgo;
 class DTMtime;
+class DTSegmentUpdator;
 
 class DTTreeBuilder {
 public:
@@ -87,11 +89,13 @@ private:
   edm::ESHandle<DTMtime> mTimeHandle;
   
 
-  
-
   // Algo to re-reco the hits
   DTRecHitBaseAlgo *theAlgo;
   std::string algoName;
+  
+  // Helper to refit segments
+  DTSegmentUpdator* theUpdator;
+  std::set<DTLayerId> skipLayersFromReference;
 };
 #endif
 

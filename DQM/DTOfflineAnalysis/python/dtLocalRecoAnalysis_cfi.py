@@ -32,8 +32,14 @@ dtLocalRecoAnal = cms.EDAnalyzer("DTLocalRecoAnalysis",
                                      recHits2DLabel  = cms.string(''),
                                      recHitLabel =  cms.string('dt1DRecHits'),
                                      muonLabel =  cms.string('muons'),
-                                     checkNoisyChannels = cms.untracked.bool(False)          
-                                     )
+                                     checkNoisyChannels = cms.untracked.bool(False),       
+                                     segmentUpdatorConfig = cms.PSet(
+                                         DTLinearDriftFromDBAlgo,
+                                         hit_afterT0_resolution = cms.double(0.03),
+                                         performT0_vdriftSegCorrection = cms.bool(False),
+                                         perform_delta_rejecting = cms.bool(False),
+                                         )
+                                     )                                
                                  )
 
 dtLocalRecoAnalT0Seg = cms.EDAnalyzer("DTLocalRecoAnalysis",

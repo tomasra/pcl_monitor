@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2011/02/13 22:47:08 $
- *  $Revision: 1.19 $
+ *  $Date: 2013/06/05 07:35:18 $
+ *  $Revision: 1.20 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -17,6 +17,15 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/Framework/interface/ESHandle.h"
 // #include "Geometry/Vector/interface/Pi.h"
+
+//Hack to be able to call DTRecSegment2D::update and DTRecSegment4D::phiSegment
+#define protected public
+#include "DataFormats/DTRecHit/interface/DTRecSegment2D.h"
+#undef protected
+#define private public
+#include "DataFormats/DTRecHit/interface/DTRecSegment4D.h"
+#undef private
+#include "RecoLocalMuon/DTSegment/src/DTSegmentUpdator.h"
 
 #include "DataFormats/DTRecHit/interface/DTRecSegment4DCollection.h"
 #include "DataFormats/DTRecHit/interface/DTRecSegment2DCollection.h"
@@ -41,7 +50,7 @@
 #include "DataFormats/PatCandidates/interface/Muon.h"
 #include "DataFormats/Math/interface/LorentzVector.h"
 #include "DataFormats/MuonReco/interface/MuonSelectors.h"
- #include "DataFormats/VertexReco/interface/VertexFwd.h"
+#include "DataFormats/VertexReco/interface/VertexFwd.h"
 #include "DataFormats/VertexReco/interface/Vertex.h"
 
 #include "DataFormats/SiPixelCluster/interface/SiPixelCluster.h"
@@ -59,12 +68,17 @@ using namespace edm;
 using namespace std;
 using namespace reco;
 
+// Refit the segment used as a reference for computing residuals, possibly skipping hits
+bool refitReferenceSegment = false;
+
+
 DTTreeBuilder::DTTreeBuilder(const ParameterSet& pset, TFile* file) : 
   theFile(file),
   BX(-999),
   //  pix(-999),
   runN(-1),
-  eventN(-1)
+  eventN(-1),
+  theUpdator(0)
 {
   debug = pset.getUntrackedParameter<bool>("debug","false");
   // the name of the 4D rec hits collection
@@ -77,6 +91,44 @@ DTTreeBuilder::DTTreeBuilder(const ParameterSet& pset, TFile* file) :
   algoName = pset.getParameter<string>("recAlgo");
   theAlgo = DTRecHitAlgoFactory::get()->create(algoName,pset.getParameter<ParameterSet>("recAlgoConfig"));
 
+  if (refitReferenceSegment) { 
+  // updator to refit the segment used as a reference to define residuals
+    theUpdator = new DTSegmentUpdator(pset.getParameter<ParameterSet>("segmentUpdatorConfig"));
+
+    // Fill List of layers to be excluded from the segment refit (suspect alignment ouliers)
+
+    //Clear Single-layer misalignments
+    skipLayersFromReference.insert(DTLayerId(-1,1,6,3,4));
+    skipLayersFromReference.insert(DTLayerId( 0,1,2,3,1));
+    skipLayersFromReference.insert(DTLayerId( 2,4,1,3,1));
+
+    //Clear 2-layer misalignments
+    skipLayersFromReference.insert(DTLayerId( 2,4,3,3,2));
+    skipLayersFromReference.insert(DTLayerId( 2,4,3,1,4));
+    skipLayersFromReference.insert(DTLayerId( 2,4,2,3,2));
+    skipLayersFromReference.insert(DTLayerId( 2,4,2,1,3));
+
+    //Reasonable candidates as single-layer misaligment
+    skipLayersFromReference.insert(DTLayerId(-1,3,9,1,1)); 
+    skipLayersFromReference.insert(DTLayerId( 1,4,2,3,2)); //huge, residual distances ~125micron, but cannot be pattern
+
+    //Problematic misalignments
+    skipLayersFromReference.insert(DTLayerId(-1,4,3,3,1)); // could hide pattern, but is anyhow too large (321) to be only a pattern. Has pattern in other SL.
+    skipLayersFromReference.insert(DTLayerId(2,4,5,3,1)); // SL1;L2-3 cannot be a pattern. Also SL3;L1 is off
+    skipLayersFromReference.insert(DTLayerId(2,4,5,1,2)); //  
+
+    //2 Misalignment in same SL:  Small, noth worth
+    skipLayersFromReference.insert(DTLayerId(-2,4,3,1,4)); // probably also 2 is misaligned.
+    skipLayersFromReference.insert(DTLayerId( 2,4,6,1,1)); // L2 is also misaligned.
+
+    //Others with patterns, or multiple effects
+    skipLayersFromReference.insert(DTLayerId( 1,4,5,3,4)); // small, maybe not worth?
+    skipLayersFromReference.insert(DTLayerId( 2,2,1,1,4)); // visible pattern
+    skipLayersFromReference.insert(DTLayerId(-2,3,8,3,4)); // visible pattern
+    skipLayersFromReference.insert(DTLayerId(-2,3,8,1,4)); //  with above; too small
+    //-2,4,2,3,1 has clear pattern
+  }
+  
 }
 
 DTTreeBuilder::~DTTreeBuilder(){}
@@ -91,6 +143,9 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
   BX = event.bunchCrossing();
   runN = event.id().run();
   eventN = event.id().event();
+
+  if (theUpdator) theUpdator->setES(setup);
+
 
   // Get the 4D segment collection from the event
   edm::Handle<DTRecSegment4DCollection> all4DSegments;
@@ -197,8 +252,8 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 //       float vDrift = -1;
 
 
-
-
+      
+      DTRecSegment4D refittedSegment4D((*segment4D));
       if((*segment4D).hasPhi()) {
 	if(debug) cout << "  segment has phi projection" << endl;
 	DTSuperLayerId supLayIdPhi1((*chamberId), 1);
@@ -233,6 +288,31 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	} else {
 	  segmObj->vDriftCorrPhi =  -1.;
 	  segmObj->t0SegPhi = -1.;
+	}
+
+	// Refit segment
+	if (refitReferenceSegment) {
+	  bool mustRefit=false;
+	  vector<DTRecHit1D> updatedRecHits;		
+	  for (vector<DTRecHit1D>::const_iterator hit=phiRecHits.begin();
+	       hit!=phiRecHits.end(); ++hit) {
+
+	    if (skipLayersFromReference.find((*hit).wireId().layerId())==skipLayersFromReference.end()) {
+	      updatedRecHits.push_back(*hit);
+	    } else {
+	      mustRefit = true;
+	    } 
+	  }
+	
+	  if (mustRefit) {
+	    refittedSegment4D.phiSegment()->update(updatedRecHits);	
+	    theUpdator->fit(&refittedSegment4D);
+	  }
+
+// 	  float ddir = (refittedSegment4D.localDirection()-(*segment4D).localDirection()).mag();
+// 	  float dpos = (refittedSegment4D.localPosition()-(*segment4D).localPosition()).mag();	  
+// 	  if (mustRefit || ddir > 0.00001 || dpos > 0.0001)  cout << "refit: " << mustRefit << " D: " << ddir << " P: " << dpos << endl;
+
 	}
       }
 
@@ -290,6 +370,7 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	  cout<<"Looping on 1D rechits: -------------------------"<<endl;
 	  cout << wireId << endl;
 	}
+	//	cout << wireId << " " << sqrt((*recHit1D).localPositionError().xx()) << endl;
 
 	
 	DTHitObject *hitObj = segmObj->add1DHit(wireId.wheel(), wireId.station(), wireId.sector(),
@@ -337,10 +418,13 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	LocalPoint wirePosInChamber = chamber->toLocal(wirePosGlob);
 // 	cout << "Wire: " << wireId << " z: " << wirePosInChamber.z() << endl;
 
-	// Segment position at Wire z in chamber local frame
-	LocalPoint segPosAtZWire = (*segment4D).localPosition()
-	  + (*segment4D).localDirection()*wirePosInChamber.z()/cos((*segment4D).localDirection().theta());
-
+	// Segment position at Wire z in chamber local frame. 
+	// If no refit is done, refittedSegment4D is identical to (*segment4D).
+// 	LocalPoint segPosAtZWire = (*segment4D).localPosition()
+// 	  + (*segment4D).localDirection()*wirePosInChamber.z()/cos((*segment4D).localDirection().theta());
+	LocalPoint segPosAtZWire = refittedSegment4D.localPosition()
+	  + refittedSegment4D.localDirection()*wirePosInChamber.z()/cos(refittedSegment4D.localDirection().theta());
+	
 	// Compute the distance of the segment from the wire
 	int sl = wireId.superlayer();
   
