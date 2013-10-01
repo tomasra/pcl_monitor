@@ -77,12 +77,14 @@ void plot(TString filename, TString cut, int wheel, int station, int sector, int
   TString canvbasename = filename;
   canvbasename = canvbasename.Replace(canvbasename.Length()-5,5,"") + TString("_") + Utils::getHistoNameFromDetIdAndSet(detId2, cut);
 
-  // byView
+  // Select canvases
   bool doPhiAndThetaS3 = true;
   bool doAngularDeps = true;
   bool doPhiThetaVsXY = true;
-  bool doNHits = true;
-  bool doPhiBySL = false;
+  bool doNHits = false;
+
+  bool doPhiBySL = false;   // only for "SL" or "ByLayer
+
 
   //-------------------- Residuals in phi and theta 
   if (doPhiAndThetaS3) {
