@@ -161,16 +161,16 @@ void plot(TString filename, TString cut, int wheel, int station, int sector, int
     c2->Divide(2,2);
 
     c2->cd(1);
-    plotAndProfileX(hResPhi->hResDistVsX,  2,rby,2,-.04, .04, -130,130);
+    plotAndProfileX(hResPhi->hResDistVsX,  2,rby,1,-.04, .04, -130,130);
 
     c2->cd(2);  
-    plotAndProfileX(hResPhi->hResDistVsY,  2,rby,2,-.04, .04, -130,130);
+    plotAndProfileX(hResPhi->hResDistVsY,  2,rby,1,-.04, .04, -130,130);
 
     c2->cd(3);  
-    plotAndProfileX(hResTheta->hResDistVsX,  2,rby,2,-.04, .04, -130,130);
+    plotAndProfileX(hResTheta->hResDistVsX,  2,rby,1,-.04, .04, -130,130);
 
     c2->cd(4);  
-    plotAndProfileX(hResTheta->hResDistVsY,  2,rby,2,-.04, .04, -130,130);
+    plotAndProfileX(hResTheta->hResDistVsY,  2,rby,1,-.04, .04, -130,130);
 
   }
 
