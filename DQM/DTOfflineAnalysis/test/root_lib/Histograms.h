@@ -54,12 +54,12 @@ class HRes1DHits{
       hResDistVsX = new TH2F(N+"_hResDistVsX",
 			     N+"_hResDistVsX",
 			     //"Res. dist from wire vs X",
-			     200, -200, 200, 600, -0.4, 0.4);
+			     100, -210, 210, 600, -0.4, 0.4);
 
       hResDistVsY = new TH2F(N+"_hResDistVsY",
 			     N+"_hResDistVsY",
 			     //"Res. dist from wire vs Y",
-			     200, -200, 200, 600, -0.4, 0.4);
+			     100, -210, 210, 600, -0.4, 0.4);
     }
     
 
