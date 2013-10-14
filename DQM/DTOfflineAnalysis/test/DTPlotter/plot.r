@@ -237,7 +237,43 @@ void plot(TString filename, TString cut, int wheel, int station, int sector, int
 
   }
 
+  bool debugProfile=true;
 
+  if(debugProfile) {
+    float xvalues[5] = {-0.7, -0.65, -0.6, -0.5, -0.4};
+    TH2F* h = hResTheta->hResDistVsAngle;
+    //    h->Rebin2D(2,1);
+
+    //----------
+
+    TH2F* hhh=h->Clone();
+    TCanvas* c1= new TCanvas;
+    c1->SetTitle(canvbasename+"_test");
+    c1->Divide(3,2);
+    c1->cd(1);
+    plotAndProfileX(hhh,1,1,1,-0.04,0.04);
+
+    for (int i=0; i<5; ++i){
+      TLine * l = new TLine(xvalues[i],-0.1,xvalues[i],0.1);
+      l->SetLineColor(kRed);
+      l->Draw();
+    }
+
+    double xq[1] = {0.5};    
+    for (int i=0; i<5; ++i){
+      c1->cd(i+2);
+      int bin=hhh->GetXaxis()->FindBin(xvalues[i]);
+      TString name=Form("x=%f",xvalues[i]);
+      TH1D * proj = h->ProjectionY(name ,bin, bin);
+      double median[1];
+      proj->GetQuantiles(1,median,xq);
+      cout << name << " "  << median[0] << endl;
+      proj->SetTitle(name);
+      proj->Draw();      
+      proj->Fit("gaus","q");
+      proj->GetXaxis()->SetRangeUser(-0.1,0.1);
+    }
+  }
   
 }
 
