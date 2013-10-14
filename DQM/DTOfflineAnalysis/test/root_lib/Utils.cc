@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2013/06/05 07:36:32 $
- *  $Revision: 1.4 $
+ *  $Date: 2013/08/19 21:39:41 $
+ *  $Revision: 1.5 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -16,10 +16,6 @@
 #include <cmath>
 
 using namespace std;
-
-Utils::Utils(){}
-
-Utils::~Utils(){}
 
 TString Utils::getHistoNameFromDetId(const DTDetId& detId) {
   stringstream wheelStr; 
@@ -115,4 +111,9 @@ TCanvas * Utils::newCanvas(int form) {
 
 TCanvas * Utils::newCanvas(TString name, int form, int w) {
   return newCanvas(name, name, 0,0,form,w);
+}
+
+void Utils::newName(TNamed* obj){
+  static long i=0;
+  obj->SetName(obj->GetName()+TString("_")+i);
 }

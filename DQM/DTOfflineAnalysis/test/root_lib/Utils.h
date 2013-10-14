@@ -4,8 +4,8 @@
 /** \class Utils
  *  No description available.
  *
- *  $Date: 2009/09/11 10:53:22 $
- *  $Revision: 1.2 $
+ *  $Date: 2013/06/05 07:36:32 $
+ *  $Revision: 1.3 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -14,37 +14,29 @@
 class DTDetId;
 class TCanvas;
 
-class Utils {
-public:
-  /// Constructor
-  Utils();
-
-  /// Destructor
-  virtual ~Utils();
+namespace Utils {
 
   // Operations
-  static TString getHistoNameFromDetId(const DTDetId& detId);
+  TString getHistoNameFromDetId(const DTDetId& detId);
   
-  static TString getHistoNameFromDetIdAndSet(const DTDetId& detId, const TString& set);
+  TString getHistoNameFromDetIdAndSet(const DTDetId& detId, const TString& set);
 
-  static TString getDTValidationHistoNameFromDetId(const DTDetId& detId, TString step="S3");
+  TString getDTValidationHistoNameFromDetId(const DTDetId& detId, TString step="S3");
   
-  static TCanvas * newCanvas(TString name,
-			     TString title="",
-			     int xdiv=0,
-			     int ydiv=0,
-			     int form = 1,
-			     int w=-1);
+  TCanvas * newCanvas(TString name,
+		      TString title="",
+		      int xdiv=0,
+		      int ydiv=0,
+		      int form = 1,
+		      int w=-1);
 
-  static TCanvas * newCanvas(TString name, int xdiv, int ydiv, int form, int w);
-  static TCanvas * newCanvas(int xdiv, int ydiv, int form = 1);
-  static TCanvas * newCanvas(int form = 1);
-  static TCanvas * newCanvas(TString name, int form, int w=-1);
+  TCanvas * newCanvas(TString name, int xdiv, int ydiv, int form, int w);
+  TCanvas * newCanvas(int xdiv, int ydiv, int form = 1);
+  TCanvas * newCanvas(int form = 1);
+  TCanvas * newCanvas(TString name, int form, int w=-1);
 
+  void newName(TNamed* obj);
 
-protected:
-
-private:
 
 };
 #endif
