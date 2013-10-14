@@ -135,9 +135,11 @@ void plot(TString filename, TString cut, int wheel, int station, int sector, int
 
     c1->Divide(2,2);
     c1->cd(1);
+      
     hSegChamberSel->hPhiLoc->GetXaxis()->SetRangeUser(-1.,1.);
     hSegChamberSel->hPhiLoc->Draw();
 
+   
     c1->cd(2);
     plotAndProfileX(hResPhi->hResDistVsAngle,rbx,rby,1,-.04, .04, -0.5, 0.5);
 

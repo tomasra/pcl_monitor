@@ -64,6 +64,11 @@ TF1* drawGFit(TH1 * h1, float nsigmas, float min, float max){
   h1->GetXaxis()->SetRangeUser(min,max);
   float minfit = h1->GetMean() - h1->GetRMS();
   float maxfit = h1->GetMean() + h1->GetRMS();
+  
+  TLine * l = new TLine(0,0,0,h1->GetMaximum()*1.05);
+  
+  l->SetLineColor(3);
+  l->SetLineWidth(2);
 
   static int i = 0;
   TString nameF1 = TString("g") + (Long_t)i;
@@ -83,6 +88,8 @@ TF1* drawGFit(TH1 * h1, float nsigmas, float min, float max){
   if (fh) fh->FixParameter(0,g1->GetParameter(0)); // so that it is not shown in legend
 
   gPad->Draw();
+  l->Draw();
+  h1->Draw("same"); //redraw on top of the line
   return g1;
 }
 
@@ -151,7 +158,7 @@ TH1F* plotAndProfileSigmaX (TH2* h2, int rebinX, int rebinY, int rebinProfile, f
 // Plot a TH2 + add profiles on top of it
 // minY, maxY: Y range for plotting and for computing profile if addProfile==true.
 //             Note that the simple profile is very sensitive to the Y range used!
-void plotAndProfileX (TH2* h2, int rebinX, int rebinY, int rebinProfile, float minY, float maxY, float minX=0, float maxX=0, bool debug = false) {
+TH1F* plotAndProfileX (TH2* h2, int rebinX, int rebinY, int rebinProfile, float minY, float maxY, float minX=0, float maxX=0, bool debug = false) {
   //  setStyle(h2);
   if (h2==0) {
     cout << "plotAndProfileX: null histo ptr" << endl;
@@ -192,12 +199,13 @@ void plotAndProfileX (TH2* h2, int rebinX, int rebinY, int rebinProfile, float m
     prof->Draw("same");
   }
 
+  TH1F* ht=0;
 
   if (addSlice) {
     TObjArray aSlices;
     //    TF1 fff("a", "gaus", -0.1, 0.1);   
     h2->FitSlicesY(0, 0, -1, 0, "QNR", &aSlices); // add "G2" to merge 2 consecutive bins
-    TH1F*  ht = aSlices[1]->Clone();    
+    ht = (TH1F*) aSlices[1]->Clone();    
     ht->SetMarkerColor(4);
     ht->Draw("same");
     
@@ -209,7 +217,7 @@ void plotAndProfileX (TH2* h2, int rebinX, int rebinY, int rebinProfile, float m
 
 	TCanvas *c = new TCanvas(sliceName.Data(), sliceName.Data());
 	c->cd();
-	TH1D * proj = h2->ProjectionY(sliceName.Data(),bin, bin);
+	TH1D* proj = h2->ProjectionY(sliceName.Data(),bin, bin);
 	proj->Draw();
 	proj->Fit("gaus");
       }
@@ -218,6 +226,7 @@ void plotAndProfileX (TH2* h2, int rebinX, int rebinY, int rebinProfile, float m
 
   h2->GetYaxis()->SetRangeUser(minY,maxY);
 
+  return ht;
 }
 
 
@@ -263,7 +272,7 @@ setPalette()
   { // Gray (white->gray)
     //  similar to gStyle->SetPalette(5);
     float max = 0.3;
-    step=(1-max)/(NRGBs-1);
+    float step=(1-max)/(NRGBs-1);
     Double_t stops[NRGBs] = { 0.00, 0.34, 0.61, 0.84, 1.00 };
     Double_t red[NRGBs]   = { 1.00, 1-step, 1-2*step, 1-3*step, 1-4*step };
     Double_t green[NRGBs] = { 1.00, 1-step, 1-2*step, 1-3*step, 1-4*step };
