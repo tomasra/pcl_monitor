@@ -158,7 +158,9 @@ TH1F* plotAndProfileSigmaX (TH2* h2, int rebinX, int rebinY, int rebinProfile, f
 // Plot a TH2 + add profiles on top of it
 // minY, maxY: Y range for plotting and for computing profile if addProfile==true.
 //             Note that the simple profile is very sensitive to the Y range used!
-TH1F* plotAndProfileX (TH2* h2, int rebinX, int rebinY, int rebinProfile, float minY, float maxY, float minX=0, float maxX=0, bool debug = false) {
+TH1F* plotAndProfileX (TH2* theh, int rebinX, int rebinY, int rebinProfile, float minY, float maxY, float minX=0, float maxX=0) {
+  TH2* h2=theh->Clone();
+  
   //  setStyle(h2);
   if (h2==0) {
     cout << "plotAndProfileX: null histo ptr" << endl;
@@ -205,23 +207,11 @@ TH1F* plotAndProfileX (TH2* h2, int rebinX, int rebinY, int rebinProfile, float 
     TObjArray aSlices;
     //    TF1 fff("a", "gaus", -0.1, 0.1);   
     h2->FitSlicesY(0, 0, -1, 0, "QNR", &aSlices); // add "G2" to merge 2 consecutive bins
-    ht = (TH1F*) aSlices[1]->Clone();    
+    
+    ht = (TH1F*) aSlices[1]->Clone();
+    Utils::newName(ht);
     ht->SetMarkerColor(4);
     ht->Draw("same");
-    
-    if(debug) {
-      for(int bin = 1; bin != h2->GetNbinsX(); ++bin) {
-	TString basename(h2->GetName());
-	TString sliceName = basename;
-	sliceName += bin;
-
-	TCanvas *c = new TCanvas(sliceName.Data(), sliceName.Data());
-	c->cd();
-	TH1D* proj = h2->ProjectionY(sliceName.Data(),bin, bin);
-	proj->Draw();
-	proj->Fit("gaus");
-      }
-    }
   }
 
   h2->GetYaxis()->SetRangeUser(minY,maxY);
