@@ -2,7 +2,8 @@
 // Global options
 TString opt2Dplot = "col";
 bool addProfile = false;
-bool addSlice = true;
+bool addSlice   = true;
+bool addMedian  = false;
 
 TF1* draw2GFit(TH1 * h1, float nsigmas, float min, float max){
 
@@ -212,6 +213,37 @@ TH1F* plotAndProfileX (TH2* theh, int rebinX, int rebinY, int rebinProfile, floa
     Utils::newName(ht);
     ht->SetMarkerColor(4);
     ht->Draw("same");
+  }
+
+  if (addMedian) {
+    double xq[1] = {0.5};
+    double median[1];
+
+    TAxis* axis =  h2->GetXaxis();
+    TH1F* medprof = new TH1F(h2->GetName()+TString("medians"),"medians", axis->GetNbins(), axis->GetXmin(), axis->GetXmax());
+    float bw =  h2->GetYaxis()->GetBinLowEdge(2)-h2->GetYaxis()->GetBinLowEdge(1);
+    
+
+    TString projname = h2->GetName()+TString("_pmedian");
+    for (int bin=1; bin<=h2->GetNbinsX(); ++bin){
+      TH1D * proj = h2->ProjectionY(projname, bin, bin);
+      double integral = proj->Integral();
+      if (integral==0) continue;
+      // Take overflow and underflow into account
+      int nbins = proj->GetNbinsX();
+      proj->SetBinContent(1, proj->GetBinContent(0)+proj->GetBinContent(1));
+      proj->SetBinContent(0,0);
+      proj->SetBinContent(nbins, proj->GetBinContent(nbins)+proj->GetBinContent(nbins+1));
+      proj->SetBinContent(nbins+1,0);
+      proj->GetQuantiles(1,median,xq);
+      medprof->SetBinContent(bin,median[0]);
+      // Approximated uncertainty on median, probably underestimated.
+      medprof->SetBinError(bin,bw*sqrt(integral/2.)/2./TMath::Max(1.,proj->GetBinContent(proj->FindBin(median[0]))));
+    }
+    medprof->SetMarkerColor(2);
+    medprof->SetMarkerStyle(20);
+    medprof->SetMarkerSize(0.4);
+    medprof->Draw("Esame");
   }
 
   h2->GetYaxis()->SetRangeUser(minY,maxY);

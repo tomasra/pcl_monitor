@@ -13,7 +13,7 @@ void plot(TString filename, int wheel, int station, int sector=0, int layer=0) {
 }
 
 
-void plot(TString filename, TString cut, int wheel, int station, int sector, int layer=0) {
+void plot(TString filename, TString cut, int wheel, int station, int sector=0, int layer=0) {
 
    if (! TString(gSystem->GetLibraries()).Contains("DTDetId_cc")) {
      cout << "loading" << endl;
@@ -78,12 +78,14 @@ void plot(TString filename, TString cut, int wheel, int station, int sector, int
   canvbasename = canvbasename.Replace(canvbasename.Length()-5,5,"") + TString("_") + Utils::getHistoNameFromDetIdAndSet(detId2, cut);
 
   // Select canvases
-  bool doPhiAndThetaS3 = true;
+  bool doPhiAndThetaS3 =true;
   bool doAngularDeps = true;
   bool doPhiThetaVsXY = true;
   bool doNHits = false;
 
   bool doPhiBySL = false;   // only for "SL" or "ByLayer
+
+  bool debugProfile=false;
 
 
   //-------------------- Residuals in phi and theta 
@@ -237,7 +239,6 @@ void plot(TString filename, TString cut, int wheel, int station, int sector, int
 
   }
 
-  bool debugProfile=true;
 
   if(debugProfile) {
     float xvalues[5] = {-0.7, -0.65, -0.6, -0.5, -0.4};
@@ -265,13 +266,21 @@ void plot(TString filename, TString cut, int wheel, int station, int sector, int
       int bin=hhh->GetXaxis()->FindBin(xvalues[i]);
       TString name=Form("x=%f",xvalues[i]);
       TH1D * proj = h->ProjectionY(name ,bin, bin);
-      double median[1];
-      proj->GetQuantiles(1,median,xq);
-      cout << name << " "  << median[0] << endl;
       proj->SetTitle(name);
       proj->Draw();      
       proj->Fit("gaus","q");
       proj->GetXaxis()->SetRangeUser(-0.1,0.1);
+
+      double median[1];
+      proj->GetQuantiles(1,median,xq);
+      double m1=median[0];
+      int nbins = proj->GetNbinsX();
+      proj->SetBinContent(1, proj->GetBinContent(0)+proj->GetBinContent(1));
+      proj->SetBinContent(nbins, proj->GetBinContent(nbins)+proj->GetBinContent(nbins+1));
+      proj->GetQuantiles(1,median,xq);
+      cout << name << " "  << m1 << " " << median[0] << endl;
+
+
     }
   }
   
