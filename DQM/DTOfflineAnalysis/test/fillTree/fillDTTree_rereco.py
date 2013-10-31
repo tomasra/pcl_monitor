@@ -10,6 +10,8 @@ ALIGNMENT = ""           #alignment DB to use
 doAngleCorr = False      #apply angle correction (experimental)
 
 ######################################################################
+import os
+print 'Working in: ', os.environ['CMSSW_BASE']
 
 process = cms.Process("DTOffAna")
 
