@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2013/06/05 07:35:18 $
- *  $Revision: 1.20 $
+ *  $Date: 2013/08/28 23:07:18 $
+ *  $Revision: 1.21 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -233,8 +233,13 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
       LocalPoint segment4DLocalPos = (*segment4D).localPosition();
       segmObj->setPositionInChamber(segment4DLocalPos.x(), segment4DLocalPos.y(), segment4DLocalPos.z());
 
-      float dxdz =angleBtwHPiAndHPi(std::atan2((*segment4D).localDirection().x(),(*segment4D).localDirection().z()));
-      float dydz = angleBtwHPiAndHPi(std::atan2((*segment4D).localDirection().y(),(*segment4D).localDirection().z()));      
+      // Old definition of angles
+//       float dxdz =angleBtwHPiAndHPi(std::atan2((*segment4D).localDirection().x(),(*segment4D).localDirection().z()));
+//       float dydz = angleBtwHPiAndHPi(std::atan2((*segment4D).localDirection().y(),(*segment4D).localDirection().z()));
+      // Use the same angle definition as Validation/DTRecHits
+      float dxdz = std::atan((*segment4D).localDirection().x()/(*segment4D).localDirection().z());
+      float dydz = std::atan((*segment4D).localDirection().y()/(*segment4D).localDirection().z());
+      
 
       segmObj->phi = dxdz;
       segmObj->theta = dydz;
