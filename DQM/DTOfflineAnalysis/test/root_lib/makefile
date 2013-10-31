@@ -20,7 +20,7 @@ ROOFITINCL    =  -I $(shell scram tool info roofitcore | grep "INCLUDE=" | sed s
 ROOFITLIBS    =  -L $(shell scram tool info roofitcore | grep "LIBDIR=" | sed s/"LIBDIR="//) -l RooFit -l RooFitCore
 
 
-CXX		= $(shell scram tool info cxxcompiler | grep "CXX=" | sed s/"CXX="//)
+CXX		= $(shell scram tool info gcc-cxxcompiler | grep "CXX=" | sed s/"CXX="//)
 
 CXXFLAGS      = -O -Wall -fPIC $(ROOTCFLAGS) $(ROOFITINCL)
 LD	 	= $(CXX)
