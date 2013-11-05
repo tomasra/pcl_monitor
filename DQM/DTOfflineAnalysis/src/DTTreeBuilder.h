@@ -13,8 +13,8 @@
  *  All histos are produce per SuperLayer.
  *
  *
- *  $Date: 2013/06/05 07:35:18 $
- *  $Revision: 1.10 $
+ *  $Date: 2013/08/28 23:03:03 $
+ *  $Revision: 1.11 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -53,12 +53,6 @@ public:
 protected:
 
 private:
-  // gives an angle between 0 and Pi
-  double angleBtwPiAndPi(double angle) const;
-
-  // gives an angle between -Pi/2 and Pi/2
-  double angleBtwHPiAndHPi(double angle) const;
-
 
   TFile* theFile;
 

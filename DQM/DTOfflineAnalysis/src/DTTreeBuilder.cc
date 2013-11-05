@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2013/08/28 23:07:18 $
- *  $Revision: 1.21 $
+ *  $Date: 2013/10/31 12:59:55 $
+ *  $Revision: 1.22 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -35,6 +35,7 @@
 
 #include "Geometry/DTGeometry/interface/DTGeometry.h"
 #include "Geometry/Records/interface/MuonGeometryRecord.h"
+#include "TrackingTools/GeomPropagators/interface/StraightLinePlaneCrossing.h"
 
 #include "CondFormats/DataRecord/interface/DTStatusFlagRcd.h"
 #include "CondFormats/DTObjects/interface/DTStatusFlag.h"
@@ -69,13 +70,14 @@ using namespace std;
 using namespace reco;
 
 // Refit the segment used as a reference for computing residuals, possibly skipping hits
+// NOTE: at the moment the refitted segment is used only as the reference to compute residuals.
+//       All other quantities (angles, segment X, Y etc) used to plot dependencies come from the original segment.
 bool refitReferenceSegment = false;
 
 
 DTTreeBuilder::DTTreeBuilder(const ParameterSet& pset, TFile* file) : 
   theFile(file),
   BX(-999),
-  //  pix(-999),
   runN(-1),
   eventN(-1),
   theUpdator(0)
@@ -95,8 +97,9 @@ DTTreeBuilder::DTTreeBuilder(const ParameterSet& pset, TFile* file) :
   // updator to refit the segment used as a reference to define residuals
     theUpdator = new DTSegmentUpdator(pset.getParameter<ParameterSet>("segmentUpdatorConfig"));
 
-    // Fill List of layers to be excluded from the segment refit (suspect alignment ouliers)
-
+    // Fill List of layers to be excluded from the segment refit (suspect alignment ouliers) 
+    // when refitReferenceSegment == true
+    
     //Clear Single-layer misalignments
     skipLayersFromReference.insert(DTLayerId(-1,1,6,3,4));
     skipLayersFromReference.insert(DTLayerId( 0,1,2,3,1));
@@ -165,12 +168,6 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
   edm::Handle<reco::VertexCollection> vertex; 
   event.getByLabel("goodPrimaryVertices", vertex);
 
-  // Get the pixel cluster collection
-//   Handle<edmNew::DetSetVector<SiPixelCluster> > clusterColl; 
-// //   event.getByLabel("siPixelClusters", clusterColl); //name hardcoded beacuse I am lazy...
-// //   pix = clusterColl->size();
-//   pix=-1;
-
   // Get the DT Geometry
   ESHandle<DTGeometry> dtGeom;
   setup.get<MuonGeometryRecord>().get(dtGeom);
@@ -233,13 +230,11 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
       LocalPoint segment4DLocalPos = (*segment4D).localPosition();
       segmObj->setPositionInChamber(segment4DLocalPos.x(), segment4DLocalPos.y(), segment4DLocalPos.z());
 
-      // Old definition of angles
-//       float dxdz =angleBtwHPiAndHPi(std::atan2((*segment4D).localDirection().x(),(*segment4D).localDirection().z()));
-//       float dydz = angleBtwHPiAndHPi(std::atan2((*segment4D).localDirection().y(),(*segment4D).localDirection().z()));
-      // Use the same angle definition as Validation/DTRecHits
+      // Segment angles defined in the chamber RF
       float dxdz = std::atan((*segment4D).localDirection().x()/(*segment4D).localDirection().z());
       float dydz = std::atan((*segment4D).localDirection().y()/(*segment4D).localDirection().z());
       
+      //      cout << "DTTreeBuilder: " << *chamberId << " dxdz: " << dxdz << " dydz: " << dydz << " " << endl;
 
       segmObj->phi = dxdz;
       segmObj->theta = dydz;
@@ -250,13 +245,6 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 
 
       int projection = -1;
-
-
-//       float t0phi = -1;
-//       float t0theta = -1;
-//       float vDrift = -1;
-
-
       
       DTRecSegment4D refittedSegment4D((*segment4D));
       if((*segment4D).hasPhi()) {
@@ -295,7 +283,7 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	  segmObj->t0SegPhi = -1.;
 	}
 
-	// Refit segment
+	// Refit segment to be used as reference for the computation of residuals, possibly skipping selected layers
 	if (refitReferenceSegment) {
 	  bool mustRefit=false;
 	  vector<DTRecHit1D> updatedRecHits;		
@@ -366,6 +354,11 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	segmObj->setTTrig(sl, mean, sigma, kFact);
       }
 
+      // Set up segment extrapolator using the refitted segment as a reference
+      StraightLinePlaneCrossing segmentPlaneCrossing((chamber->toGlobal(refittedSegment4D.localPosition())).basicVector(),
+						     (chamber->toGlobal(refittedSegment4D.localDirection())).basicVector(),
+						     anyDirection);
+
       // Loop over 1D RecHit inside 4D segment
       for(vector<DTRecHit1D>::const_iterator recHit1D = recHits1D_S3.begin();
 	  recHit1D != recHits1D_S3.end();
@@ -409,56 +402,28 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	const DTLayer* layer = (chamber->superLayer(wireId.superlayerId()))->layer(wireId.layerId());
 	float wireX = layer->specificTopology().wirePosition(wireId.wire());
 
-
-	
-	// Distance of the 1D rechit from the wire
-	//float distRecHitToWire = fabs(wireX - (*recHit1D).localPosition().x());
-	float distRecHitToWire = fabs(wireX - (*recHit1D).localPosition().x());
-	
-	// Extrapolate the segment to the z of the wire
-	
-	// Get wire position in chamber RF
-	LocalPoint wirePosInLay(wireX,(*recHit1D).localPosition().y(),(*recHit1D).localPosition().z());
-	GlobalPoint wirePosGlob = layer->toGlobal(wirePosInLay);
-	LocalPoint wirePosInChamber = chamber->toLocal(wirePosGlob);
-// 	cout << "Wire: " << wireId << " z: " << wirePosInChamber.z() << endl;
-
-	// Segment position at Wire z in chamber local frame. 
-	// If no refit is done, refittedSegment4D is identical to (*segment4D).
-// 	LocalPoint segPosAtZWire = (*segment4D).localPosition()
-// 	  + (*segment4D).localDirection()*wirePosInChamber.z()/cos((*segment4D).localDirection().theta());
-	LocalPoint segPosAtZWire = refittedSegment4D.localPosition()
-	  + refittedSegment4D.localDirection()*wirePosInChamber.z()/cos(refittedSegment4D.localDirection().theta());
-	
-	// Compute the distance of the segment from the wire
-	int sl = wireId.superlayer();
-  
-
-	double distSegmToWire = -1;	
-	float deltaX = (*recHit1D).localPosition().x() - (layer->toLocal(chamber->toGlobal(segPosAtZWire))).x();
-	float angle = -1;
-	if(sl == 1 || sl == 3) {
-	  // RPhi SL
-	  distSegmToWire = fabs(wirePosInChamber.x() - segPosAtZWire.x());
-	  angle = dxdz;
-	} else if(sl == 2) {
-	  // RZ SL
-	  //x in layer and y in chamber are in opposite direction in sl theta
-	  distSegmToWire = fabs(segPosAtZWire.y() - wirePosInChamber.y());
-	  angle = dydz;
+	// Extrapolate segment to layer surface
+	pair<bool,Basic3DVector<float> > ppt = segmentPlaneCrossing.position(layer->surface());
+	if (ppt.first==false) {
+	  cout << "ERROR: invalid segment extrapolation" <<  refittedSegment4D.localPosition() << " " << refittedSegment4D.localDirection() << endl;
+	  continue;	  
 	}
+	GlobalPoint segExrapolationToLayer(ppt.second);
+	LocalPoint  segExrapolationToLayer_lrf = layer->toLocal(segExrapolationToLayer);
 
-
+	// Distance between 1D rechit and segment extrapolation
+	float deltaX = (*recHit1D).localPosition().x() - segExrapolationToLayer_lrf.x();
+	// Distance of the 1D rechit from the wire
+	double distRecHitToWire = std::abs(wireX - (*recHit1D).localPosition().x());
+	// Distance of the segment extrapolation from the wire
+	double distSegmToWire = std::abs(wireX-segExrapolationToLayer_lrf.x());
+	
+	// Segment angle in the layer RF. (this is the original segment, not the refitted one!)
+	LocalVector segDirInLayer = layer->toLocal(chamber->toGlobal((*segment4D).localDirection()));
+	float angle = std::atan(segDirInLayer.x()/segDirInLayer.z());
 
 	if(fabs(distSegmToWire) > 10)
 	  cout << "  Warning: dist segment-wire: " << distSegmToWire << endl;
-
-	//double residual = distRecHitToWire - distSegmToWire;
-
-	// Get segment etrapolation pos. in layer RF
-	//LocalPoint segPosExtrInLayer = layer->toLocal(chamber->toGlobal(segPosAtZWire));
-	//	const DTSuperLayer* superlayer = chamber->superLayer(wireId.superlayerId());
-	//	LocalPoint segPosExtrInSL = superlayer->toLocal(chamber->toGlobal(segPosAtZWire));	
 
 	// create the DTHitObject
 	hitObj->setLocalPosition((*recHit1D).localPosition().x(),
@@ -583,7 +548,8 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	LocalPoint segment2DLocalPos = (*segment2D).localPosition();
 	segmObj->setPositionInChamber(segment2DLocalPos.x(), segment2DLocalPos.y(), segment2DLocalPos.z());
 
-	float dxdz =angleBtwHPiAndHPi(std::atan2((*segment2D).localDirection().x(),(*segment2D).localDirection().z()));
+      // Segment angle defined in the chamber RF
+	float dxdz = std::atan((*segment2D).localDirection().x()/(*segment2D).localDirection().z());
 
 	segmObj->phi = dxdz;
 	segmObj->theta = 0;
@@ -654,19 +620,18 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 	
 	  // Get wire position in SL RF
 	  LocalPoint wirePosInLay(wireX,0,0);
-	  GlobalPoint wirePosGlob = layer->toGlobal(wirePosInLay);
-	  LocalPoint wirePosInSl = sl->toLocal(wirePosGlob);
+	  LocalPoint wirePosInSl = sl->toLocal(layer->toGlobal(wirePosInLay));
 	  // 	cout << "Wire: " << wireId << " z: " << wirePosInChamber.z() << endl;
 
 	  // Segment position at Wire z in SL local frame
+	  // FIXME: this neglects misalignment, should use the proper implementation as for 4D (cf above)
 	  LocalPoint segPosAtZWire = (*segment2D).localPosition()
 	    + (*segment2D).localDirection()*wirePosInSl.z()/cos((*segment2D).localDirection().theta());
   
 
 	  float deltaX = (*recHit1D).localPosition().x() - (layer->toLocal(sl->toGlobal(segPosAtZWire))).x();
-	  float angle = -1;
+	  float angle = dxdz;
 	  double distSegmToWire = fabs(wirePosInSl.x() - segPosAtZWire.x());
-	  angle = dxdz;
 
 	  // 	cout << wireId << " wiX=" << wireX << " drhw=" << distRecHitToWire 
 	  // 	     << " wposL=" << wirePosInLay 
@@ -791,9 +756,11 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
       muObj->normChi2glb=normChi2glb;
       muObj->type=type;
 
-      // If you look at MuonSegmentMatcher class you will see a lot of interesting quantities to look at!
-      // you can get the list of matched info using matches()
-      // hChamberMatched->Fill(muon->numberOfChambers());
+      // Segment matches
+//       if(muon->isMatchesValid()){
+// 	const std::vector<MuonChamberMatch>& matches = muon->matches();
+// 	cout << "matches: " << matches.size() << endl;
+//       }
 
       int sel = 0;
       //      if(muon::isGoodMuon(*muon,muon::GlobalMuonPromptTight)) sel=1;
@@ -854,18 +821,4 @@ void DTTreeBuilder::beginJob() {
   theTree->Branch("Run", &runN, "Run/I");
   theTree->Branch("Event", &eventN, "Event/I");
 }
-
-
-double DTTreeBuilder::angleBtwPiAndPi(double angle) const {
-  while(angle >= TMath::Pi()) angle -= TMath::Pi();
-  while(angle < 0.) angle += TMath::Pi();
-  return angle;
-}
-
-double DTTreeBuilder::angleBtwHPiAndHPi(double angle) const {
-  while(angle >= TMath::PiOver2()) angle -= TMath::Pi();
-  while(angle < -TMath::PiOver2()) angle += TMath::Pi();
-  return angle;
-}
-
 
