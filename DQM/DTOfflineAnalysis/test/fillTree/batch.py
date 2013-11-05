@@ -64,6 +64,7 @@ echo 'destination dir: ls: '
 cd $LS_SUBCWD
 pwd
 ls -l 
+setenv ROOT_HIST 0
 if ( -s DTLocalReco.root ) then
  root -q -b '${CMSSW_BASE}/src/DQM/DTOfflineAnalysis/test/fillTree/rootFileIntegrity.r(\"DTLocalReco.root\")'
 else
