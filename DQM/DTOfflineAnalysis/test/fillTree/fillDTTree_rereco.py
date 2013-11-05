@@ -45,7 +45,7 @@ execfile("files_RelValZMM5312.py")                                       # Z Rel
 
 ###################
 
-process.source.inputCommands = cms.untracked.vstring("keep *", "drop *_MEtoEDMConverter_*_*", "drop L1GlobalTriggerObjectMapRecord_hltL1GtObjectMap__HLT")
+process.source.inputCommands = cms.untracked.vstring("keep *", "drop *_MEtoEDMConverter_*_*", "drop L1GlobalTriggerObjectMapRecord_hltL1GtObjectMap__HLT", "drop l1extra*_*_*_*")
 
 process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32(-1)
