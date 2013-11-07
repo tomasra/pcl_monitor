@@ -253,12 +253,12 @@ TH1F* plotAndProfileX (TH2* theh, int rebinX, int rebinY, int rebinProfile, floa
 
 
 // Print all canvases in separate files
-void printCanvases(TString type, TString path="."){
+void printCanvases(TString type="png", TString path="."){
   TIter iter(gROOT->GetListOfCanvases());
   TCanvas *c;
   while( (c = (TCanvas *)iter()) ) {
-    TString name =  c->GetTitle();
-    c->Print(path+"/"+name+"."+type,type);
+    TString name =  path+"/"+c->GetTitle()+"."+type;
+    c->Print(name);
   }
 }
 
@@ -335,8 +335,8 @@ TStyle * getStyle(TString name) {
     theStyle->SetCanvasColor(kWhite);
 //      theStyle->SetCanvasDefH(600); //Height of canvas
 //      theStyle->SetCanvasDefW(800); //Width of canvas
-      theStyle->SetCanvasDefH(750); //Height of canvas
-      theStyle->SetCanvasDefW(1000); //Width of canvas
+    theStyle->SetCanvasDefH(750); //Height of canvas
+    theStyle->SetCanvasDefW(1000); //Width of canvas
 
     theStyle->SetCanvasDefX(0);   //POsition on screen
     theStyle->SetCanvasDefY(0);
@@ -363,9 +363,10 @@ TStyle * getStyle(TString name) {
     // For the histo:
     // theStyle->SetHistFillColor(1);
     // theStyle->SetHistFillStyle(0);
-    theStyle->SetHistLineColor(1);
-    theStyle->SetHistLineStyle(0);
-    theStyle->SetHistLineWidth(1);
+    theStyle->SetHistLineColor(kBlue);
+    theStyle->SetMarkerColor(kBlue);
+    //    theStyle->SetHistLineStyle(0);
+    //    theStyle->SetHistLineWidth(1);
     // theStyle->SetLegoInnerR(Float_t rad = 0.5);
     // theStyle->SetNumberContours(Int_t number = 20);
 
@@ -404,51 +405,49 @@ TStyle * getStyle(TString name) {
 //     theStyle->SetStatH(0.02);
 //     theStyle->SetStatW(0.2);
     // theStyle->SetStatStyle(Style_t style = 1001);
-//     theStyle->SetStatX(0.82);
-//     theStyle->SetStatY(0.5);
+    theStyle->SetStatX(0.94);
+    theStyle->SetStatY(0.96);
 
     // Margins:
-     theStyle->SetPadTopMargin(0.1);
-     theStyle->SetPadBottomMargin(0.1);
-     theStyle->SetPadLeftMargin(0.1);
-     theStyle->SetPadRightMargin(0.05);
+//      theStyle->SetPadTopMargin(0.1);
+      theStyle->SetPadBottomMargin(0.11);
+//      theStyle->SetPadLeftMargin(0.1);
+//      theStyle->SetPadRightMargin(0.05);
+    theStyle->SetPadLeftMargin(0.15);
 
     // For the Global title:
-
-    // Uncomment to remove title
-    //    theStyle->SetOptTitle(0); 
-    theStyle->SetTitleFont(42);
-    theStyle->SetTitleColor(1);
-    theStyle->SetTitleTextColor(1);
-    theStyle->SetTitleFillColor(10);
-    theStyle->SetTitleFontSize(0.05);
+    
+    //    theStyle->SetOptTitle(0); // Uncomment to remove title
+//     theStyle->SetTitleFont(42);
+//     theStyle->SetTitleColor(1);
+//     theStyle->SetTitleTextColor(1);
+    theStyle->SetTitleFillColor(0);
+//     theStyle->SetTitleFontSize(0.05);
     // theStyle->SetTitleH(0); // Set the height of the title box
     // theStyle->SetTitleW(0); // Set the width of the title box
     // theStyle->SetTitleX(0); // Set the position of the title box
-    theStyle->SetTitleY(1); // Set the position of the title box
-    theStyle->SetTitleStyle(1001);
-    // theStyle->SetTitleBorderSize(2);
+    theStyle->SetTitleY(0.96); // Set the position of the title box
+    theStyle->SetTitleStyle(0);
+    theStyle->SetTitleBorderSize(0);
+
 
     // For the axis titles:
 
-    theStyle->SetTitleColor(1, "XYZ");
-    theStyle->SetTitleFont(42, "XYZ");
-    theStyle->SetTitleSize(0.05, "XYZ");
+//     theStyle->SetTitleColor(1, "XYZ");
+//     theStyle->SetTitleFont(42, "XYZ");
+    //    theStyle->SetTitleSize(0.05, "XYZ");
     // theStyle->SetTitleXSize(Float_t size = 0.02); // Another way to set the size?
     // theStyle->SetTitleYSize(Float_t size = 0.02);
-    theStyle->SetTitleXOffset(0.9);
-    theStyle->SetTitleYOffset(1.25);
+//     theStyle->SetTitleXOffset(0.9);
+//     theStyle->SetTitleYOffset(1.25);
     // theStyle->SetTitleOffset(1.1, "Y"); // Another way to set the Offset
 
     // For the axis labels:
 
-    theStyle->SetLabelColor(1, "XYZ");
-
-    theStyle->SetLabelFont(42, "XYZ");
-
-    theStyle->SetLabelOffset(0.007, "XYZ");
-
-    theStyle->SetLabelSize(0.045, "XYZ");
+//     theStyle->SetLabelColor(1, "XYZ");
+//     theStyle->SetLabelFont(42, "XYZ");
+//     theStyle->SetLabelOffset(0.007, "XYZ");
+//     theStyle->SetLabelSize(0.045, "XYZ");
 
     // For the axis:
 
@@ -478,7 +477,7 @@ TStyle * getStyle(TString name) {
     // theStyle->SetTimeOffset(Double_t toffset);
     // theStyle->SetHistMinimumZero(kTRUE);
     theStyle->SetTextSize(0.045);
-    theStyle->SetTextFont(42);
+    //    theStyle->SetTextFont(42);
     
     //   style->SetOptFit(101);
     //   style->SetOptStat(1111111); 
