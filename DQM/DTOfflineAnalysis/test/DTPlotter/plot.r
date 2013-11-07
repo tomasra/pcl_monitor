@@ -67,8 +67,8 @@ void plot(TString filename, TString cut, int wheel, int station, int sector=0, i
   HRes1DHits *hResPhiS1 = new HRes1DHits(Utils::getHistoNameFromDetIdAndSet(detId1, cut)+"_S1",file);
   HRes1DHits *hResThetaS1 = new HRes1DHits(Utils::getHistoNameFromDetIdAndSet(detId2, cut)+"_S1",file);
 
-  cout << "hResPhi set name:  " << hResPhi->name << endl;
-  cout << "hResTheta set name:" << hResTheta->name << endl;
+  cout << "hResPhi set name:  " << hResPhi->name << " " << hResPhi << endl;
+  cout << "hResTheta set name:" << hResTheta->name << " " << hResTheta << endl;
 
   // Segment plots
   DTDetId chDetId(wheel, station, sector, 0, 0, 0);
@@ -81,7 +81,8 @@ void plot(TString filename, TString cut, int wheel, int station, int sector=0, i
   bool doPhiAndThetaS3 =true;
   bool doAngularDeps = true;
   bool doPhiThetaVsXY = true;
-  bool doNHits = false;
+  bool doPhiThetaVsXYS1 = true;
+  bool doNHits = true;
 
   bool doPhiBySL = false;   // only for "SL" or "ByLayer
 
@@ -178,6 +179,25 @@ void plot(TString filename, TString cut, int wheel, int station, int sector=0, i
 
   }
 
+  //-------------------- Phi/theta vs X and Y @ S1
+  if (doPhiThetaVsXYS1 && hResPhiS1->hResDistVsX) {
+    TCanvas* c2= new TCanvas;
+    c2->SetTitle(canvbasename+"_PhiThetavsXY_S1");
+    c2->Divide(2,2);
+
+    c2->cd(1);
+    plotAndProfileX(hResPhiS1->hResDistVsX,  2,rby,1,-.04, .04, -130,130);
+
+    c2->cd(2);  
+    plotAndProfileX(hResPhiS1->hResDistVsY,  2,rby,1,-.04, .04, -130,130);
+
+    c2->cd(3);  
+    plotAndProfileX(hResThetaS1->hResDistVsX,  2,rby,1,-.04, .04, -130,130);
+
+    c2->cd(4);  
+    plotAndProfileX(hResThetaS1->hResDistVsY,  2,rby,1,-.04, .04, -130,130);
+
+  }
 
     //-------------------- nHits, chi2
   if (doNHits) { 
