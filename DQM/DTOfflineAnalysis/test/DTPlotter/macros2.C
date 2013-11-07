@@ -208,9 +208,18 @@ TH1F* plotAndProfileX (TH2* theh, int rebinX, int rebinY, int rebinProfile, floa
     TObjArray aSlices;
     //    TF1 fff("a", "gaus", -0.1, 0.1);   
     h2->FitSlicesY(0, 0, -1, 0, "QNR", &aSlices); // add "G2" to merge 2 consecutive bins
-    
-    ht = (TH1F*) aSlices[1]->Clone();
+
+    ht = (TH1F*) aSlices[1]->Clone();    
     Utils::newName(ht);
+    // Remove bins with failed fits, based on fit errors
+    float thr = (maxY-minY)/4.;
+    for (int bin=1; bin<=ht->GetNbinsX();++bin){
+      if (ht->GetBinError(bin)>thr) {
+	ht->SetBinContent(bin,0);
+	ht->SetBinError(bin,0);
+      }
+    }
+    
     ht->SetMarkerColor(4);
     ht->Draw("same");
   }
