@@ -91,15 +91,17 @@ class HRes1DHits{
 //     hResPosVsAngle = (TH2F *) file->Get(name_+"_hResPosVsAngle");
 
     if (hResDist) {
-      hResDist->SetXTitle("|d_hit|-|d_extr| (cm)");
+      hResDist->SetXTitle("|d_{hit}|-|d_{seg}| (cm)");
       if (hResDistVsDist!=0) {
-	hResDistVsDist->SetXTitle("|d_extr| (cm)");
-	hResDistVsDist->SetYTitle("|d_hit|-|d_extr| (cm)");
+	hResDistVsDist->SetXTitle("|d_{seg}| (cm)");
+	hResDistVsDist->SetYTitle("|d_{hit}|-|d_{seg}| (cm)");
+	hResDistVsAngle->SetXTitle("#alpha (rad)");
+	hResDistVsAngle->SetYTitle("|d_{hit}|-|d_{seg}| (cm)");
 	hResDistVsX->SetXTitle("Local X (cm)");
-	hResDistVsX->SetYTitle("|d_hit|-|d_extr| (cm)");
+	hResDistVsX->SetYTitle("|d_{hit}|-|d_{seg}| (cm)");
 	hResDistVsY->SetXTitle("Local Y (cm)");
-	hResDistVsY->SetYTitle("|d_hit|-|d_extr| (cm)");
-	hResDistVsTheta->SetYTitle("phi |d_hit|-|d_extr| (cm) vs angle in theta SL");
+	hResDistVsY->SetYTitle("|d_{hit}|-|d_{seg}| (cm)");
+	hResDistVsTheta->SetYTitle("phi |d_{hit}|-|d_{seg}| (cm) vs angle in theta SL");
       }
     }
   }
