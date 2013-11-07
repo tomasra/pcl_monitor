@@ -43,7 +43,11 @@ void plot(TString filename, TString cut, int wheel, int station, int sector=0, i
 
  
   TStyle * style = getStyle("tdr");
-  style->cd();  
+  style->cd();
+  gStyle->SetTitleSize(0.05,"XYZ"); // Set larger axis titles
+  gStyle->SetTitleOffset(1.3,"Y");
+  gStyle->SetOptTitle(0); // remove histogram titles
+
   setPalette();
   //  gStyle->SetOptStat(111); // print also mean value
 
@@ -136,7 +140,7 @@ void plot(TString filename, TString cut, int wheel, int station, int sector=0, i
     rbx=1;
     rby=1;
 
-    c1->Divide(2,2);
+    c1->Divide(2,2,0.0005,0.0005);
     c1->cd(1);
       
     hSegChamberSel->hPhiLoc->GetXaxis()->SetRangeUser(-1.,1.);
@@ -163,7 +167,7 @@ void plot(TString filename, TString cut, int wheel, int station, int sector=0, i
   if (doPhiThetaVsXY) {
     TCanvas* c2= new TCanvas;
     c2->SetTitle(canvbasename+"_PhiThetavsXY");
-    c2->Divide(2,2);
+    c2->Divide(2,2,0.0005,0.0005);
 
     c2->cd(1);
     plotAndProfileX(hResPhi->hResDistVsX,  2,rby,1,-.04, .04, -130,130);
@@ -183,7 +187,7 @@ void plot(TString filename, TString cut, int wheel, int station, int sector=0, i
   if (doPhiThetaVsXYS1 && hResPhiS1->hResDistVsX) {
     TCanvas* c2= new TCanvas;
     c2->SetTitle(canvbasename+"_PhiThetavsXY_S1");
-    c2->Divide(2,2);
+    c2->Divide(2,2,0.0005,0.0005);
 
     c2->cd(1);
     plotAndProfileX(hResPhiS1->hResDistVsX,  2,rby,1,-.04, .04, -130,130);
@@ -203,7 +207,7 @@ void plot(TString filename, TString cut, int wheel, int station, int sector=0, i
   if (doNHits) { 
        TCanvas* c1= new TCanvas;
     c1->SetTitle(canvbasename+"_NHitsT0");
-    c1->Divide(2,2);
+    c1->Divide(2,2,0.0005,0.0005);
     c1->cd(1);
     
     TH2F * hNh = hSegChamberSel->hNHits;
@@ -233,7 +237,7 @@ void plot(TString filename, TString cut, int wheel, int station, int sector=0, i
     TCanvas* c2= new TCanvas;
     c2->SetName(canvbasename+"_Phi1Phi2");
     c2->SetTitle(canvbasename+"_Phi1Phi2");
-    c2->Divide(2,2);
+    c2->Divide(2,2,0.0005,0.0005);
 
     c2->cd(1);
     TF1* fphi1=drawGFit(hResPhi1->hResDist, nsigma, -0.4, 0.4);

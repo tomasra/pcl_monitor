@@ -320,6 +320,8 @@ setPalette()
 TStyle * getStyle(TString name) {
   TStyle *theStyle;
 
+  gROOT->ForceStyle();
+
   if ( name == "myStyle" ) {
     theStyle = new TStyle("myStyle", "myStyle");
     //    theStyle->SetOptStat(0);
@@ -435,7 +437,7 @@ TStyle * getStyle(TString name) {
     // theStyle->SetTitleH(0); // Set the height of the title box
     // theStyle->SetTitleW(0); // Set the width of the title box
     // theStyle->SetTitleX(0); // Set the position of the title box
-    theStyle->SetTitleY(0.96); // Set the position of the title box
+    theStyle->SetTitleY(0.97); // Set the position of the title box
     theStyle->SetTitleStyle(0);
     theStyle->SetTitleBorderSize(0);
 

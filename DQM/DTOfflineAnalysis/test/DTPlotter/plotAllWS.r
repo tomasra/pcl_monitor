@@ -28,8 +28,6 @@ void plotAllWS(TString filename, int sector, int sl) {
    gStyle->SetTitleOffset(1.5,"Y");
    gStyle->SetOptTitle(0); // remove histogram titles
 
-   gROOT->ForceStyle();
-
    setPalette();
    opt2Dplot = "col";
    float nsigma = 2;
