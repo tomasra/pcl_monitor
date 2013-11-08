@@ -1,6 +1,6 @@
 #/DYJetsToLL_M-50_TuneZ2Star_8TeV-madgraph-tarball/Summer12_DR53X-HLT8E33_PU_S10_START53_V7I-v1/GEN-SIM-RECO
 
-process.GlobalTag.globaltag = "START53_V7I:All" 
+process.GlobalTag.globaltag = "START53_V7I::All" 
 #  process.GlobalTag.globaltag = "MC_53_V7A::All"  # IDEAL MC
 
 readFiles = cms.untracked.vstring()
