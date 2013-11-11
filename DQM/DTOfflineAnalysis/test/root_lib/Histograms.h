@@ -60,7 +60,7 @@ class HRes1DHits{
       hResDistVsCell = new TH2F(N+"_hResDistVsCell",
 				N+"_hResDistVsCell",
 				//"Res. dist from wire vs X",
-				100, 0., 100., 600, 0.4, 0.4);
+				100, 0., 100., 600, -0.4, 0.4);
 
       hResDistVsY = new TH2F(N+"_hResDistVsY",
 			     N+"_hResDistVsY",
@@ -138,7 +138,7 @@ class HRes1DHits{
       hResDistVsAngle->Fill(angle, deltaDist);
       hResDistVsTheta->Fill(angleTheta, deltaDist);
       hResDistVsX->Fill(hitX, deltaDist);
-      hResDistVsCell->Fill(hitX, cell);
+      hResDistVsCell->Fill(cell, deltaDist);
       hResDistVsY->Fill(hitY, deltaDist);
       //     hPullPos->Fill(deltaX/sigma);
       //     hResPosVsAngle->Fill(angle, deltaX);
