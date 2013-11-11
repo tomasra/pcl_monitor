@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2013/10/31 12:59:55 $
- *  $Revision: 1.22 $
+ *  $Date: 2013/11/05 18:19:54 $
+ *  $Revision: 1.23 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -267,7 +267,7 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 		      hitResolution,
 		      DTVelocityUnits::cm_per_ns);
 
-	float vdrift = vDrift1 + vDrift2 / 2.;
+	float vdrift = (vDrift1 + vDrift2) / 2.;
 
 	const DTChamberRecSegment2D* phiSeg = (*segment4D).phiSegment();
 	vector<DTRecHit1D> phiRecHits = phiSeg->specificRecHits();
