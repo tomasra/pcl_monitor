@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2013/08/19 21:41:20 $
- *  $Revision: 1.16 $
+ *  $Date: 2013/08/28 23:09:31 $
+ *  $Revision: 1.17 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -383,17 +383,18 @@ void TTreeReader::processEvent(int entry) {
     //-------------------- Segment plots
     double vdrift = oneSeg->vDriftCorrPhi;
     DTDetId segmDetid(oneSeg->wheel, oneSeg->station, oneSeg->sector, 0, 0, 0);
-    if(readCalibTable) {
-      DTDetId sl1Id = segmDetid;
-      sl1Id.sl = 1;
-      DTDetId sl3Id = segmDetid;
-      sl3Id.sl = 3;
-      // FIXME: assume that SL1 and 3 have the same  vdrift
-      if (vdrift != 0.) 
-	vdrift = calibMap->meanVDrift(sl1Id)*(1. - oneSeg->vDriftCorrPhi);
-      if(debug > 5)
-	cout << segmDetid << " vdrift: " << calibMap->meanVDrift(sl1Id) << endl;
-    }
+    // Obsolete, oneSeg->vDriftCorrPhi is now already the corrected vdrift!
+//     if(readCalibTable) {
+//       DTDetId sl1Id = segmDetid;
+//       sl1Id.sl = 1;
+//       DTDetId sl3Id = segmDetid;
+//       sl3Id.sl = 3;
+//       // FIXME: assume that SL1 and 3 have the same  vdrift
+//       if (vdrift != 0.) 
+// 	vdrift = calibMap->meanVDrift(sl1Id)*(1. - oneSeg->vDriftCorrPhi);
+//       if(debug > 5)
+// 	cout << segmDetid << " vdrift: " << calibMap->meanVDrift(sl1Id) << endl;
+//     }
 
     DTDetId chId = buildDetid(oneSeg->wheel, oneSeg->station, oneSeg->sector, 0, 0, 0);
     // Plots for selected segments: loop over set of cuts
@@ -477,12 +478,12 @@ void TTreeReader::processEvent(int entry) {
 	    histosRes[*cut][detIdForPlot]->Fill(hitObj->resDist, 
 						hitObj->distFromWire, 
 						hitObj->resPos,
-
 						hitObj->X,
 						hitObj->Y, 
 						hitObj->angle, 
 						hitObj->sigmaPos,
-						oneSeg->theta);
+						oneSeg->theta,
+						hitObj->wire);
 	    if(doStep1)
 	      histosResS1[*cut][detIdForPlot]->Fill(hitObj->resDistS1, 
 						    hitObj->distFromWire, 
@@ -491,7 +492,8 @@ void TTreeReader::processEvent(int entry) {
 						    hitObj->Y, 
 						    hitObj->angle, 
 						    hitObj->sigmaPos,
-						    oneSeg->theta);
+						    oneSeg->theta,
+						    hitObj->wire);
 
 	    }
 	++cut;

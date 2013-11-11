@@ -20,6 +20,7 @@ class HRes1DHits{
     hResDistVsTheta(0),
     hResPos(0),
     hResDistVsX(0),
+    hResDistVsCell(0),
     hResDistVsY(0),
     detail(detail_)
   {
@@ -56,6 +57,11 @@ class HRes1DHits{
 			     //"Res. dist from wire vs X",
 			     100, -210, 210, 600, -0.4, 0.4);
 
+      hResDistVsCell = new TH2F(N+"_hResDistVsCell",
+				N+"_hResDistVsCell",
+				//"Res. dist from wire vs X",
+				100, 0., 100., 600, 0.4, 0.4);
+
       hResDistVsY = new TH2F(N+"_hResDistVsY",
 			     N+"_hResDistVsY",
 			     //"Res. dist from wire vs Y",
@@ -85,6 +91,7 @@ class HRes1DHits{
     hResDistVsTheta = (TH2F *) file->Get(name_+"_hResDistVsTheta");
 
     hResDistVsX = (TH2F *) file->Get(name_+"_hResDistVsX");
+    hResDistVsCell = (TH2F *) file->Get(name_+"_hResDistVsCell");
     hResDistVsY = (TH2F *) file->Get(name_+"_hResDistVsY");
     hResPos = (TH1F *) file->Get(name_+"_hResPos");
 //     hPullPos = (TH1F *) file->Get(name_+"_hPullPos");
@@ -99,6 +106,8 @@ class HRes1DHits{
 	hResDistVsAngle->SetYTitle("|d_{hit}|-|d_{seg}| (cm)");
 	hResDistVsX->SetXTitle("Local X (cm)");
 	hResDistVsX->SetYTitle("|d_{hit}|-|d_{seg}| (cm)");
+	hResDistVsCell->SetXTitle("Cell");
+	hResDistVsCell->SetYTitle("|d_{hit}|-|d_{seg}| (cm)");
 	hResDistVsY->SetXTitle("Local Y (cm)");
 	hResDistVsY->SetYTitle("|d_{hit}|-|d_{seg}| (cm)");
 	hResDistVsTheta->SetYTitle("phi |d_{hit}|-|d_{seg}| (cm) vs angle in theta SL");
@@ -113,13 +122,14 @@ class HRes1DHits{
     delete hResDistVsAngle;
     delete hResDistVsTheta;
     delete hResDistVsX;
+    delete hResDistVsCell;
     delete hResDistVsY;
     delete hResPos;
 //     delete hPullPos;
 //     delete hResPosVsAngle;
 }
 
-  void Fill(float deltaDist, float distFromWire, float deltaX, float hitX, float hitY, float angle, float sigma, float angleTheta) {
+  void Fill(float deltaDist, float distFromWire, float deltaX, float hitX, float hitY, float angle, float sigma, float angleTheta, int cell) {
     hResDist->Fill(deltaDist);
     hResPos->Fill(deltaX);
 
@@ -128,6 +138,7 @@ class HRes1DHits{
       hResDistVsAngle->Fill(angle, deltaDist);
       hResDistVsTheta->Fill(angleTheta, deltaDist);
       hResDistVsX->Fill(hitX, deltaDist);
+      hResDistVsCell->Fill(hitX, cell);
       hResDistVsY->Fill(hitY, deltaDist);
       //     hPullPos->Fill(deltaX/sigma);
       //     hResPosVsAngle->Fill(angle, deltaX);
@@ -143,6 +154,7 @@ class HRes1DHits{
       hResDistVsAngle->Write();
       hResDistVsTheta->Write();
       hResDistVsX->Write();
+      hResDistVsCell->Write();
       hResDistVsY->Write();
       //     hPullPos->Write();
       //     hResPosVsAngle->Write();
@@ -163,6 +175,7 @@ class HRes1DHits{
   TH2F * hResPosVsAngle;
 
   TH2F * hResDistVsX;
+  TH2F * hResDistVsCell;
   TH2F * hResDistVsY;
   TString name;
   int detail;
