@@ -4,8 +4,8 @@
 /** \class DTSegmentObject
  *  No description available.
  *
- *  $Date: 2011/02/07 21:57:49 $
- *  $Revision: 1.5 $
+ *  $Date: 2013/06/05 07:34:40 $
+ *  $Revision: 1.6 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -68,9 +68,11 @@ public:
   // angles in chamber RF
   float phi;
   float theta;
+
   // t0segment
   float t0SegPhi;
   float t0SegTheta;
+  float dVDriftPhi;
   float vDriftCorrPhi;
   float vDriftCorrTheta;
 

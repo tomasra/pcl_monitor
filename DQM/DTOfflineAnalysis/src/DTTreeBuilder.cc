@@ -2,8 +2,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2013/11/05 18:19:54 $
- *  $Revision: 1.23 $
+ *  $Date: 2013/11/11 14:22:01 $
+ *  $Revision: 1.24 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -268,19 +268,29 @@ void DTTreeBuilder::analyze(const Event& event, const EventSetup& setup) {
 		      DTVelocityUnits::cm_per_ns);
 
 	float vdrift = (vDrift1 + vDrift2) / 2.;
+	
+	// FIXME: Apply the corrections that are harcoded in RecoLocalMuon/DTRecHit/plugins/DTLinearDriftFromDBAlgo.cc
+	  // (variation of vdrift along Y due to B field)
+	if (abs((*chamberId).wheel()) == 2 && 
+	    (*chamberId).station() == 1) {
+	  // Note that here we pick the segment local Y, while in reco the correction is applied using the hit local Y!
+	  const float k_param = 1.2e-04;
+	  vdrift = vdrift*(1. - k_param*segment4DLocalPos.y());
+	}
 
 	const DTChamberRecSegment2D* phiSeg = (*segment4D).phiSegment();
 	vector<DTRecHit1D> phiRecHits = phiSeg->specificRecHits();
 	copy(phiRecHits.begin(), phiRecHits.end(), back_inserter(recHits1D_S3));
 	projection = 1;
-	// 	segmObj->vDriftCorrPhi = (*segment4D).phiSegment()->vDrift();
-	float dVdrift = (*segment4D).phiSegment()->vDrift();
 	if ((*segment4D).phiSegment()->ist0Valid()) {
+	  segmObj->t0SegPhi = (*segment4D).phiSegment()->t0();
+	  float dVdrift = (*segment4D).phiSegment()->vDrift();
+	  segmObj->dVDriftPhi = dVdrift;  // O is returned in case of failure, e.g. if nhits < 5, or vdrift corr > 10%
 	  segmObj->vDriftCorrPhi =  vdrift*(1. - dVdrift);
-	  segmObj->t0SegPhi = (*segment4D).phiSegment()->t0(); 
 	} else {
-	  segmObj->vDriftCorrPhi =  -1.;
 	  segmObj->t0SegPhi = -1.;
+	  segmObj->dVDriftPhi    = 0.; // this is already used for falure anyhow
+	  segmObj->vDriftCorrPhi =  vdrift;
 	}
 
 	// Refit segment to be used as reference for the computation of residuals, possibly skipping selected layers

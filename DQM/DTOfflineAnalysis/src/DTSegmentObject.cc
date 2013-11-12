@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2010/09/10 12:49:11 $
- *  $Revision: 1.4 $
+ *  $Date: 2011/02/07 21:57:49 $
+ *  $Revision: 1.5 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -27,6 +27,7 @@ DTSegmentObject::DTSegmentObject() : wheel(0),
 				     theta(0.),
 				     t0SegPhi(0.),
 				     t0SegTheta(0.),
+				     dVDriftPhi(0.),
 				     vDriftCorrPhi(0.),
 				     vDriftCorrTheta(0.),
 				     nHits(0),
@@ -57,6 +58,7 @@ DTSegmentObject::DTSegmentObject(int wheel, int station, int sector) : wheel(whe
 								       theta(0.),
 								       t0SegPhi(0.),
 								       t0SegTheta(0.),
+								       dVDriftPhi(0.),
 								       vDriftCorrPhi(0.),
 								       vDriftCorrTheta(0.),
 								       nHits(0),
@@ -86,6 +88,7 @@ DTSegmentObject::DTSegmentObject(const DTSegmentObject& segmObj) : wheel(segmObj
 								   theta(segmObj.theta),
 								   t0SegPhi(segmObj.t0SegPhi),
 								   t0SegTheta(segmObj.t0SegTheta),
+								   dVDriftPhi(segmObj.dVDriftPhi),
 								   vDriftCorrPhi(segmObj.vDriftCorrPhi),
 								   vDriftCorrTheta(segmObj.vDriftCorrTheta),
 								   nHits(segmObj.nHits),
