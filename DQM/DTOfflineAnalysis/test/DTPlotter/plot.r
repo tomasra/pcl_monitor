@@ -27,9 +27,10 @@ void plot(TString filename, TString cut, int wheel, int station, int sector=0, i
   //----------------------------------------------------------------------
   //  Configurable options
 
-   opt2Dplot = "col"; // Plot options scatter plots
+   opt2Dplot = "col";  // Plot options for scatter plots
    addProfile = false; // Draw simple profile for 2D plots (red)
-   addSlice = true;   // Draw mean of fitted gaussian in slides for 2D plots (blue
+   addSlice = true;    // Draw mean of fitted gaussian in slides for 2D plots (blue)
+   addMedian = false;   // Draw meadian profile of 2D plots (red)
 
   int rbx =1; // rebin x in scatter plots
   int rby =1; // rebin y in scatter plots
@@ -79,16 +80,20 @@ void plot(TString filename, TString cut, int wheel, int station, int sector=0, i
   HSegment*   hSegChamberSel = new HSegment(Utils::getHistoNameFromDetIdAndSet(chDetId, cut),file);
   
   TString canvbasename = filename;
-  canvbasename = canvbasename.Replace(canvbasename.Length()-5,5,"") + TString("_") + Utils::getHistoNameFromDetIdAndSet(detId2, cut);
+  
+  canvbasename = canvbasename.Replace(canvbasename.Length()-5,5,"") + TString("_") + Utils::getHistoNameFromDetIdAndSet(DTDetId(wheel,station,sector,0,layer,0), cut);
 
   // Select canvases
-  bool doPhiAndThetaS3 =true;
+  bool doPhiAndThetaS3 = true;
   bool doAngularDeps = true;
   bool doPhiThetaVsXY = true;
-  bool doPhiThetaVsXYS1 = true;
+  bool doPhiThetaVsXYS1 = false;
   bool doNHits = true;
+  bool doVd = true;
 
-  bool doPhiBySL = false;   // only for "SL" or "ByLayer
+  // Special plots
+  bool doPhiBySL = false; // only for "SL" or "ByLayer
+  bool doResVsCell = false; // makes sense only for "SL" or "ByLayer
 
   bool debugProfile=false;
 
@@ -170,16 +175,16 @@ void plot(TString filename, TString cut, int wheel, int station, int sector=0, i
     c2->Divide(2,2,0.0005,0.0005);
 
     c2->cd(1);
-    plotAndProfileX(hResPhi->hResDistVsX,  2,rby,1,-.04, .04, -130,130);
+    plotAndProfileX(hResPhi->hResDistVsX,  1,rby,1,-.04, .04, -130,130);
 
     c2->cd(2);  
-    plotAndProfileX(hResPhi->hResDistVsY,  2,rby,1,-.04, .04, -130,130);
+    plotAndProfileX(hResPhi->hResDistVsY,  1,rby,1,-.04, .04, -130,130);
 
     c2->cd(3);  
-    plotAndProfileX(hResTheta->hResDistVsX,  2,rby,1,-.04, .04, -130,130);
+    plotAndProfileX(hResTheta->hResDistVsX, 1,rby,1,-.04, .04, -130,130);
 
     c2->cd(4);  
-    plotAndProfileX(hResTheta->hResDistVsY,  2,rby,1,-.04, .04, -130,130);
+    plotAndProfileX(hResTheta->hResDistVsY,  1,rby,1,-.04, .04, -130,130);
 
   }
 
@@ -190,16 +195,16 @@ void plot(TString filename, TString cut, int wheel, int station, int sector=0, i
     c2->Divide(2,2,0.0005,0.0005);
 
     c2->cd(1);
-    plotAndProfileX(hResPhiS1->hResDistVsX,  2,rby,1,-.04, .04, -130,130);
+    plotAndProfileX(hResPhiS1->hResDistVsX,  1,rby,1,-.04, .04, -130,130);
 
     c2->cd(2);  
-    plotAndProfileX(hResPhiS1->hResDistVsY,  2,rby,1,-.04, .04, -130,130);
+    plotAndProfileX(hResPhiS1->hResDistVsY,  1,rby,1,-.04, .04, -130,130);
 
     c2->cd(3);  
-    plotAndProfileX(hResThetaS1->hResDistVsX,  2,rby,1,-.04, .04, -130,130);
+    plotAndProfileX(hResThetaS1->hResDistVsX,  1,rby,1,-.04, .04, -130,130);
 
     c2->cd(4);  
-    plotAndProfileX(hResThetaS1->hResDistVsY,  2,rby,1,-.04, .04, -130,130);
+    plotAndProfileX(hResThetaS1->hResDistVsY,  1,rby,1,-.04, .04, -130,130);
 
   }
 
@@ -232,7 +237,7 @@ void plot(TString filename, TString cut, int wheel, int station, int sector=0, i
 
 
 
-  // Phi residuals divided by SL (only with SL or ByLayer granularity)
+  //-------------------- Phi residuals divided by SL (only with SL or ByLayer granularity)
   if (doPhiBySL) {
     TCanvas* c2= new TCanvas;
     c2->SetName(canvbasename+"_Phi1Phi2");
@@ -263,13 +268,29 @@ void plot(TString filename, TString cut, int wheel, int station, int sector=0, i
 
   }
 
+  
+  //-------------------- Residuals by cell#
+  // used to debug periodic modulation of residual vs X
+  // (makes sense only with SL or ByLayer granularity; produced detail=2)
+  if (doResVsCell) {
+        TCanvas* c2= new TCanvas;
+    c2->SetTitle(canvbasename+"_resVsCell");
+    c2->Divide(2,2,0.0005,0.0005);
 
+    c2->cd(1);
+    plotAndProfileX(hResPhi->hResDistVsCell,  1,1,1,-.04,.04, 1,60);
+
+    c2->cd(3);  
+    plotAndProfileX(hResTheta->hResDistVsCell,  1,1,1,-.04,.04, 0,60);
+
+  }
+  
+
+  //-------------------- Example to inspect slices of profile histograms
   if(debugProfile) {
     float xvalues[5] = {-0.7, -0.65, -0.6, -0.5, -0.4};
     TH2F* h = hResTheta->hResDistVsAngle;
     //    h->Rebin2D(2,1);
-
-    //----------
 
     TH2F* hhh=h->Clone();
     TCanvas* c1= new TCanvas;
@@ -308,5 +329,38 @@ void plot(TString filename, TString cut, int wheel, int station, int sector=0, i
     }
   }
   
-}
 
+  //-------------------- plot vdrift vs x/y
+  if (doVd) {
+    TCanvas* c1= new TCanvas;
+    c1->SetTitle(canvbasename+"_vdrift");
+    c1->Divide(2,2);
+
+    if (hSegChamberSel->hVDrift->GetEntries() != 0){
+      c1->cd(1);
+      plotAndProfileX(hSegChamberSel->hVDriftVsX,2,1,1,0.0052, 0.0056, -130., 130.);
+
+      c1->cd(2);
+      plotAndProfileX(hSegChamberSel->hVDriftVsY,2,1,1,0.0052, 0.0056, -130., 130.);
+      hSegChamberSel->hVDriftVsY->GetXaxis()->SetTitle("Local Y (cm)");
+      hSegChamberSel->hVDriftVsY->GetYaxis()->SetTitle("v_{drift} (cm/ns)");
+    }
+
+
+    c1->cd(3);
+    TF1* fDvd=drawGFit(hSegChamberSel->hVDrift, 1.2, 0, 1);
+
+//     hSegChamberSel->hFailVdAngle->SetXTitle("#alpha of segments with no vdrift (rad)");
+//     hSegChamberSel->hFailVdAngle->Draw();
+
+    c1->cd(4);
+    //    plotAndProfileX(hSegChamberSel->hVDriftVsPhi,1,1,1,0.0052, 0.0056, -.5, .5);
+    
+    plotAndProfileX(hSegChamberSel->hdVDriftVsY,2,1,1,-0.03,0.03, -130., 130.);
+
+  }
+
+
+
+
+}
