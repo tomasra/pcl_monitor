@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2013/08/28 23:09:31 $
- *  $Revision: 1.17 $
+ *  $Date: 2013/11/11 14:59:11 $
+ *  $Revision: 1.18 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -26,6 +26,7 @@
 
 using namespace std;
 
+bool patchVd = true; // Apply corrections to the measured vd
 
 TH1S* hRun=new TH1S("hRun","hRun", 1000, 130000, 150000);
 
@@ -228,7 +229,7 @@ void TTreeReader::begin() {
 	    ++set) {
 	  TString setName = (*set).first;
 	  if(histosSeg[setName].find(chId) == histosSeg[setName].end()) {
-	    histosSeg[setName][chId] = new HSegment(Utils::getHistoNameFromDetIdAndSet(chId, setName));
+	    histosSeg[setName][chId] = new HSegment(Utils::getHistoNameFromDetIdAndSet(chId, setName), detail);
 	  }
 	}
 
@@ -380,8 +381,10 @@ void TTreeReader::processEvent(int entry) {
     } //< --- end of theta eff plots
     
 
-    //-------------------- Segment plots
-    double vdrift = oneSeg->vDriftCorrPhi;
+    //-------------------- Segment plots 
+    float dvdrift = -(oneSeg->dVDriftPhi); // change sign so that this is (Vcorr-Vold)/Vold
+    float vdrift = oneSeg->vDriftCorrPhi;
+
     DTDetId segmDetid(oneSeg->wheel, oneSeg->station, oneSeg->sector, 0, 0, 0);
     // Obsolete, oneSeg->vDriftCorrPhi is now already the corrected vdrift!
 //     if(readCalibTable) {
@@ -418,6 +421,7 @@ void TTreeReader::processEvent(int entry) {
 					    oneSeg->t0SegPhi,
 					    oneSeg->t0SegTheta,
 					    vdrift,
+					    dvdrift,
 					    oneSeg->Xsl,
 					    oneSeg->Ysl);
 	if((*set).first == "hqPhiV") passHqPhiV = true;

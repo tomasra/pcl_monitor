@@ -57,18 +57,19 @@ class HRes1DHits{
 			     //"Res. dist from wire vs X",
 			     100, -210, 210, 600, -0.4, 0.4);
 
-      hResDistVsCell = new TH2F(N+"_hResDistVsCell",
-				N+"_hResDistVsCell",
-				//"Res. dist from wire vs X",
-				100, 0., 100., 600, -0.4, 0.4);
-
       hResDistVsY = new TH2F(N+"_hResDistVsY",
 			     N+"_hResDistVsY",
 			     //"Res. dist from wire vs Y",
 			     100, -210, 210, 600, -0.4, 0.4);
     }
     
-
+    if (detail>3) {
+      hResDistVsCell = new TH2F(N+"_hResDistVsCell",
+				N+"_hResDistVsCell",
+				//"Res. dist from wire vs X",
+				100, 0., 100., 600, -0.4, 0.4);
+    }
+    
     
 //     hPullPos = new TH1F(N+"_hPullPos", "Pulls on position", 100, -5, 5);
 
@@ -81,9 +82,9 @@ class HRes1DHits{
     
   }
 
-  HRes1DHits(TString name_, TFile* file, int detail_=999){
+  HRes1DHits(TString name_, TFile* file){
     name=name_;
-    detail=detail_;
+    detail=-1;
 
     hResDist = (TH1F *) file->Get(name_+"_hResDist");
     hResDistVsDist = (TH2F *) file->Get(name_+"_hResDistVsDist");
@@ -99,19 +100,23 @@ class HRes1DHits{
 
     if (hResDist) {
       hResDist->SetXTitle("|d_{hit}|-|d_{seg}| (cm)");
-      if (hResDistVsDist!=0) {
-	hResDistVsDist->SetXTitle("|d_{seg}| (cm)");
-	hResDistVsDist->SetYTitle("|d_{hit}|-|d_{seg}| (cm)");
-	hResDistVsAngle->SetXTitle("#alpha (rad)");
-	hResDistVsAngle->SetYTitle("|d_{hit}|-|d_{seg}| (cm)");
-	hResDistVsX->SetXTitle("Local X (cm)");
-	hResDistVsX->SetYTitle("|d_{hit}|-|d_{seg}| (cm)");
-	hResDistVsCell->SetXTitle("Cell");
-	hResDistVsCell->SetYTitle("|d_{hit}|-|d_{seg}| (cm)");
-	hResDistVsY->SetXTitle("Local Y (cm)");
-	hResDistVsY->SetYTitle("|d_{hit}|-|d_{seg}| (cm)");
-	hResDistVsTheta->SetYTitle("phi |d_{hit}|-|d_{seg}| (cm) vs angle in theta SL");
-      }
+    }
+    
+    if (hResDistVsDist) {
+      hResDistVsDist->SetXTitle("|d_{seg}| (cm)");
+      hResDistVsDist->SetYTitle("|d_{hit}|-|d_{seg}| (cm)");
+      hResDistVsAngle->SetXTitle("#alpha (rad)");
+      hResDistVsAngle->SetYTitle("|d_{hit}|-|d_{seg}| (cm)");
+      hResDistVsX->SetXTitle("Local X (cm)");
+      hResDistVsX->SetYTitle("|d_{hit}|-|d_{seg}| (cm)");
+      hResDistVsY->SetXTitle("Local Y (cm)");
+      hResDistVsY->SetYTitle("|d_{hit}|-|d_{seg}| (cm)");
+      hResDistVsTheta->SetYTitle("phi |d_{hit}|-|d_{seg}| (cm) vs angle in theta SL");
+    }
+    
+    if (hResDistVsCell) {
+      hResDistVsCell->SetXTitle("Cell");
+      hResDistVsCell->SetYTitle("|d_{hit}|-|d_{seg}| (cm)");
     }
   }
 
@@ -138,10 +143,12 @@ class HRes1DHits{
       hResDistVsAngle->Fill(angle, deltaDist);
       hResDistVsTheta->Fill(angleTheta, deltaDist);
       hResDistVsX->Fill(hitX, deltaDist);
-      hResDistVsCell->Fill(cell, deltaDist);
       hResDistVsY->Fill(hitY, deltaDist);
       //     hPullPos->Fill(deltaX/sigma);
       //     hResPosVsAngle->Fill(angle, deltaX);
+    }
+    if (detail>3) {
+      hResDistVsCell->Fill(cell, deltaDist);
     }
   }
   
@@ -154,10 +161,12 @@ class HRes1DHits{
       hResDistVsAngle->Write();
       hResDistVsTheta->Write();
       hResDistVsX->Write();
-      hResDistVsCell->Write();
       hResDistVsY->Write();
       //     hPullPos->Write();
       //     hResPosVsAngle->Write();
+    }
+    if (detail>3) {
+      hResDistVsCell->Write();
     }
   }
   
@@ -284,10 +293,21 @@ class HSegment{
 
 //     hNSegm = new TH1F(N+"hNSegm","# of segments", 100, 0, 100);
 //     hNSegm->Sumw2();
+    if (detail>2) {
+      hdVDriftVsY = new TH2F(N+"_hdVDriftVsY", "delta_V_drift vs Y",
+			     200, -200, 200,
+			     100, -0.1, 0.1);
+      
+      hFailVdAngle    = new TH1F(N+"_hFailVdAngle", "Angle for failed 4-par fit",
+				 100, -1.2, 1.2);
+      
+    }
+    
   }
   
   HSegment(TString name_, TFile* file){
     name=name_;
+    detail=-1;
 
     hNHits = (TH2F*) file->Get(name_+"_hNHits");
 //     hNHitsPhi = (TH1F*) file->Get(name_+"_hNHitsPhi");
@@ -306,10 +326,25 @@ class HSegment{
     ht0PhiVsPhi = (TH2F*) file->Get(name_+"_ht0PhiVsPhi");
 //     hDeltaT0 = (TH1F*) file->Get(name_+"_hDeltaT0");
     hVDrift = (TH1F*) file->Get(name_+"_hVDrift");
+    hVDrift->SetXTitle("v_{drift} (cm/ns)");
     hVDriftVsPhi = (TH2F*) file->Get(name_+"_hVDriftVsPhi");
+    hVDriftVsPhi->SetXTitle("#alpha (rad)");
+    hVDriftVsPhi->SetYTitle("v_{drift} (cm/ns)");
     hVDriftVsX = (TH2F*) file->Get(name_+"_hVDriftVsX");
+    hVDriftVsX->SetXTitle("Local X (cm)");
+    hVDriftVsX->SetYTitle("v_{drift} (cm/ns)");
     hVDriftVsY = (TH2F*) file->Get(name_+"_hVDriftVsY");
+    hVDriftVsY->SetXTitle("Local Y (cm)");
+    hVDriftVsY->SetYTitle("v_{drift} (cm/ns)");  
 //     hNSegm = (TH1F*) file->Get(name_+"_hNSegm");
+    hdVDriftVsY = (TH2F*) file->Get(name_+"_hdVDriftVsY");
+    hFailVdAngle = (TH1F*) file->Get(name_+"_hFailVdAngle");
+    if (hdVDriftVsY) {
+      hdVDriftVsY->SetXTitle("Local Y (cm)");
+      hdVDriftVsY->SetYTitle("#Delta v_{drift}/v_{drift}"); 
+      hFailVdAngle->SetXTitle("#alpha (rad)");
+    }
+    
 
   }
 
@@ -331,6 +366,7 @@ class HSegment{
 	    float t0Phi,
 	    float t0Theta,
 	    float vDrift,
+	    float dvDrift,
 	    float Xsl,
 	    float Ysl) {
 
@@ -352,13 +388,22 @@ class HSegment{
 //       ht0Theta->Fill(t0Theta);
       ht0PhiVsPhi->Fill(phi,t0Phi);
 //       hDeltaT0->Fill(t0Theta-t0Phi);
-      if (vDrift!=0.) {
+
+      if (dvDrift!=0.) { // Fill only for correctly computed vdrift
 	hVDrift->Fill(vDrift);
 	hVDriftVsPhi->Fill(phi,vDrift);
 	hVDriftVsX->Fill(Xsl,vDrift);
 	hVDriftVsY->Fill(Ysl,vDrift);
+      } 
+    }
+    
+    if (detail>2) {
+      if (dvDrift!=0.) {
+	hdVDriftVsY->Fill(Ysl,dvDrift);
+      } else {
+	hFailVdAngle->Fill(phi);
       }
-    }    
+    }
   }
   
   void Write() {
@@ -383,7 +428,11 @@ class HSegment{
       hVDriftVsPhi->Write();
       hVDriftVsX->Write();
       hVDriftVsY->Write();
-      //    hNSegm->Write();
+     //    hNSegm->Write();
+      if (detail>=2) {
+	hdVDriftVsY->Write();
+	hFailVdAngle->Write();
+      } 
     }
   }
   
@@ -411,6 +460,8 @@ class HSegment{
   TH2F* hVDriftVsX;
   TH2F* hVDriftVsY;
   TH1F* hNSegm;
+  TH2F* hdVDriftVsY;
+  TH1F* hFailVdAngle;
   TString name;
   int detail;
 
