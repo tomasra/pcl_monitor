@@ -89,6 +89,7 @@ void plot(TString filename, TString cut, int wheel, int station, int sector=0, i
   bool doPhiThetaVsXY = true;
   bool doPhiThetaVsXYS1 = false;
   bool doNHits = true;
+  bool doT0 = true;
   bool doVd = true;
 
   // Special plots
@@ -102,7 +103,7 @@ void plot(TString filename, TString cut, int wheel, int station, int sector=0, i
   if (doPhiAndThetaS3) {
     TCanvas* c1= new TCanvas;
     c1->SetTitle(canvbasename+"_PhiTheta");
-    c1->Divide(2,2);
+    c1->Divide(2,2,0.0005,0.0005);
     
     c1->cd(1);
     TH1F* hRes;
@@ -211,7 +212,7 @@ void plot(TString filename, TString cut, int wheel, int station, int sector=0, i
     //-------------------- nHits, chi2
   if (doNHits) { 
        TCanvas* c1= new TCanvas;
-    c1->SetTitle(canvbasename+"_NHitsT0");
+    c1->SetTitle(canvbasename+"_NHits");
     c1->Divide(2,2,0.0005,0.0005);
     c1->cd(1);
     
@@ -235,7 +236,29 @@ void plot(TString filename, TString cut, int wheel, int station, int sector=0, i
     st->Draw();
   }
 
+  //-------------------- nHits, chi2
+  if (doT0){
+    TCanvas* c2= new TCanvas;
+    c2->SetName(canvbasename+"_t0");
+    c2->SetTitle(canvbasename+"_t0");
+    c2->Divide(2,2,0.0005,0.0005);
 
+    c2->cd(1);
+    TH2F * ht0 = hSegChamberSel->ht0;
+    ht0->SetXTitle("t0 #phi");
+    ht0->SetYTitle("t0 #theta");
+    ht0->Draw("col");
+
+    c2->cd(2);
+    ht0->ProjectionY()->Draw();
+
+    c2->cd(3);
+    ht0->ProjectionX()->Draw();
+
+    c2->cd(4);
+    plotAndProfileX(hSegChamberSel->ht0PhiVsPhi,rbx,rby,1,-5, 5, -0.5, 0.5);
+  }
+  
 
   //-------------------- Phi residuals divided by SL (only with SL or ByLayer granularity)
   if (doPhiBySL) {
@@ -295,7 +318,7 @@ void plot(TString filename, TString cut, int wheel, int station, int sector=0, i
     TH2F* hhh=h->Clone();
     TCanvas* c1= new TCanvas;
     c1->SetTitle(canvbasename+"_test");
-    c1->Divide(3,2);
+    c1->Divide(3,2,0.0005,0.0005);
     c1->cd(1);
     plotAndProfileX(hhh,1,1,1,-0.04,0.04);
 
@@ -334,7 +357,7 @@ void plot(TString filename, TString cut, int wheel, int station, int sector=0, i
   if (doVd) {
     TCanvas* c1= new TCanvas;
     c1->SetTitle(canvbasename+"_vdrift");
-    c1->Divide(2,2);
+    c1->Divide(2,2,0.0005,0.0005);
 
     if (hSegChamberSel->hVDrift->GetEntries() != 0){
       c1->cd(1);
