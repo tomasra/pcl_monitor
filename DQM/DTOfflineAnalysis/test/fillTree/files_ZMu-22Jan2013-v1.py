@@ -1,3 +1,5 @@
+isMC = False
+
 process.GlobalTag.globaltag = "FT_53_V21_AN3::All"
 
 readFiles = cms.untracked.vstring()

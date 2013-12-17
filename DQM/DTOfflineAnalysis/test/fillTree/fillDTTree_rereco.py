@@ -9,7 +9,7 @@ skipDeltaSuppr = True    #skip DRR
 ALIGNMENT = ""           #alignment DB to use
 doAngleCorr = False      #apply angle correction (experimental)
 
-T0_CALIBRATION = ""
+T0_CALIBRATION = "t0.db"
 
 ######################################################################
 import os
@@ -37,9 +37,9 @@ process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 
 ################### Set input samples
 
-#execfile("files_ZMu-22Jan2013-v1.py")                                    # Data
+execfile("files_ZMu-22Jan2013-v1.py")                                    # Data
 #execfile("files_DYJetsToLL_M-50_TuneZ2Star_8TeV-madgraph-tarball.py")    # Z MC
-execfile("files_RelValZMM5312.py")                                       # Z RelVal, 5X
+#execfile("files_RelValZMM5312.py")                                       # Z RelVal, 5X
 #execfile("files_RelValZMM700p4.py")                                      # Z RelVal, 7X
 
 # Override GT set in flies above to use IDEAL MC
