@@ -429,7 +429,7 @@ class HSegment{
       hVDriftVsX->Write();
       hVDriftVsY->Write();
      //    hNSegm->Write();
-      if (detail>=2) {
+      if (detail>2) {
 	hdVDriftVsY->Write();
 	hFailVdAngle->Write();
       } 

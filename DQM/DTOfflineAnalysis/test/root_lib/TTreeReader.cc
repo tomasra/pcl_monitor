@@ -1,8 +1,8 @@
 /*
  *  See header file for a description of this class.
  *
- *  $Date: 2013/11/11 14:59:11 $
- *  $Revision: 1.18 $
+ *  $Date: 2013/11/13 11:18:41 $
+ *  $Revision: 1.19 $
  *  \author G. Cerminara - INFN Torino
  */
 
@@ -617,7 +617,7 @@ DTDetId TTreeReader::buildDetid(int wheel, int station, int sector, int sl, int 
     return DTDetId(wheel, station, 0, sl, layer, 0);
   } else if(theGranularity == 7) { // chamberByLayer
     return DTDetId(wheel, station, sector, sl, layer, 0);
-  } else if(theGranularity == 13) { // abs(W), statByView
+  } else if(theGranularity == 13) { // abs(W), statByView : Sl3 is also merged with 1
     return DTDetId(abs(wheel), station, 0, sl, 0, 0);
   }
   
