@@ -9,6 +9,8 @@ skipDeltaSuppr = True    #skip DRR
 ALIGNMENT = ""           #alignment DB to use
 doAngleCorr = False      #apply angle correction (experimental)
 
+T0_CALIBRATION = ""
+
 ######################################################################
 import os
 print 'Working in: ', os.environ['CMSSW_BASE']
@@ -58,7 +60,12 @@ process.load("DQM.DTOfflineAnalysis.dtLocalRecoAnalysis_cfi")
 process.load('Configuration/StandardSequences/MagneticField_AutoFromDBCurrent_cff')
 process.load('Configuration/Geometry/GeometryIdeal_cff')
 
-
+if T0_CALIBRATION != "" :
+    process.GlobalTag.toGet = cms.VPSet(
+        cms.PSet(record = cms.string("DTT0Rcd"),
+                 tag = cms.string("t0"),
+                 connect = cms.untracked.string("sqlite_file:"+T0_CALIBRATION))
+        )
 #if CALIBRATION != "" :
 #process.GlobalTag.toGet = cms.VPSet(
 #    cms.PSet(record = cms.string("DTTtrigRcd"),
