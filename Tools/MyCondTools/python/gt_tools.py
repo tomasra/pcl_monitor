@@ -107,6 +107,18 @@ def convertnodecollection(value):
 
 
 # python wrappers of cmscon commands
+def exportIov(connect, tag, destination, passwd=""):
+    exportIovCommand = 'export TNS_ADMIN=/afs/cern.ch/cms/DB/conddb; cmscond_export_iov -s %s -t %s -d %s' % (connect, tag, destination)
+    if passwd != 'None' and passwd != '':
+        exportIovCommand += ' -P ' + passwd
+    #print exportIovCommand
+    statusAndOutput = commands.getstatusoutput(exportIovCommand)
+    if statusAndOutput[0] != 0:
+        print warning("Warning") + ": exportIov for tag: " + tag + " failed!"
+        print exportIovCommand
+        print statusAndOutput[1]
+
+    return statusAndOutput
 
 def listIov(connect, tag, passwd):
     """
@@ -977,7 +989,7 @@ class GTEntryCollection:
         if len(self._tagsInPrep) != 0:
             return True
 
-    def dumpToConfFile(self, newconffile, newgt, gtaccount):
+    def dumpToConfFile(self, newconffile, newgt, gtaccount,sqlite=''):
         # --------------------------------------------------------------------------
         # Write the new conf file
         node = self.nodedata()
@@ -987,7 +999,11 @@ class GTEntryCollection:
         # open output conf file
         conf=open(newconffile,'w')
         conf.write('[COMMON]\n')
-        conf.write('connect=sqlite_file:' + newgt + '.db\n')
+        print sqlite
+        if sqlite == '':
+            conf.write('connect=sqlite_file:' + newgt + '.db\n')
+        else:
+            conf.write('connect=' + sqlite + '\n')
         #conf.write('#connect=oracle://cms_orcoff_int2r/'+ACCOUNT+'\n')
         conf.write('#connect=oracle://cms_orcon_prod/'+gtaccount+'\n')
         conf.write('\n')
