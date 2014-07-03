@@ -13,15 +13,7 @@ Author: G.Cerminara
 
 """
 
-def PDNameFilter(pdName,match):
-    if match in pdName:
-        return True
-    return False
-    
-def PDFilterOutPromptSkim(pdName):
-    if not PDNameFilter(pdName, "PromptSkim"):
-        return True
-    return False
+
 
 
 class AlcaRecoDetails:
@@ -504,7 +496,7 @@ def getDatasets(pd, epoch, version, tier):
             theversion = components[len(components)-1]
             # FIXME: dont' remember why it was like this
             # theversion = components[len(components)-2] + "-" +  components[len(components)-1]
-            #print theversion
+            print theversion
             if theversion == version:
                 listforret.append(dataset)
     return listforret

@@ -13,8 +13,8 @@ import CondCore.Utilities.iovInspector as iovInspector
 """
 Module providing tools to inspect IOV tags in the DB
 
-$Date: 2012/11/22 11:22:11 $
-$Revision: 1.2 $
+$Date: 2013/03/05 15:00:09 $
+$Revision: 1.3 $
 
 """
 

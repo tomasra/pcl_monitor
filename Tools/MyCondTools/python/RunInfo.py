@@ -7,8 +7,8 @@ import InspectTag
 """
 Module providing tools to query the RunInfo tags in the condition DB
 
-$Date: 2013/03/05 15:00:53 $
-$Revision: 1.9 $
+$Date: 2013/03/08 10:52:24 $
+$Revision: 1.10 $
 
 """
 

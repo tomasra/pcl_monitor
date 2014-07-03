@@ -5,8 +5,8 @@ from Tools.MyCondTools.rrapi import RRApi, RRApiError
 """
 Module providing an interface to the RunRegistry 2 and RunRegistry 3 APIs.
 
-$Date: 2012/06/11 17:53:57 $
-$Revision: 1.5 $
+$Date: 2012/09/20 14:34:32 $
+$Revision: 1.6 $
 Author: G.Cerminara
 
 """
