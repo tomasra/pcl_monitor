@@ -62,13 +62,14 @@ class PCLRunReport:
         
         self.status = "NotRun"
 
-     def setRunStartAndStopTime(self, runInfo):
-         self.startTime = runInfo.startTime()
-         self.stopTime  = runInfo.stopTime()
+    def setRunStartAndStopTime(self, runInfo):
+        self.startTime = runInfo.startTime()
+        self.stopTime  = runInfo.stopTime()
 
 
-     def addPCLFile(self, pclFile):
-         
+    def addPCLFile(self, pclFile):
+        # FIXME: implement
+        return
 
 
 
