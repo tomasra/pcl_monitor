@@ -1,4 +1,3 @@
-| [[%LINKTOGTLIST%/?GlobalTag=GR_R_60_V9][GR_R_60_V9]] | %GREEN%60X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_60_V8 with the following updates:<br> - extended ECAL laser tag (also fixing problem in 2012C data). |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_60_V8][GR_R_60_V8]] | %GREEN%60X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_60_V7 with the following updates:<br> - Updated jet energy corrections to the ones used by the HLT since mid-Run2012C.<br> - Separated the AK5Calo corrections used at HLT from those used at RECO. <br> |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_60_V7][GR_R_60_V7]] | %GREEN%60X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_60_V6 with the following updates:<br> - another bug fix for ECAL laser APD/PN tag. |
 | [[%LINKTOGTLIST%/?GlobalTag=GR_R_60_V6][GR_R_60_V6]] | %GREEN%60X%ENDCOLOR% | To be used for data reprocessing. | As !GR_R_60_V5 with the following updates:<br> - updated JECs for JPT (Aug 2012). |
