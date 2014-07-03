@@ -10,7 +10,7 @@ import Tools.MyCondTools.monitoring_config as config
 
 
 
-
+# FIXME: this is obsolete: remove once the migration is completed
 class PCLOutputFiles:
     """
     Class representing the output files fo the Tier0 workflow for each run (sqlite + metadata files).
@@ -48,6 +48,27 @@ class PCLOutputFiles:
         if self.uploadTime != None:
             return True
         return False
+
+
+
+
+class PCLRunReport:
+    """ This class represents the statemachine of the PCL for each run """
+    def __init__(self, runNumber):
+        self.runNumber = runNumber
+    
+        self.startTime = None
+        self.stopTime = None
+        
+        self.status = "NotRun"
+
+     def setRunStartAndStopTime(self, runInfo):
+         self.startTime = runInfo.startTime()
+         self.stopTime  = runInfo.stopTime()
+
+
+     def addPCLFile(self, pclFile):
+         
 
 
 
@@ -235,24 +256,10 @@ def writeCacheAndLog(cachefilename, logfilename, runReports):
     logFile.close()
 
 
-def getFileTimeHash(filename):
-    hashTime = ''
-    if 'ALCAPROMPTHarvest' in filename:
-        # this is the ProdA file-name
-        hashTime = filename.split('-')[4]
-    else:
-        # this is the WMA file-name
-        hashTime = filename.split('@')[2]
-    return hashTime
 
 
-class OngoingRunExcept(Exception):
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return repr(self.value)
 
-
+# FIXME: deprecated
 def getDropBoxMetadata(dbFile):
     jsonData = open(dbFile.uploadFileName)
     metadataMap = json.load(jsonData)
@@ -289,15 +296,11 @@ class PCLOutputFile:
 
         self.iovTable = None
         
-#     def checkCreationTime(self):
-#         # creation time = modification = access = change time on AFS
-#         self.creationTime = 
-#         return
 
     def checkPayload(self, pclTag):
 
         # -------------------------------------------------------------------
-        # 2 --- Check for empty payloads (if the case exit)
+        # --- Check for empty payloads (if the case exit)
         # list IOV
         # - if empty -> setEmpty Payload and continue
         # - if full quit check for uplaod in oracle and quit the loop
@@ -366,6 +369,7 @@ class PCLOutputFile:
         return statusMap[flags]
         
     def getRunNumber(self):
+        # FIXME: implement!
         return
 
     def getDropBoxMetadata(self):
